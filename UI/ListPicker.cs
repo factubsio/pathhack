@@ -1,0 +1,116 @@
+namespace Pathhack.UI;
+
+public interface ISelectable
+{
+    string Name { get; }
+    string? Subtitle => null;
+    string Description { get; }
+    IEnumerable<string> Details => [];
+    string[] Tags => [];
+}
+
+public record class SimpleSelectable(string Name, string Description) : ISelectable;
+
+public static class ListPicker
+{
+    const int ListWidth = 24;
+    const int DetailX = ListWidth + 2;
+
+    public static T? Pick<T>(IReadOnlyList<T> items, string prompt, int defaultIndex = 0) where T : class, ISelectable
+    {
+        var layer = Draw.Layers[2];
+        using var _ = layer.Activate(fullScreen: true);
+        
+        int index = defaultIndex;
+        while (true)
+        {
+            DrawPicker(layer, items, index, prompt, null, 0);
+            var key = Console.ReadKey(true);
+            switch (key.Key)
+            {
+                case ConsoleKey.UpArrow or ConsoleKey.K:
+                    index = (index - 1 + items.Count) % items.Count;
+                    break;
+                case ConsoleKey.DownArrow or ConsoleKey.J:
+                    index = (index + 1) % items.Count;
+                    break;
+                case ConsoleKey.Enter:
+                    return items[index];
+                case ConsoleKey.Escape:
+                    return null;
+            }
+        }
+    }
+
+    public static List<T>? PickMultiple<T>(IReadOnlyList<T> items, string prompt, int count) where T : class, ISelectable
+    {
+        var layer = Draw.Layers[2];
+        using var _ = layer.Activate(fullScreen: true);
+        
+        int index = 0;
+        HashSet<int> selected = [];
+        while (true)
+        {
+            DrawPicker(layer, items, index, prompt, selected, count);
+            var key = Console.ReadKey(true);
+            switch (key.Key)
+            {
+                case ConsoleKey.UpArrow or ConsoleKey.K:
+                    index = (index - 1 + items.Count) % items.Count;
+                    break;
+                case ConsoleKey.DownArrow or ConsoleKey.J:
+                    index = (index + 1) % items.Count;
+                    break;
+                case ConsoleKey.RightArrow or ConsoleKey.L or ConsoleKey.LeftArrow or ConsoleKey.H:
+                    if (selected.Contains(index))
+                        selected.Remove(index);
+                    else if (selected.Count < count)
+                        selected.Add(index);
+                    break;
+                case ConsoleKey.Enter when selected.Count == count:
+                    return selected.Select(i => items[i]).ToList();
+                case ConsoleKey.Escape:
+                    return null;
+            }
+        }
+    }
+
+    static void DrawPicker<T>(ScreenBuffer layer, IReadOnlyList<T> items, int cursor, string prompt, HashSet<int>? selected, int count) where T : ISelectable
+    {
+        layer.Clear();
+        layer.FullScreen = true;
+        layer.Write(2, 1, prompt, ConsoleColor.White);
+
+        for (int i = 0; i < items.Count; i++)
+        {
+            var style = i == cursor ? CellStyle.Reverse : CellStyle.None;
+            string prefix = selected != null ? (selected.Contains(i) ? "[+] " : "[ ] ") : "";
+            layer.Write(2, 3 + i, prefix + items[i].Name, ConsoleColor.White, ConsoleColor.Black, style);
+        }
+
+        var current = items[cursor];
+        layer.Write(DetailX, 3, current.Name, ConsoleColor.Yellow);
+        if (current.Tags.Length > 0)
+        {
+            layer.Write(DetailX + current.Name.Length + 5, 3, '(' + string.Join(", ", current.Tags) + ')', ConsoleColor.Cyan);
+        }
+        if (current.Subtitle != null)
+        {
+            RichText.Write(layer, DetailX, 4, Draw.ViewWidth - DetailX - 2, current.Subtitle);
+        }
+
+        int descEnd = RichText.Write(layer, DetailX, 5, Draw.ViewWidth - DetailX - 2, current.Description);
+
+        int detailY = descEnd + 2;
+        foreach (var detail in current.Details)
+        {
+            RichText.Write(layer, DetailX, detailY++, Draw.ViewWidth - DetailX - 2, detail);
+        }
+
+        string help = selected != null
+            ? $"[↑↓] select  [←→] toggle  [Enter] confirm ({selected.Count}/{count})  [Esc] back"
+            : "[↑↓/jk] select  [Enter] confirm  [Esc] back";
+        layer.Write(2, Draw.ScreenHeight - 2, help, ConsoleColor.DarkGray);
+        Draw.Blit();
+    }
+}
