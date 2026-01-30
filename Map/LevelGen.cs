@@ -101,6 +101,7 @@ public static class LevelGen
         ["everflame_tomb"] = Dat.CryptLevels.EverflameEnd,
         ["bigroom_rect"] = Dat.BigRoomLevels.Rectangle,
         ["bigroom_oval"] = Dat.BigRoomLevels.Oval,
+        ["sanctuary_1"] = Dat.EndShrineLevels.EndShrine1,
     };
     
     static SpecialLevel? FindSpecialLevel(string id) => 
@@ -715,6 +716,17 @@ public class LevelGenContext(TextWriter log)
     {
         foreach (var p in tiles)
             occupied[p.X] |= 1u << p.Y;
+    }
+
+    internal Pos? FindLocationInRoom(Room room, Func<Pos, bool> predicate, int maxAttempts = 100)
+    {
+        for (int i = 0; i < maxAttempts; i++)
+        {
+            Pos p = LevelGen.RandomInterior(room);
+            if (predicate(p)) return p;
+        }
+        return null;
+
     }
 
     internal Room? FindRoom(Func<Room, bool> accept, int maxAttempts = 15)

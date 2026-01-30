@@ -90,12 +90,12 @@ public static class SpecialLevelParser
         ['|'] = TileType.Wall,
     };
     
-    static readonly HashSet<char> MarkerChars = ['+', '<', '>', 'S', '^'];
+    static readonly HashSet<char> MarkerChars = ['+', '<', '>', 'S', '^', '_'];
     
     public static Dictionary<char, List<Pos>> Parse(SpecialLevel spec, LevelGenContext ctx)
     {
         Dictionary<char, List<Pos>> marks = [];
-        OrderedDictionary<int, List<Pos>> roomTiles = [];
+        SortedDictionary<int, List<Pos>> roomTiles = [];
         
         var lines = spec.Map.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         int mapH = lines.Length;
@@ -196,7 +196,7 @@ public static class SpecialLevelParser
                 int minY = filled.Min(p => p.Y);
                 int maxY = filled.Max(p => p.Y);
                 Rect bounds = new(minX, minY, maxX - minX + 1, maxY - minY + 1);
-                ctx.Log("adding room");
+                ctx.Log($"adding room {n}");
                 LevelGen.PlaceRoom(ctx, bounds);
             }
         }

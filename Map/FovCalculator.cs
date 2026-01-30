@@ -93,7 +93,7 @@ public static class FovCalculator
     public static void Compute(Level level, Pos origin, int lightRadius, TileBitset? moreLit = null)
     {
         level.ClearLOS();
-        int maxRange = Math.Max(level.Width, level.Height);
+        int maxRange = 2 * level.Width + level.Height;
         ScanShadowcast(level, level.LOS, origin, maxRange);
 
         level.ClearLit();

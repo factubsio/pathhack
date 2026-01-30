@@ -25,6 +25,7 @@ public static class Input
         ["quit"] = new("quit", ArgType.None, _ => g.Done("Quit")),
         ["dbg.jump"] = new("dbg.jump", ArgType.Int("Level"), DebugJump),
         ["levelup"] = new("levelup", ArgType.None, _ => DoLevelUp()),
+        ["invoke"] = new("invoke", ArgType.None, _ => InvokeItem()),
     };
 
     static readonly Dictionary<char, Command> _commands = new()
@@ -320,6 +321,21 @@ public static class Input
             g.DoDrop(u, item);
         g.pline("You drop {0} item{1}.", toDrop.Count, toDrop.Count == 1 ? "" : "s");
         u.Energy -= ActionCosts.OneAction.Value;
+    }
+
+    static void InvokeItem()
+    {
+        if (!u.Inventory.Any())
+        {
+            g.pline("You have nothing to invoke.");
+            return;
+        }
+        var menu = new Menu<Item>();
+        menu.Add("Invoke what?", LineStyle.Heading);
+        BuildItemList(menu, u.Inventory);
+        var picked = menu.Display(MenuMode.PickOne);
+        if (picked.Count == 0) return;
+        ItemInvoke.Invoke(picked[0]);
     }
 
     static void WaitTurn() => u.Energy -= ActionCosts.OneAction.Value;
@@ -696,7 +712,7 @@ public static class Input
                     g.pline("You can't find a path there.");
                     return;
                 }
-                Log.Write($"Travel: from={upos} to={cursor} path=[{string.Join(",", PathToPositions(upos, path))}]");
+                Log.Verbose("movement", $"Travel: from={upos} to={cursor} path=[{string.Join(",", PathToPositions(upos, path))}]");
                 Movement.StartTravel(path);
                 return;
             }
@@ -778,6 +794,10 @@ public static class Input
                 trap.PlayerSeen = true;
             }
         }
+
+        var msg = lvl.GetState(upos)?.Message;
+        if (msg != null)
+            g.pline(msg);
     }
 
     static CommandArg GetArg(ArgType type) => type.Kind switch
@@ -868,7 +888,7 @@ public static class Input
 
     public static void HandleKey(ConsoleKeyInfo key)
     {
-        Log.Write($"HandleKey: Key={key.Key} Char={(int)key.KeyChar} Mods={key.Modifiers}");
+        Log.Verbose("movement", $"HandleKey: Key={key.Key} Char={(int)key.KeyChar} Mods={key.Modifiers}");
         if (key.Key == ConsoleKey.P && key.Modifiers.HasFlag(ConsoleModifiers.Control))
         {
             ShowMessageHistory();
@@ -906,7 +926,7 @@ public static class Input
         else if (GetDirection(key.Key, key.Modifiers.HasFlag(ConsoleModifiers.Control)) is { } dir)
         {
             // Check for shift/ctrl modifiers for running
-            Log.Write($"dir key: {key.Key} char: {(int)key.KeyChar} mods: {key.Modifiers} shift={key.Modifiers.HasFlag(ConsoleModifiers.Shift)} ctrl={key.Modifiers.HasFlag(ConsoleModifiers.Control)}");
+            Log.Verbose("movement", $"dir key: {key.Key} char: {(int)key.KeyChar} mods: {key.Modifiers} shift={key.Modifiers.HasFlag(ConsoleModifiers.Shift)} ctrl={key.Modifiers.HasFlag(ConsoleModifiers.Control)}");
             if (key.Modifiers.HasFlag(ConsoleModifiers.Shift))
             {
                 Movement.StartRun(RunMode.UntilBlocked, dir);

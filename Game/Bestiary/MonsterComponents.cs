@@ -112,19 +112,17 @@ public static class NaturalWeapons
     };
 }
 
-public class DropOnDeath(Func<Item> func) : LogicBrick
+public class SayOnDeath(string message) : LogicBrick
 {
-    public override void OnDeath(Fact fact, PHContext ctx)
-    {
-        lvl.PlaceItem(func(), ctx.Target.Unit!.Pos);
-    }
+    public override void OnDeath(Fact fact, PHContext ctx) => LoreDump(message);
+}
+
+public class DropOnDeath(ItemDef def) : LogicBrick
+{
+    public override void OnDeath(Fact fact, PHContext ctx) => lvl.PlaceItem(Item.Create(def), ctx.Target.Unit!.Pos);
 }
 
 public class GenerateDropOnDeath(ItemDef item) : LogicBrick
 {
-    public override void OnDeath(Fact fact, PHContext ctx)
-    {
-        var drop = ItemGen.GenerateItem(item);
-        lvl.PlaceItem(drop, ctx.Target.Unit!.Pos);
-    }
+  public override void OnDeath(Fact fact, PHContext ctx) => lvl.PlaceItem(ItemGen.GenerateItem(item), ctx.Target.Unit!.Pos);
 }

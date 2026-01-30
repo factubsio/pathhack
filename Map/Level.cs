@@ -1,3 +1,5 @@
+using System.Resources;
+
 namespace Pathhack.Map;
 
 // TileType, TileFlags, and TileInfo.DefaultFlags must be kept in sync
@@ -22,7 +24,6 @@ public enum TileFlags : ushort
     Passable = 1 << 0,
     Diggable = 1 << 1,
     Structural = 1 << 2,
-    Feature = 1 << 3,
 }
 
 // TileType, TileFlags, and TileInfo.DefaultFlags must be kept in sync
@@ -54,12 +55,19 @@ public enum DoorState : byte
 
 public record struct TileMemory(Tile Tile, DoorState Door, Item? TopItem);
 
+public class TileFeature(string id)
+{
+    public string Id => id;
+}
+
 public class CellState
 {
     public DoorState Door;
     public IUnit? Unit;
     public Room? Room;
     public List<Item>? Items;
+    public string? Message;
+    internal TileFeature? Feature;
 }
 
 public readonly record struct Tile(TileType Type, TileFlags Flags)
@@ -67,7 +75,6 @@ public readonly record struct Tile(TileType Type, TileFlags Flags)
     public bool IsPassable => (Flags & TileFlags.Passable) != 0;
     public bool IsDiggable => (Flags & TileFlags.Diggable) != 0;
     public bool IsStructural => (Flags & TileFlags.Structural) != 0;
-    public bool HasFeature => (Flags & TileFlags.Feature) != 0;
 
     public bool IsDoor => Type == TileType.Door;
     public bool IsStairs => Type is TileType.StairsUp or TileType.StairsDown or TileType.BranchUp or TileType.BranchDown;
@@ -179,6 +186,8 @@ public class Level(LevelId id, int width, int height)
     
     public long LastExitTurn { get; set; }
     public bool NoInitialSpawns;
+    public string? FirstIntro;
+    public string? ReturnIntro;
 
     public bool InBounds(Pos p) => p.X >= 0 && p.X < Width && p.Y >= 0 && p.Y < Height;
 
@@ -306,6 +315,9 @@ public class Level(LevelId id, int width, int height)
     public bool IsDoorOpen(Pos p) => IsDoor(p) && GetState(p) is { } s && s.Door == DoorState.Open;
     public bool IsDoorBroken(Pos p) => IsDoor(p) && GetState(p) is { } s && s.Door == DoorState.Broken;
 
+    public bool HasFeature(Pos p) => GetState(p)?.Feature != null;
+    public bool HasFeature(Pos p, string id) => GetState(p)?.Feature?.Id == id;
+
     public bool IsDoor(Pos p) => this[p].Type == TileType.Door;
 
     public bool CanMoveTo(Pos from, Pos to, IUnit? who = null)
@@ -330,6 +342,17 @@ public class Level(LevelId id, int width, int height)
         // TODO: phasing, swimming, flying, etc. based on who
 
         return true;
+    }
+
+    public Pos? FindTile(Func<Pos, bool> predicate)
+    {
+        for (int y = 0; y < Height; y++)
+            for (int x = 0; x < Width; x++)
+            {
+                Pos p = new(x, y);
+                if (predicate(p)) return p;
+            }
+        return null;
     }
 
     public Pos? FindTile(TileType type)

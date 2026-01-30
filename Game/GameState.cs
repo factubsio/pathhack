@@ -110,12 +110,20 @@ public class GameState
         Perf.Dump();
         Console.Clear();
         Console.SetCursorPosition(0, 0);
-        Console.WriteLine("GAME OVER");
-        Console.WriteLine();
-        Console.WriteLine(reason);
-        Console.WriteLine();
-        Console.WriteLine("Press any key...");
-        Console.ReadKey(true);
+
+        if (reason == "Won")
+        {
+            Fireworks.Play();
+        }
+        else
+        {
+            Console.WriteLine("GAME OVER");
+            Console.WriteLine();
+            Console.WriteLine(reason);
+            Console.WriteLine();
+            Console.WriteLine("Press any key...");
+            Console.ReadKey(true);
+        }
         throw new GameOverException();
     }
 
@@ -211,7 +219,7 @@ public class GameState
     {
         bool canSee = lvl.IsVisible(source.Pos);
         bool canHear = sound != null && upos.ChebyshevDist(source.Pos) <= hearRadius;
-        
+
         if (canSee && ifSee != null)
             pline(ifSee, source);
         else if (canHear)
@@ -335,11 +343,22 @@ public class GameState
             level = LevelGen.Generate(id, Seed);
             MonsterSpawner.SpawnInitialMonsters(level, u.CharacterLevel);
             Levels[id] = level;
+            if (level.FirstIntro != null)
+            {
+                LoreDump(level.FirstIntro);
+            }
         }
-        else if (level.LastExitTurn > 0)
+        else
         {
-            long delta = CurrentRound - level.LastExitTurn;
-            MonsterSpawner.CatchUpSpawns(level, delta);
+            if (level.ReturnIntro != null)
+            {
+                LoreDump(level.ReturnIntro);
+            }
+            if (level.LastExitTurn > 0)
+            {
+                long delta = CurrentRound - level.LastExitTurn;
+                MonsterSpawner.CatchUpSpawns(level, delta);
+            }
         }
 
         u.Level = id;
@@ -357,6 +376,17 @@ public class GameState
         };
         level.Units.Add(u);
         FovCalculator.Compute(level, upos, u.DarkVisionRadius);
+    }
+
+    public static void LoreDump(string message)
+    {
+        using var overlay = Draw.Overlay.Activate();
+        Draw.Overlay.FullScreen = true;
+        int y = RichText.Write(Draw.Overlay, 2, 2, 52, message);
+        Draw.OverlayWrite(2, y + 2, "press (space) to continue");
+        Draw.Blit();
+        while (Console.ReadKey(true).Key != ConsoleKey.Spacebar)
+            Draw.Blit();
     }
 
     public void DoHeal(IUnit source, IUnit target, DiceFormula formula)
@@ -634,7 +664,7 @@ public class GameState
     internal void Portal(IUnit unit)
     {
         if (!unit.IsPlayer) return; //for now monsters can't portal
-        
+
         var tile = lvl[upos].Type;
         Log.Write($"Portal: tile={tile} pos={upos} level={u.Level}");
         Log.Write($"Portal: BranchUpTarget={lvl.BranchUpTarget} BranchDownTarget={lvl.BranchDownTarget}");

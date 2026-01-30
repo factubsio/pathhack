@@ -29,53 +29,53 @@ public static class Movement
 
     public static bool TryContinueRun()
     {
-        Log.Write($"TryContinueRun: Mode={Mode} TravelPath={TravelPath?.Count} idx={_travelIdx}");
+        Log.Verbose("movement", $"TryContinueRun: Mode={Mode} TravelPath={TravelPath?.Count} idx={_travelIdx}");
         if (Mode == RunMode.None) return false;
 
         if (Mode == RunMode.Travel)
         {
             if (TravelPath == null || _travelIdx >= TravelPath.Count)
             {
-                Log.Write("Travel: path exhausted");
+                Log.Verbose("movement", "Travel: path exhausted");
                 Stop();
                 return false;
             }
             Dir = TravelPath[_travelIdx++];
-            Log.Write($"Travel: step {_travelIdx}, dir={Dir}");
+            Log.Verbose("movement", $"Travel: step {_travelIdx}, dir={Dir}");
         }
 
         // Check blockers before moving
         Pos next = upos + Dir;
         if (!lvl.InBounds(next) || !lvl.CanMoveTo(upos, next, u))
         {
-            Log.Write("Can't move there");
+            Log.Verbose("movement", "Can't move there");
             Stop();
             return false;
         }
 
         if (lvl.UnitAt(next) != null)
         {
-            Log.Write("Blocked by monster");
+            Log.Verbose("movement", "Blocked by monster");
             Stop();
             return false;
         }
 
         if (lvl.Traps.TryGetValue(next, out var trap) && trap.PlayerSeen)
         {
-            Log.Write("Trap ahead");
+            Log.Verbose("movement", "Trap ahead");
             Stop();
             return false;
         }
 
         // Move
-        Log.Write($"Moving from {upos} to {next}");
+        Log.Verbose("movement", $"Moving from {upos} to {next}");
         lvl.MoveUnit(u, next);
         u.Energy -= ActionCosts.OneAction.Value;
 
         // Check if we should stop AFTER this move
         if (ShouldStopAfterMove())
         {
-            Log.Write("Stopping after move");
+            Log.Verbose("movement", "Stopping after move");
             Stop();
         }
 
@@ -90,7 +90,7 @@ public static class Movement
             if (n == upos - Dir) continue;
             if (lvl.UnitAt(n) is { } m && m != u)
             {
-                Log.Write($"Stop: monster at {n}");
+                Log.Verbose("movement", $"Stop: monster at {n}");
                 return true;
             }
         }
@@ -106,19 +106,19 @@ public static class Movement
             // Stop if we're on interesting terrain
             if (lvl[upos].IsStairs)
             {
-                Log.Write("Stop: on stairs");
+                Log.Verbose("movement", "Stop: on stairs");
                 return true;
             }
             if (lvl.ItemsAt(upos).Count > 0)
             {
-                Log.Write("Stop: items here");
+                Log.Verbose("movement", "Stop: items here");
                 return true;
             }
 
             // Check sides for openings (perpendicular to movement)
             Pos left = new(-Dir.Y, Dir.X);
             Pos right = new(Dir.Y, -Dir.X);
-            
+
             // Check one tile ahead for upcoming openings
             // If wall to side now, but diagonal-ahead is passable = opening coming up
             Pos ahead = upos + Dir;
@@ -129,33 +129,33 @@ public static class Movement
                     Pos sidePos = upos + side;
                     Pos aheadSide = ahead + side;
                     if (!lvl.InBounds(aheadSide)) continue;
-                    
+
                     // Wall to side now, but passable diagonal-ahead = upcoming opening
                     bool wallToSide = !lvl.InBounds(sidePos) || !lvl.CanMoveTo(upos, sidePos, u);
                     bool openAhead = lvl.CanMoveTo(ahead, aheadSide, u);
-                    
+
                     if (wallToSide && openAhead)
                     {
-                        Log.Write($"Stop: upcoming opening at {aheadSide}");
+                        Log.Verbose("movement", $"Stop: upcoming opening at {aheadSide}");
                         return true;
                     }
                 }
-                
+
                 // Closed door ahead - stop adjacent
                 if (lvl.IsDoorClosed(ahead))
                 {
-                    Log.Write("Stop: closed door ahead");
+                    Log.Verbose("movement", "Stop: closed door ahead");
                     return true;
                 }
-                
+
                 // Interesting terrain ahead - stop adjacent
                 if (IsInteresting(ahead))
                 {
-                    Log.Write("Stop: interesting ahead");
+                    Log.Verbose("movement", "Stop: interesting ahead");
                     return true;
                 }
             }
-            
+
             // Check current position sides (only for cardinal movement)
             if (Dir.X == 0 || Dir.Y == 0)
             {
@@ -163,23 +163,23 @@ public static class Movement
                 {
                     Pos sidePos = upos + side;
                     if (!lvl.InBounds(sidePos)) continue;
-                    
+
                     // Any door directly to side - stop adjacent
                     if (lvl.IsDoor(sidePos))
                     {
-                        Log.Write($"Stop: door to side at {sidePos}");
+                        Log.Verbose("movement", $"Stop: door to side at {sidePos}");
                         return true;
                     }
-                    
+
                     var tile = lvl[sidePos];
-                    
+
                     // Corridor/floor opening to the side that wasn't there before
                     if (tile.Type is TileType.Floor or TileType.Corridor)
                     {
                         Pos prevSide = (upos - Dir) + side;
                         if (lvl.InBounds(prevSide) && !lvl.CanMoveTo(upos - Dir, prevSide, u))
                         {
-                            Log.Write($"Stop: new opening to side at {sidePos}");
+                            Log.Verbose("movement", $"Stop: new opening to side at {sidePos}");
                             return true;
                         }
                     }
@@ -191,12 +191,12 @@ public static class Movement
         {
             if (lvl.ItemsAt(upos).Count > 1)
             {
-                Log.Write("Stop: items here");
+                Log.Verbose("movement", "Stop: items here");
                 return true;
             }
             if (IsInteresting(upos))
             {
-                Log.Write("Stop: interesting here");
+                Log.Verbose("movement", "Stop: interesting here");
                 return true;
             }
         }

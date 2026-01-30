@@ -154,7 +154,7 @@ public static class DungeonResolver
         return ctx =>
         {
             var r = ctx.FindRoom(r => !r.HasStairs) ?? ctx.PickRoom();
-            var pos = ctx.level.FindLocationInRoom(r, p => !ctx.level[p].HasFeature && !ctx.level[p].IsStructural) ?? ctx.Throw<Pos>($"cannot place stairs {type} (no pos)");
+            var pos = ctx.FindLocationInRoom(r, p => !ctx.level.HasFeature(p) && !ctx.level[p].IsStructural) ?? ctx.Throw<Pos>($"cannot place stairs {type} (no pos)");
             ctx.level.Set(pos, type);
         };
     }
@@ -169,7 +169,7 @@ public static class DungeonResolver
             if (!patchExisting)
             {
                 var r = ctx.FindRoom(r => !r.HasStairs) ?? ctx.PickRoom();
-                var pos = ctx.level.FindLocationInRoom(r, p => !ctx.level[p].HasFeature && !ctx.level[p].IsStructural) ?? ctx.Throw<Pos>("cannot place portal (no pos)");
+                var pos = ctx.FindLocationInRoom(r, p => !ctx.level.HasFeature(p) && !ctx.level[p].IsStructural) ?? ctx.Throw<Pos>("cannot place portal (no pos)");
                 ctx.level.Set(pos, type);
             }
 

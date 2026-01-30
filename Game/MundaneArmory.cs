@@ -22,6 +22,16 @@ public static class MundaneArmory
         Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
     };
 
+    public static readonly WeaponDef Mace = new()
+    {
+        id = "mace",
+        Name = "mace",
+        BaseDamage = d(6),
+        Profiency = Proficiencies.Mace,
+        DamageType = DamageTypes.Blunt,
+        Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
+    };
+
     public static readonly WeaponDef Scimitar = new()
     {
         id = "scimitar",
@@ -80,7 +90,7 @@ public static class MundaneArmory
     {
         id = "falchion",
         Name = "falchion",
-        BaseDamage = d(10),
+        BaseDamage = d(2, 4),
         Profiency = Proficiencies.Falchion,
         DamageType = DamageTypes.Slashing,
         Hands = 2,
