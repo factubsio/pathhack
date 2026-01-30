@@ -35,6 +35,7 @@ public class EverflameComponent : LogicBrick
                 lvl.Set(data.Lock + Pos.NW, TileType.Floor);
                 lvl.Set(data.Lock + Pos.W, TileType.Floor);
                 lvl.Set(data.Lock + Pos.SW, TileType.Floor);
+                data.Locked = false;
             }
 
             data.DistanceToShrine = data.Shrine.ChebyshevDist(upos);
