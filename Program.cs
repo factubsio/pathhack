@@ -1,11 +1,12 @@
+using System.Runtime.Intrinsics.Arm;
 using Pathhack.Dat;
 using static Pathhack.Map.DepthAnchor;
 
 List<BranchTemplate> templates = [
     new("dungeon", "Dungeon", (3, 3)) {
         Levels = [
-            new("sanctuary", ["sanctuary"], FromBottom, 0),
-            new("challenge", ["challenge_a", "challenge_b"], RelativeTo, -1, 1, "sanctuary"),
+            new("sanctuary", ["sanctuary_1"], FromBottom, 0),
+            // new("challenge", ["challenge_a", "challenge_b"], RelativeTo, -1, 1, "sanctuary"),
             new("bigroom", ["bigroom_rect", "bigroom_oval"], FromTop, 1, 1, Required: false),
         ]
     },
@@ -27,7 +28,7 @@ if (args.Length > 0)
 else
 {
     // bubble dbeug
-    // LevelGen.ForcedLevel1 = BigRoomLevels.Oval;
+    // LevelGen.ForcedLevel1 = EndShrineLevels.EndShrine1;
 }
 
 using var _noCursor = new HideCursor();
@@ -39,8 +40,13 @@ while (true)
 {
     ResetGameState();
 
-    g.Seed = 12345;
+    byte[] seed = new byte[4];
+    Random.Shared.NextBytes(seed);
+
+    g.Seed = BitConverter.ToInt32(seed);
+
     // g.DebugMode = true;
+    // g.Seed = 12345;
 
     g.Branches = DungeonResolver.Resolve(templates, g.Seed);
     var dungeon = g.Branches["dungeon"];

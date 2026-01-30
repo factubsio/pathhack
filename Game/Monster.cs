@@ -22,6 +22,7 @@ public class MonsterDef : BaseDef
   public int CR = 0;
   public int SpawnWeight = 1;
   public int MinDepth = 1;
+  public bool IsUnique = false;
   public int MaxDepth = 99;
   public string? Family;
 }
@@ -140,10 +141,10 @@ public class Monster : Unit<MonsterDef>, IFormattable
   public override string ToString() => Def.Name;
   public string ToString(string? format, IFormatProvider? provider) => format switch
   {
-    "the" => Def.Name.The(),
-    "The" => Def.Name.The().Capitalize(),
-    "an" => Def.Name.An(),
-    "An" => Def.Name.An().Capitalize(),
+    "the" => Def.IsUnique ? Def.Name : Def.Name.The(),
+    "The" => Def.IsUnique ? Def.Name : Def.Name.The().Capitalize(),
+    "an" => Def.IsUnique ? Def.Name : Def.Name.An(),
+    "An" => Def.IsUnique ? Def.Name : Def.Name.An().Capitalize(),
     "own" => "his",
     "Own" => "His",
     _ => Def.Name

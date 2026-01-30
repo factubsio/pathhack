@@ -9,9 +9,11 @@ public enum ModifierCategory
     ItemPenalty,
     StatusBonus,
     StatusPenalty,
+
+    Override, // BE CAREFUL WITH THIS
 }
 
-public record class Modifier(ModifierCategory Category, int Value, string? Why = null)
+public record class Modifier(ModifierCategory Category, int Value, string? Why = null, int Priority = 0)
 {
     public static int operator +(int value, Modifier? modifier) => value + modifier?.Value ?? 0;
 
@@ -70,6 +72,7 @@ public static class Proficiencies
     public const string Whip = "whip";
     public const string Scythe = "scythe";
     public const string Falchion = "falchion";
+    public const string Mace = "mace";
 
     public const string SimpleGroup = "g/simple";
 
@@ -96,9 +99,15 @@ public class Modifiers
 {
     public readonly Dictionary<ModifierCategory, Modifier> Unstackable = [];
     public readonly List<Modifier> Stackable = [];
+    public Modifier? Override { get; private set; }
 
     public Modifier AddModifier(Modifier modifier)
     {
+        if (modifier.Category == ModifierCategory.Override)
+        {
+            if (Override == null || modifier.Priority > Override.Priority)
+                Override = modifier;
+        }
         if (modifier.Category == ModifierCategory.UntypedStackable)
         {
             Stackable.Add(modifier);
@@ -126,7 +135,7 @@ public class Modifiers
             Unstackable.Remove(modifier.Category);
     }
 
-    public int Calculate() => Unstackable.Values.Sum(x => x.Value) + Stackable.Sum(x => x.Value);
+    public int Calculate() => Override != null ? Override.Value : (Unstackable.Values.Sum(x => x.Value) + Stackable.Sum(x => x.Value));
 
     internal void AddAll(Modifiers mods)
     {

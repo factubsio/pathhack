@@ -81,25 +81,5 @@ public static class MiscMonsters
         ],
     };
 
-    public static readonly MonsterDef Asar = new()
-    {
-        id = "asar",
-        Name = "Asar",
-        Glyph = new('Z', ConsoleColor.Magenta),
-        HP = 30,
-        AC = 16,
-        AttackBonus = 8,
-        DamageBonus = 4,
-        LandMove = ActionCosts.LandMove20,
-        Unarmed = NaturalWeapons.Claw_1d6,
-        Size = UnitSize.Medium,
-        CR = 4,
-        SpawnWeight = 0, // unique, don't spawn randomly
-        Components = [
-            new GrantAction(new NaturalAttack(NaturalWeapons.Claw_1d6)),
-            new DropOnDeath(() => new(QuestItems.Everflame)),
-        ],
-    };
-
     public static readonly MonsterDef[] All = [Rat, Skeleton, ThornBush];
 }

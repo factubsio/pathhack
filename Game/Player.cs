@@ -15,7 +15,7 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def), IFormattable
     public override int StrMod => Mod(Attributes.Str.Value);
 
     public LevelId Level { get; set; }
-    public int DarkVisionRadius => Ancestry.DarkVisionRadius + QueryModifiers("light_radius").Calculate();
+    public int DarkVisionRadius => Math.Clamp(Ancestry.DarkVisionRadius + QueryModifiers("light_radius").Calculate(), 0, 100);
     public override ActionCost LandMove => ActionCosts.StandardLandMove;
 
     public StatBlock<ModifiableValue> Attributes = new(() => new(10));
@@ -69,7 +69,7 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def), IFormattable
             p.ApplyStatMod(flaw, -2);
 
         // HP from class
-        p.HP.Reset(cls.HpPerLevel + Mod(p.Attributes.Con.Value));
+        p.HP.Reset(cls.HpPerLevel + Mod(p.Attributes.Con.Value) + 12);
 
         // Starting equipment
         cls.GrantStartingEquipment?.Invoke(p);

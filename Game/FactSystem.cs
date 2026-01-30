@@ -245,11 +245,7 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
     {
         Def = def;
         foreach (var c in Def.Components)
-        {
-            var data = c.CreateData();
-            Facts.Add(new Fact(this, c, data));
-            if (c.IsActive) ActiveFactCount++;
-        }
+            AddFact(c);
     }
     private readonly List<Fact> Facts = [];
 

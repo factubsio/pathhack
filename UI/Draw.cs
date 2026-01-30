@@ -266,6 +266,10 @@ public static class Draw
                             var top = items[^1];
                             Layers[0][x, y + MapRow] = Cell.From(top.Def.Glyph);
                         }
+                        else if (level.GetState(p)?.Feature is {} feature && feature.Id[0] != '_')
+                        {
+                            Layers[0][x, y + MapRow] = new('_', ConsoleColor.DarkGreen);
+                        }
                         else if (level.Traps.TryGetValue(p, out var trap) && trap.PlayerSeen)
                         {
                             Layers[0][x, y + MapRow] = Cell.From(trap.Glyph);
