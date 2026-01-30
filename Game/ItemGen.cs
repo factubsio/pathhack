@@ -189,11 +189,17 @@ public class StrikingRune(int extraDice) : LogicBrick
 {
     public int ExtraDice => extraDice;
     
-    public override object? OnQuery(Fact fact, string key, string? arg) => key switch
+    public override void OnBeforeDamageRoll(Fact fact, PHContext context)
     {
-        "striking" => extraDice,
-        _ => null
-    };
+        if (!fact.IsEquipped() || context.Weapon != fact.Entity) return;
+        if (context.Weapon?.Def is not WeaponDef wdef) return;
+        var baseDie = wdef.BaseDamage.Dice[0];
+        context.Damage.Add(new DamageRoll
+        {
+            Formula = new Dice(extraDice * baseDie.D, baseDie.F),
+            Type = wdef.DamageType
+        });
+    }
 }
 
 public class ElementalRune(DamageType type, int quality) : LogicBrick
