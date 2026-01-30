@@ -100,9 +100,9 @@ public static class FovCalculator
         foreach (var room in level.Rooms)
         {
             if (!room.Lit) continue;
-            foreach (var p in room.Bounds.Interior())
+            foreach (var p in room.Interior)
                 level.SetLit(p);
-            foreach (var p in room.Bounds.Border())
+            foreach (var p in room.Border)
                 level.SetLit(p);
         }
 

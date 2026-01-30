@@ -24,6 +24,7 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def), IFormattable
     public int CharacterLevel = 0;
     public int XP = 0;
     public HashSet<string> TakenFeats = [];
+    public Dictionary<LevelId, HashSet<string>> SeenFeatures = [];
 
     public required ClassDef Class = null!;
     public required DeityDef Deity = null!;

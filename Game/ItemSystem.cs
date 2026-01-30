@@ -8,6 +8,7 @@ public class ItemDef : BaseDef
     public int Weight = 1;
     public string Material = Materials.Iron;
     public bool Stackable;
+    public bool IsUnique = false;
 
     public char Class => Glyph.Value;
 }
@@ -72,6 +73,10 @@ public class Item(ItemDef def) : Entity<ItemDef>(def), IFormattable
     public char InvLet;
     public IUnit? Holder;
     public int Count = 1;
+
+    public bool IsNamedUnique = false;
+
+    public bool IsUnique => IsNamedUnique || Def.IsUnique;
     
     // runes (weapons only for now)
     public int Potency;
@@ -91,9 +96,12 @@ public class Item(ItemDef def) : Entity<ItemDef>(def), IFormattable
             if (Count > 1)
                 parts.Add($"{Count}");
             
-            // effective bonus from fundamental
-            int bonus = EffectiveBonus;
-            parts.Add($"{bonus:+#;-#;+0}");
+            // Only show potency for weapons
+            if (Def is WeaponDef)
+            {
+                int bonus = EffectiveBonus;
+                parts.Add($"{bonus:+#;-#;+0}");
+            }
 
             if (Fundamental != null && !Fundamental.Def.IsNull)
                 parts.Add($"{Fundamental.Def.DisplayName}/{Fundamental.Def.Quality}");
@@ -171,6 +179,8 @@ public class Item(ItemDef def) : Entity<ItemDef>(def), IFormattable
     {
         "the" => DisplayName.The(),
         "The" => DisplayName.The().Capitalize(),
+        "an" when IsUnique => Count > 1 ? DisplayName : DisplayName.The(),
+        "An" when IsUnique => Count > 1 ? DisplayName : DisplayName.The().Capitalize(),
         "an" => Count > 1 ? DisplayName : DisplayName.An(),
         "An" => Count > 1 ? DisplayName.Capitalize() : DisplayName.An().Capitalize(),
         _ => DisplayName

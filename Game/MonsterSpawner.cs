@@ -14,7 +14,8 @@ public static class MonsterSpawner
         foreach (var room in level.Rooms)
         {
             if (g.Rn2(2) != 0) continue;
-            SpawnAndPlace(level, playerLevel, p => level.FindLocationInRoom(room, level.NoUnit));
+            SpawnAndPlace(level, playerLevel, p => level.FindLocationInRoom(room, pos => 
+                level.NoUnit(pos) && !level[pos].IsStairs));
         }
     }
 
@@ -23,7 +24,8 @@ public static class MonsterSpawner
         if (level.NoInitialSpawns) return;
 
         if (g.Rn2(RuntimeSpawnFrequency) != 0) return;
-        SpawnAndPlace(level, u.CharacterLevel, _ => level.FindLocation(p => level.NoUnit(p) && p.ChebyshevDist(upos) > 5));
+        SpawnAndPlace(level, u.CharacterLevel, _ => level.FindLocation(p => 
+            level.NoUnit(p) && !level[p].IsStairs && p.ChebyshevDist(upos) > 5));
     }
 
     public static void CatchUpSpawns(Level level, long turnDelta)
@@ -35,7 +37,8 @@ public static class MonsterSpawner
 
         for (int i = 0; i < actualSpawns; i++)
         {
-            if (!SpawnAndPlace(level, u.CharacterLevel, _ => level.FindLocation(level.NoUnit)))
+            if (!SpawnAndPlace(level, u.CharacterLevel, _ => level.FindLocation(p => 
+                level.NoUnit(p) && !level[p].IsStairs)))
                 break;
         }
     }

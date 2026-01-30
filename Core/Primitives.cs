@@ -19,6 +19,7 @@ public readonly record struct Pos(int X, int Y) : IFormattable
     public static readonly Pos SW = new(-1, 1);
 
     public static readonly Pos[] AllDirs = [N, NE, E, SE, S, SW, W, NW];
+    public static readonly Pos[] CardinalDirs = [N, E, S, W];
     public bool IsValid => X >= 0 && Y >= 0;
 
     public override string ToString() => $"({X},{Y})";

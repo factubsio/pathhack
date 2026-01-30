@@ -22,7 +22,7 @@ public class FireBreath(int radius, Dice damage, int dc, string pool = "fire_bre
         using var cone = lvl.CollectCone(unit.Pos, dir, radius);
 
         Draw.AnimateFlash(cone, new Glyph('≈', ConsoleColor.Red));
-        g.pline("{0:The} breathes fire!", unit);
+        g.YouObserve(unit, "{0:The} breathes fire!", "a whoosh of flames");
 
         foreach (var pos in cone)
         {
@@ -56,7 +56,7 @@ public class WarChant(string pool = "war_chant") : ActionBrick
     {
         unit.TryUseCharge(pool);
 
-        g.pline("{0:The} sings a war chant!", unit);
+        g.YouObserve(unit, "{0:The} sings a war chant!", "a war chant");
 
         string? family = (unit as Monster)?.Def.Family;
         if (family == null) return;

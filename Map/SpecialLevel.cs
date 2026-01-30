@@ -1,6 +1,16 @@
 namespace Pathhack.Map;
 
-public record SpecialLevel(string Id, string Map, Action<LevelBuilder>? PreRender = null, Action<LevelBuilder>? PostRender = null);
+public record SpecialLevel(string Id, string Map, Action<LevelBuilder>? PreRender = null, Action<LevelBuilder>? PostRender = null)
+{
+    public bool HasPortalToChild = false;
+    public bool HasPortalToParent = false;
+    public bool HasStairsUp = false;
+    public bool HasStairsDown = false;
+
+    public string? Name { get; init; }
+    public string DisplayName => Name ?? Id;
+    public HashSet<int>? IrregularRooms { get; init; }
+}
 
 public class LevelBuilder(Dictionary<char, List<Pos>> marks, LevelGenContext ctx)
 {
@@ -24,6 +34,27 @@ public class LevelBuilder(Dictionary<char, List<Pos>> marks, LevelGenContext ctx
 
     public void Trap(Trap trap, Pos p) =>
         Level.Traps[p] = trap;
+    
+    public Pos? FindLocation(Func<Pos, bool> predicate, int maxAttempts = 100)
+    {
+        for (int i = 0; i < maxAttempts; i++)
+        {
+            Room room = LevelGen.Pick(Level.Rooms);
+            Pos p = LevelGen.RandomInterior(room);
+            if (predicate(p)) return p;
+        }
+        return null;
+    }
+    
+    public Pos? FindLocationInRoom(Room room, Func<Pos, bool> predicate, int maxAttempts = 100)
+    {
+        for (int i = 0; i < maxAttempts; i++)
+        {
+            Pos p = LevelGen.RandomInterior(room);
+            if (predicate(p)) return p;
+        }
+        return null;
+    }
     
     // public void NonDiggable(Rect r)
     // {
@@ -88,11 +119,11 @@ public static class SpecialLevelParser
                 }
                 else if (c == '+')
                 {
-                    ctx.level.PlaceDoor(p, DoorState.Closed);
                     AddMark(marks, c, p);
                 }
                 else if (char.IsDigit(c))
                 {
+                    ctx.level.Set(p, TileType.Wall);
                     int n = c - '0';
                     if (!roomTiles.TryGetValue(n, out var list))
                         roomTiles[n] = list = [];
@@ -106,16 +137,68 @@ public static class SpecialLevelParser
             }
         }
         
-        // Build rooms from digit tiles
-        foreach (var (n, tiles) in roomTiles)
+        // Build rooms from digit walls via flood fill from adjacent floor
+        foreach (var (n, walls) in roomTiles)
         {
-            int minX = tiles.Min(p => p.X);
-            int maxX = tiles.Max(p => p.X);
-            int minY = tiles.Min(p => p.Y);
-            int maxY = tiles.Max(p => p.Y);
-            Rect bounds = new(minX, minY, maxX - minX + 1, maxY - minY + 1);
-            ctx.Log("adding room");
-            LevelGen.PlaceRoom(ctx, bounds);
+            // Find a floor tile adjacent to any wall
+            Pos? seed = null;
+            foreach (var w in walls)
+            {
+                foreach (var d in Pos.CardinalDirs)
+                {
+                    var np = w + d;
+                    if (ctx.level.InBounds(np) && ctx.level[np].Type == TileType.Floor)
+                    {
+                        seed = np;
+                        break;
+                    }
+                }
+                if (seed != null) break;
+            }
+            
+            if (seed == null)
+            {
+                ctx.Log($"room {n}: no adjacent floor found");
+                continue;
+            }
+            
+            HashSet<Pos> filled = [];
+            Queue<Pos> queue = new([seed.Value]);
+            while (queue.Count > 0)
+            {
+                var p = queue.Dequeue();
+                if (!filled.Add(p)) continue;
+                foreach (var d in Pos.CardinalDirs)
+                {
+                    var np = p + d;
+                    if (ctx.level.InBounds(np) && ctx.level[np].Type == TileType.Floor && !filled.Contains(np))
+                        queue.Enqueue(np);
+                }
+            }
+            
+            // Turn digit walls to floor so they become part of room, RenderRoom
+            // constructs walls later, it's all a bit hokey?
+            foreach (var w in walls)
+            {
+                ctx.level.Set(w, TileType.Floor);
+                filled.Add(w);
+            }
+            
+            if (spec.IrregularRooms?.Contains(n) == true)
+            {
+                ctx.Log($"adding irregular room with {filled.Count} tiles");
+                LevelGen.PlaceIrregularRoom(ctx, filled);
+            }
+            else
+            {
+                int minX = filled.Min(p => p.X);
+                int maxX = filled.Max(p => p.X);
+                int minY = filled.Min(p => p.Y);
+                int maxY = filled.Max(p => p.Y);
+                Rect bounds = new(minX, minY, maxX - minX + 1, maxY - minY + 1);
+                ctx.Log("adding room");
+                LevelGen.PlaceRoom(ctx, bounds);
+            }
         }
         
         return marks;

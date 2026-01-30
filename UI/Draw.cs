@@ -215,10 +215,10 @@ public static class Draw
 
     static char WallChar(Level level, Pos p)
     {
-        bool n = IsWall(level, p + new Pos(0, -1));
-        bool s = IsWall(level, p + new Pos(0, 1));
-        bool e = IsWall(level, p + new Pos(1, 0));
-        bool w = IsWall(level, p + new Pos(-1, 0));
+        bool n = IsWall(level, p + Pos.N);
+        bool s = IsWall(level, p + Pos.S);
+        bool e = IsWall(level, p + Pos.E);
+        bool w = IsWall(level, p + Pos.W);
 
         return (n, s, e, w) switch
         {
@@ -325,9 +325,9 @@ public static class Draw
     {
         ConsoleColor fg = isMemory ? memoryColor : TileColor(t);
         if (t == TileType.BranchUp)
-            fg = level.BranchUpTarget?.Color ?? ConsoleColor.Cyan;
+            fg = level.BranchUpTarget?.Branch.Color ?? ConsoleColor.Cyan;
         else if (t == TileType.BranchDown)
-            fg = level.BranchDownTarget?.Color ?? ConsoleColor.Cyan;
+            fg = level.BranchDownTarget?.Branch.Color ?? ConsoleColor.Cyan;
         bool dec = t == TileType.Wall || t == TileType.Floor || (t == TileType.Door && door != DoorState.Closed);
         char ch = t switch
         {
@@ -345,7 +345,7 @@ public static class Draw
         return new(ch, fg, Dec: dec);
     }
 
-    public static void DrawCurrent()
+    public static void DrawCurrent(Pos? cursor = null)
     {
         if (g.CurrentLevel is { } level)
         {
@@ -355,6 +355,14 @@ public static class Draw
             Perf.Start();
             DrawLevel(level);
             Perf.Stop("DrawLevel");
+            
+            if (cursor is { } c && level.InBounds(c))
+            {
+                var cell = Layers[0][c.X, c.Y + MapRow];
+                if (cell.HasValue)
+                    Layers[0][c.X, c.Y + MapRow] = cell.Value with { Style = CellStyle.Reverse };
+            }
+            
             Perf.Start();
             DrawStatus(level);
             Perf.Stop("DrawStatus");

@@ -1,5 +1,27 @@
 namespace Pathhack.Game.Classes;
 
+public class MagicMapping : ActionBrick
+{
+    public override string Name => "Magic Mapping";
+    
+    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
+    {
+        whyNot = "";
+        return true;
+    }
+    
+    public override void Execute(IUnit unit, object? data, Target target)
+    {
+        for (int y = 0; y < lvl.Height; y++)
+        for (int x = 0; x < lvl.Width; x++)
+        {
+            Pos p = new(x, y);
+            lvl.UpdateMemory(p);
+        }
+        g.pline("A map coalesces in your mind.");
+    }
+}
+
 public static partial class ClassDefs
 {
     public static ClassDef Developer => new()
@@ -54,6 +76,7 @@ public static partial class ClassDefs
             darts2.Potency = 1;
             p.Inventory.Add(darts2);
             
+            p.AddAction(new MagicMapping());
             foreach (var blessing in Blessings.All)
                 blessing.ApplyMinor(p);
             g.DebugMode = true;
