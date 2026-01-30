@@ -27,6 +27,7 @@ public static class LevelGen
     public static Pos RandomBorder(Rect r) => _rng.RandomBorder(r);
     public static List<Pos> RandomInteriorN(Rect r, int n) => _rng.RandomInteriorN(r, n);
     public static T Pick<T>(List<T> list) => list[Rn2(list.Count)];
+    public static Pos RandomInterior(Room room) => room.Interior[Rn2(room.Interior.Count)];
 
     public static void Seed(LevelId id, int gameSeed)
     {
@@ -58,18 +59,30 @@ public static class LevelGen
             {
                 level = new(id, 80, 21),
             };
-            if (ForcedLevel1 != null && id.Depth == 1)
+            
+            var resolved = id.Branch.ResolvedLevels[id.Depth - 1];
+            SpecialLevel? special = (ForcedLevel1, id.Depth, resolved.Template) switch
             {
-                GenSpecial(ctx, ForcedLevel1);
-            }
-            else if (id.Depth <= TestLevels.Length)
+                ({ } forced, 1, _) => forced,
+                (_, _, { } template) => template,
+                _ => null
+            };
+            
+            if (special != null)
             {
-                GenSpecial(ctx, TestLevels[id.Depth - 1]);
+                GenSpecial(ctx, special);
             }
             else
             {
                 GenRoomsAndCorridors(ctx);
             }
+
+            foreach (var cmd in resolved.Commands)
+            {
+                Log($"executing resolved action: {cmd.Debug}");
+                cmd.Action(ctx);
+            }
+            
             PatchEmptyDoors(ctx.level);
             LogLevel(ctx.level);
             return ctx.level;
@@ -80,6 +93,18 @@ public static class LevelGen
             _log = null;
         }
     }
+
+    public static SpecialLevel? GetTemplate(string? name) => name == null ? null : SpecialLevels.TryGetValue(name, out var level) ? level : null;
+
+    static readonly Dictionary<string, SpecialLevel> SpecialLevels = new()
+    {
+        ["everflame_tomb"] = Dat.CryptLevels.EverflameEnd,
+        ["bigroom_rect"] = Dat.BigRoomLevels.Rectangle,
+        ["bigroom_oval"] = Dat.BigRoomLevels.Oval,
+    };
+    
+    static SpecialLevel? FindSpecialLevel(string id) => 
+        SpecialLevels.GetValueOrDefault(id);
 
     static void PatchEmptyDoors(Level level)
     {
@@ -129,13 +154,12 @@ public static class LevelGen
 
     static void GenSpecial(LevelGenContext ctx, SpecialLevel spec)
     {
-        var marks = SpecialLevelParser.Parse(spec, ctx);
-
         // Fill with rock
         for (int y = 0; y < ctx.level.Height; y++)
             for (int x = 0; x < ctx.level.Width; x++)
                 ctx.level.Set(new(x, y), TileType.Rock);
 
+        var marks = SpecialLevelParser.Parse(spec, ctx);
 
         spec.PreRender?.Invoke(new LevelBuilder(marks, ctx));
 
@@ -144,6 +168,10 @@ public static class LevelGen
 
         // // Merge adjacent rooms (after render so we can modify tiles)
         MergeAdjacentRooms(ctx);
+        
+        // Re-place doors (RenderRooms may have overwritten them)
+        foreach (var p in marks.GetValueOrDefault('+', []))
+            ctx.level.PlaceDoor(p, DoorState.Closed);
 
         spec.PostRender?.Invoke(new LevelBuilder(marks, ctx));
     }
@@ -161,7 +189,7 @@ public static class LevelGen
 
         int triesRemaining = maxTries;
 
-        while (triesRemaining > 0 && ctx.level.Rooms.Count < targetRooms)
+        while (triesRemaining > 0 && ctx.Stamps.Count < targetRooms)
             triesRemaining -= TryPlaceRoom(ctx, triesRemaining);
 
         // Render rooms to tiles
@@ -173,9 +201,6 @@ public static class LevelGen
         // Connect rooms with corridors
         MakeCorridors(ctx);
 
-        // Place stairs
-        PlaceStairs(ctx);
-
         // Assign special room types
         AssignRoomTypes(ctx);
 
@@ -185,14 +210,16 @@ public static class LevelGen
 
     public static void PlaceRoom(LevelGenContext ctx, Rect bounds)
     {
-        Room room = new(bounds);
-        if (Rn2(ctx.level.Depth + 5) < 5)
-        {
-            room.Flags |= RoomFlags.Lit;
-        }
-        ctx.level.Rooms.Add(room);
+        ctx.Stamps.Add(new(bounds));
         ctx.MarkOccupied(bounds);
-        Log($"Placed room {ctx.level.Rooms.Count - 1} at {bounds.X},{bounds.Y} size {bounds.W}x{bounds.H}");
+        Log($"Placed room {ctx.Stamps.Count - 1} at {bounds.X},{bounds.Y} size {bounds.W}x{bounds.H}");
+    }
+
+    public static void PlaceIrregularRoom(LevelGenContext ctx, HashSet<Pos> tiles)
+    {
+        ctx.Stamps.Add(new(tiles));
+        ctx.MarkOccupied(tiles);
+        Log($"Placed irregular room {ctx.Stamps.Count - 1} with {tiles.Count} tiles");
     }
 
     public static int TryPlaceRoom(LevelGenContext ctx, int maxTries)
@@ -226,15 +253,14 @@ public static class LevelGen
         if (nestChance > 0 && Rn2(10) < 100)
         {
             // Pick an eligible room (not first/last which have stairs)
-            var eligible = level.Rooms
-                .Where((r, i) => i > 0 && i < level.Rooms.Count - 1 && (r.Flags & RoomFlags.Merged) == 0)
-                .ToList();
+            List<int> eligible = [];
+            for (int i = 1; i < level.Rooms.Count - 1; i++)
+                if ((level.Rooms[i].Flags & RoomFlags.Merged) == 0)
+                    eligible.Add(i);
             if (eligible.Count > 0)
             {
-                var room = eligible[Rn2(eligible.Count)];
-                room = room with { Type = RoomType.GoblinNest };
-                int idx = level.Rooms.IndexOf(level.Rooms.First(r => r.Bounds == room.Bounds));
-                level.Rooms[idx] = room;
+                int idx = eligible[Rn2(eligible.Count)];
+                level.Rooms[idx] = level.Rooms[idx] with { Type = RoomType.GoblinNest };
                 Log($"Assigned GoblinNest to room {idx}");
             }
         }
@@ -296,59 +322,27 @@ public static class LevelGen
 
     public static void RenderRooms(LevelGenContext ctx)
     {
-        foreach (Room room in ctx.level.Rooms)
+        foreach (var stamp in ctx.Stamps)
+        {
+            Room room = Room.FromStamp(stamp);
+            if (Rn2(ctx.level.Depth + 5) < 5)
+                room.Flags |= RoomFlags.Lit;
+            ctx.level.Rooms.Add(room);
             RenderRoom(ctx.level, room);
+        }
     }
 
     public static void RenderRoom(Level level, Room room)
     {
-        foreach (Pos p in room.Bounds.Border())
+        foreach (Pos p in room.Border)
         {
             level.Set(p, TileType.Wall);
             level.GetOrCreateState(p).Room = room;
         }
-        foreach (Pos p in room.Bounds.Interior())
+        foreach (Pos p in room.Interior)
         {
             level.Set(p, TileType.Floor);
             level.GetOrCreateState(p).Room = room;
-        }
-    }
-
-    static void PlaceStairs(LevelGenContext ctx)
-    {
-        var level = ctx.level;
-        if (level.Rooms.Count == 0) return;
-
-        Rect first = level.Rooms[0].Bounds;
-        Rect last = level.Rooms[^1].Bounds;
-        bool isFirst = level.Id.Depth == 1;
-        bool isLast = level.Id.Depth == level.Id.Branch.MaxDepth;
-        bool goingDown = level.Id.Branch.Dir == BranchDir.Down;
-
-        // Entry/return stairs
-        Pos entry = RandomInterior(first);
-        if (isFirst)
-        {
-            TileType entryType = goingDown ? TileType.BranchUp : TileType.BranchDown;
-            level.Set(entry, entryType);
-            if (goingDown) level.BranchUp = entry; else level.BranchDown = entry;
-        }
-        else
-        {
-            TileType entryType = goingDown ? TileType.StairsUp : TileType.StairsDown;
-            level.Set(entry, entryType);
-            if (goingDown) level.StairsUp = entry; else level.StairsDown = entry;
-        }
-
-        // Exit stairs (to next level)
-        if (!isLast)
-        {
-            Pos exit = RandomInterior(last);
-            TileType exitType = goingDown ? TileType.StairsDown : TileType.StairsUp;
-            if (exit == entry)
-                exit = RandomInterior(last);
-            level.Set(exit, exitType);
-            if (goingDown) level.StairsDown = exit; else level.StairsUp = exit;
         }
     }
 
@@ -357,10 +351,10 @@ public static class LevelGen
         var level = ctx.level;
         for (int i = 0; i < level.Rooms.Count - 1; i++)
         {
+            if (level.Rooms[i].Bounds is not { } a) continue;
             for (int j = i + 1; j < level.Rooms.Count; j++)
             {
-                Rect a = level.Rooms[i].Bounds;
-                Rect b = level.Rooms[j].Bounds;
+                if (level.Rooms[j].Bounds is not { } b) continue;
 
                 // Check if walls are adjacent (sharing a wall)
                 bool xAdj = a.X + a.W == b.X || b.X + b.W == a.X;
@@ -415,8 +409,8 @@ public static class LevelGen
     public static void MakeCorridors(LevelGenContext ctx)
     {
         List<Room> connectable = [.. ctx.level.Rooms
-            .Where(r => (r.Flags & RoomFlags.NoConnect) == 0)
-            .OrderBy(r => r.Bounds.X)];
+            .Where(r => (r.Flags & RoomFlags.NoConnect) == 0 && r.Bounds != null)
+            .OrderBy(r => r.Bounds!.Value.X)];
 
         if (connectable.Count < 2) return;
 
@@ -496,8 +490,8 @@ public static class LevelGen
     static bool TryDigCorridor(LevelGenContext ctx, Room roomA, Room roomB)
     {
         var level = ctx.level;
-        Rect a = roomA.Bounds;
-        Rect b = roomB.Bounds;
+        Rect a = roomA.Bounds!.Value;
+        Rect b = roomB.Bounds!.Value;
 
         int dx, dy;
         Pos doorA, doorB;
@@ -706,6 +700,7 @@ public class LevelGenContext(TextWriter log)
     public uint[] occupied = new uint[80];
     public required Level level;
     public bool NoSpawns;
+    public List<RoomStamp> Stamps = [];
 
     public void Log(string str) => log.WriteLine(str);
 
@@ -716,4 +711,28 @@ public class LevelGenContext(TextWriter log)
             occupied[x] |= mask;
     }
 
+    public void MarkOccupied(HashSet<Pos> tiles)
+    {
+        foreach (var p in tiles)
+            occupied[p.X] |= 1u << p.Y;
+    }
+
+    internal Room? FindRoom(Func<Room, bool> accept, int maxAttempts = 15)
+    {
+        for (int i = 0; i < maxAttempts; i++)
+        {
+            var candidate = LevelGen.Pick(level.Rooms);
+            if (accept(candidate)) return candidate;
+        }
+        return null;
+    }
+
+    internal Room PickRoom() => LevelGen.Pick(level.Rooms);
+
+    internal T Throw<T>(string v)
+    {
+        throw new Exception($"building: {level.Id} -> {v}");
+    }
 }
+
+public record class DungeonGenCommand(Action<LevelGenContext> Action, string Debug);

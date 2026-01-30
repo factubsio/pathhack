@@ -120,7 +120,7 @@ public class GameState
     }
 
     public bool DebugMode { get; set; }
-    public Dictionary<string, Branch> Branches { get; } = [];
+    public Dictionary<string, Branch> Branches { get; set; } = [];
     public Dictionary<LevelId, Level> Levels { get; } = [];
     public Level? CurrentLevel { get; set; }
     public HashSet<IEntity> PendingFactCleanup { get; } = [];
@@ -152,7 +152,7 @@ public class GameState
     public static bool DoCheck(PHContext ctx, string label)
     {
         var check = ctx.Check!;
-        
+
         ctx.Source?.FireAllFacts(x => x.OnBeforeCheck, ctx);
         ctx.Target.Unit?.FireAllFacts(x => x.OnBeforeCheck, ctx);
 
@@ -183,9 +183,9 @@ public class GameState
         var target = ctx.Target.Unit!;
         Check check = new() { DC = dc };
         ctx.Check = check;
-        
+
         check.Modifiers.AddAll(target.QueryModifiers(modifierKey));
-        
+
         bool didSave = DoCheck(ctx, label);
         if (didSave && !silent)
         {
@@ -206,6 +206,17 @@ public class GameState
         MessageHistory.Add(msg);
     }
     public void pline(string fmt, params object[] args) => pline(string.Format(fmt, args));
+
+    public void YouObserve(IUnit source, string? ifSee, string? sound = null, int hearRadius = 6)
+    {
+        bool canSee = lvl.IsVisible(source.Pos);
+        bool canHear = sound != null && upos.ChebyshevDist(source.Pos) <= hearRadius;
+        
+        if (canSee && ifSee != null)
+            pline(ifSee, source);
+        else if (canHear)
+            pline("You hear {0}.", sound!);
+    }
 
     public int CurrentRound;
 
@@ -302,7 +313,7 @@ public class GameState
     void MonsterTurn(IUnit mon)
     {
         if (mon is not Monster m) { mon.Energy = 0; return; }
-        
+
         m.DoTurn();
 
 
@@ -335,14 +346,14 @@ public class GameState
         CurrentLevel = level;
         upos = where switch
         {
-          SpawnAt.Explicit => whereExactly ?? level.StairsUp!.Value,
-          SpawnAt.StairsUp => (level.StairsUp ?? level.BranchUp)!.Value,
-          SpawnAt.StairsDown => (level.StairsDown ?? level.BranchDown)!.Value,
-          SpawnAt.BranchUp => (level.BranchUp ?? level.StairsUp)!.Value,
-          SpawnAt.BranchDown => (level.BranchDown ?? level.StairsDown)!.Value,
-          SpawnAt.RandomLegal => level.FindLocation(p => level.CanMoveTo(Pos.Invalid, p, u) && level.NoUnit(p)) ?? Pos.Zero,
-          SpawnAt.RandomAny => level.FindLocation(level.NoUnit) ?? Pos.Zero,
-          _ => throw new NotImplementedException(),
+            SpawnAt.Explicit => whereExactly ?? level.StairsUp!.Value,
+            SpawnAt.StairsUp => (level.StairsUp ?? level.BranchUp)!.Value,
+            SpawnAt.StairsDown => (level.StairsDown ?? level.BranchDown)!.Value,
+            SpawnAt.BranchUp => (level.BranchUp ?? level.StairsUp)!.Value,
+            SpawnAt.BranchDown => (level.BranchDown ?? level.StairsDown)!.Value,
+            SpawnAt.RandomLegal => level.FindLocation(p => level.CanMoveTo(Pos.Invalid, p, u) && level.NoUnit(p)) ?? Pos.Zero,
+            SpawnAt.RandomAny => level.FindLocation(level.NoUnit) ?? Pos.Zero,
+            _ => throw new NotImplementedException(),
         };
         level.Units.Add(u);
         FovCalculator.Compute(level, upos, u.DarkVisionRadius);
@@ -379,7 +390,8 @@ public class GameState
         Check check = new() { DC = defender.GetAC() };
         ctx.Check = check;
 
-        if (weapon != null) {
+        if (weapon != null)
+        {
             bool improvised = thrown && weapon.Launcher == null;
             if (improvised)
                 check.Modifiers.AddModifier(new(ModifierCategory.UntypedStackable, -2, "improvised"));
@@ -482,6 +494,9 @@ public class GameState
         Log.Write($"  {target:The} takes {damage} total damage");
         target.HP -= damage;
 
+        if (target.IsPlayer)
+            Movement.Stop();
+
         source.FireAllFacts(x => x.OnDamageDone, ctx);
         target.FireAllFacts(x => x.OnDamageTaken, ctx);
 
@@ -507,11 +522,14 @@ public class GameState
                     g.pline($"{source:The} dies!");
                 else
                     g.pline($"{source:The} kills {target:the}!");
-                
+
+                using (var death = PHContext.Create(source, Target.From(target)))
+                    target.FireAllFacts(f => f.OnDeath, death);
+
                 // drop inventory
                 foreach (var item in target.Inventory.ToList())
                     g.DoDrop(target, item);
-                
+
                 target.IsDead = true;
                 lvl.GetOrCreateState(target.Pos).Unit = null;
             }
@@ -543,7 +561,7 @@ public class GameState
         }
         int total = 150;
         int frames = last.ChebyshevDist(thrower.Pos);
-        int perFrame = total/frames;
+        int perFrame = total / frames;
         Draw.AnimateProjectile(thrower.Pos, last, item.Def.Glyph, perFrame);
         if (hit != null)
             Attack(thrower, hit, item, thrown: true);
@@ -553,7 +571,7 @@ public class GameState
     public void DoPickup(IUnit unit, Item item)
     {
         lvl.RemoveItem(item, unit.Pos);
-        
+
         // try merge with existing stack
         foreach (var existing in unit.Inventory)
         {
@@ -564,7 +582,7 @@ public class GameState
                 return;
             }
         }
-        
+
         unit.Inventory.Add(item);
         Log.Write("pickup: {0}", item.Def.Name);
     }
@@ -610,5 +628,31 @@ public class GameState
     internal void FlashLit(TileBitset moreLit)
     {
         FovCalculator.Compute(lvl, upos, u.DarkVisionRadius, moreLit);
+    }
+
+    // Assume unit is on a portal or stairs
+    internal void Portal(IUnit unit)
+    {
+        if (!unit.IsPlayer) return; //for now monsters can't portal
+        
+        var tile = lvl[upos].Type;
+        Log.Write($"Portal: tile={tile} pos={upos} level={u.Level}");
+        Log.Write($"Portal: BranchUpTarget={lvl.BranchUpTarget} BranchDownTarget={lvl.BranchDownTarget}");
+        switch (tile)
+        {
+            case TileType.StairsDown:
+                GoToLevel(u.Level + 1, SpawnAt.StairsUp);
+                break;
+            case TileType.StairsUp when u.Level.Depth > 1:
+                GoToLevel(u.Level - 1, SpawnAt.StairsDown);
+                break;
+            case TileType.BranchDown when lvl.BranchDownTarget is { } target:
+                GoToLevel(target, SpawnAt.BranchUp);
+                break;
+            case TileType.BranchUp when lvl.BranchUpTarget is { } target:
+                GoToLevel(target, SpawnAt.BranchDown);
+                break;
+        }
+        Log.Write($"Portal: after level={u.Level} pos={upos}");
     }
 }

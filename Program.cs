@@ -1,14 +1,33 @@
 using Pathhack.Dat;
-using Pathhack.Game;
-using Pathhack.Game.Classes;
-using Pathhack.Map;
-using Pathhack.UI;
+using static Pathhack.Map.DepthAnchor;
+
+List<BranchTemplate> templates = [
+    new("dungeon", "Dungeon", (3, 3)) {
+        Levels = [
+            new("sanctuary", ["sanctuary"], FromBottom, 0),
+            new("challenge", ["challenge_a", "challenge_b"], RelativeTo, -1, 1, "sanctuary"),
+            new("bigroom", ["bigroom_rect", "bigroom_oval"], FromTop, 1, 1, Required: false),
+        ]
+    },
+    new("crypt", "Crypt of the Everflame", (1, 1)) {
+        Parent = "dungeon",
+        EntranceDepth = (1, 2),
+        Levels = [
+            new("crypt_end", ["everflame_tomb"], FromBottom, 0),
+        ]
+    }
+];
 
 if (args.Length > 0)
 {
     var field = typeof(TestLevel).GetField(args[0]);
     if (field?.GetValue(null) is SpecialLevel sl)
         LevelGen.ForcedLevel1 = sl;
+}
+else
+{
+    // bubble dbeug
+    // LevelGen.ForcedLevel1 = BigRoomLevels.Oval;
 }
 
 using var _noCursor = new HideCursor();
@@ -23,11 +42,10 @@ while (true)
     g.Seed = 12345;
     // g.DebugMode = true;
 
-    int depth = 10;
-    Branch branch = new("Main", depth);
-    g.Branches[branch.Name] = branch;
+    g.Branches = DungeonResolver.Resolve(templates, g.Seed);
+    var dungeon = g.Branches["dungeon"];
 
-    LevelId startId = new(branch, 1);
+    LevelId startId = new(dungeon, 1);
     Level startLevel = LevelGen.Generate(startId, g.Seed);
     MonsterSpawner.SpawnInitialMonsters(startLevel);
     g.Levels[startId] = startLevel;

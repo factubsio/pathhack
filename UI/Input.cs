@@ -507,6 +507,53 @@ public static class Input
         u.Energy -= ability.GetCost(u, abilityData, target).Value;
     }
 
+    static void ShowBranchOverview()
+    {
+        Branch branch = u.Level.Branch;
+        while (true)
+        {
+            var menu = new Menu<string>();
+            menu.Add($"{branch.Name}: levels 1 to {branch.MaxDepth}", LineStyle.Heading);
+            
+            for (int d = 1; d <= branch.MaxDepth; d++)
+            {
+                List<string> features = [];
+                var resolved = branch.ResolvedLevels[d - 1];
+                
+                if (resolved.Template != null) features.Add(resolved.Template.DisplayName);
+                if (resolved.BranchDown != null) features.Add($"Stairs down to {g.Branches[resolved.BranchDown].Name}");
+                if (resolved.BranchUp != null) features.Add($"Stairs up to {g.Branches[resolved.BranchUp].Name}");
+                
+                bool isHere = branch == u.Level.Branch && d == u.Level.Depth;
+                if (features.Count == 0 && !isHere) continue;
+                
+                string marker = isHere ? " <- You are here" : "";
+                menu.Add($"   Level {d}:{marker}");
+                foreach (var f in features)
+                    menu.Add($"      {f}");
+            }
+
+            if (branch.Name != "Dungeon")
+            {
+                menu.Add("");
+                menu.Add("(tab) switch branch, (esc) close");
+                menu.AddHidden('\t', "switch");
+
+                var result = menu.Display(MenuMode.PickOne);
+                if (result.Count == 0 || result[0] != "switch") break;
+
+                // Toggle to main or back to current
+                branch = branch == g.Branches["dungeon"] ? u.Level.Branch : g.Branches["dungeon"];
+            }
+            else
+            {
+                menu.Display(MenuMode.None);
+                break;
+            }
+            
+        }
+    }
+
     static void ShowCharacterInfo()
     {
         var menu = new Menu<string>();
@@ -621,6 +668,94 @@ public static class Input
         u.Energy -= ActionCosts.OneAction.Value;
     }
 
+    static void DoTravel()
+    {
+        g.pline("Where do you want to travel to?");
+        Pos cursor = upos;
+        char lastGlyph = '\0';
+        int glyphIndex = 0;
+        
+        while (true)
+        {
+            Draw.DrawCurrent(cursor);
+            var key = Console.ReadKey(true);
+            
+            if (key.Key == ConsoleKey.Escape)
+            {
+                g.Messages.Clear();
+                return;
+            }
+            
+            if (key.Key == ConsoleKey.Enter || key.KeyChar == '.')
+            {
+                g.Messages.Clear();
+                if (cursor == upos) return;
+                var path = Pathfinding.FindPath(lvl, upos, cursor);
+                if (path == null || path.Count == 0)
+                {
+                    g.pline("You can't find a path there.");
+                    return;
+                }
+                Log.Write($"Travel: from={upos} to={cursor} path=[{string.Join(",", PathToPositions(upos, path))}]");
+                Movement.StartTravel(path);
+                return;
+            }
+            
+            if (GetDirection(key.Key) is { } dir)
+            {
+                int dist = key.Modifiers.HasFlag(ConsoleModifiers.Shift) ? 5 : 1;
+                Pos next = cursor + dir * dist;
+                if (lvl.InBounds(next)) cursor = next;
+                lastGlyph = '\0';
+            }
+            else if (key.KeyChar is '<' or '>' or '+' or '#')
+            {
+                var matches = FindGlyphPositions(key.KeyChar);
+                if (matches.Count > 0)
+                {
+                    if (key.KeyChar != lastGlyph) glyphIndex = 0;
+                    else glyphIndex = (glyphIndex + 1) % matches.Count;
+                    cursor = matches[glyphIndex];
+                    lastGlyph = key.KeyChar;
+                }
+            }
+        }
+    }
+
+    static List<Pos> FindGlyphPositions(char glyph)
+    {
+        List<Pos> result = [];
+        for (int y = 0; y < lvl.Height; y++)
+        for (int x = 0; x < lvl.Width; x++)
+        {
+            Pos p = new(x, y);
+            if (!lvl.WasSeen(p)) continue;
+            char ch = GetTileGlyph(p);
+            if (ch == glyph) result.Add(p);
+        }
+        return result;
+    }
+
+    static char GetTileGlyph(Pos p)
+    {
+        var mem = lvl.GetMemory(p);
+        if (mem is not { } m) return '\0';
+        return m.Tile.Type switch
+        {
+            TileType.Door => m.Door == DoorState.Open ? '\0' : '+',
+            TileType.StairsUp or TileType.BranchUp => '<',
+            TileType.StairsDown or TileType.BranchDown => '>',
+            TileType.Corridor => '#',
+            _ => '\0',
+        };
+    }
+
+    static IEnumerable<Pos> PathToPositions(Pos start, List<Pos> dirs)
+    {
+        Pos p = start;
+        foreach (var d in dirs) yield return p += d;
+    }
+
     static void LookHere()
     {
         var items = lvl.ItemsAt(upos);
@@ -666,10 +801,12 @@ public static class Input
         return s;
     }
 
-    public static Pos? GetDirection(ConsoleKey key) => key switch
+    public static Pos? GetDirection(ConsoleKey key, bool withCtrl = false) => key switch
     {
         ConsoleKey.H or ConsoleKey.LeftArrow or ConsoleKey.NumPad4 => Pos.W,
+        ConsoleKey.Backspace when withCtrl => Pos.W,  // Ctrl+H
         ConsoleKey.J or ConsoleKey.DownArrow or ConsoleKey.NumPad2 => Pos.S,
+        ConsoleKey.Enter when withCtrl => Pos.S,      // Ctrl+J
         ConsoleKey.K or ConsoleKey.UpArrow or ConsoleKey.NumPad8 => Pos.N,
         ConsoleKey.L or ConsoleKey.RightArrow or ConsoleKey.NumPad6 => Pos.E,
         ConsoleKey.Y or ConsoleKey.NumPad7 => Pos.NW,
@@ -688,6 +825,8 @@ public static class Input
         Console.Write("#");
         string? name = ReadLine(_extCommands.Keys);
         Console.CursorVisible = false;
+        Console.SetCursorPosition(0, 0);
+        Console.Write(new string(' ', Console.WindowWidth));
         if (name == null) return;
         if (_extCommands.TryGetValue(name, out Command? cmd))
         {
@@ -729,6 +868,7 @@ public static class Input
 
     public static void HandleKey(ConsoleKeyInfo key)
     {
+        Log.Write($"HandleKey: Key={key.Key} Char={(int)key.KeyChar} Mods={key.Modifiers}");
         if (key.Key == ConsoleKey.P && key.Modifiers.HasFlag(ConsoleModifiers.Control))
         {
             ShowMessageHistory();
@@ -736,10 +876,15 @@ public static class Input
         }
         
         ResetMessageHistory();
+        Movement.Stop(); // any manual input stops running
         
         if (key.Key == ConsoleKey.G && key.Modifiers.HasFlag(ConsoleModifiers.Control))
         {
             ShowAbilities();
+        }
+        else if (key.Key == ConsoleKey.O && key.Modifiers.HasFlag(ConsoleModifiers.Control))
+        {
+            ShowBranchOverview();
         }
         else if (key.Key == ConsoleKey.X && key.Modifiers.HasFlag(ConsoleModifiers.Control))
         {
@@ -749,13 +894,30 @@ public static class Input
         {
             HandleExtended();
         }
+        else if (key.KeyChar == '_')
+        {
+            DoTravel();
+        }
         else if (_commands.TryGetValue(key.KeyChar, out Command? cmd))
         {
             CommandArg arg = GetArg(cmd.Arg);
             cmd.Action(arg);
         }
-        else if (GetDirection(key.Key) is { } dir)
+        else if (GetDirection(key.Key, key.Modifiers.HasFlag(ConsoleModifiers.Control)) is { } dir)
         {
+            // Check for shift/ctrl modifiers for running
+            Log.Write($"dir key: {key.Key} char: {(int)key.KeyChar} mods: {key.Modifiers} shift={key.Modifiers.HasFlag(ConsoleModifiers.Shift)} ctrl={key.Modifiers.HasFlag(ConsoleModifiers.Control)}");
+            if (key.Modifiers.HasFlag(ConsoleModifiers.Shift))
+            {
+                Movement.StartRun(RunMode.UntilBlocked, dir);
+                return;
+            }
+            if (key.Modifiers.HasFlag(ConsoleModifiers.Control))
+            {
+                Movement.StartRun(RunMode.UntilInteresting, dir);
+                return;
+            }
+
             Pos next = upos + dir;
             if (!lvl.InBounds(next)) return;
             var tgt = lvl.UnitAt(next);
@@ -776,22 +938,31 @@ public static class Input
         }
         else if (key.KeyChar == '>')
         {
-            if (lvl[upos].Type == TileType.StairsDown)
-            {
-                g.GoToLevel(u.Level + 1, SpawnAt.StairsUp);
-            }
+            if (lvl[upos].Type == TileType.StairsDown || lvl[upos].Type == TileType.BranchDown)
+                g.Portal(u);
+            else if (lvl[upos].IsStairs)
+                g.pline("These stairs don't go down.");
         }
         else if (key.KeyChar == '<')
         {
-            if (lvl[upos].Type == TileType.StairsUp && u.Level.Depth > 1)
-            {
-                g.GoToLevel(u.Level - 1, SpawnAt.StairsDown);
-            }
+            if (lvl[upos].Type == TileType.StairsUp || lvl[upos].Type == TileType.BranchUp)
+                g.Portal(u);
+            else if (lvl[upos].IsStairs)
+                g.pline("These stairs don't go up.");
+
+
         }
     }
 
     public static void PlayerTurn()
     {
+        // Continue running if in run mode
+        if (Movement.TryContinueRun())
+        {
+            Draw.DrawCurrent();
+            return;
+        }
+
         Draw.ClearMessages();
         Perf.Pause();
         var key = Console.ReadKey(true);
@@ -856,6 +1027,7 @@ public class Menu<T>
         while (true)
         {
             Draw.ClearOverlay();
+            Draw.Overlay.FullScreen = fullscreen;
             var pageItems = _items.Skip(page * maxLines).Take(maxLines).ToList();
             int pageOffset = page * maxLines;
             
@@ -901,15 +1073,28 @@ public class Menu<T>
             var key = Console.ReadKey(true);
             
             // paging
-            if (key.Key == ConsoleKey.RightArrow || key.KeyChar == '>' || (key.Key == ConsoleKey.Spacebar && mode == MenuMode.None))
+            if (key.Key == ConsoleKey.RightArrow || key.KeyChar == '>' || key.Key == ConsoleKey.Spacebar)
             {
                 if (pages > 1) page = (page + 1) % pages;
                 else break;
                 continue;
             }
-            if (key.Key == ConsoleKey.LeftArrow || key.KeyChar == '<')
+            if (key.Key == ConsoleKey.LeftArrow || key.KeyChar == '<' || key.KeyChar == '^')
             {
                 if (pages > 1) page = (page - 1 + pages) % pages;
+                continue;
+            }
+            
+            // select all in PickAny
+            if (mode == MenuMode.PickAny && (key.KeyChar == '.' || key.KeyChar == ','))
+            {
+                var selectable = _items.Select((item, i) => (item, i)).Where(x => x.item.Value != null).ToList();
+                bool allSelected = selectable.All(x => selected.Contains(x.i));
+                foreach (var (_, i) in selectable)
+                {
+                    if (allSelected) selected.Remove(i);
+                    else selected.Add(i);
+                }
                 continue;
             }
             else if (key.Key == ConsoleKey.Escape)

@@ -93,6 +93,15 @@ public static class NaturalWeapons
         Category = WeaponCategory.Natural,
     };
 
+    public static readonly WeaponDef Claw_1d6 = new()
+    {
+        Name = "claw",
+        BaseDamage = d(6),
+        DamageType = DamageTypes.Slashing,
+        Profiency = Proficiencies.Unarmed,
+        Category = WeaponCategory.Natural,
+    };
+
     public static readonly WeaponDef DogSlicer = new()
     {
         Name = "dogslicer",
@@ -101,4 +110,21 @@ public static class NaturalWeapons
         Profiency = Proficiencies.Unarmed,
         MeleeVerb = "swings",
     };
+}
+
+public class DropOnDeath(Func<Item> func) : LogicBrick
+{
+    public override void OnDeath(Fact fact, PHContext ctx)
+    {
+        lvl.PlaceItem(func(), ctx.Target.Unit!.Pos);
+    }
+}
+
+public class GenerateDropOnDeath(ItemDef item) : LogicBrick
+{
+    public override void OnDeath(Fact fact, PHContext ctx)
+    {
+        var drop = ItemGen.GenerateItem(item);
+        lvl.PlaceItem(drop, ctx.Target.Unit!.Pos);
+    }
 }

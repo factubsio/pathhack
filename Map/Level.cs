@@ -22,6 +22,7 @@ public enum TileFlags : ushort
     Passable = 1 << 0,
     Diggable = 1 << 1,
     Structural = 1 << 2,
+    Feature = 1 << 3,
 }
 
 // TileType, TileFlags, and TileInfo.DefaultFlags must be kept in sync
@@ -66,20 +67,34 @@ public readonly record struct Tile(TileType Type, TileFlags Flags)
     public bool IsPassable => (Flags & TileFlags.Passable) != 0;
     public bool IsDiggable => (Flags & TileFlags.Diggable) != 0;
     public bool IsStructural => (Flags & TileFlags.Structural) != 0;
+    public bool HasFeature => (Flags & TileFlags.Feature) != 0;
 
     public bool IsDoor => Type == TileType.Door;
+    public bool IsStairs => Type is TileType.StairsUp or TileType.StairsDown or TileType.BranchUp or TileType.BranchDown;
+
 
     public static Tile From(TileType type) => new(type, TileInfo.DefaultFlags(type));
 }
 
 public enum BranchDir { Down, Up }
 
-public record class Branch(string Name, int MaxDepth, ConsoleColor Color = ConsoleColor.White, BranchDir Dir = BranchDir.Down);
+public static class BranchExt
+{
+    public static BranchDir Reversed(this BranchDir dir) => dir == BranchDir.Down ? BranchDir.Up : BranchDir.Down;
+}
+
+public record class Branch(string Name, int MaxDepth, ConsoleColor Color = ConsoleColor.White, BranchDir Dir = BranchDir.Down)
+{
+    public List<ResolvedLevel> ResolvedLevels { get; init; } = [];
+    public int? EntranceDepthInParent { get; init; }
+}
 
 public readonly record struct LevelId(Branch Branch, int Depth)
 {
     public static LevelId operator +(LevelId id, int delta) => new(id.Branch, id.Depth + delta);
     public static LevelId operator -(LevelId id, int delta) => new(id.Branch, id.Depth - delta);
+
+    public override string ToString() => $"{Branch.Name}/{Depth}";
 
 }
 
@@ -96,13 +111,44 @@ public enum RoomFlags : byte
     Lit = 1 << 0,
     NoConnect = 1 << 1,
     Merged = 1 << 2,
+    HasStairs = 1 << 3,
 }
 
-public record class Room(Rect Bounds, RoomType Type = RoomType.Ordinary)
+public record struct RoomStamp
+{
+    public Rect? Bounds { get; init; }
+    public HashSet<Pos>? Tiles { get; init; }
+    
+    public RoomStamp(Rect bounds) { Bounds = bounds; }
+    public RoomStamp(HashSet<Pos> tiles) { Tiles = tiles; }
+}
+
+public record class Room(List<Pos> Border, List<Pos> Interior, RoomType Type = RoomType.Ordinary)
 {
     public RoomFlags Flags { get; set; }
     public bool Lit => (Flags & RoomFlags.Lit) != 0;
-    public HashSet<Pos> Border { get; } = [..Bounds.Border()];
+    public bool HasStairs => (Flags & RoomFlags.HasStairs) != 0;
+    public Rect? Bounds { get; init; }
+    
+    public Pos RandomInterior() => Interior.Pick();
+    
+    public static Room FromStamp(RoomStamp stamp, RoomType type = RoomType.Ordinary)
+    {
+        if (stamp.Tiles != null)
+        {
+            List<Pos> border = [];
+            List<Pos> interior = [];
+            foreach (var p in stamp.Tiles)
+            {
+                bool edge = false;
+                foreach (var d in Pos.CardinalDirs)
+                    if (!stamp.Tiles.Contains(p + d)) { edge = true; break; }
+                (edge ? border : interior).Add(p);
+            }
+            return new(border, interior, type);
+        }
+        return new([..stamp.Bounds!.Value.Border()], [..stamp.Bounds!.Value.Interior()], type) { Bounds = stamp.Bounds };
+    }
 }
 
 public class Level(LevelId id, int width, int height)
@@ -128,8 +174,9 @@ public class Level(LevelId id, int width, int height)
     public Pos? StairsDown { get; set; }
     public Pos? BranchUp { get; set; }
     public Pos? BranchDown { get; set; }
-    public Branch? BranchUpTarget { get; set; }
-    public Branch? BranchDownTarget { get; set; }
+    public LevelId? BranchUpTarget { get; set; }
+    public LevelId? BranchDownTarget { get; set; }
+    
     public long LastExitTurn { get; set; }
     public bool NoInitialSpawns;
 
@@ -178,12 +225,20 @@ public class Level(LevelId id, int width, int height)
     public void Set(Pos p, TileType type)
     {
         this[p] = Tile.From(type);
+
         switch (type)
         {
             case TileType.StairsUp: StairsUp = p; break;
             case TileType.StairsDown: StairsDown = p; break;
             case TileType.BranchUp: BranchUp = p; break;
             case TileType.BranchDown: BranchDown = p; break;
+        }
+
+        if (this[p].IsStairs)
+        {
+            var room = RoomAt(p);
+            if (room != null)
+                room.Flags |= RoomFlags.HasStairs;
         }
     }
 
@@ -245,11 +300,11 @@ public class Level(LevelId id, int width, int height)
         Units.Remove(unit);
     }
 
-    public bool IsDoorClosed(Pos p) => GetState(p) is { } s && (s.Door == DoorState.Closed || s.Door == DoorState.Locked);
-    public bool IsDoorPassable(Pos p) => GetState(p) is { } s && (s.Door == DoorState.Open || s.Door == DoorState.Broken);
-    public bool IsDoorLocked(Pos p) => GetState(p) is { } s && s.Door == DoorState.Locked;
-    public bool IsDoorOpen(Pos p) => GetState(p) is { } s && s.Door == DoorState.Open;
-    public bool IsDoorBroken(Pos p) => GetState(p) is { } s && s.Door == DoorState.Broken;
+    public bool IsDoorClosed(Pos p) => IsDoor(p) && GetState(p) is { } s && (s.Door == DoorState.Closed || s.Door == DoorState.Locked);
+    public bool IsDoorPassable(Pos p) => IsDoor(p) && GetState(p) is { } s && (s.Door == DoorState.Open || s.Door == DoorState.Broken);
+    public bool IsDoorLocked(Pos p) => IsDoor(p) && GetState(p) is { } s && s.Door == DoorState.Locked;
+    public bool IsDoorOpen(Pos p) => IsDoor(p) && GetState(p) is { } s && s.Door == DoorState.Open;
+    public bool IsDoorBroken(Pos p) => IsDoor(p) && GetState(p) is { } s && s.Door == DoorState.Broken;
 
     public bool IsDoor(Pos p) => this[p].Type == TileType.Door;
 
@@ -291,7 +346,7 @@ public class Level(LevelId id, int width, int height)
         for (int i = 0; i < maxAttempts; i++)
         {
             Room room = Rooms.Pick();
-            Pos p = LevelGen.RandomInterior(room.Bounds);
+            Pos p = room.RandomInterior();
             if (predicate(p)) return p;
         }
         return null;
@@ -301,7 +356,7 @@ public class Level(LevelId id, int width, int height)
     {
         for (int i = 0; i < maxAttempts; i++)
         {
-            Pos p = LevelGen.RandomInterior(room.Bounds);
+            Pos p = room.RandomInterior();
             if (predicate(p)) return p;
         }
         return null;
