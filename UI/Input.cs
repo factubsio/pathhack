@@ -44,6 +44,7 @@ public static class Input
         [';'] = new("farlook", ArgType.None, _ => Pokedex.Farlook()),
         ['f'] = new("fire", ArgType.Dir, Fire),
         ['Q'] = new("quiver", ArgType.None, _ => SetQuiver()),
+        ['Z'] = new("zap_spell", ArgType.None, _ => ZapSpell()),
     };
 
     static void DebugJump(CommandArg arg)
@@ -377,7 +378,7 @@ public static class Input
     static void SetQuiver()
     {
         var throwable = u.Inventory.Where(i => i.Def is WeaponDef w && w.Range > 1).ToList();
-        if (!throwable.Any())
+        if (throwable.Count == 0)
         {
             g.pline("You have nothing to ready.");
             return;
@@ -492,6 +493,57 @@ public static class Input
         g.DoUnequip(u, picked[0]);
         g.pline("You remove {0}.", Grammar.DoName(picked[0]));
     }
+
+    static void ZapSpell()
+    {
+        if (u.Spells.Count == 0)
+        {
+            g.pline("You don't know any spells right now.");
+            return;
+        }
+        var menu = new Menu<ActionBrick>();
+        menu.Add("Choose which spell to cast", LineStyle.Heading);
+        char let = 'a';
+        string whyNot;
+        foreach (var level in u.Spells.GroupBy(s => s.Level))
+        {
+            menu.Add($"Level {level.Key}:", LineStyle.SubHeading);
+            foreach (var spell in level)
+            {
+                var data = u.ActionData.GetValueOrDefault(spell);
+                bool ready = spell.CanExecute(u, data, Target.None, out whyNot);
+                string status = ready ? "" : $" ({whyNot})";
+                menu.Add(let++, spell.Name + status, spell);
+            }
+        }
+        var picked = menu.Display(MenuMode.PickOne);
+        if (picked.Count == 0) return;
+        var ability = picked[0];
+        var abilityData = u.ActionData.GetValueOrDefault(ability);
+        Log.Write($"zapping spell: {picked[0]}, {picked[0].Targeting}");
+        
+        Target target = Target.None;
+        if (ability.Targeting == TargetingType.Direction)
+        {
+            g.pline("In what direction?");
+            Draw.DrawCurrent();
+            var dir = GetDirection(Console.ReadKey(true).Key);
+            if (dir == null) return;
+            target = new Target(null, dir.Value);
+        }
+        Log.Write($"  target: {target}");
+        // TODO: handle TargetingType.Unit, TargetingType.Pos
+        
+        if (!ability.CanExecute(u, abilityData, target, out whyNot))
+        {
+            g.pline($"That ability is not ready ({whyNot}).");
+            return;
+        }
+        ability.Execute(u, abilityData, target);
+        u.Energy -= ability.GetCost(u, abilityData, target).Value;
+
+    }
+
 
     static void ShowAbilities()
     {
@@ -846,6 +898,7 @@ public static class Input
         ConsoleKey.U or ConsoleKey.NumPad9 => Pos.NE,
         ConsoleKey.B or ConsoleKey.NumPad1 => Pos.SW,
         ConsoleKey.N or ConsoleKey.NumPad3 => Pos.SE,
+        ConsoleKey.OemPeriod or ConsoleKey.NumPad5 => Pos.Zero,
         _ => null,
     };
 

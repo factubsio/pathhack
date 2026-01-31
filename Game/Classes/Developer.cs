@@ -1,9 +1,7 @@
 namespace Pathhack.Game.Classes;
 
-public class MagicMapping : ActionBrick
+public class MagicMapping() : ActionBrick("Magic Mapping")
 {
-    public override string Name => "Magic Mapping";
-    
     public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
     {
         whyNot = "";
