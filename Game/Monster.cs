@@ -135,6 +135,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
   public override ActionCost LandMove => Def.LandMove;
   public override int GetAttackBonus(WeaponDef weapon) => Def.AttackBonus + TemplateBonus;
   public override int GetDamageBonus() => Def.DamageBonus + TemplateBonus;
+  public override int GetSpellDC() => 10 + Def.CR;
   protected override WeaponDef GetUnarmedDef() => Def.Unarmed;
   public override Glyph Glyph => Def.Glyph;
 

@@ -98,6 +98,34 @@ public static class Draw
 
     public static void ClearOverlay() => Overlay.Clear();
 
+    public static void AnimateBeam(Pos from, Pos to, Glyph glyph, int delayMs = 30)
+    {
+        var dir = (to - from).Signed;
+        
+        // DEC: x = vertical, q = horizontal. Unicode for diagonals.
+        (char beamChar, bool dec) = (dir.X, dir.Y) switch
+        {
+            (0, _) => ('x', true),
+            (_, 0) => ('q', true),
+            (1, 1) or (-1, -1) => ('╲', false),
+            _ => ('╱', false),
+        };
+
+        using var layer = Overlay.Activate();
+        
+        Pos p = from + dir;
+        while (p != to + dir)
+        {
+            Overlay[p.X, p.Y + MapRow] = new Cell(beamChar, glyph.Color, Dec: dec);
+            Blit();
+            Thread.Sleep(delayMs);
+            p += dir;
+        }
+
+        Thread.Sleep(delayMs);
+        Blit();
+    }
+
     public static void AnimateProjectile(Pos from, Pos to, Glyph glyph, int delayMs = 100)
     {
         int dx = Math.Sign(to.X - from.X);
@@ -124,6 +152,37 @@ public static class Draw
             Overlay[p.X, p.Y + MapRow] = new Cell(glyph.Value, glyph.Color);
         Blit();
         Thread.Sleep(delayMs);
+    }
+
+    public static void AnimateCone(Pos origin, IEnumerable<Pos> positions, Glyph frontier, Glyph mid, Glyph trail, int delayMs = 40)
+    {
+        using var layer = Overlay.Activate();
+        
+        var rings = positions
+            .GroupBy(p => p.ChebyshevDist(origin))
+            .OrderBy(g => g.Key)
+            .Select(g => g.ToList())
+            .ToList();
+        
+        for (int i = 0; i < rings.Count; i++)
+        {
+            // Update previous rings to trail/mid
+            for (int j = 0; j < i; j++)
+            {
+                var glyph = (i - j) >= 2 ? trail : mid;
+                foreach (var p in rings[j])
+                    Overlay[p.X, p.Y + MapRow] = new Cell(glyph.Value, glyph.Color);
+            }
+            
+            // Draw frontier
+            foreach (var p in rings[i])
+                Overlay[p.X, p.Y + MapRow] = new Cell(frontier.Value, frontier.Color);
+            
+            Blit();
+            Thread.Sleep(delayMs);
+        }
+        
+        Thread.Sleep(delayMs * 2);
     }
 
     public static void OverlayWrite(int x, int y, string text, ConsoleColor fg = ConsoleColor.Gray, ConsoleColor bg = ConsoleColor.Black, CellStyle style = CellStyle.None) =>

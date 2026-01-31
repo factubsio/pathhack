@@ -22,12 +22,30 @@ public abstract class SpellBrickBase(string name, int level, string description,
 
 public class SpellBrick(string name, int level, string description, Action<IUnit, Target> act, TargetingType targeting = TargetingType.None) : SpellBrickBase(name, level, description, targeting)
 {
-  public override void Execute(IUnit unit, object? data, Target target) => act(unit, target);
+  public override void Execute(IUnit unit, object? data, Target target) 
+  {
+    if (unit.TryUseCharge(Pool)) act(unit, target);
+  }
 }
 
 public class SpellBrick<T>(string name, int level, string description, Action<IUnit, Target, T> act, TargetingType targeting = TargetingType.None) : SpellBrickBase(name, level, description, targeting) where T : new()
 {
   public override object? CreateData() => new T();
-  public override void Execute(IUnit unit, object? data, Target target) => act(unit, target, (T)data!);
+  public override void Execute(IUnit unit, object? data, Target target) 
+  {
+    if (unit.TryUseCharge(Pool)) act(unit, target, (T)data!);
+  }
 }
 
+
+// testing nosnesne stuff
+internal class ConsumeSpell(int lvl) : ActionBrick($"consume spell {lvl}")
+{
+    private string Pool => $"spell_l{lvl}";
+    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot) => unit.HasCharge(Pool, out whyNot);
+
+    public override void Execute(IUnit unit, object? data, Target target)
+    {
+        unit.TryUseCharge(Pool);
+    }
+}

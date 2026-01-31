@@ -79,6 +79,8 @@ public abstract class LogicBrick
 
     public virtual void OnSpawn(Fact fact, PHContext context) { }
     public virtual void OnDeath(Fact fact, PHContext context) { }
+
+    public virtual void OnBeforeSpellCast(Fact fact, PHContext context) { }
 }
 
 public class ApplyFactOnAttackHit<T>(Func<T> toApply) : LogicBrick where T : LogicBrick
@@ -456,6 +458,7 @@ public interface IUnit : IEntity
     int GetAC();
     int GetAttackBonus(WeaponDef weapon);
     int GetDamageBonus();
+    int GetSpellDC();
     Item GetWieldedItem();
     bool Equip(Item item);
     bool Unequip(EquipSlot slot);
@@ -597,6 +600,7 @@ public abstract class Unit<TDef>(TDef def) : Entity<TDef>(def), IUnit where TDef
     public abstract int GetAC();
     public abstract int GetAttackBonus(WeaponDef weapon);
     public abstract int GetDamageBonus();
+    public abstract int GetSpellDC();
     protected abstract WeaponDef GetUnarmedDef();
 
     public Item GetWieldedItem()

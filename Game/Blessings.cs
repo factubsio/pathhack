@@ -446,7 +446,10 @@ public class SunBlessingMinor() : ActionBrick("Sun Blessing")
         Log.Verbose("sun", "Sun blessing radius={0} from {1}", radius, unit.Pos);
         
         using TileBitset result = lvl.CollectCircle(upos, radius, false);
-        Draw.AnimateFlash(result, new Glyph('*', ConsoleColor.Yellow), 170);
+        Draw.AnimateCone(unit.Pos, result,
+            new Glyph('*', ConsoleColor.Yellow),
+            new Glyph('*', ConsoleColor.DarkYellow),
+            new Glyph('.', ConsoleColor.DarkYellow));
 
         g.FlashLit(result);
 
