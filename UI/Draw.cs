@@ -152,6 +152,9 @@ public static class Draw
         _ => 37,
     };
 
+    public static int TotalBytesWritten = 0;
+    public static int DamagedCellCount = 0;
+
     public static void Blit()
     {
         for (int y = 0; y < ScreenHeight; y++)
@@ -171,8 +174,9 @@ public static class Draw
                 }
                 cell ??= Cell.Empty;
 
-                int idx = y * ViewWidth + x;
+                int idx = (y * ViewWidth) + x;
                 if (_prev[idx] == cell.Value) continue;
+                DamagedCellCount++;
                 _prev[idx] = cell.Value;
 
                 var fg = cell.Value.Fg;
@@ -184,15 +188,26 @@ public static class Draw
                 int bgCode = AnsiColor(bg) + 10;
                 char ch = cell.Value.Ch;
 
+                string cmd;
+
                 if ((cell.Value.Style & CellStyle.Bold) != 0)
-                    Console.Write($"\x1b[{y + 1};{x + 1}H\x1b[{fgCode};{bgCode};1m{ch}\x1b[22m");
+                    cmd = $"\x1b[{y + 1};{x + 1}H\x1b[{fgCode};{bgCode};1m{ch}\x1b[22m";
                 else if (cell.Value.Dec)
-                    Console.Write($"\x1b[{y + 1};{x + 1}H\x1b[{fgCode};{bgCode}m\x1b(0{ch}\x1b(B");
+                    cmd = $"\x1b[{y + 1};{x + 1}H\x1b[{fgCode};{bgCode}m\x1b(0{ch}\x1b(B";
                 else
-                    Console.Write($"\x1b[{y + 1};{x + 1}H\x1b[{fgCode};{bgCode}m{ch}");
+                    cmd = $"\x1b[{y + 1};{x + 1}H\x1b[{fgCode};{bgCode}m{ch}";
+
+                TotalBytesWritten += cmd.Length;
+                Console.Write(cmd);
             }
         }
         Console.Write("\x1b[0m");
+    }
+
+    public static void ResetRoundStats()
+    {
+        TotalBytesWritten = 0;
+        DamagedCellCount = 0;
     }
 
     internal static void Invalidate()

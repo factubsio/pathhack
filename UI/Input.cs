@@ -223,11 +223,24 @@ public static class Input
         Pos target = upos + d;
         if (lvl.InBounds(target) && lvl[target].Type == TileType.Door)
         {
-            CellState state = lvl.GetOrCreateState(target);
-            if (state.Door == DoorState.Closed)
-                state.Door = DoorState.Open;
+            if (lvl.OpenDoor(target))
+            {
+                u.Energy -= ActionCosts.OneAction.Value;
+            }
+            else
+            {
+                if (lvl.IsDoorOpen(target))
+                    g.pline("It's already open.");
+                else if (lvl.IsDoorBroken(target))
+                    g.pline("It's already broken beyond repair.");
+                else if (lvl.IsDoorLocked(target))
+                    g.pline("It's locked.");
+            }
         }
-        u.Energy -= ActionCosts.OneAction.Value;
+        else
+        {
+            g.pline("There is no door there.");
+        }
     }
 
     static void ShowInventory()

@@ -90,11 +90,27 @@ public static class FovCalculator
         int start = CircleStart[radius];
         return Math.Abs(col) <= CircleData[start + absRow];
     }
+
+    private static Pos lastLosPov = Pos.Invalid;
+    private static LevelId lastLosLevel = new();
+    private static int lastLosGeometryVersion = -1;
+
     public static void Compute(Level level, Pos origin, int lightRadius, TileBitset? moreLit = null)
     {
-        level.ClearLOS();
-        int maxRange = 2 * level.Width + level.Height;
-        ScanShadowcast(level, level.LOS, origin, maxRange);
+        Perf.Start();
+        const int maxRange = 66;
+        bool losDirty =
+                lastLosPov != origin
+                || lastLosLevel != level.Id
+                || lastLosGeometryVersion != level.GeometryVersion;
+        if (losDirty)
+        {
+            level.ClearLOS();
+            ScanShadowcast(level, level.LOS, origin, maxRange);
+            lastLosPov = origin;
+            lastLosGeometryVersion = level.GeometryVersion;
+            lastLosLevel = level.Id;
+        }
 
         level.ClearLit();
         foreach (var room in level.Rooms)
@@ -130,6 +146,7 @@ public static class FovCalculator
                 }
             }
         }
+        Perf.Stop("FovCompute");
     }
 
     public static void ScanShadowcast(Level level, TileBitset target, Pos origin, int radius, bool includeWalls = true)

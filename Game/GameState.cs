@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Formats.Tar;
 
 namespace Pathhack.Game;
 
@@ -31,22 +32,44 @@ public static class Perf
     public static void Pause() => _pause.Start();
     public static void Resume() => _pause.Stop();
 
-    public static void StartRound() => _roundTimings.Clear();
+    private static bool PerRoundPerf = true;
+
+
+    public static void StartRound()
+    {
+        if (perRound == null)
+        {
+            global.Start();
+            perRound = new StreamWriter("perf_round.log");
+        }
+        roundStart = global.Elapsed.TotalSeconds;
+        if (PerRoundPerf)
+            perRound.WriteLine($">>>: BEGIN {_roundCount} {roundStart}");
+        _roundTimings.Clear();
+    }
+
+    private static double roundStart = 0;
+    private static readonly Stopwatch global = new();
+    private static TextWriter perRound = null!;
 
     public static void EndRound()
     {
-        _roundCount++;
+        if (!PerRoundPerf) return;
+
+        perRound.WriteLine($"=== END {_roundCount} (elapsed:{global.Elapsed.TotalSeconds - roundStart:F3}) ===");
+        perRound.WriteLine($"blit stats: written={Draw.TotalBytesWritten}, damaged={Draw.DamagedCellCount}");
+
         if (_roundTimings.Count == 0) return;
-        using var w = new StreamWriter("perf_round.log", append: true);
-        w.WriteLine($"=== Round {_roundCount} ===");
         foreach (var (label, (ticks, count)) in _roundTimings.OrderByDescending(x => x.Value.Ticks))
         {
             double ms = ticks * 1000.0 / Stopwatch.Frequency;
-            w.WriteLine($"  {label}: {ms:F2}ms, {count} calls");
+            perRound.WriteLine($"  {label}: {ms:F2}ms, {count} calls");
         }
         double pauseMs = _pause.ElapsedTicks * 1000.0 / Stopwatch.Frequency;
-        w.WriteLine($"  (paused: {pauseMs:F2}ms)");
+        perRound.WriteLine($"  (paused: {pauseMs:F2}ms)");
         _pause.Reset();
+
+        _roundCount++;
     }
 
     public static void Dump()
@@ -57,6 +80,8 @@ public static class Perf
             double ms = ticks * 1000.0 / Stopwatch.Frequency;
             w.WriteLine($"{label}: {ms:F2}ms total, {count} calls, {ms / count:F3}ms avg");
         }
+
+        perRound.Close();
     }
 }
 
@@ -233,15 +258,18 @@ public class GameState
         if (!(CurrentLevel is { } lvl)) return;
 
         Perf.StartRound();
+        Draw.ResetRoundStats();
         lvl.Units.Sort((a, b) => b.Initiative.CompareTo(a.Initiative));
 
         LevelId startLevel = u.Level;
 
         // OnRoundStart for active entities and all units
+        Perf.Start();
         foreach (var entity in ActiveEntities)
             entity.FireWithCtx(x => x.OnRoundStart, PHContext.Create(null, Target.None));
         foreach (var unit in lvl.Units)
             unit.FireWithCtx(x => x.OnRoundStart, PHContext.Create(unit, Target.None));
+        Perf.Stop("OnRoundStart");
 
         foreach (var Unit in lvl.Units)
         {
@@ -255,10 +283,12 @@ public class GameState
             {
                 if (u.Level != startLevel) break;
 
-                Perf.Start();
                 FovCalculator.Compute(lvl, upos, u.DarkVisionRadius);
+
+                Perf.Start();
                 Draw.DrawCurrent();
                 Perf.Stop("Draw");
+
                 if (unit.IsPlayer)
                 {
                     Perf.Start();
@@ -272,8 +302,9 @@ public class GameState
                     MonsterTurn(unit);
                     Perf.Stop("MonsterTurn");
                 }
-                Perf.Start();
                 FovCalculator.Compute(lvl, upos, u.DarkVisionRadius);
+
+                Perf.Start();
                 Draw.DrawCurrent();
                 Perf.Stop("Draw");
 
@@ -283,11 +314,16 @@ public class GameState
         }
 
         // OnRoundEnd for all units
+        Perf.Start();
         foreach (var unit in lvl.Units)
         {
             unit.FireWithCtx(x => x.OnRoundEnd, PHContext.Create(unit, Target.None));
             unit.TickPools();
         }
+        foreach (var entity in ActiveEntities)
+            entity.FireWithCtx(x => x.OnRoundEnd, PHContext.Create(null, Target.None));
+        CleanupFacts();
+        Perf.Stop("OnRoundEnd");
 
         lvl.Units.RemoveAll(x => x.IsDead);
 
@@ -303,9 +339,10 @@ public class GameState
 
         }
 
+        Perf.Start();
         MonsterSpawner.TryRuntimeSpawn(lvl);
-        TickActiveEntities();
-        CleanupFacts();
+        Perf.Stop("Runtime spawn");
+
         UI.Draw.DrawCurrent();
         Perf.EndRound();
         CurrentRound++;
@@ -313,9 +350,6 @@ public class GameState
 
     void TickActiveEntities()
     {
-        foreach (var entity in ActiveEntities)
-            entity.FireWithCtx(x => x.OnRoundEnd, PHContext.Create(null, Target.None));
-        CleanupFacts();
     }
 
     void MonsterTurn(IUnit mon)

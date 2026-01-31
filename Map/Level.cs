@@ -188,6 +188,13 @@ public class Level(LevelId id, int width, int height)
     public bool NoInitialSpawns;
     public string? FirstIntro;
     public string? ReturnIntro;
+    public int GeometryVersion;
+
+    public bool UnderConstruction = true;
+    public void InvalidateGeometry()
+    {
+        if (!UnderConstruction) GeometryVersion++;
+    }
 
     public bool InBounds(Pos p) => p.X >= 0 && p.X < Width && p.Y >= 0 && p.Y < Height;
 
@@ -249,6 +256,8 @@ public class Level(LevelId id, int width, int height)
             if (room != null)
                 room.Flags |= RoomFlags.HasStairs;
         }
+
+        InvalidateGeometry();
     }
 
     public CellState? GetState(Pos p) => _state[p.Y * Width + p.X];
@@ -470,6 +479,18 @@ public class Level(LevelId id, int width, int height)
         { X: 1, Y: -1 } => [2, 3],  // NE
         _ => [0, 1, 2, 3, 4, 5, 6, 7],
     };
+
+    internal bool OpenDoor(Pos target)
+    {
+        CellState state = GetOrCreateState(target);
+        if (state.Door == DoorState.Closed)
+        {
+            state.Door = DoorState.Open;
+            InvalidateGeometry();
+            return true;
+        }
+        return false;
+    }
 }
 
 
