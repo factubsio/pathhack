@@ -85,6 +85,7 @@ public static class LevelGen
             
             PatchEmptyDoors(ctx.level);
             LogLevel(ctx.level);
+            ctx.level.UnderConstruction = false;
             return ctx.level;
         }
         finally

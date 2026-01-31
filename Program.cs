@@ -36,7 +36,7 @@ using var _noCursor = new HideCursor();
 var creation = new CharCreation();
 if (!creation.Run()) return;
 
-Log.EnabledTags.Add("movement");
+//Log.EnabledTags.Add("movement");
 
 while (true)
 {
