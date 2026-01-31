@@ -172,7 +172,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
       {
         Log.Write($"{this} uses {action.Name}");
         action.Execute(this, data, playerTarget);
-        Energy -= 12;
+        Energy -= ActionCosts.OneAction.Value;
         return;
       }
     }
