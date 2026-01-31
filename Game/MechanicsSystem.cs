@@ -26,6 +26,8 @@ public sealed class PHContext : IDisposable
     public required PHContext? Parent;
     public required IUnit? Source;
     public required Target Target;
+    public SpellBrick? Spell;
+    public ActionBrick? Action;
     public Item? Weapon;
     public Check? Check;
     public List<DamageRoll> Damage = [];
@@ -260,6 +262,17 @@ public class StatBlock<T>(Func<T> creat)
     public readonly T Int = creat();
     public readonly T Wis = creat();
     public readonly T Cha = creat();
+
+    public T this[AbilityStat stat] => stat switch
+    {
+      AbilityStat.Str => Str,
+      AbilityStat.Dex => Dex,
+      AbilityStat.Con => Con,
+      AbilityStat.Int => Int,
+      AbilityStat.Wis => Wis,
+      AbilityStat.Cha => Cha,
+      _ => throw new NotImplementedException(),
+    };
 }
 
 public record struct ActionCost(int Value)

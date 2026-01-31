@@ -3,6 +3,7 @@ global using System.Collections.Generic;
 global using Pathhack.Core;
 global using Pathhack.Game;
 global using Pathhack.Game.Bestiary;
+global using Pathhack.Game.Spells;
 global using Pathhack.Map;
 global using Pathhack.UI;
 

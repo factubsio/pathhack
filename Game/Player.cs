@@ -124,6 +124,8 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def), IFormattable
 
     public override int GetDamageBonus() => Mod(Attributes.Str.Value);
 
+    public override int GetSpellDC() => 10 + CasterLevel + Mod(Attributes[Class.KeyAbility].Value);
+
     protected override WeaponDef GetUnarmedDef() => NaturalWeapons.Fist;
 
     public override bool IsAwareOf(Trap trap) => trap.PlayerSeen;

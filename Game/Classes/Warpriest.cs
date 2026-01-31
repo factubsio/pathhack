@@ -84,7 +84,9 @@ public static class WarpriestFeats
 public static partial class ClassDefs
 {
     public static readonly List<SpellBrickBase> WarpriestList = [
-        CommonSpells.CureLightWounds,
+        BasicLevel1Spells.CureLightWounds,
+        BasicLevel1Spells.BurningHands,
+        BasicLevel1Spells.MagicMissile,
     ];
 
     public static ClassDef Warpriest => new()
@@ -160,42 +162,3 @@ public static partial class ClassDefs
 
 }
 
-public static class CommonSpells
-{
-    public static readonly SpellBrick CureLightWounds = new("Cure light wounds", 1, "heals for 1d6",
-    (u, t) =>
-    {
-        if (t.Pos == null) return;
-        var target = lvl.UnitAt(u.Pos + t.Pos.Value);
-        if (target == null) return;
-
-        int dice = (1 + u.CasterLevel) / 2;
-        using var ctx = PHContext.Create(u, t);
-
-        if (target.Has("undead") == true)
-        {
-            ctx.Damage.Add(new() {
-                Formula = d(dice, 8) + 2,
-                Type = DamageTypes.Magic,
-            });
-            DoDamage(ctx);
-            g.pline($"The positive energy sears {target:the}!");
-        }
-        else
-        {
-            g.DoHeal(u, target, d(dice, 6));
-            g.pline($"{target:The} {VTense(target, "look")} a little better.");
-        }
-    }, TargetingType.Direction);
-}
-
-internal class ConsumeSpell(int lvl) : ActionBrick($"consume spell {lvl}")
-{
-    private string Pool => $"spell_l{lvl}";
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot) => unit.HasCharge(Pool, out whyNot);
-
-    public override void Execute(IUnit unit, object? data, Target target)
-    {
-        unit.TryUseCharge(Pool);
-    }
-}
