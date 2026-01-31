@@ -20,6 +20,20 @@ public readonly record struct Pos(int X, int Y) : IFormattable
 
     public static readonly Pos[] AllDirs = [N, NE, E, SE, S, SW, W, NW];
     public static readonly Pos[] CardinalDirs = [N, E, S, W];
+
+    // For each direction, the 5 "forward" neighbors to check when running (excludes behind + behind-diagonals)
+    public static readonly Dictionary<Pos, Pos[]> ForwardNeighbours = new()
+    {
+        [N]  = [NW, N, NE, W, E],
+        [NE] = [N, NE, E, NW, SE],
+        [E]  = [NE, E, SE, N, S],
+        [SE] = [E, SE, S, NE, SW],
+        [S]  = [SE, S, SW, E, W],
+        [SW] = [S, SW, W, SE, NW],
+        [W]  = [SW, W, NW, S, N],
+        [NW] = [W, NW, N, SW, NE],
+    };
+
     public bool IsValid => X >= 0 && Y >= 0;
 
     public override string ToString() => $"({X},{Y})";

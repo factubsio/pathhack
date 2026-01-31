@@ -67,10 +67,25 @@ public static class Movement
             return false;
         }
 
+        // Shift: stop ON doorways/transitions (check before moving through)
+        if (Mode == RunMode.UntilBlocked)
+        {
+            bool nowInRoom = lvl[upos].Type == TileType.Floor;
+            bool nextIsRoom = lvl[next].Type == TileType.Floor;
+            if (lvl.IsDoor(next) || (nowInRoom != nextIsRoom))
+            {
+                // Move onto the threshold, then stop
+                Log.Verbose("movement", $"Moving to doorway/transition at {next}");
+                lvl.MoveUnit(u, next);
+                Stop();
+                return true;
+            }
+        }
+
         // Move
         Log.Verbose("movement", $"Moving from {upos} to {next}");
         lvl.MoveUnit(u, next);
-        u.Energy -= ActionCosts.OneAction.Value;
+        // Note: MoveUnit already charges energy
 
         // Check if we should stop AFTER this move
         if (ShouldStopAfterMove())
@@ -84,7 +99,61 @@ public static class Movement
 
     static bool ShouldStopAfterMove()
     {
-        // Always stop if monster adjacent (except directly behind)
+        if (Mode == RunMode.UntilBlocked)
+        {
+            // Stop ON items
+            if (lvl.ItemsAt(upos).Count > 0)
+            {
+                Log.Verbose("movement", "Stop: items here");
+                return true;
+            }
+
+            // Stop ON stairs
+            if (lvl[upos].IsStairs)
+            {
+                Log.Verbose("movement", "Stop: on stairs");
+                return true;
+            }
+
+            // Only stop for monster directly ahead
+            Pos ahead = upos + Dir;
+            Pos behind = upos - Dir;
+            if (lvl.InBounds(ahead) && lvl.UnitAt(ahead) is { } m && m != u)
+            {
+                Log.Verbose("movement", $"Stop: monster ahead at {ahead}");
+                return true;
+            }
+
+            // Corridor following: if blocked ahead, try to turn
+            if (!lvl.InBounds(ahead) || !lvl.CanMoveTo(upos, ahead, u))
+            {
+                // Count passable exits (excluding behind)
+                List<Pos> exits = [];
+                foreach (var d in Pos.AllDirs)
+                {
+                    Pos p = upos + d;
+                    if (p == behind) continue;
+                    if (lvl.InBounds(p) && lvl.CanMoveTo(upos, p, u) && lvl.UnitAt(p) == null)
+                        exits.Add(d);
+                }
+
+                if (exits.Count == 1)
+                {
+                    // Single exit - turn and continue
+                    Dir = exits[0];
+                    Log.Verbose("movement", $"Corridor turn: new dir={Dir}");
+                    return false;
+                }
+
+                // No exits or multiple - stop
+                Log.Verbose("movement", "Stop: blocked, no single exit");
+                return true;
+            }
+
+            return false;
+        }
+
+        // UntilInteresting: stop for any adjacent monster (except behind)
         foreach (var n in upos.Neighbours())
         {
             if (n == upos - Dir) continue;
@@ -93,12 +162,6 @@ public static class Movement
                 Log.Verbose("movement", $"Stop: monster at {n}");
                 return true;
             }
-        }
-
-        if (Mode == RunMode.UntilBlocked)
-        {
-            Pos next = upos + Dir;
-            return !lvl.InBounds(next) || !lvl.CanMoveTo(upos, next, u);
         }
 
         if (Mode == RunMode.UntilInteresting)
@@ -115,14 +178,41 @@ public static class Movement
                 return true;
             }
 
-            // Check sides for openings (perpendicular to movement)
+            // Check forward neighbors (5 tiles: excludes behind + behind-diagonals)
+            foreach (var offset in Pos.ForwardNeighbours[Dir])
+            {
+                Pos p = upos + offset;
+                if (!lvl.InBounds(p)) continue;
+
+                // Stop for stairs/interesting terrain
+                if (IsInteresting(p))
+                {
+                    Log.Verbose("movement", $"Stop: interesting at {p}");
+                    return true;
+                }
+
+                // Stop for closed doors
+                if (lvl.IsDoorClosed(p))
+                {
+                    Log.Verbose("movement", $"Stop: closed door at {p}");
+                    return true;
+                }
+
+                // Stop for open doors (any adjacent)
+                if (lvl.IsDoor(p) && !lvl.IsDoorClosed(p))
+                {
+                    Log.Verbose("movement", $"Stop: open door at {p}");
+                    return true;
+                }
+            }
+
+            // Check for new corridor openings (wall was beside us, now there's a path)
             Pos left = new(-Dir.Y, Dir.X);
             Pos right = new(Dir.Y, -Dir.X);
-
-            // Check one tile ahead for upcoming openings
-            // If wall to side now, but diagonal-ahead is passable = opening coming up
             Pos ahead = upos + Dir;
-            if (lvl.InBounds(ahead))
+            bool diagonal = Dir.X != 0 && Dir.Y != 0;
+
+            if (!diagonal && lvl.InBounds(ahead))
             {
                 foreach (var side in (Pos[])[left, right])
                 {
@@ -130,58 +220,12 @@ public static class Movement
                     Pos aheadSide = ahead + side;
                     if (!lvl.InBounds(aheadSide)) continue;
 
-                    // Wall to side now, but passable diagonal-ahead = upcoming opening
                     bool wallToSide = !lvl.InBounds(sidePos) || !lvl.CanMoveTo(upos, sidePos, u);
                     bool openAhead = lvl.CanMoveTo(ahead, aheadSide, u);
-
                     if (wallToSide && openAhead)
                     {
                         Log.Verbose("movement", $"Stop: upcoming opening at {aheadSide}");
                         return true;
-                    }
-                }
-
-                // Closed door ahead - stop adjacent
-                if (lvl.IsDoorClosed(ahead))
-                {
-                    Log.Verbose("movement", "Stop: closed door ahead");
-                    return true;
-                }
-
-                // Interesting terrain ahead - stop adjacent
-                if (IsInteresting(ahead))
-                {
-                    Log.Verbose("movement", "Stop: interesting ahead");
-                    return true;
-                }
-            }
-
-            // Check current position sides (only for cardinal movement)
-            if (Dir.X == 0 || Dir.Y == 0)
-            {
-                foreach (var side in (Pos[])[left, right])
-                {
-                    Pos sidePos = upos + side;
-                    if (!lvl.InBounds(sidePos)) continue;
-
-                    // Any door directly to side - stop adjacent
-                    if (lvl.IsDoor(sidePos))
-                    {
-                        Log.Verbose("movement", $"Stop: door to side at {sidePos}");
-                        return true;
-                    }
-
-                    var tile = lvl[sidePos];
-
-                    // Corridor/floor opening to the side that wasn't there before
-                    if (tile.Type is TileType.Floor or TileType.Corridor)
-                    {
-                        Pos prevSide = (upos - Dir) + side;
-                        if (lvl.InBounds(prevSide) && !lvl.CanMoveTo(upos - Dir, prevSide, u))
-                        {
-                            Log.Verbose("movement", $"Stop: new opening to side at {sidePos}");
-                            return true;
-                        }
                     }
                 }
             }

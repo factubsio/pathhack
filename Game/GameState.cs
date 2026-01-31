@@ -591,8 +591,11 @@ public class GameState
         }
         int total = 150;
         int frames = last.ChebyshevDist(thrower.Pos);
-        int perFrame = total / frames;
-        Draw.AnimateProjectile(thrower.Pos, last, item.Def.Glyph, perFrame);
+        if (frames > 0)
+        {
+            int perFrame = total / frames;
+            Draw.AnimateProjectile(thrower.Pos, last, item.Def.Glyph, perFrame);
+        }
         if (hit != null)
             Attack(thrower, hit, item, thrown: true);
         lvl.PlaceItem(item, last);
