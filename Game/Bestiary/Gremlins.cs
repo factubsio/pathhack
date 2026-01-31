@@ -6,13 +6,10 @@ namespace Pathhack.Game.Bestiary;
 // --- Gremlin Components ---
 
 // Pugwampi: curse player's weapon when in range (pooled charge)
-public class CurseWeaponInRange(int range) : ActionBrick
+public class CurseWeaponInRange(int range) : ActionBrick("Curse Weapon")
 {
     public static readonly CurseWeaponInRange Instance = new(3);
     const int CurseDuration = 10;
-
-    public override string Name => "Curse Weapon";
-    public override TargetingType Targeting => TargetingType.None;
 
     public const string Resource = "pugwampi_curse";
 
@@ -110,28 +107,7 @@ public class DrunkenDodge : LogicBrick
     }
 }
 
-// Very Drunk Jinkin: vomit acid
-public class VomitAcid : ActionBrick
-{
-    public static readonly VomitAcid Instance = new();
-    public override string Name => "Vomit";
-    public override TargetingType Targeting => TargetingType.Unit;
-
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
-    {
-        whyNot = "no adjacent target";
-        // TODO: check adjacent
-        return false;
-    }
-
-    public override void Execute(IUnit unit, object? data, Target target)
-    {
-        // TODO: acid damage to target
-    }
-}
-
 // --- Monster Definitions ---
-
 public static class Gremlins
 {
     private static readonly LogicBrick[] CommonEquip = [

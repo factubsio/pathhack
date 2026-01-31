@@ -1,4 +1,5 @@
 using System.Reflection.Metadata;
+using System.Text;
 using Pathhack.Core;
 using Pathhack.Game;
 using Pathhack.Map;
@@ -431,5 +432,34 @@ public static class Draw
         int progress = u.XP - Progression.XpForLevel(u.CharacterLevel);
         string xpStr = Progression.HasPendingLevelUp(u) ? $"XP:{progress}/{needed}*" : $"XP:{progress}/{needed} ";
         Layers[0].Write(0, StatusRow + 1, $"HP:{u.HP.Current}/{u.HP.Max} AC:{u.GetAC()} CL:{u.CharacterLevel} {xpStr}".PadRight(ViewWidth));
+        DrawSpellPips();
+    }
+
+    static void DrawSpellPips()
+    {
+        // const int maxSlots = 5;
+        const int width = 6;
+        StringBuilder sb = new();
+        for (int lvl = 1; lvl <= 9; lvl++)
+        {
+            var pool = u.GetPool($"spell_l{lvl}");
+            if (pool == null) continue;
+
+            int left = 36 + width * (lvl - 1);
+
+            Layers[0].Write(left, StatusRow, $"l{lvl}");
+            sb.Clear();
+
+            for (int i = 0; i < pool.Max; i++)
+            {
+                if (i < pool.Current)
+                    sb.Append('●');
+                else if (i == pool.Current && pool.Ticks >= pool.RegenRate / 2)
+                    sb.Append('◐');
+                else
+                    sb.Append('○');
+            }
+            Layers[0].Write(left, StatusRow + 1, sb.ToString());
+        }
     }
 }

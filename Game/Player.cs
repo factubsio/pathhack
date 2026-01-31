@@ -129,6 +129,7 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def), IFormattable
     public override bool IsAwareOf(Trap trap) => trap.PlayerSeen;
     public override void ObserveTrap(Trap trap) => trap.PlayerSeen = true;
     public override bool IsDM => false;
+    public override int CasterLevel => CharacterLevel;
 }
 
 internal class PlayerSkills : LogicBrick

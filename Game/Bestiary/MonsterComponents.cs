@@ -1,3 +1,5 @@
+using System.Reflection.Metadata.Ecma335;
+
 namespace Pathhack.Game.Bestiary;
 
 public class Equip(ItemDef itemDef) : LogicBrick
@@ -43,24 +45,6 @@ public class EquipSet(params Outfit[] outfits) : LogicBrick
             context.Source!.Inventory.Add(item);
             context.Source!.Equip(item);
         }
-    }
-}
-
-public class GrantAction(ActionBrick action) : LogicBrick
-{
-    public ActionBrick Action => action;
-    
-    public override void OnSpawn(Fact fact, PHContext context)
-    {
-        context.Source!.AddAction(action);
-    }
-}
-
-public class GrantPool(string name, int max, int regenRate) : LogicBrick
-{
-    public override void OnSpawn(Fact fact, PHContext context)
-    {
-        context.Source!.AddPool(name, max, regenRate);
     }
 }
 

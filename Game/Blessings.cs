@@ -33,10 +33,8 @@ public class GrantBlessingBrick(BlessingDef blessing) : LogicBrick
     }
 }
 
-public class FireBlessingMinor : ActionBrick
+public class FireBlessingMinor() : ActionBrick("Fire Blessing")
 {
-    public override string Name => "Fire Blessing";
-
     public override object? CreateData() => new CooldownTracker();
 
     public override ActionCost GetCost(IUnit unit, object? data, Target target) =>
@@ -256,11 +254,10 @@ public class WarBlessingPassive : LogicBrick
     }
 }
 
-public class WarBlessingAction(Fact fact) : ActionBrick
+public class WarBlessingAction(Fact fact) : ActionBrick("War Blessing")
 {
     const int BuffDuration = 20;
 
-    public override string Name => "War Blessing";
     WarBlessingData Data => (WarBlessingData)fact.Data!;
 
     public override ActionCost GetCost(IUnit unit, object? data, Target target) =>
@@ -291,9 +288,8 @@ public class CooldownTracker
     }
 }
 
-public class AddBuffAction(string name, Func<string> on, Func<int, LogicBrick> makeFact, DiceFormula cd, DiceFormula dur) : ActionBrick
+public class AddBuffAction(string name, Func<string> on, Func<int, LogicBrick> makeFact, DiceFormula cd, DiceFormula dur) : ActionBrick(name)
 {
-    public override string Name => name;
     public override object? CreateData() => new CooldownTracker();
 
     public override ActionCost GetCost(IUnit unit, object? data, Target target) =>
@@ -382,11 +378,10 @@ public static class BlessingHelper
 }
 
 // Healing Blessing - heal 1d6+level
-public class HealingBlessingMinor : ActionBrick
+public class HealingBlessingMinor() : ActionBrick("Healing Blessing")
 {
     const int Cooldown = 150;
 
-    public override string Name => "Healing Blessing";
     public override object? CreateData() => new CooldownTracker();
 
     public override ActionCost GetCost(IUnit unit, object? data, Target target) =>
@@ -406,14 +401,11 @@ public class HealingBlessingMinor : ActionBrick
     }
 }
 
-public class MagicBlessingMinor : ActionBrick
+public class MagicBlessingMinor() : ActionBrick("Magic Blessing", TargetingType.Direction)
 {
     const int Cooldown = 100;
 
-    public override string Name => "Magic Blessing";
     public override object? CreateData() => new CooldownTracker();
-
-    public override TargetingType Targeting => TargetingType.Direction;
 
     public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot) => ((CooldownTracker)data!).CanExecute(out whyNot);
 
@@ -436,11 +428,10 @@ public class MagicBlessingMinor : ActionBrick
 }
 
 // Sun Blessing - passive +1 light radius, active AoE burn
-public class SunBlessingMinor : ActionBrick
+public class SunBlessingMinor() : ActionBrick("Sun Blessing")
 {
     const int radius = 4;
 
-    public override string Name => "Sun Blessing";
     public override object? CreateData() => new CooldownTracker();
 
     public override ActionCost GetCost(IUnit unit, object? data, Target target) =>
@@ -499,13 +490,11 @@ public class LuckBlessingPassive : LogicBrick
 }
 
 // Darkness Blessing - cone blind
-public class DarknessBlessingMinor : ActionBrick
+public class DarknessBlessingMinor() : ActionBrick("Darkness Blessing", TargetingType.Direction)
 {
     const int Radius = 4;
     const int BlindDuration = 10;
 
-    public override string Name => "Darkness Blessing";
-    public override TargetingType Targeting => TargetingType.Direction;
     public override object? CreateData() => new CooldownTracker();
 
     public override ActionCost GetCost(IUnit unit, object? data, Target target) =>

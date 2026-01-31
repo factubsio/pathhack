@@ -1,3 +1,5 @@
+using System.Reflection.Metadata;
+
 namespace Pathhack.Game.Classes;
 
 public class SacredStrikeBrick : LogicBrick
@@ -81,6 +83,10 @@ public static class WarpriestFeats
 
 public static partial class ClassDefs
 {
+    public static readonly List<SpellBrickBase> WarpriestList = [
+        CommonSpells.CureLightWounds,
+    ];
+
     public static ClassDef Warpriest => new()
     {
         id = "warpriest",
@@ -105,9 +111,21 @@ public static partial class ClassDefs
                     new GrantProficiency(Proficiencies.LightArmor, ProficiencyLevel.Trained),
                     new GrantProficiency(Proficiencies.MediumArmor, ProficiencyLevel.Trained),
                     new SacredWeapon(),
+                    new GrantPool("spell_l1", 5, 20),
+                    new GrantPool("spell_l2", 4, 40),
+                    new GrantPool("spell_l3", 3, 60),
+                    new GrantPool("spell_l4", 3, 100),
+                    new GrantPool("spell_l5", 2, 150),
+                    new GrantAction(new ConsumeSpell(1)),
+                    new GrantAction(new ConsumeSpell(2)),
+                    new GrantAction(new ConsumeSpell(3)),
+                    new GrantAction(new ConsumeSpell(4)),
+                    new GrantAction(new ConsumeSpell(5)),
                 ],
                 Selections = [
-                    new() { Label = "Choose a blessing", Options = Blessings.All.Select(b => b.ToFeat()) }
+                    new() { Label = "Choose a blessing", Options = Blessings.All.Select(b => b.ToFeat()) },
+                    // new() { Label = "Choose a cantrip", Options = Blessings.All.Select(b => b.ToFeat()) },
+                    new() { Label = "Choose a spell", Options = WarpriestList.Select(b => b.ToFeat()) },
                 ],
             },
         ],
@@ -139,4 +157,45 @@ public static partial class ClassDefs
         Proficiencies.Unarmed => null,
         _ => null,
     };
+
+}
+
+public static class CommonSpells
+{
+    public static readonly SpellBrick CureLightWounds = new("Cure light wounds", 1, "heals for 1d6",
+    (u, t) =>
+    {
+        if (t.Pos == null) return;
+        var target = lvl.UnitAt(u.Pos + t.Pos.Value);
+        if (target == null) return;
+
+        int dice = (1 + u.CasterLevel) / 2;
+        using var ctx = PHContext.Create(u, t);
+
+        if (target.Has("undead") == true)
+        {
+            ctx.Damage.Add(new() {
+                Formula = d(dice, 8) + 2,
+                Type = DamageTypes.Magic,
+            });
+            DoDamage(ctx);
+            g.pline($"The positive energy sears {target:the}!");
+        }
+        else
+        {
+            g.DoHeal(u, target, d(dice, 6));
+            g.pline($"{target:The} {VTense(target, "look")} a little better.");
+        }
+    }, TargetingType.Direction);
+}
+
+internal class ConsumeSpell(int lvl) : ActionBrick($"consume spell {lvl}")
+{
+    private string Pool => $"spell_l{lvl}";
+    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot) => unit.HasCharge(Pool, out whyNot);
+
+    public override void Execute(IUnit unit, object? data, Target target)
+    {
+        unit.TryUseCharge(Pool);
+    }
 }

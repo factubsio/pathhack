@@ -106,11 +106,12 @@ public enum MergeStrategy { Replace, Max, Min, Sum, Or, And }
 
 public enum TargetingType { None, Direction, Unit, Pos }
 
-public abstract class ActionBrick
+public abstract class ActionBrick(string name, TargetingType targeting = TargetingType.None)
 {
-    public virtual string Name => GetType().Name;
+    public string Name => name;
+    public TargetingType Targeting => targeting;
+
     public virtual object? CreateData() => null;
-    public virtual TargetingType Targeting => TargetingType.None;
     public virtual ActionCost GetCost(IUnit unit, object? data, Target target) => ActionCosts.OneAction;
     public abstract bool CanExecute(IUnit unit, object? data, Target target, out string whyNot);
     public abstract void Execute(IUnit unit, object? data, Target target);
@@ -134,7 +135,7 @@ public class QueryBrick(string queryKey, object value) : LogicBrick
         key == queryKey ? value : null;
 }
 
-public class AttackWithWeapon : ActionBrick
+public class AttackWithWeapon() : ActionBrick("attack_with_weapon")
 {
     public static readonly AttackWithWeapon Instance = new();
 
@@ -176,7 +177,7 @@ public class AttackWithWeapon : ActionBrick
     }
 }
 
-public class NaturalAttack(WeaponDef weapon) : ActionBrick
+public class NaturalAttack(WeaponDef weapon) : ActionBrick("attack_with_nat")
 {
     public WeaponDef Weapon => weapon;
     readonly Item _item = new(weapon);
@@ -440,6 +441,7 @@ public interface IUnit : IEntity
     List<ActionBrick> Actions { get; }
     Dictionary<ActionBrick, object?> ActionData { get; }
     void AddAction(ActionBrick action);
+    void AddSpell(SpellBrickBase spell);
     IEnumerable<Fact> Facts { get; }
     ActionCost LandMove { get; }
 
@@ -449,6 +451,7 @@ public interface IUnit : IEntity
     Trap? TrappedIn { get; set; }
     int EscapeAttempts { get; set; }
     bool IsDM { get; }
+    int CasterLevel { get; }
 
     int GetAC();
     int GetAttackBonus(WeaponDef weapon);
@@ -465,6 +468,7 @@ public interface IUnit : IEntity
     bool HasCharge(string name, out string whyNot);
     bool TryUseCharge(string name);
     void TickPools();
+    ChargePool? GetPool(string name);
 
     void FireAllFacts(Func<LogicBrick, Action<Fact, PHContext>> value, PHContext ctx)
     {
@@ -498,10 +502,12 @@ public abstract class Unit<TDef>(TDef def) : Entity<TDef>(def), IUnit where TDef
     Inventory? _inventory;
     public Inventory Inventory => _inventory ??= new(this);
     public List<ActionBrick> Actions { get; } = [];
+    public List<SpellBrickBase> Spells { get; } = [];
     public Dictionary<ActionBrick, object?> ActionData { get; } = [];
     IEnumerable<Fact> IUnit.Facts => LiveFacts;
     readonly Dictionary<string, ChargePool> Pools = [];
     public abstract bool IsDM { get; }
+    public abstract int CasterLevel { get; }
 
     public Trap? TrappedIn { get; set; }
     public int EscapeAttempts { get; set; }
@@ -532,9 +538,16 @@ public abstract class Unit<TDef>(TDef def) : Entity<TDef>(def), IUnit where TDef
         return true;
     }
     public void TickPools() { foreach (var p in Pools.Values) p.Tick(); }
+    public ChargePool? GetPool(string name) => Pools.GetValueOrDefault(name);
 
     public abstract int NaturalRegen { get; }
     public abstract int StrMod { get; }
+
+    public void AddSpell(SpellBrickBase spell)
+    {
+        Spells.Add(spell);
+        ActionData[spell] = spell.CreateData();
+    }
 
     public void AddAction(ActionBrick action)
     {
@@ -643,3 +656,25 @@ public abstract class Unit<TDef>(TDef def) : Entity<TDef>(def), IUnit where TDef
         return true;
     }
 }
+
+public class GrantAction(ActionBrick action) : LogicBrick
+{
+    public ActionBrick Action => action;
+  public override void OnFactAdded(Fact fact) => (fact.Entity as IUnit)?.AddAction(action);
+}
+
+public class GrantSpell(SpellBrickBase spell) : LogicBrick
+{
+    public SpellBrickBase Spell => spell;
+    public override void OnFactAdded(Fact fact) => (fact.Entity as IUnit)?.AddSpell(spell);
+}
+
+public class GrantPool(string name, int max, int regenRate) : LogicBrick
+{
+    public override void OnFactAdded(Fact fact)
+    {
+        Log.Write($"on fact added pool {name} to {fact.Entity}");
+        (fact.Entity as IUnit)?.AddPool(name, max, regenRate);
+    } 
+}
+

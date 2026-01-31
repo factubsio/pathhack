@@ -1,9 +1,7 @@
 namespace Pathhack.Game.Bestiary;
 
-public class FireBreath(int radius, Dice damage, int dc, string pool = "fire_breath") : ActionBrick
+public class FireBreath(int radius, Dice damage, int dc, string pool = "fire_breath") : ActionBrick("Goblin Fire Breath")
 {
-    public override string Name => "Fire Breath";
-
     public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
     {
         if (!unit.HasCharge(pool, out whyNot)) return false;
@@ -42,12 +40,10 @@ public class FireBreath(int radius, Dice damage, int dc, string pool = "fire_bre
     }
 }
 
-public class WarChant(string pool = "war_chant") : ActionBrick
+public class WarChant(string pool = "war_chant") : ActionBrick("Goblin War Chant")
 {
     const int Duration = 10;
     const int Range = 6;
-
-    public override string Name => "War Chant";
 
     public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot) =>
         unit.HasCharge(pool, out whyNot);
