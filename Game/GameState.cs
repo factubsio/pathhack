@@ -333,6 +333,21 @@ public class GameState
         CleanupFacts();
         Perf.Stop("OnRoundEnd");
 
+        // Ambient room sounds
+        var specialRooms = lvl.Rooms.Where(r => r.Type != RoomType.Ordinary).ToList();
+        if (specialRooms.Count > 0 && Rn2(200) == 0)
+        {
+            var room = specialRooms.Pick();
+            var msg = room.Type switch
+            {
+                RoomType.GoblinNest => "You hear chanting.",
+                RoomType.GremlinParty => "You hear snoring.",
+                RoomType.GremlinPartyBig => "You hear a lot of snoring.",
+                _ => null
+            };
+            if (msg != null) pline(msg);
+        }
+
         lvl.ReapDead();
 
         foreach (var unit in lvl.LiveUnits)
@@ -559,6 +574,8 @@ public class GameState
         }
         Log.Write($"  {target:The} takes {damage} total damage");
         target.HP -= damage;
+
+        if (target is Monster mon) mon.IsAsleep = false;
 
         if (target.IsPlayer)
             Movement.Stop();

@@ -95,7 +95,7 @@ public static class DungeonResolver
                 throw new Exception($"Failed to resolve branch {template.Id}");
 
 
-            branches[template.Id] = new Branch(template.Name, branchLength, template.Color, template.Dir)
+            branches[template.Id] = new Branch(template.Id, template.Name, branchLength, template.Color, template.Dir)
             {
                 ResolvedLevels = resolved,
                 EntranceDepthInParent = depthInParent
@@ -115,13 +115,13 @@ public static class DungeonResolver
 
                 if (template.Dir == BranchDir.Down)
                 {
-                    parentLevel.BranchDown = branch.Name;
-                    branchEntry.BranchUp = parent.Name;
+                    parentLevel.BranchDown = branch.Id;
+                    branchEntry.BranchUp = parent.Id;
                 }
                 else
                 {
-                    parentLevel.BranchUp = branch.Name;
-                    branchEntry.BranchDown = parent.Name;
+                    parentLevel.BranchUp = branch.Id;
+                    branchEntry.BranchDown = parent.Id;
                 }
 
                 parentLevel.AddCommand($"place portal TO {template.Name}",

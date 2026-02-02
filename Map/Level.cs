@@ -137,7 +137,7 @@ public static class BranchExt
     public static BranchDir Reversed(this BranchDir dir) => dir == BranchDir.Down ? BranchDir.Up : BranchDir.Down;
 }
 
-public record class Branch(string Name, int MaxDepth, ConsoleColor Color = ConsoleColor.White, BranchDir Dir = BranchDir.Down)
+public record class Branch(string Id, string Name, int MaxDepth, ConsoleColor Color = ConsoleColor.White, BranchDir Dir = BranchDir.Down)
 {
     public List<ResolvedLevel> ResolvedLevels { get; init; } = [];
     public int? EntranceDepthInParent { get; init; }
@@ -156,6 +156,8 @@ public enum RoomType : byte
 {
     Ordinary,
     GoblinNest,
+    GremlinParty,
+    GremlinPartyBig,
 }
 
 [Flags]
@@ -182,6 +184,7 @@ public record class Room(List<Pos> Border, List<Pos> Interior, RoomType Type = R
     public RoomFlags Flags { get; set; }
     public bool Lit => (Flags & RoomFlags.Lit) != 0;
     public bool HasStairs => (Flags & RoomFlags.HasStairs) != 0;
+    public bool Entered { get; set; }
     public Rect? Bounds { get; init; }
     
     public Pos RandomInterior() => Interior.Pick();
