@@ -2,7 +2,7 @@ namespace Pathhack.Game.Bestiary;
 
 public class Thorns(Dice damage, DamageType type) : LogicBrick
 {
-    public override void OnDamageTaken(Fact fact, PHContext context)
+    protected override void OnDamageTaken(Fact fact, PHContext context)
     {
         if (context.Source is not IUnit attacker) return;
         var defender = context.Target.Unit!;

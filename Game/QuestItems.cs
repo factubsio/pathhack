@@ -15,7 +15,7 @@ public class EverflameComponent : LogicBrick
 
     public override object? CreateData() => new EverflameData();
 
-    public override void OnRoundStart(Fact fact, PHContext context)
+    protected override void OnRoundStart(Fact fact, PHContext context)
     {
         var data = (EverflameData)fact.Data!;
 
@@ -43,7 +43,7 @@ public class EverflameComponent : LogicBrick
         }
     }
 
-    public override object? OnQuery(Fact fact, string key, string? arg)
+    protected override object? OnQuery(Fact fact, string key, string? arg)
     {
         var data = (EverflameData)fact.Data!;
         if (data.LightRadiusForced != 100 && key == "light_radius")

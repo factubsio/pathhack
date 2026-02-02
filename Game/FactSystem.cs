@@ -10,15 +10,19 @@ public record struct Glyph(char Value, ConsoleColor Color = ConsoleColor.White)
 
 public interface IEntity
 {
-    public void Fire(Func<LogicBrick, Action<Fact, PHContext>> action, IUnit? source, Target target);
-    public void FireWithCtx(Func<LogicBrick, Action<Fact, PHContext>> action, PHContext ctx);
+    public IEnumerable<Fact> LiveFacts { get; }
+    public IEnumerable<Fact> GetAllFacts(PHContext? ctx);
     public void CleanupMarkedFacts();
-    public Fact AddFact(LogicBrick brick);
-    public Fact AddUniqueFact(Func<Fact, bool> check, Func<LogicBrick> brick);
+    public Fact AddFact(LogicBrick brick, int? duration = null);
+    public void RemoveStack(Type type);
+    public void RemoveStack<T>() where T : LogicBrick;
     public void DecrementActiveFact();
+    public void ExpireFacts();
     object? Query(string key, string? arg = null, MergeStrategy merge = MergeStrategy.Replace);
     T Query<T>(string key, string? arg, MergeStrategy merge, T defaultValue);
     bool Has(string key);
+    bool Can(string key);
+    bool HasFact<T>() where T : LogicBrick;
 }
 
 public class Fact(IEntity entity, LogicBrick brick, object? data)
@@ -28,82 +32,134 @@ public class Fact(IEntity entity, LogicBrick brick, object? data)
     public object? Data => data;
     public bool MarkedForRemoval;
 
+    public int Stacks { get; set; } = 1;
+    public int? ExpiresAt { get; set; }
+
+    public int? RemainingRounds => ExpiresAt.HasValue ? Math.Max(0, ExpiresAt.Value - g.CurrentRound) : null;
+
     public void Remove()
     {
         Log.Write($"removing fact {Brick} (already? {MarkedForRemoval})");
         if (MarkedForRemoval) return;
         MarkedForRemoval = true;
+        LogicBrick.FireOnFactRemoved(Brick, this);
         if (Brick.IsActive)
             Entity.DecrementActiveFact();
         g.PendingFactCleanup.Add(Entity);
     }
 }
 
+public enum StackMode { Independent, Stack, Replace, Extend }
+
 public abstract class LogicBrick
 {
+    public static LogicBrick? GlobalHook;
+
     public virtual object? CreateData() => null;
     public virtual bool IsBuff => false;
     public virtual string? BuffName => null;
     public virtual bool IsActive => false;
+    public virtual StackMode StackMode => StackMode.Independent;
+    public virtual int MaxStacks => int.MaxValue;
+    public virtual bool RequiresEquipped => false;
 
-    public virtual object? OnQuery(Fact fact, string key, string? arg) => null;
+    protected virtual object? OnQuery(Fact fact, string key, string? arg) => null;
 
-    public virtual void OnFactAdded(Fact fact) { }
+    protected virtual void OnFactAdded(Fact fact) { }
+    protected virtual void OnFactRemoved(Fact fact) { }
+    protected virtual void OnStackAdded(Fact fact) { }
+    protected virtual void OnStackRemoved(Fact fact) { }
 
-    public virtual void OnRoundStart(Fact fact, PHContext context) { }
-    public virtual void OnRoundEnd(Fact fact, PHContext context) { }
+    protected virtual void OnRoundStart(Fact fact, PHContext context) { }
+    protected virtual void OnRoundEnd(Fact fact, PHContext context) { }
 
-    public virtual void OnTurnStart(Fact fact, PHContext context) { }
-    public virtual void OnTurnEnd(Fact fact, PHContext context) { }
+    protected virtual void OnTurnStart(Fact fact, PHContext context) { }
+    protected virtual void OnTurnEnd(Fact fact, PHContext context) { }
 
-    public virtual void OnBeforeDamageRoll(Fact fact, PHContext context) { }
-    public virtual void OnBeforeDamageIncomingRoll(Fact fact, PHContext context) { }
+    protected virtual void OnBeforeDamageRoll(Fact fact, PHContext context) { }
+    protected virtual void OnBeforeDamageIncomingRoll(Fact fact, PHContext context) { }
 
-    public virtual void OnDamageTaken(Fact fact, PHContext context) { }
-    public virtual void OnDamageDone(Fact fact, PHContext context) { }
+    protected virtual void OnDamageTaken(Fact fact, PHContext context) { }
+    protected virtual void OnDamageDone(Fact fact, PHContext context) { }
 
-    public virtual void OnBeforeAttackRoll(Fact fact, PHContext context) { }
-    public virtual void OnAfterAttackRoll(Fact fact, PHContext context) { }
+    protected virtual void OnBeforeAttackRoll(Fact fact, PHContext context) { }
+    protected virtual void OnAfterAttackRoll(Fact fact, PHContext context) { }
 
-    public virtual void OnBeforeDefendRoll(Fact fact, PHContext context) { }
-    public virtual void OnAfterDefendRoll(Fact fact, PHContext context) { }
+    protected virtual void OnBeforeDefendRoll(Fact fact, PHContext context) { }
+    protected virtual void OnAfterDefendRoll(Fact fact, PHContext context) { }
 
-    public virtual void OnBeforeCheck(Fact fact, PHContext context) { }
+    protected virtual void OnBeforeCheck(Fact fact, PHContext context) { }
 
-    public virtual void OnBeforeHealGiven(Fact fact, PHContext context) { }
-    public virtual void OnBeforeHealReceived(Fact fact, PHContext context) { }
-    public virtual void OnAfterHealReceived(Fact fact, PHContext context) { }
+    protected virtual void OnBeforeHealGiven(Fact fact, PHContext context) { }
+    protected virtual void OnBeforeHealReceived(Fact fact, PHContext context) { }
+    protected virtual void OnAfterHealReceived(Fact fact, PHContext context) { }
 
-    public virtual void OnEquip(Fact fact, PHContext context) { }
-    public virtual void OnUnequip(Fact fact, PHContext context) { }
+    protected virtual void OnEquip(Fact fact, PHContext context) { }
+    protected virtual void OnUnequip(Fact fact, PHContext context) { }
 
-    public virtual void OnSpawn(Fact fact, PHContext context) { }
-    public virtual void OnDeath(Fact fact, PHContext context) { }
+    protected virtual void OnSpawn(Fact fact, PHContext context) { }
+    protected virtual void OnDeath(Fact fact, PHContext context) { }
 
-    public virtual void OnBeforeSpellCast(Fact fact, PHContext context) { }
+    protected virtual void OnBeforeSpellCast(Fact fact, PHContext context) { }
+
+    // Static dispatch methods - call these instead of instance methods directly
+    static bool Skip(LogicBrick b, Fact f) => b.RequiresEquipped && !f.IsEquipped();
+    public static object? FireOnQuery(LogicBrick b, Fact f, string key, string? arg) { if (Skip(b, f)) return null; GlobalHook?.OnQuery(f, key, arg); return b.OnQuery(f, key, arg); }
+    public static void FireOnFactAdded(LogicBrick b, Fact f) { GlobalHook?.OnFactAdded(f); b.OnFactAdded(f); }
+    public static void FireOnFactRemoved(LogicBrick b, Fact f) { GlobalHook?.OnFactRemoved(f); b.OnFactRemoved(f); }
+    public static void FireOnStackAdded(LogicBrick b, Fact f) { GlobalHook?.OnStackAdded(f); b.OnStackAdded(f); }
+    public static void FireOnStackRemoved(LogicBrick b, Fact f) { GlobalHook?.OnStackRemoved(f); b.OnStackRemoved(f); }
+    public static void FireOnRoundStart(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnRoundStart(f, c); b.OnRoundStart(f, c); }
+    public static void FireOnRoundEnd(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnRoundEnd(f, c); b.OnRoundEnd(f, c); }
+    public static void FireOnTurnStart(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnTurnStart(f, c); b.OnTurnStart(f, c); }
+    public static void FireOnTurnEnd(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnTurnEnd(f, c); b.OnTurnEnd(f, c); }
+    public static void FireOnBeforeDamageRoll(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnBeforeDamageRoll(f, c); b.OnBeforeDamageRoll(f, c); }
+    public static void FireOnBeforeDamageIncomingRoll(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnBeforeDamageIncomingRoll(f, c); b.OnBeforeDamageIncomingRoll(f, c); }
+    public static void FireOnDamageTaken(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnDamageTaken(f, c); b.OnDamageTaken(f, c); }
+    public static void FireOnDamageDone(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnDamageDone(f, c); b.OnDamageDone(f, c); }
+    public static void FireOnBeforeAttackRoll(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnBeforeAttackRoll(f, c); b.OnBeforeAttackRoll(f, c); }
+    public static void FireOnAfterAttackRoll(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnAfterAttackRoll(f, c); b.OnAfterAttackRoll(f, c); }
+    public static void FireOnBeforeDefendRoll(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnBeforeDefendRoll(f, c); b.OnBeforeDefendRoll(f, c); }
+    public static void FireOnAfterDefendRoll(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnAfterDefendRoll(f, c); b.OnAfterDefendRoll(f, c); }
+    public static void FireOnBeforeCheck(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnBeforeCheck(f, c); b.OnBeforeCheck(f, c); }
+    public static void FireOnBeforeHealGiven(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnBeforeHealGiven(f, c); b.OnBeforeHealGiven(f, c); }
+    public static void FireOnBeforeHealReceived(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnBeforeHealReceived(f, c); b.OnBeforeHealReceived(f, c); }
+    public static void FireOnAfterHealReceived(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnAfterHealReceived(f, c); b.OnAfterHealReceived(f, c); }
+    public static void FireOnEquip(LogicBrick b, Fact f, PHContext c) { GlobalHook?.OnEquip(f, c); b.OnEquip(f, c); }
+    public static void FireOnUnequip(LogicBrick b, Fact f, PHContext c) { GlobalHook?.OnUnequip(f, c); b.OnUnequip(f, c); }
+    public static void FireOnSpawn(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnSpawn(f, c); b.OnSpawn(f, c); }
+    public static void FireOnDeath(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnDeath(f, c); b.OnDeath(f, c); }
+    public static void FireOnBeforeSpellCast(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnBeforeSpellCast(f, c); b.OnBeforeSpellCast(f, c); }
+
+    // IEntity overloads - fire on all facts via GetAllFacts (null-safe)
+    public static void FireOnRoundStart(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnRoundStart(f.Brick, f, c); }
+    public static void FireOnRoundEnd(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnRoundEnd(f.Brick, f, c); }
+    public static void FireOnBeforeCheck(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnBeforeCheck(f.Brick, f, c); }
+    public static void FireOnBeforeDamageRoll(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnBeforeDamageRoll(f.Brick, f, c); }
+    public static void FireOnBeforeDamageIncomingRoll(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnBeforeDamageIncomingRoll(f.Brick, f, c); }
+    public static void FireOnDamageTaken(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnDamageTaken(f.Brick, f, c); }
+    public static void FireOnDamageDone(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnDamageDone(f.Brick, f, c); }
+    public static void FireOnBeforeAttackRoll(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnBeforeAttackRoll(f.Brick, f, c); }
+    public static void FireOnAfterAttackRoll(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnAfterAttackRoll(f.Brick, f, c); }
+    public static void FireOnBeforeDefendRoll(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnBeforeDefendRoll(f.Brick, f, c); }
+    public static void FireOnAfterDefendRoll(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnAfterDefendRoll(f.Brick, f, c); }
+    public static void FireOnBeforeHealGiven(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnBeforeHealGiven(f.Brick, f, c); }
+    public static void FireOnBeforeHealReceived(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnBeforeHealReceived(f.Brick, f, c); }
+    public static void FireOnAfterHealReceived(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnAfterHealReceived(f.Brick, f, c); }
+    public static void FireOnEquip(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnEquip(f.Brick, f, c); }
+    public static void FireOnUnequip(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnUnequip(f.Brick, f, c); }
+    public static void FireOnSpawn(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnSpawn(f.Brick, f, c); }
+    public static void FireOnDeath(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnDeath(f.Brick, f, c); }
 }
 
-public class ApplyFactOnAttackHit<T>(Func<T> toApply) : LogicBrick where T : LogicBrick
+public class ApplyFactOnAttackHit(LogicBrick toApply, int? duration = null) : LogicBrick
 {
-    public override void OnAfterAttackRoll(Fact fact, PHContext context)
+    protected override void OnAfterAttackRoll(Fact fact, PHContext context)
     {
         if (context.Check!.Result)
-            context.Target?.Unit?.AddUniqueFact(x => x.Brick is T, toApply);
+            context.Target?.Unit?.AddFact(toApply, duration);
     }
 }
-
-public class TimedBrick(DiceFormula duration) : LogicBrick
-{
-    private readonly int expiresAt = g.CurrentRound + duration.Roll();
-    public override bool IsBuff => true;
-    public override bool IsActive => true;
-
-    public override void OnRoundEnd(Fact fact, PHContext ctx)
-    {
-        if (g.CurrentRound >= expiresAt) fact.Remove();
-    }
-}
-
 public enum MergeStrategy { Replace, Max, Min, Sum, Or, And }
 
 public enum TargetingType { None, Direction, Unit, Pos }
@@ -133,7 +189,7 @@ public static class LogicHelpers
 
 public class QueryBrick(string queryKey, object value) : LogicBrick
 {
-    public override object? OnQuery(Fact fact, string key, string? arg) =>
+    protected override object? OnQuery(Fact fact, string key, string? arg) =>
         key == queryKey ? value : null;
 }
 
@@ -194,9 +250,10 @@ public class NaturalAttack(WeaponDef weapon) : ActionBrick("attack_with_nat")
         g.Attack(unit, target.Unit!, _item);
 }
 
-public class GrantProficiency(string skill, ProficiencyLevel level) : LogicBrick
+public class GrantProficiency(string skill, ProficiencyLevel level, bool requiresEquipped = false) : LogicBrick
 {
-    public override object? OnQuery(Fact fact, string key, string? arg) =>
+    public override bool RequiresEquipped => requiresEquipped;
+    protected override object? OnQuery(Fact fact, string key, string? arg) =>
         key == "proficiency" && arg == skill ? (int)level : null;
 }
 
@@ -208,7 +265,7 @@ public static class EntityExts
 
 public class ArmorBrick(int acBonus, int dexCap) : LogicBrick
 {
-    public override object? OnQuery(Fact fact, string key, string? arg) =>
+    protected override object? OnQuery(Fact fact, string key, string? arg) =>
         fact.IsEquipped() ? key switch
         {
             "ac" => new Modifier(ModifierCategory.ItemBonus, acBonus),
@@ -216,22 +273,6 @@ public class ArmorBrick(int acBonus, int dexCap) : LogicBrick
             _ => null,
         } : null;
 }
-
-public class WhenEquipped(LogicBrick inner) : LogicBrick
-{
-    // Always pass these through
-    public override void OnEquip(Fact fact, PHContext ctx) => inner.OnEquip(fact, ctx);
-    public override void OnUnequip(Fact fact, PHContext ctx) => inner.OnUnequip(fact, ctx);
-
-    public override object? OnQuery(Fact fact, string key, string? arg) => fact.IsEquipped() ? inner.OnQuery(fact, key, arg) : null;
-
-    public override void OnBeforeAttackRoll(Fact fact, PHContext ctx) { if (fact.IsEquipped()) inner.OnBeforeAttackRoll(fact, ctx); }
-    public override void OnBeforeDamageRoll(Fact fact, PHContext ctx) { if (fact.IsEquipped()) inner.OnBeforeDamageRoll(fact, ctx); }
-    public override void OnBeforeDefendRoll(Fact fact, PHContext ctx) { if (fact.IsEquipped()) inner.OnBeforeDefendRoll(fact, ctx); }
-    public override void OnDamageTaken(Fact fact, PHContext ctx) { if (fact.IsEquipped()) inner.OnDamageTaken(fact, ctx); }
-    public override void OnDamageDone(Fact fact, PHContext ctx) { if (fact.IsEquipped()) inner.OnDamageDone(fact, ctx); }
-}
-
 
 public class BaseDef
 {
@@ -254,20 +295,33 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
 
     public IEnumerable<Fact> LiveFacts => Facts.Where(x => !x.MarkedForRemoval);
 
+    public virtual IEnumerable<Fact> GetAllFacts(PHContext? ctx) => LiveFacts;
+
     public void ShareFactsFrom(Entity<DefT> other)
     {
         foreach (var fact in other.LiveFacts)
             Facts.Add(fact);
     }
 
-    public Fact AddUniqueFact(Func<Fact, bool> check, Func<LogicBrick> brick)
+    public Fact AddFact(LogicBrick brick, int? duration = null)
     {
-        return LiveFacts.FirstOrDefault(check) ?? AddFact(brick());
-    }
+        if (brick.StackMode == StackMode.Stack)
+        {
+            var existing = LiveFacts.FirstOrDefault(f => f.Brick.GetType() == brick.GetType());
+            if (existing != null)
+            {
+                if (existing.Stacks < brick.MaxStacks)
+                {
+                    existing.Stacks++;
+                    LogicBrick.FireOnStackAdded(existing.Brick, existing);
+                }
+                return existing;
+            }
+        }
 
-    public Fact AddFact(LogicBrick brick)
-    {
         var fact = new Fact(this, brick, brick.CreateData());
+        if (duration.HasValue)
+            fact.ExpiresAt = g.CurrentRound + duration.Value;
         Facts.Add(fact);
         Log.Write($"add fact {fact.Brick} => {this}");
         if (brick.IsActive)
@@ -275,20 +329,27 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
             if (ActiveFactCount++ == 0 && this is not IUnit)
                 g.ActiveEntities.Add(this);
         }
-        brick.OnFactAdded(fact);
+        LogicBrick.FireOnFactAdded(brick, fact);
         return fact;
     }
 
-    public void Fire(Func<LogicBrick, Action<Fact, PHContext>> action, IUnit? source, Target? target = null)
+    public void RemoveStack(Type type)
     {
-        using var ctx = PHContext.Create(source, target ?? Target.None);
-        FireWithCtx(action, ctx);
+        var fact = LiveFacts.FirstOrDefault(f => f.Brick.GetType() == type);
+        if (fact == null) return;
+        fact.Stacks--;
+        LogicBrick.FireOnStackRemoved(fact.Brick, fact);
+        if (fact.Stacks <= 0)
+            fact.Remove();
     }
 
-    public void FireWithCtx(Func<LogicBrick, Action<Fact, PHContext>> action, PHContext ctx)
+    public void RemoveStack<T>() where T : LogicBrick => RemoveStack(typeof(T));
+
+    public void ExpireFacts()
     {
-        foreach (var c in LiveFacts)
-            action(c.Brick)(c, ctx);
+        foreach (var fact in LiveFacts)
+            if (fact.ExpiresAt.HasValue && g.CurrentRound >= fact.ExpiresAt.Value)
+                fact.Remove();
     }
 
     public void CleanupMarkedFacts() => Facts.RemoveAll(f => f.MarkedForRemoval);
@@ -296,14 +357,14 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
     public void DecrementActiveFact()
     {
         if (--ActiveFactCount == 0 && this is not IUnit)
-            GameState.g.ActiveEntities.Remove(this);
+            g.ActiveEntities.Remove(this);
     }
 
     public virtual object? Query(string key, string? arg = null, MergeStrategy merge = MergeStrategy.Replace)
     {
         object? result = null;
         foreach (var fact in LiveFacts)
-            result = Merge(result, fact.Brick.OnQuery(fact, key, arg), merge);
+            result = Merge(result, LogicBrick.FireOnQuery(fact.Brick, fact, key, arg), merge);
         return result;
     }
 
@@ -311,6 +372,9 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
         Query(key, arg, merge) is T v ? v : defaultValue;
 
     public virtual bool Has(string key) => Query(key, null, MergeStrategy.Or, false);
+    public virtual bool Can(string key) => Query(key, null, MergeStrategy.And, true);
+
+    public bool HasFact<T>() where T : LogicBrick => LiveFacts.Any(f => f.Brick is T);
 
     protected static object? Merge(object? current, object? next, MergeStrategy strategy)
     {
@@ -472,14 +536,6 @@ public interface IUnit : IEntity
     bool TryUseCharge(string name);
     void TickPools();
     ChargePool? GetPool(string name);
-
-    void FireAllFacts(Func<LogicBrick, Action<Fact, PHContext>> value, PHContext ctx)
-    {
-        FireWithCtx(value, ctx);
-        foreach (var item in Inventory)
-            item.FireWithCtx(value, ctx);
-    }
-
 }
 
 public class ChargePool(int max, int regenRate)
@@ -507,6 +563,15 @@ public abstract class Unit<TDef>(TDef def) : Entity<TDef>(def), IUnit where TDef
     public List<ActionBrick> Actions { get; } = [];
     public List<SpellBrickBase> Spells { get; } = [];
     public Dictionary<ActionBrick, object?> ActionData { get; } = [];
+
+    public override IEnumerable<Fact> GetAllFacts(PHContext? ctx)
+    {
+        foreach (var f in LiveFacts) yield return f;
+        foreach (var item in Inventory)
+            foreach (var f in item.LiveFacts) yield return f;
+        if (ctx?.Weapon != null && !Inventory.Contains(ctx.Weapon))
+            foreach (var f in ctx.Weapon.LiveFacts) yield return f;
+    }
     IEnumerable<Fact> IUnit.Facts => LiveFacts;
     readonly Dictionary<string, ChargePool> Pools = [];
     public abstract bool IsDM { get; }
@@ -565,10 +630,10 @@ public abstract class Unit<TDef>(TDef def) : Entity<TDef>(def), IUnit where TDef
     {
         object? result = null;
         foreach (var fact in LiveFacts)
-            result = Merge(result, fact.Brick.OnQuery(fact, key, arg), merge);
+            result = Merge(result, LogicBrick.FireOnQuery(fact.Brick, fact, key, arg), merge);
         foreach (var item in Inventory)
             foreach (var fact in item.LiveFacts)
-                result = Merge(result, fact.Brick.OnQuery(fact, key, arg), merge);
+                result = Merge(result, LogicBrick.FireOnQuery(fact.Brick, fact, key, arg), merge);
         return result;
     }
     public override T Query<T>(string key, string? arg, MergeStrategy merge, T defaultValue) =>
@@ -577,11 +642,11 @@ public abstract class Unit<TDef>(TDef def) : Entity<TDef>(def), IUnit where TDef
     {
         var mods = new Modifiers();
         foreach (var fact in LiveFacts)
-            if (fact.Brick.OnQuery(fact, key, arg) is Modifier m)
+            if (LogicBrick.FireOnQuery(fact.Brick, fact, key, arg) is Modifier m)
                 mods.AddModifier(m);
         foreach (var item in Inventory)
             foreach (var fact in item.LiveFacts)
-                if (fact.Brick.OnQuery(fact, key, arg) is Modifier m)
+                if (LogicBrick.FireOnQuery(fact.Brick, fact, key, arg) is Modifier m)
                     mods.AddModifier(m);
         return mods;
     }
@@ -636,7 +701,8 @@ public abstract class Unit<TDef>(TDef def) : Entity<TDef>(def), IUnit where TDef
             Equipped[mainSlot] = item;
         }
 
-        item.Fire(x => x.OnEquip, this);
+        using var ctx = PHContext.Create(this, Target.None);
+        LogicBrick.FireOnEquip(item, ctx);
         Log.Write("equip: {0}", item.Def.Name);
         return true;
     }
@@ -655,7 +721,8 @@ public abstract class Unit<TDef>(TDef def) : Entity<TDef>(def), IUnit where TDef
         if (Equipped.TryGetValue(mainSlot, out var mainItem) && mainItem == item)
             Equipped.Remove(mainSlot);
 
-        item.Fire(x => x.OnUnequip, this);
+        using var ctx = PHContext.Create(this, Target.None);
+        LogicBrick.FireOnUnequip(item, ctx);
         Log.Write("unequip: {0}", item.Def.Name);
         return true;
     }
@@ -664,18 +731,18 @@ public abstract class Unit<TDef>(TDef def) : Entity<TDef>(def), IUnit where TDef
 public class GrantAction(ActionBrick action) : LogicBrick
 {
     public ActionBrick Action => action;
-  public override void OnFactAdded(Fact fact) => (fact.Entity as IUnit)?.AddAction(action);
+  protected override void OnFactAdded(Fact fact) => (fact.Entity as IUnit)?.AddAction(action);
 }
 
 public class GrantSpell(SpellBrickBase spell) : LogicBrick
 {
     public SpellBrickBase Spell => spell;
-    public override void OnFactAdded(Fact fact) => (fact.Entity as IUnit)?.AddSpell(spell);
+    protected override void OnFactAdded(Fact fact) => (fact.Entity as IUnit)?.AddSpell(spell);
 }
 
 public class GrantPool(string name, int max, int regenRate) : LogicBrick
 {
-    public override void OnFactAdded(Fact fact)
+    protected override void OnFactAdded(Fact fact)
     {
         Log.Write($"on fact added pool {name} to {fact.Entity}");
         (fact.Entity as IUnit)?.AddPool(name, max, regenRate);

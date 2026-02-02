@@ -18,10 +18,12 @@ public static class ListPicker
 
     public static T? Pick<T>(IReadOnlyList<T> items, string prompt, int defaultIndex = 0) where T : class, ISelectable
     {
+        if (items.Count == 0) return null;
+        
         var layer = Draw.Layers[2];
         using var _ = layer.Activate(fullScreen: true);
         
-        int index = defaultIndex;
+        int index = Math.Clamp(defaultIndex, 0, items.Count - 1);
         while (true)
         {
             DrawPicker(layer, items, index, prompt, null, 0);

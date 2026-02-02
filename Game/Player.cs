@@ -136,7 +136,7 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def), IFormattable
 
 internal class PlayerSkills : LogicBrick
 {
-  public override object? OnQuery(Fact fact, string key, string? arg)
+  protected override object? OnQuery(Fact fact, string key, string? arg)
   {
     return key switch
     {

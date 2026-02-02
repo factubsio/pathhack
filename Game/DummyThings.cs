@@ -13,6 +13,15 @@ public static class DummyThings
     public static readonly ItemDef ProtRing = new() { id = "prot_ring", Name = "ring of protection", Glyph = new(ItemClasses.Ring, ConsoleColor.Yellow) };
     public static readonly ItemDef StrRing = new() { id = "str_ring", Name = "ring of strength", Glyph = new(ItemClasses.Ring, ConsoleColor.Green) };
 
+    public static readonly ItemDef Blindfold = new()
+    {
+        id = "blindfold",
+        Name = "blindfold",
+        Glyph = new(ItemClasses.Amulet, ConsoleColor.DarkGray),
+        DefaultEquipSlot = ItemSlots.Face,
+        Components = [new ApplyOnEquip(BlindBuff.Instance)],
+    };
+
     public static readonly WeaponDef Dart = new()
     {
         id = "dart",
@@ -24,7 +33,7 @@ public static class DummyThings
         Stackable = true,
     };
 
-    public static readonly ItemDef[] All = [Ration, Apple, HealPotion, SpeedPotion, TeleScroll, IdScroll, FireWand, ColdWand, ProtRing, StrRing];
+    public static readonly ItemDef[] All = [Ration, Apple, HealPotion, SpeedPotion, TeleScroll, IdScroll, FireWand, ColdWand, ProtRing, StrRing, Blindfold];
 
     public static readonly MonsterDef Dummy = new()
     {

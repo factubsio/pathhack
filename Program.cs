@@ -1,5 +1,6 @@
 using System.Runtime.Intrinsics.Arm;
 using Pathhack.Dat;
+using Pathhack.Test;
 using static Pathhack.Map.DepthAnchor;
 
 List<BranchTemplate> templates = [
@@ -28,10 +29,17 @@ if (args.Length > 0)
 else
 {
     // bubble dbeug
-    // LevelGen.ForcedLevel1 = EndShrineLevels.EndShrine1;
+    LevelGen.ForcedLevel1 = TestLevel.OneRoom;
 }
 
 using var _noCursor = new HideCursor();
+
+using var _rec = TtyRec.Start("game.rec");
+using var _plog = new StreamWriter("pline.log") { AutoFlush = true };
+
+// SampleTests.RegisterAll();
+// TestRunner.Run();
+// return;
 
 var creation = new CharCreation();
 if (!creation.Run()) return;
@@ -41,6 +49,7 @@ if (!creation.Run()) return;
 while (true)
 {
     ResetGameState();
+    g.PlineLog = _plog;
 
     byte[] seed = new byte[4];
     Random.Shared.NextBytes(seed);

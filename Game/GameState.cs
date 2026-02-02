@@ -114,6 +114,7 @@ public class GameState
 {
     public static GameState g { get; private set; } = new();
     public static Level lvl => g.CurrentLevel!;
+    public StreamWriter? PlineLog;
 
     private int _seed;
     public int Seed
@@ -186,8 +187,8 @@ public class GameState
     {
         var check = ctx.Check!;
 
-        ctx.Source?.FireAllFacts(x => x.OnBeforeCheck, ctx);
-        ctx.Target.Unit?.FireAllFacts(x => x.OnBeforeCheck, ctx);
+        LogicBrick.FireOnBeforeCheck(ctx.Source, ctx);
+        LogicBrick.FireOnBeforeCheck(ctx.Target.Unit, ctx);
 
         int net = check.Advantage - check.Disadvantage;
         bool hasAdv = net > 0;
@@ -237,6 +238,7 @@ public class GameState
     {
         Messages.Add(msg);
         MessageHistory.Add(msg);
+        PlineLog?.WriteLine($"[{CurrentRound}] {msg}");
     }
     public void pline(string fmt, params object[] args) => pline(string.Format(fmt, args));
 
@@ -259,27 +261,29 @@ public class GameState
 
         Perf.StartRound();
         Draw.ResetRoundStats();
-        lvl.Units.Sort((a, b) => b.Initiative.CompareTo(a.Initiative));
+        lvl.SortUnitsByInitiative();
 
         LevelId startLevel = u.Level;
 
-        // OnRoundStart for active entities and all units
-        Perf.Start();
-        foreach (var entity in ActiveEntities)
-            entity.FireWithCtx(x => x.OnRoundStart, PHContext.Create(null, Target.None));
-        foreach (var unit in lvl.Units)
-            unit.FireWithCtx(x => x.OnRoundStart, PHContext.Create(unit, Target.None));
-        Perf.Stop("OnRoundStart");
-
-        foreach (var Unit in lvl.Units)
+        foreach (var Unit in lvl.LiveUnits)
         {
             Unit.Energy += 12;
         }
 
-        foreach (var unit in lvl.Units)
+        // OnRoundStart for active entities and all units
+        Perf.Start();
+        foreach (var entity in ActiveEntities)
+            LogicBrick.FireOnRoundStart(entity, PHContext.Create(null, Target.None));
+        foreach (var unit in lvl.LiveUnits)
         {
-            if (unit.IsDead) continue;
-            while (unit.Energy > 1)
+            LogicBrick.FireOnRoundStart(unit, PHContext.Create(unit, Target.None));
+        }
+        Perf.Stop("OnRoundStart");
+
+        foreach (var unit in lvl.LiveUnits)
+        {
+            // Check for dead here in case somethign kills itself
+            while (unit.Energy > 1 && !unit.IsDead)
             {
                 if (u.Level != startLevel) break;
 
@@ -292,7 +296,7 @@ public class GameState
                 if (unit.IsPlayer)
                 {
                     Perf.Start();
-                    UI.Input.PlayerTurn();
+                    Input.PlayerTurn();
                     Perf.Stop("PlayerTurn");
                     if (u.Level != startLevel) break;
                 }
@@ -315,19 +319,23 @@ public class GameState
 
         // OnRoundEnd for all units
         Perf.Start();
-        foreach (var unit in lvl.Units)
+        foreach (var unit in lvl.LiveUnits)
         {
-            unit.FireWithCtx(x => x.OnRoundEnd, PHContext.Create(unit, Target.None));
+            unit.ExpireFacts();
+            LogicBrick.FireOnRoundEnd(unit, PHContext.Create(unit, Target.None));
             unit.TickPools();
         }
         foreach (var entity in ActiveEntities)
-            entity.FireWithCtx(x => x.OnRoundEnd, PHContext.Create(null, Target.None));
+        {
+            entity.ExpireFacts();
+            LogicBrick.FireOnRoundEnd(entity, PHContext.Create(null, Target.None));
+        }
         CleanupFacts();
         Perf.Stop("OnRoundEnd");
 
-        lvl.Units.RemoveAll(x => x.IsDead);
+        lvl.ReapDead();
 
-        foreach (var unit in lvl.Units)
+        foreach (var unit in lvl.LiveUnits)
         {
             int regen = unit.NaturalRegen;
             while (regen > 0)
@@ -348,10 +356,6 @@ public class GameState
         CurrentRound++;
     }
 
-    void TickActiveEntities()
-    {
-    }
-
     void MonsterTurn(IUnit mon)
     {
         if (mon is not Monster m) { mon.Energy = 0; return; }
@@ -368,7 +372,7 @@ public class GameState
         Log.Write($"LevelChange {u.Level} -> {id}");
         if (CurrentLevel is { } old)
         {
-            old.Units.Remove(u);
+            old.RemoveUnit(u);
             old.LastExitTurn = CurrentRound;
         }
 
@@ -408,7 +412,7 @@ public class GameState
             SpawnAt.RandomAny => level.FindLocation(level.NoUnit) ?? Pos.Zero,
             _ => throw new NotImplementedException(),
         };
-        level.Units.Add(u);
+        level.PlaceUnit(u, upos);
         FovCalculator.Compute(level, upos, u.DarkVisionRadius);
     }
 
@@ -428,14 +432,14 @@ public class GameState
         using var ctx = PHContext.Create(source, new Target(target, target.Pos));
         ctx.HealFormula = formula;
 
-        source.FireAllFacts(x => x.OnBeforeHealGiven, ctx);
-        target.FireAllFacts(x => x.OnBeforeHealReceived, ctx);
+        LogicBrick.FireOnBeforeHealGiven(source, ctx);
+        LogicBrick.FireOnBeforeHealReceived(target, ctx);
 
         int roll = ctx.HealFormula.Roll() + ctx.HealModifiers.Calculate();
         int actual = target.HP.Heal(roll);
         ctx.HealedAmount = actual;
 
-        target.FireAllFacts(x => x.OnAfterHealReceived, ctx);
+        LogicBrick.FireOnAfterHealReceived(target, ctx);
 
         Log.Write("{0} heals {1} for {2} ({3} actual)", source, target, roll, actual);
     }
@@ -464,13 +468,13 @@ public class GameState
             check.Modifiers.AddModifier(new(ModifierCategory.ItemBonus, with.Potency, "potency"));
         }
 
-        attacker.FireAllFacts(x => x.OnBeforeAttackRoll, ctx);
-        defender.FireAllFacts(x => x.OnBeforeDefendRoll, ctx);
+        LogicBrick.FireOnBeforeAttackRoll(attacker, ctx);
+        LogicBrick.FireOnBeforeDefendRoll(defender, ctx);
 
         bool hit = DoCheck(ctx, $"{attacker} attacks {defender}");
 
-        attacker.FireAllFacts(x => x.OnAfterAttackRoll, ctx);
-        defender.FireAllFacts(x => x.OnAfterDefendRoll, ctx);
+        LogicBrick.FireOnAfterAttackRoll(attacker, ctx);
+        LogicBrick.FireOnAfterDefendRoll(defender, ctx);
 
         if (hit)
         {
@@ -479,7 +483,7 @@ public class GameState
                 Formula = weapon?.BaseDamage ?? d(2),
                 Type = weapon?.DamageType ?? DamageTypes.Blunt
             };
-            dmg.Modifiers.AddModifier(new(ModifierCategory.UntypedStackable, attacker.GetDamageBonus(), "inherent"));
+            dmg.Modifiers.AddModifier(new(ModifierCategory.UntypedStackable, attacker.GetDamageBonus(), "str_inherent"));
             ctx.Damage.Add(dmg);
 
             if (thrown)
@@ -491,8 +495,6 @@ public class GameState
             }
             else if (attacker.IsPlayer)
             {
-                int strDamage = Mod(u.Attributes.Str.Value);
-                dmg.Modifiers.AddModifier(new(ModifierCategory.UntypedStackable, strDamage, "str"));
                 pline($"You hit the {defender}.");
             }
             else if (defender.IsPlayer)
@@ -545,8 +547,8 @@ public class GameState
         var source = ctx.Source!;
         var target = ctx.Target.Unit!;
 
-        source.FireAllFacts(x => x.OnBeforeDamageRoll, ctx);
-        target.FireAllFacts(x => x.OnBeforeDamageIncomingRoll, ctx);
+        LogicBrick.FireOnBeforeDamageRoll(source, ctx);
+        LogicBrick.FireOnBeforeDamageIncomingRoll(target, ctx);
 
         int damage = 0;
         foreach (var dmg in ctx.Damage)
@@ -561,8 +563,8 @@ public class GameState
         if (target.IsPlayer)
             Movement.Stop();
 
-        source.FireAllFacts(x => x.OnDamageDone, ctx);
-        target.FireAllFacts(x => x.OnDamageTaken, ctx);
+        LogicBrick.FireOnDamageDone(source, ctx);
+        LogicBrick.FireOnDamageTaken(target, ctx);
 
         if (target.HP.IsZero)
         {
@@ -588,7 +590,7 @@ public class GameState
                     g.pline($"{source:The} kills {target:the}!");
 
                 using (var death = PHContext.Create(source, Target.From(target)))
-                    target.FireAllFacts(f => f.OnDeath, death);
+                    LogicBrick.FireOnDeath(target, death);
 
                 // drop inventory
                 foreach (var item in target.Inventory.ToList())
@@ -609,9 +611,9 @@ public class GameState
         Log.Write("drop: {0}", item.Def.Name);
     }
 
-    public void DoThrow(IUnit thrower, Item item, Pos dir)
+    public Pos DoThrow(IUnit thrower, Item item, Pos dir, Pos? from = null)
     {
-        Pos pos = thrower.Pos;
+        Pos pos = from ?? thrower.Pos;
         Pos last = pos;
         IUnit? hit = null;
         int range = Math.Max(1, 4 + thrower.StrMod - item.Def.Weight / 40);
@@ -624,15 +626,16 @@ public class GameState
             if (hit != null) break;
         }
         int total = 150;
-        int frames = last.ChebyshevDist(thrower.Pos);
+        int frames = last.ChebyshevDist(from ?? thrower.Pos);
         if (frames > 0)
         {
             int perFrame = total / frames;
-            Draw.AnimateProjectile(thrower.Pos, last, item.Def.Glyph, perFrame);
+            Draw.AnimateProjectile(from ?? thrower.Pos, last, item.Def.Glyph, perFrame);
         }
         if (hit != null)
             Attack(thrower, hit, item, thrown: true);
         lvl.PlaceItem(item, last);
+        return last;
     }
 
     public void DoPickup(IUnit unit, Item item)
@@ -692,10 +695,7 @@ public class GameState
         PendingFactCleanup.Clear();
     }
 
-    internal void FlashLit(TileBitset moreLit)
-    {
-        FovCalculator.Compute(lvl, upos, u.DarkVisionRadius, moreLit);
-    }
+    internal static void FlashLit(TileBitset moreLit) => FovCalculator.Compute(lvl, upos, u.DarkVisionRadius, moreLit);
 
     // Assume unit is on a portal or stairs
     internal void Portal(IUnit unit)

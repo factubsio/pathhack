@@ -30,7 +30,7 @@ public static class Grammar
 
     public static string VTense(IUnit subj, string verb)
     {
-        if (subj.IsPlayer) return verb;
+        if (subj.IsPlayer) return verb == "is" ? "are" : verb;
         // singular: add s/es
         if (verb.EndsWith('s') || verb.EndsWith('x') || verb.EndsWith("ch") || verb.EndsWith("sh"))
             return verb + "es";

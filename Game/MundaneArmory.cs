@@ -32,6 +32,37 @@ public static class MundaneArmory
         Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
     };
 
+    public static readonly WeaponDef Club = new()
+    {
+        id = "club",
+        Name = "club",
+        BaseDamage = d(6),
+        Profiency = Proficiencies.Club,
+        DamageType = DamageTypes.Blunt,
+        Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
+    };
+
+    public static readonly WeaponDef SpikedClub = new()
+    {
+        id = "spiked_club",
+        Name = "spiked club",
+        BaseDamage = d(8),
+        Profiency = Proficiencies.Club,
+        DamageType = DamageTypes.Blunt,
+        Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
+    };
+
+    public static readonly WeaponDef Quarterstaff = new()
+    {
+        id = "quarterstaff",
+        Name = "quarterstaff",
+        BaseDamage = d(6),
+        Profiency = Proficiencies.Club,
+        DamageType = DamageTypes.Blunt,
+        Hands = 2,
+        Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
+    };
+
     public static readonly WeaponDef Scimitar = new()
     {
         id = "scimitar",
@@ -149,7 +180,7 @@ public static class MundaneArmory
         Name = "ring of knives",
         Glyph = new(ItemClasses.Ring, ConsoleColor.Cyan),
         DefaultEquipSlot = ItemSlots.Ring,
-        Components = [new WhenEquipped(new GrantProficiency(Proficiencies.Dagger, ProficiencyLevel.Trained))],
+        Components = [new GrantProficiency(Proficiencies.Dagger, ProficiencyLevel.Trained, requiresEquipped: true)],
     };
 
     public static readonly WeaponDef[] AllWeapons = [Dagger, Longsword, Scimitar, Rapier, Whip, SpikedChain, Scythe, Falchion];

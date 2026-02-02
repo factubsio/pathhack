@@ -20,6 +20,14 @@ public record Command(string Name, ArgType Arg, Action<CommandArg> Action);
 
 public static class Input
 {
+    public static Queue<ConsoleKey>? InjectedKeys;
+
+    public static ConsoleKeyInfo NextKey()
+    {
+        if (InjectedKeys != null && InjectedKeys.TryDequeue(out var k))
+            return new ConsoleKeyInfo('\0', k, false, false, false);
+        return Console.ReadKey(true);
+    }
     static readonly Dictionary<string, Command> _extCommands = new(StringComparer.OrdinalIgnoreCase)
     {
         ["quit"] = new("quit", ArgType.None, _ => g.Done("Quit")),
@@ -496,6 +504,12 @@ public static class Input
 
     static void ZapSpell()
     {
+        if (!u.Can("can_speak"))
+        {
+            g.pline($"You are currently silenced!");
+            return;
+        }
+
         if (u.Spells.Count == 0)
         {
             g.pline("You don't know any spells right now.");
@@ -527,7 +541,7 @@ public static class Input
         {
             g.pline("In what direction?");
             Draw.DrawCurrent();
-            var dir = GetDirection(Console.ReadKey(true).Key);
+            var dir = GetDirection(NextKey().Key);
             if (dir == null) return;
             target = new Target(null, dir.Value);
         }
@@ -573,7 +587,7 @@ public static class Input
         {
             g.pline("In what direction?");
             Draw.DrawCurrent();
-            var dir = GetDirection(Console.ReadKey(true).Key);
+            var dir = GetDirection(NextKey().Key);
             if (dir == null) return;
             target = new Target(null, dir.Value);
         }
@@ -759,7 +773,7 @@ public static class Input
         while (true)
         {
             Draw.DrawCurrent(cursor);
-            var key = Console.ReadKey(true);
+            var key = NextKey();
             
             if (key.Key == ConsoleKey.Escape)
             {
@@ -868,7 +882,7 @@ public static class Input
     static CommandArg GetArg(ArgType type) => type.Kind switch
     {
         ArgKind.None => new NoArg(),
-        ArgKind.Dir => GetDirection(Console.ReadKey(true).Key) is { } d ? new DirArg(d) : new NoArg(),
+        ArgKind.Dir => GetDirection(NextKey().Key) is { } d ? new DirArg(d) : new NoArg(),
         ArgKind.Int => PromptLine(type.Prompt) is { } s && int.TryParse(s, out int v) ? new IntArg(v) : new NoArg(),
         ArgKind.String => PromptLine(type.Prompt) is { } s ? new StringArg(s) : new NoArg(),
         _ => new NoArg(),
@@ -926,7 +940,7 @@ public static class Input
         List<char> chars = [];
         while (true)
         {
-            ConsoleKeyInfo k = Console.ReadKey(true);
+            ConsoleKeyInfo k = NextKey();
             if (k.Key == ConsoleKey.Enter) return new string([.. chars]);
             if (k.Key == ConsoleKey.Escape) return null;
             if (k.Key == ConsoleKey.Backspace && chars.Count > 0)
@@ -1004,23 +1018,30 @@ public static class Input
                 return;
             }
 
-            Pos next = upos + dir;
-            if (!lvl.InBounds(next)) return;
-            var tgt = lvl.UnitAt(next);
-            if (tgt != null)
+            if (dir == Pos.Zero)
             {
-                g.Attack(u, tgt, u.GetWieldedItem());
                 u.Energy -= ActionCosts.OneAction.Value;
             }
-            else if (lvl.CanMoveTo(upos, next, u) || g.DebugMode)
+            else
             {
-                lvl.MoveUnit(u, next);
-                LookHere();
+                Pos next = upos + dir;
+                if (!lvl.InBounds(next)) return;
+                var tgt = lvl.UnitAt(next);
+                if (tgt != null)
+                {
+                    g.Attack(u, tgt, u.GetWieldedItem());
+                    u.Energy -= ActionCosts.OneAction.Value;
+                }
+                else if (lvl.CanMoveTo(upos, next, u) || g.DebugMode)
+                {
+                    lvl.MoveUnit(u, next);
+                }
+                else if (lvl.IsDoorClosed(next))
+                {
+                    OpenDoor(new DirArg(dir));
+                }
             }
-            else if (lvl.IsDoorClosed(next))
-            {
-                OpenDoor(new DirArg(dir));
-            }
+            LookHere();
         }
         else if (key.KeyChar == '>')
         {
@@ -1050,8 +1071,9 @@ public static class Input
         }
 
         Draw.ClearMessages();
+
         Perf.Pause();
-        var key = Console.ReadKey(true);
+        var key = NextKey();
         Perf.Resume();
         HandleKey(key);
     }
@@ -1156,7 +1178,7 @@ public class Menu<T>
             }
 
             Draw.Blit();
-            var key = Console.ReadKey(true);
+            var key = Input.NextKey();
             
             // paging
             if (key.Key == ConsoleKey.RightArrow || key.KeyChar == '>' || key.Key == ConsoleKey.Spacebar)

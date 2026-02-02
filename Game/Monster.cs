@@ -156,7 +156,8 @@ public class Monster : Unit<MonsterDef>, IFormattable
     Monster m = new(def) { Template = template };
     int hpMod = template switch { MonsterTemplate.Elite => def.HP / 10 + 1, MonsterTemplate.Weak => -(def.HP / 10 + 1), _ => 0 };
     m.HP.Reset(Math.Max(1, def.HP + hpMod));
-    m.Fire(x => x.OnSpawn, m);
+    using var ctx = PHContext.Create(m, Target.None);
+    LogicBrick.FireOnSpawn(m, ctx);
     return m;
   }
 
@@ -197,8 +198,11 @@ public class Monster : Unit<MonsterDef>, IFormattable
       int penalty = WasRecentlyAt(candidate) ? 100 : 0;
       int score = dist + penalty;
 
-      // random tiebreaker to avoid snaking
-      if (score < bestScore || (score == bestScore && g.Rn2(2) == 0))
+      // weighted tiebreaker: 2/3 chance to prefer cardinal over diagonal
+      bool wins = score < bestScore 
+          || (score == bestScore && g.Rn2(dir.IsDiagonal ? 6 : 3) == 0);
+      
+      if (wins)
       {
         best = candidate;
         bestScore = score;

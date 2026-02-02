@@ -3,19 +3,23 @@ namespace Pathhack.Dat;
 public static class TestLevel
 {
     public static readonly SpecialLevel OneRoom = new("test", """
-        1111111111111
-        1...........1
-        1...........1
-        1...<.D.>...1
-        1...........1
-        1...........1
-        1111111111111
+        11111111111111111
+        1...............1
+        1...............1
+        1...............1
+        1...............1
+        1...<.D.>.......1
+        1...............1
+        1...............1
+        1...............1
+        1...............1
+        11111111111111111
         """,
         PostRender: b =>
         {
             b.Stair(b['<'], TileType.BranchUp);
             b.Stair(b['>'], TileType.StairsDown);
-            b.Monster(DummyThings.Dummy, b['D']);
+            b.Monster(Derro.Strangler, b['D']);
             b.Level.NoInitialSpawns = true;
         });
 

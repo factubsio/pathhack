@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+
 namespace Pathhack.Game;
 
 public enum ModifierCategory
@@ -181,8 +183,15 @@ public class DamageRoll
     public bool Halved { get; private set; }
     public bool Doubled { get; private set; }
 
+    private int _extraDice = 0;
+    public int ExtraDice
+    {
+        get => _extraDice;
+        set => _extraDice = Math.Max(value, _extraDice);
+    }
+
     int? _rolled;
-    public int Base => _rolled ??= Formula.Roll();
+    public int Base => _rolled ??= Formula.Roll(_extraDice);
 
     public int Total
     {

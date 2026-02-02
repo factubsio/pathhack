@@ -97,7 +97,7 @@ public static class LevelGen
 
     public static SpecialLevel? GetTemplate(string? name) => name == null ? null : SpecialLevels.TryGetValue(name, out var level) ? level : null;
 
-    static readonly Dictionary<string, SpecialLevel> SpecialLevels = new()
+    internal static readonly Dictionary<string, SpecialLevel> SpecialLevels = new()
     {
         ["everflame_tomb"] = Dat.CryptLevels.EverflameEnd,
         ["bigroom_rect"] = Dat.BigRoomLevels.Rectangle,

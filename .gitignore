@@ -16,6 +16,8 @@
 .amazonq
 .kiro
 
+/game.rec
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
