@@ -54,6 +54,8 @@ public class Monster : Unit<MonsterDef>, IFormattable
   // where monster thinks player is (perfect vision for now)
   public Pos? ApparentPlayerPos { get; private set; }
 
+  public bool IsAsleep;
+
   // anti-oscillation: last N positions
   const int TrackSize = 5;
   readonly Pos[] _track = new Pos[TrackSize];
@@ -89,13 +91,13 @@ public class Monster : Unit<MonsterDef>, IFormattable
   void UpdateApparentPos()
   {
     // always knows (pet, grabber, etc)
-    if (Has("always_knows_u"))
+    if (Has("always_knows_u") && !IsAsleep)
     {
       ApparentPlayerPos = upos;
       return;
     }
 
-    if (CanSeeYou)
+    if (CanSeeYou && !IsAsleep)
     {
       ApparentPlayerPos = upos;
       return;
@@ -163,6 +165,13 @@ public class Monster : Unit<MonsterDef>, IFormattable
 
   internal void DoTurn()
   {
+    if (IsAsleep)
+    {
+      UpdateApparentPos();
+      if (ApparentPlayerPos == null) { Energy = 0; return; }
+      IsAsleep = false;
+    }
+
     if (Def.Brain?.DoTurn(this) == true) return;
 
     // try any action that can execute

@@ -1,19 +1,18 @@
 using System.Runtime.Intrinsics.Arm;
 using Pathhack.Dat;
-using Pathhack.Test;
 using static Pathhack.Map.DepthAnchor;
 
 List<BranchTemplate> templates = [
-    new("dungeon", "Dungeon", (3, 3)) {
+    new("dungeon", "Dungeon", (6, 9)) {
         Levels = [
             new("sanctuary", ["sanctuary_1"], FromBottom, 0),
             // new("challenge", ["challenge_a", "challenge_b"], RelativeTo, -1, 1, "sanctuary"),
-            new("bigroom", ["bigroom_rect", "bigroom_oval"], FromTop, 1, 1, Required: false),
+            new("bigroom", ["bigroom_rect", "bigroom_oval"], FromTop, 3, 6, Required: false),
         ]
     },
     new("crypt", "Crypt of the Everflame", (1, 1)) {
         Parent = "dungeon",
-        EntranceDepth = (1, 2),
+        EntranceDepth = (2, 5),
         Levels = [
             new("crypt_end", ["everflame_tomb"], FromBottom, 0),
         ]
@@ -29,7 +28,7 @@ if (args.Length > 0)
 else
 {
     // bubble dbeug
-    LevelGen.ForcedLevel1 = TestLevel.OneRoom;
+    // LevelGen.ForcedLevel1 = TestLevel.OneRoom;
 }
 
 using var _noCursor = new HideCursor();

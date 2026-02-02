@@ -131,6 +131,23 @@ public static class LevelGen
             xAxis[x + 2] = (x % 5 == 0) ? xChars[x % xChars.Length] : ' ';
         Log(new string(xAxis));
 
+        // Build room type overlay
+        Dictionary<Pos, char> roomLabels = [];
+        for (int i = 0; i < level.Rooms.Count; i++)
+        {
+            var room = level.Rooms[i];
+            if (room.Type == RoomType.Ordinary) continue;
+            if (room.Interior.Count == 0) continue;
+            char label = room.Type switch
+            {
+                RoomType.GoblinNest => 'G',
+                RoomType.GremlinParty => 'g',
+                RoomType.GremlinPartyBig => 'P',
+                _ => '?'
+            };
+            roomLabels[room.Interior[0]] = label;
+        }
+
         for (int y = 0; y < level.Height; y++)
         {
             char[] row = new char[level.Width + 2];
@@ -138,17 +155,21 @@ public static class LevelGen
             row[1] = ' ';
             for (int x = 0; x < level.Width; x++)
             {
-                row[x + 2] = level[new(x, y)].Type switch
-                {
-                    TileType.Rock => ' ',
-                    TileType.Floor => '.',
-                    TileType.Wall => '#',
-                    TileType.Corridor => ',',
-                    TileType.Door => '+',
-                    TileType.StairsUp => '<',
-                    TileType.StairsDown => '>',
-                    _ => '?',
-                };
+                Pos p = new(x, y);
+                if (roomLabels.TryGetValue(p, out char label))
+                    row[x + 2] = label;
+                else
+                    row[x + 2] = level[p].Type switch
+                    {
+                        TileType.Rock => ' ',
+                        TileType.Floor => '.',
+                        TileType.Wall => '#',
+                        TileType.Corridor => ',',
+                        TileType.Door => '+',
+                        TileType.StairsUp => '<',
+                        TileType.StairsDown => '>',
+                        _ => '?',
+                    };
             }
             Log(new string(row));
         }
@@ -247,23 +268,51 @@ public static class LevelGen
         return i;
     }
 
+    static int RequireDepth(Level l, int min, int max = 99) => l.Depth >= min && l.Depth <= max ? 1 : 0;
+    static int RequireSize(Room r, int min) => r.Interior.Count >= min ? 1 : 0;
+    static int RequireNoUpStairs(Level l, Room r) => r.Interior.Any(p => 
+        l[p].Type is TileType.StairsUp or TileType.BranchUp) ? 0 : 1;
+
+    static int MapRange(int value, Range input, Range output)
+    {
+        int inMin = input.Start.Value, inMax = input.End.Value;
+        int outMin = output.Start.Value, outMax = output.End.Value;
+        if (value <= inMin) return outMin;
+        if (value >= inMax) return outMax;
+        return outMin + (outMax - outMin) * (value - inMin) / (inMax - inMin);
+    }
+
+    record RoomRule(RoomType Type, Func<Level, Room, int> Chance);
+
+    static readonly RoomRule[] RoomRules = [
+        new(RoomType.GoblinNest, (l, r) => RequireNoUpStairs(l, r) * RequireSize(r, 9) * MapRange(l.Depth, 1..6, 30..0)),
+        new(RoomType.GremlinParty, (l, r) => RequireNoUpStairs(l, r) * RequireDepth(l, 2) * 30),
+        new(RoomType.GremlinPartyBig, (l, r) => RequireNoUpStairs(l, r) * RequireSize(r, 16) * RequireDepth(l, 4) * 20),
+    ];
+
     static void AssignRoomTypes(LevelGenContext ctx)
     {
         var level = ctx.level;
-        // Goblin nest: high chance depth 1-3, decreasing after
-        int nestChance = level.Depth <= 3 ? 3 : Math.Max(0, 6 - level.Depth);
-        if (nestChance > 0 && Rn2(10) < 100)
+        
+        List<int> eligible = [];
+        for (int i = 0; i < level.Rooms.Count; i++)
+            if ((level.Rooms[i].Flags & RoomFlags.Merged) == 0)
+                eligible.Add(i);
+
+        foreach (int i in eligible)
         {
-            // Pick an eligible room (not first/last which have stairs)
-            List<int> eligible = [];
-            for (int i = 1; i < level.Rooms.Count - 1; i++)
-                if ((level.Rooms[i].Flags & RoomFlags.Merged) == 0)
-                    eligible.Add(i);
-            if (eligible.Count > 0)
+            var room = level.Rooms[i];
+            var shuffled = RoomRules.Shuffled();
+            
+            foreach (var rule in shuffled)
             {
-                int idx = eligible[Rn2(eligible.Count)];
-                level.Rooms[idx] = level.Rooms[idx] with { Type = RoomType.GoblinNest };
-                Log($"Assigned GoblinNest to room {idx}");
+                int chance = rule.Chance(level, room);
+                if (chance <= 0) continue;
+                int roll = Rn2(100);
+                if (roll >= chance) { Log($"Room {i} {rule.Type}: roll {roll} >= {chance}, skip"); continue; }
+                level.Rooms[i] = room with { Type = rule.Type };
+                Log($"Room {i} {rule.Type}: roll {roll} < {chance}, assigned");
+                break;
             }
         }
     }
@@ -277,40 +326,60 @@ public static class LevelGen
                 case RoomType.GoblinNest:
                     FillGoblinNest(ctx, room);
                     break;
+                case RoomType.GremlinParty:
+                    FillGremlinParty(ctx, room, small: true);
+                    break;
+                case RoomType.GremlinPartyBig:
+                    FillGremlinParty(ctx, room, small: false);
+                    break;
             }
         }
     }
 
     static void FillGoblinNest(LevelGenContext ctx, Room room)
     {
-        void Place(MonsterDef def)
+        // Find center of room
+        int cx = (int)room.Interior.Average(p => p.X);
+        int cy = (int)room.Interior.Average(p => p.Y);
+        Pos center = new(cx, cy);
+        
+        // Place 8 goblins in circle around center
+        MonsterDef[] pool = [Goblins.Warrior, Goblins.Warrior, Goblins.Warrior, Goblins.Warrior,
+                             Goblins.Chef, Goblins.WarChanter, Goblins.Pyro, Goblins.Warrior];
+        
+        foreach (var dir in Pos.AllDirs)
         {
+            Pos p = center + dir;
+            if (!room.Interior.Contains(p)) continue;
+            if (ctx.level.UnitAt(p) != null) continue;
+            
+            var def = pool.Pick();
+            var m = Monster.Spawn(def);
+            m.IsAsleep = true;
+            ctx.level.PlaceUnit(m, p);
+        }
+    }
+
+    static void FillGremlinParty(LevelGenContext ctx, Room room, bool small)
+    {
+        Monster Place(MonsterDef def)
+        {
+            var m = Monster.Spawn(def);
+            m.IsAsleep = true;
             if (ctx.level.FindLocationInRoom(room, ctx.level.NoUnit) is { } pos)
-            {
-                var m = Monster.Spawn(def);
                 ctx.level.PlaceUnit(m, pos);
-            }
+            return m;
         }
 
-        // Always: 1 chef
-        Place(Goblins.Chef);
+        int total = small ? RnRange(2, 5) : RnRange(5, 12);
+        int drunk = small ? 1 : 5;
 
-        // 2-4 warriors
-        int warriors = RnRange(2, 4);
-        for (int i = 0; i < warriors; i++)
-            Place(Goblins.Warrior);
+        for (int i = 0; i < drunk; i++)
+            Place(Gremlins.VeryDrunkJinkin);
 
-        // 1/3 chance: chanter
-        if (Rn2(3) == 0)
-            Place(Goblins.WarChanter);
-
-        // 1/4 chance: pyro
-        if (Rn2(4) == 0)
-            Place(Goblins.Pyro);
-
-        // 1/10 chance: medium boss
-        if (Rn2(10) == 0)
-            Place(Goblins.MediumBoss);
+        MonsterDef[] others = [Gremlins.Mitflit, Gremlins.Pugwampi, Gremlins.Jinkin];
+        for (int i = drunk; i < total; i++)
+            Place(others.Pick());
     }
 
     static bool CanPlace(uint[] occupied, Rect r)

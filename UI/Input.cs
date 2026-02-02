@@ -727,7 +727,7 @@ public static class Input
         {
             // Third press or exhausted: show full list
             _msgHistoryIdx = -1;
-            var menu = new Menu();
+            var menu = new Menu { InitialPage = -1 };
             menu.Add("Message History", LineStyle.Heading);
             for (int i = 0; i < history.Count; i++)
                 menu.Add(history[i]);
@@ -853,6 +853,21 @@ public static class Input
 
     static void LookHere()
     {
+        // Room entry message (first time only)
+        var room = lvl.RoomAt(upos);
+        if (room != null && !room.Entered)
+        {
+            room.Entered = true;
+            var msg = room.Type switch
+            {
+                RoomType.GoblinNest => "You find a goblin prayer circle.",
+                RoomType.GremlinParty => "You stumble across the aftermath of a gremlin party.",
+                RoomType.GremlinPartyBig => "You enter the chaos of a gremlin bender.",
+                _ => null
+            };
+            if (msg != null) g.pline(msg);
+        }
+
         var items = lvl.ItemsAt(upos);
         if (items.Count == 0) {}
         else if (items.Count == 1)
@@ -1086,6 +1101,7 @@ public class Menu<T>
 {
     readonly List<(char? Letter, string Text, T? Value, LineStyle Style, char? Category)> _items = [];
     readonly Dictionary<char, T?> _hidden = [];
+    public int InitialPage { get; set; }
     
     public void Add(string line, LineStyle style = LineStyle.Text) => _items.Add((null, line, default, style, null));
     public void Add(char letter, string text, T value, char? category = null) => _items.Add((letter, text, value, LineStyle.Item, category));
@@ -1108,7 +1124,7 @@ public class Menu<T>
             layer.FullScreen = true;
         }
 
-        int page = 0;
+        int page = InitialPage < 0 ? pages + InitialPage : InitialPage;
         HashSet<int> selected = [];
 
         // calc width once from all items
@@ -1187,7 +1203,8 @@ public class Menu<T>
                 else break;
                 continue;
             }
-            if (key.Key == ConsoleKey.LeftArrow || key.KeyChar == '<' || key.KeyChar == '^')
+            if (key.Key == ConsoleKey.LeftArrow || key.KeyChar == '<' || key.KeyChar == '^'
+                || (key.Key == ConsoleKey.P && key.Modifiers == ConsoleModifiers.Control))
             {
                 if (pages > 1) page = (page - 1 + pages) % pages;
                 continue;
