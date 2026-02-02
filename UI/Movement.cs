@@ -118,7 +118,7 @@ public static class Movement
             // Only stop for monster directly ahead
             Pos ahead = upos + Dir;
             Pos behind = upos - Dir;
-            if (lvl.InBounds(ahead) && lvl.UnitAt(ahead) is { } m && m != u)
+            if (lvl.InBounds(ahead) && lvl.UnitAt(ahead) is { IsDead: false } m && m != u)
             {
                 Log.Verbose("movement", $"Stop: monster ahead at {ahead}");
                 return true;
@@ -157,7 +157,7 @@ public static class Movement
         foreach (var n in upos.Neighbours())
         {
             if (n == upos - Dir) continue;
-            if (lvl.UnitAt(n) is { } m && m != u)
+            if (lvl.UnitAt(n) is { IsDead: false } m && m != u)
             {
                 Log.Verbose("movement", $"Stop: monster at {n}");
                 return true;

@@ -57,40 +57,35 @@ public class WarChant(string pool = "war_chant") : ActionBrick("Goblin War Chant
         string? family = (unit as Monster)?.Def.Family;
         if (family == null) return;
 
-        foreach (var ally in lvl.Units)
+        foreach (var ally in lvl.LiveUnits)
         {
             if (ally is not Monster m) continue;
             if (m.Def.Family != family) continue;
             if (unit.Pos.ChebyshevDist(ally.Pos) > Range) continue;
-            m.AddFact(new WarChantBuff(g.CurrentRound + Duration));
+            m.AddFact(WarChantBuff.Instance, duration: Duration);
         }
     }
 }
 
-public class WarChantBuff(int expiresAt) : LogicBrick
+public class WarChantBuff : LogicBrick
 {
+    public static readonly WarChantBuff Instance = new();
     public override bool IsBuff => true;
     public override string? BuffName => "War Chant";
     public override bool IsActive => true;
 
-    public override void OnBeforeAttackRoll(Fact fact, PHContext context)
+    protected override void OnBeforeAttackRoll(Fact fact, PHContext context)
     {
         if (context.Source != fact.Entity) return;
         if (context.Weapon == null) return;
         context.Check!.Modifiers.AddModifier(new(ModifierCategory.CircumstanceBonus, 2, "war chant"));
     }
 
-    public override void OnBeforeDamageRoll(Fact fact, PHContext context)
+    protected override void OnBeforeDamageRoll(Fact fact, PHContext context)
     {
         if (context.Source != fact.Entity) return;
         if (context.Weapon == null) return;
         context.Damage[0].Modifiers.AddModifier(new(ModifierCategory.CircumstanceBonus, 1, "war chant"));
-    }
-
-    public override void OnRoundEnd(Fact fact, PHContext context)
-    {
-        if (g.CurrentRound >= expiresAt)
-            fact.Remove();
     }
 }
 

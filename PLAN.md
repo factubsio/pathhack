@@ -67,10 +67,10 @@
 - [x] Traps (one so far, pit, but more should be easy, not generated though)
 
 ## Spells
-- [ ] Spell slots (level 1 only)
-- [ ] Slot regen over time
-- [ ] Cast command, spell menu
-- [ ] One spell (cure light wounds)
+- [x] Spell slots (level 1 only)
+- [x] Slot regen over time
+- [x] Cast command, spell menu
+- [x] One spell (cure light wounds) [we also done burning hands and magic missile]
 
 ## Economy
 - [ ] Gold
@@ -166,4 +166,6 @@
 - [ ] generate traps
 - [ ] disarm traps?
 - [ ] shift move sucks still
+
+- [ ] testing, we have done some stuff, hooked logicbricks, added some harness, early days
 

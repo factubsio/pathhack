@@ -20,6 +20,21 @@ public class MagicMapping() : ActionBrick("Magic Mapping")
     }
 }
 
+public class BlindSelf() : ActionBrick("Blind Self")
+{
+    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
+    {
+        whyNot = "";
+        return true;
+    }
+    
+    public override void Execute(IUnit unit, object? data, Target target)
+    {
+        unit.AddFact(new TimedBlind(), duration: 5);
+        g.pline("You blind yourself!");
+    }
+}
+
 public static partial class ClassDefs
 {
     public static ClassDef Developer => new()
@@ -87,6 +102,7 @@ public static partial class ClassDefs
             p.Inventory.Add(darts2);
             
             p.AddAction(new MagicMapping());
+            p.AddAction(new BlindSelf());
             foreach (var blessing in Blessings.All)
                 blessing.ApplyMinor(p);
             g.DebugMode = true;

@@ -32,31 +32,36 @@ public class CurseWeaponInRange(int range) : ActionBrick("Curse Weapon")
     {
         if (!unit.TryUseCharge(Resource)) return;
         var weapon = u.GetWieldedItem();
-        weapon.AddFact(new WeaponCurse(CurseDuration));
+        weapon.AddFact(WeaponCurse.Instance, duration: CurseDuration);
         g.pline($"{unit:The} curses your {weapon}!");
     }
 }
 
 // Curse fact applied to weapon: -2 attack for duration
-public class WeaponCurse(int duration) : TimedBrick(duration)
+public class WeaponCurse : LogicBrick
 {
+    public static readonly WeaponCurse Instance = new();
+    public override bool IsBuff => true;
+    public override bool IsActive => true;
     public override string? BuffName => "Pugwampi's Ill Fortune";
 
-    public override void OnBeforeAttackRoll(Fact fact, PHContext ctx)
+    protected override void OnBeforeAttackRoll(Fact fact, PHContext ctx)
     {
         if (fact.Entity is not Item item) return;
         if (ctx.Source != item.Holder) return;
         if (ctx.Weapon != item) return;
         ctx.Check!.Modifiers.AddModifier(new(ModifierCategory.UntypedStackable, -2, "cursed"));
     }
-
 }
 
-public class JinkinCurse() : TimedBrick(10)
+public class JinkinCurse : LogicBrick
 {
+    public static readonly JinkinCurse Instance = new();
+    public override bool IsBuff => true;
+    public override bool IsActive => true;
     public override string? BuffName => "Jinkin's Ill Fortune";
 
-    public override void OnBeforeCheck(Fact fact, PHContext context)
+    protected override void OnBeforeCheck(Fact fact, PHContext context)
     {
         if (context.Source == fact.Entity)
         {
@@ -66,17 +71,28 @@ public class JinkinCurse() : TimedBrick(10)
     }
 }
 
-// Prone: -2 AC, half speed, 2 rounds
-public class Prone() : TimedBrick(2)
+// Prone: -2 AC, half speed
+public class ProneBuff : LogicBrick
 {
+    public static readonly ProneBuff Instance = new();
+    public override bool IsBuff => true;
     public override string? BuffName => "Hamstrung";
+    public override StackMode StackMode => StackMode.Stack;
 
-    public override object? OnQuery(Fact fact, string key, string? arg)
+    protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
     {
-        if (key == "ac") return new Modifier(ModifierCategory.UntypedStackable, -2, "prone");
-        if (key == "speed_mult") return 0.5;
-        return null;
-    }
+        "ac" => new Modifier(ModifierCategory.UntypedStackable, -2, "prone"),
+        "speed_mult" => 0.5,
+        _ => null
+    };
+}
+
+public class TimedProne : LogicBrick
+{
+    public static readonly TimedProne Instance = new();
+    public override bool IsActive => true;
+    protected override void OnFactAdded(Fact fact) => fact.Entity.AddFact(ProneBuff.Instance);
+    protected override void OnFactRemoved(Fact fact) => fact.Entity.RemoveStack<ProneBuff>();
 }
 
 // FilthFever: periodic damage/penalty until cured
@@ -87,7 +103,7 @@ public class FilthFever : LogicBrick
     public override bool IsBuff => true;
     public override bool IsActive => true;
 
-    public override void OnRoundStart(Fact fact, PHContext ctx)
+    protected override void OnRoundStart(Fact fact, PHContext ctx)
     {
         // TODO: periodic Con damage or HP drain
     }
@@ -98,7 +114,7 @@ public class DrunkenDodge : LogicBrick
 {
     public static readonly DrunkenDodge Instance = new();
 
-    public override void OnBeforeDefendRoll(Fact fact, PHContext ctx)
+    protected override void OnBeforeDefendRoll(Fact fact, PHContext ctx)
     {
         if (g.Rn2(100) < 30)
         {
@@ -175,7 +191,7 @@ public static class Gremlins
         Size = UnitSize.Small,
         CR = 1,
         Components = [
-            new ApplyFactOnAttackHit<JinkinCurse>(() => new()),
+            new ApplyFactOnAttackHit(JinkinCurse.Instance, duration: 10),
             ..CommonEquip
         ],
     };
@@ -194,7 +210,7 @@ public static class Gremlins
         Size = UnitSize.Small,
         CR = 2,
         Components = [
-            new ApplyFactOnAttackHit<Prone>(() => new()),
+            new ApplyFactOnAttackHit(TimedProne.Instance, duration: 2),
             ..CommonEquip,
         ],
     };
@@ -214,7 +230,7 @@ public static class Gremlins
         Size = UnitSize.Small,
         CR = -1,
         Components = [
-            new ApplyFactOnAttackHit<FilthFever>(() => new()),
+            new ApplyFactOnAttackHit(FilthFever.Instance),
             ..CommonEquip,
         ],
     };
@@ -241,17 +257,29 @@ public static class Gremlins
     public static readonly MonsterDef[] All = [Mitflit, Pugwampi, Jinkin, Nuglub, Grimple, VeryDrunkJinkin];
 }
 
-public class Nauseated(int time) : TimedBrick(time)
+public class NauseatedBuff : LogicBrick
 {
+    public static readonly NauseatedBuff Instance = new();
+    public override bool IsBuff => true;
     public override string? BuffName => "Nauseated";
-    public override void OnBeforeCheck(Fact fact, PHContext context)
+    public override StackMode StackMode => StackMode.Stack;
+
+    protected override void OnBeforeCheck(Fact fact, PHContext context)
     {
         if (context.Source == fact.Entity)
         {
             context.Check!.Disadvantage++;
-            fact.Remove();
+            fact.Entity.RemoveStack<NauseatedBuff>();
         }
     }
+}
+
+public class TimedNauseated : LogicBrick
+{
+    public static readonly TimedNauseated Instance = new();
+    public override bool IsActive => true;
+    protected override void OnFactAdded(Fact fact) => fact.Entity.AddFact(NauseatedBuff.Instance);
+    protected override void OnFactRemoved(Fact fact) => fact.Entity.RemoveStack<NauseatedBuff>();
 }
 
 public class VeryDrunkJinkinBrain : MonsterBrain
@@ -299,7 +327,7 @@ public class VeryDrunkJinkinBrain : MonsterBrain
                 // yucky yucky
                 if (CreateAndDoCheck(ctx, "fortitude_save", 14, "Nauseated", false)) return true;
                 g.pline($"{tgt:The} can barely hold {tgt:own} own lunch down.");
-                tgt.AddUniqueFact(x => x.Brick is Nauseated, () => new Nauseated(4));
+                tgt.AddFact(TimedNauseated.Instance, duration: 4);
             }
         }
         else if (roll < 50)

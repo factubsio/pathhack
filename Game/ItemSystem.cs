@@ -201,6 +201,7 @@ public static class ItemSlots
     public const string Body = "body";
     public const string Ring = "ring";
     public const string Amulet = "amulet";
+    public const string Face = "face";
 }
 
 public static class ItemClasses

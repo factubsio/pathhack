@@ -94,22 +94,29 @@ public static class FovCalculator
     private static Pos lastLosPov = Pos.Invalid;
     private static LevelId lastLosLevel = new();
     private static int lastLosGeometryVersion = -1;
+    private static int lastLosRange = -1;
 
     public static void Compute(Level level, Pos origin, int lightRadius, TileBitset? moreLit = null)
     {
         Perf.Start();
         const int maxRange = 66;
+
+        int losRange = u.Can("can_see") ? maxRange : 0;
+
         bool losDirty =
                 lastLosPov != origin
                 || lastLosLevel != level.Id
-                || lastLosGeometryVersion != level.GeometryVersion;
+                || lastLosGeometryVersion != level.GeometryVersion
+                || lastLosRange != losRange;
         if (losDirty)
         {
             level.ClearLOS();
-            ScanShadowcast(level, level.LOS, origin, maxRange);
+            if (losRange > 0)
+                ScanShadowcast(level, level.LOS, origin, losRange);
             lastLosPov = origin;
             lastLosGeometryVersion = level.GeometryVersion;
             lastLosLevel = level.Id;
+            lastLosRange = losRange;
         }
 
         level.ClearLit();

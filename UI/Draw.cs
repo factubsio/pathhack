@@ -6,6 +6,56 @@ using Pathhack.Map;
 
 namespace Pathhack.UI;
 
+public static class TtyRec
+{
+    private static FileStream? _file;
+    private static DateTime _startTime;
+
+    public sealed class TtyHandle : IDisposable
+    {
+        public void Dispose() => Stop();
+    }
+
+    public static TtyHandle Start(string path)
+    {
+        _file = File.Create(path);
+        _startTime = DateTime.UtcNow;
+        return new();
+    }
+
+    private static int lastRoundBlitted = 0;
+
+    public static void Write(string data)
+    {
+        if (_file == null) return;
+
+        double totalSecs = lastRoundBlitted * 0.3;
+        int sec = (int)totalSecs;
+        int usec = (int)((totalSecs - sec) * 1_000_000);
+        byte[] bytes = Encoding.UTF8.GetBytes(data);
+
+        Span<byte> header = stackalloc byte[12];
+        BitConverter.TryWriteBytes(header[0..4], sec);
+        BitConverter.TryWriteBytes(header[4..8], usec);
+        BitConverter.TryWriteBytes(header[8..12], bytes.Length);
+        _file.Write(header);
+        _file.Write(bytes);
+    }
+
+    public static void Flush()
+    {
+        lastRoundBlitted = g.CurrentRound + 1;
+        if (_file == null) return;
+    }
+
+    public static void Stop()
+    {
+        _file?.Flush();
+        _file?.Dispose();
+        _file = null;
+    }
+}
+
 [Flags]
 public enum CellStyle : byte
 {
@@ -79,6 +129,8 @@ public readonly struct LayerScope(ScreenBuffer layer) : IDisposable
 
 public static class Draw
 {
+    public static bool Enabled = true;
+
     public const int ViewWidth = 80;
     public const int ViewHeight = 21;
     public const int MsgRow = 0;
@@ -212,8 +264,8 @@ public static class Draw
         _ => 37,
     };
 
-    public static int TotalBytesWritten = 0;
-    public static int DamagedCellCount = 0;
+    public static int TotalBytesWritten { get; private set; } = 0;
+    public static int DamagedCellCount { get; private set; } = 0;
 
     public static void Blit()
     {
@@ -258,10 +310,13 @@ public static class Draw
                     cmd = $"\x1b[{y + 1};{x + 1}H\x1b[{fgCode};{bgCode}m{ch}";
 
                 TotalBytesWritten += cmd.Length;
-                Console.Write(cmd);
+                TtyRec.Write(cmd);
+                if (Enabled) Console.Write(cmd);
             }
         }
-        Console.Write("\x1b[0m");
+        TtyRec.Write("\x1b[0m");
+        TtyRec.Flush();
+        if (Enabled) Console.Write("\x1b[0m");
     }
 
     public static void ResetRoundStats()
@@ -325,13 +380,12 @@ public static class Draw
                 Pos p = new(x, y);
                 bool visible = level.IsVisible(p);
 
-                if (visible)
+                if (visible || p == upos)
                 {
-                    IUnit? UnitAt = level.Units.FirstOrDefault(c => c.Pos == p);
-                    if (UnitAt != null)
+                    IUnit? unit = level.UnitAt(p);
+                    if (unit != null)
                     {
-                        var glyph = UnitAt.Glyph;
-                        Layers[0][x, y + MapRow] = Cell.From(UnitAt.Glyph);
+                        Layers[0][x, y + MapRow] = Cell.From(unit.Glyph);
                     }
                     else
                     {

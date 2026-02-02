@@ -9,7 +9,7 @@ public static class Pokedex
     public static void Farlook()
     {
         Pos cursor = upos;
-        var monsters = lvl.Units.Where(m => lvl.IsVisible(m.Pos)).ToList();
+        var monsters = lvl.LiveUnits.Where(m => !m.IsDead && lvl.IsVisible(m.Pos)).ToList();
         int monsterIdx = -1;
 
         var layer = Draw.Overlay;

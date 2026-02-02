@@ -36,6 +36,28 @@ public static class RngExtensions
 
     public static T Pick<T>(this List<T> list) => list[g.Rn2(list.Count)];
     public static T Pick<T>(this T[] array) => array[g.Rn2(array.Length)];
+
+    public static T[] Shuffled<T>(this T[] array)
+    {
+        T[] copy = [..array];
+        for (int i = copy.Length - 1; i > 0; i--)
+        {
+            int j = g.Rn2(i + 1);
+            (copy[i], copy[j]) = (copy[j], copy[i]);
+        }
+        return copy;
+    }
+
+    public static List<T> Shuffled<T>(this List<T> list)
+    {
+        List<T> copy = [..list];
+        for (int i = copy.Count - 1; i > 0; i--)
+        {
+            int j = g.Rn2(i + 1);
+            (copy[i], copy[j]) = (copy[j], copy[i]);
+        }
+        return copy;
+    }
     
     public static T PickWeighted<T>(this IEnumerable<T> items, Func<T, int> weight)
     {
@@ -73,11 +95,11 @@ public record struct DiceFormula(Dice[] Dice)
     public static implicit operator DiceFormula(Dice d) => new([d]);
     public static implicit operator DiceFormula(int flat) => new([new(0, 0, flat)]);
 
-    public readonly int Roll()
+    public readonly int Roll(int extraDice = 0)
     {
         int sum = 0;
-        foreach (var d in Dice)
-            sum += d.Roll();
+        foreach (var die in Dice)
+            sum += d(die.D + extraDice, die.F, die.Flat).Roll();
         return sum;
     }
 

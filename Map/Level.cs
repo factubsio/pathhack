@@ -174,7 +174,8 @@ public class Level(LevelId id, int width, int height)
     readonly TileMemory?[] _memory = new TileMemory?[width * height];
     public TileBitset LOS => _los;
     public TileBitset Lit => _lit;
-    public readonly List<IUnit> Units = [];
+    private readonly List<IUnit> Units = [];
+    public IEnumerable<IUnit> LiveUnits => Units.Where(u => !u.IsDead);
     public readonly Dictionary<Pos, Trap> Traps = [];
     public List<Room> Rooms { get; } = [];
     public Pos? StairsUp { get; set; }
@@ -267,7 +268,11 @@ public class Level(LevelId id, int width, int height)
         return s ??= new CellState();
     }
 
-    public IUnit? UnitAt(Pos p) => _state[p.Y * Width + p.X]?.Unit;
+    public IUnit? UnitAt(Pos p)
+    {
+        var unit = _state[p.Y * Width + p.X]?.Unit;
+        return unit is { IsDead: false } ? unit : null;
+    }
     public Room? RoomAt(Pos p) => _state[p.Y * Width + p.X]?.Room;
 
     public void PlaceUnit(IUnit Unit, Pos p)
@@ -491,6 +496,9 @@ public class Level(LevelId id, int width, int height)
         }
         return false;
     }
+
+    internal void ReapDead() => Units.RemoveAll(x => x.IsDead);
+    internal void SortUnitsByInitiative() => Units.Sort((a, b) => b.Initiative.CompareTo(a.Initiative));
 }
 
 

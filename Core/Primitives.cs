@@ -20,6 +20,9 @@ public readonly record struct Pos(int X, int Y) : IFormattable
 
     public static readonly Pos[] AllDirs = [N, NE, E, SE, S, SW, W, NW];
     public static readonly Pos[] CardinalDirs = [N, E, S, W];
+    public static readonly Pos[] DiagonalDirs = [NE, SE, SW, NW];
+
+    public bool IsDiagonal => X != 0 && Y != 0;
 
     // For each direction, the 5 "forward" neighbors to check when running (excludes behind + behind-diagonals)
     public static readonly Dictionary<Pos, Pos[]> ForwardNeighbours = new()

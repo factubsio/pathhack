@@ -26,7 +26,7 @@ public class BlessingDef
 
 public class GrantBlessingBrick(BlessingDef blessing) : LogicBrick
 {
-    public override void OnFactAdded(Fact fact)
+    protected override void OnFactAdded(Fact fact)
     {
         if (fact.Entity is IUnit unit)
             blessing.ApplyMinor(unit);
@@ -56,45 +56,40 @@ public class FireBlessingMinor() : ActionBrick("Fire Blessing")
         else
             g.pline("Your weapon bursts into flame!");
 
-        weapon.AddFact(new FlamingBuff(g.CurrentRound + duration));
+        weapon.AddFact(FlamingBuff.Instance, duration: duration);
     }
 }
 
-public class FlamingBuff(int expiresAt) : LogicBrick
+public class FlamingBuff : LogicBrick
 {
+    public static readonly FlamingBuff Instance = new();
     public override bool IsBuff => true;
     public override string? BuffName => "Flaming Weapon";
     public override bool IsActive => true;
 
-    public override object? OnQuery(Fact fact, string key, string? arg) => key switch
+    protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
     {
         "flaming" => true,
         _ => null
     };
 
-    public override void OnRoundEnd(Fact fact, PHContext context)
+    protected override void OnFactRemoved(Fact fact)
     {
-        if (g.CurrentRound >= expiresAt)
+        if (fact.Entity is Item item && item.Holder is { IsPlayer: true })
         {
-            fact.Remove();
-
-            if (fact.Entity is Item item && item.Holder is { IsPlayer: true })
-            {
-                bool isUnarmed = item.Def is WeaponDef w && w.Profiency == Proficiencies.Unarmed;
-                if (isUnarmed)
-                    g.pline("The flames around your fists fade.");
-                else if (item.Has("flaming"))
-                    g.pline("Your weapon burns less brightly.");
-                else
-                    g.pline("Your weapon's flames die out.");
-            }
+            bool isUnarmed = item.Def is WeaponDef w && w.Profiency == Proficiencies.Unarmed;
+            if (isUnarmed)
+                g.pline("The flames around your fists fade.");
+            else if (item.Has("flaming"))
+                g.pline("Your weapon burns less brightly.");
+            else
+                g.pline("Your weapon's flames die out.");
         }
     }
 
-    public override void OnBeforeDamageRoll(Fact fact, PHContext context)
+    protected override void OnBeforeDamageRoll(Fact fact, PHContext context)
     {
         if (context.Weapon != fact.Entity) return;
-        Log.Write("on befor edamage roll");
         context.Damage.Add(new DamageRoll
         {
             Formula = d(4),
@@ -130,15 +125,7 @@ public static class Blessings
         Id = "strength",
         Name = "Strength",
         Description = "Call upon divine might.",
-        ApplyMinor = unit => unit.AddAction(BlessingHelper.MakeBlessing(
-            "Strength (minor)", 
-            () => "Strength buff on",
-            () => "Strength buff off",
-            () => u.Attributes.Str.Modifiers.AddModifier(new(ModifierCategory.UntypedStackable, 4, "Strength (minor)")),
-            mod => u.Attributes.Str.Modifiers.RemoveModifier(mod),
-            BlessingHelper.MinorCooldown,
-            d(10) + 10
-        ))
+        ApplyMinor = unit => unit.AddAction(new StrengthBlessingMinor())
     };
 
     public static readonly BlessingDef Law = new()
@@ -146,17 +133,7 @@ public static class Blessings
         Id = "law",
         Name = "Law",
         Description = "Invoke the armor of order.",
-        ApplyMinor = unit => unit.AddAction(BlessingHelper.MakeBlessing(
-            "Law (minor)",
-            () => "Law buff on",
-            () => "Law buff off",
-            (key, _) => key switch
-            {
-                "ac" => new Modifier(ModifierCategory.CircumstanceBonus, 2, "law"),
-                _ => null,
-            },
-            80,
-            10))
+        ApplyMinor = unit => unit.AddAction(new LawBlessingMinor())
     };
 
     public static readonly BlessingDef Healing = new()
@@ -220,7 +197,7 @@ public class WarBlessingPassive : LogicBrick
     public override object? CreateData() => new WarBlessingData();
     public override bool IsActive => true;
 
-    public override void OnBeforeAttackRoll(Fact fact, PHContext context)
+    protected override void OnBeforeAttackRoll(Fact fact, PHContext context)
     {
         if (context.Source != fact.Entity) return;
         var data = (WarBlessingData)fact.Data!;
@@ -234,7 +211,7 @@ public class WarBlessingPassive : LogicBrick
             context.Check!.Modifiers.AddModifier(new(ModifierCategory.UntypedStackable, bonus, "war"));
     }
 
-    public override void OnRoundEnd(Fact fact, PHContext context)
+    protected override void OnRoundEnd(Fact fact, PHContext context)
     {
         var data = (WarBlessingData)fact.Data!;
         if (data.State == WarBlessingState.Buffed && g.CurrentRound >= data.BuffUntil)
@@ -288,43 +265,75 @@ public class CooldownTracker
     }
 }
 
-public class AddBuffAction(string name, Func<string> on, Func<int, LogicBrick> makeFact, DiceFormula cd, DiceFormula dur) : ActionBrick(name)
+public class StrengthBlessingMinor() : ActionBrick("Strength (minor)")
 {
     public override object? CreateData() => new CooldownTracker();
-
-    public override ActionCost GetCost(IUnit unit, object? data, Target target) =>
-        BlessingHelper.Cost(unit);
-
+    public override ActionCost GetCost(IUnit unit, object? data, Target target) => BlessingHelper.Cost(unit);
     public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot) => ((CooldownTracker)data!).CanExecute(out whyNot);
 
     public override void Execute(IUnit unit, object? data, Target target)
     {
-        ((CooldownTracker)data!).CooldownUntil = g.CurrentRound + cd.Roll();
-
-        if (unit is not Player p) return;
-
-        g.pline(on());
-
-        unit.AddFact(makeFact(g.CurrentRound + dur.Roll()));
+        ((CooldownTracker)data!).CooldownUntil = g.CurrentRound + BlessingHelper.Cooldown(unit, BlessingHelper.MinorCooldown);
+        g.pline("Divine might surges through you!");
+        unit.AddFact(StrengthBuff.Instance, duration: d(10).Roll() + 10);
     }
 }
 
-public class BuffBrick(int expiresAt, string buffName, Action? onEnd, Func<string, string?, object?>? query, Func<string> off) : LogicBrick
+public class StrengthBuff : LogicBrick
 {
+    public static readonly StrengthBuff Instance = new();
     public override bool IsBuff => true;
-    public override string? BuffName => buffName;
     public override bool IsActive => true;
+    public override string? BuffName => "Strength";
 
-    public override object? OnQuery(Fact fact, string key, string? arg) => query?.Invoke(key, arg);
+    public override object? CreateData() => new Modifier(ModifierCategory.UntypedStackable, 4, "Strength (minor)");
 
-    public override void OnRoundEnd(Fact fact, PHContext context)
+    protected override void OnFactAdded(Fact fact)
     {
-        if (g.CurrentRound >= expiresAt)
+        if (fact.Entity is Player p && fact.Data is Modifier mod)
+            p.Attributes.Str.Modifiers.AddModifier(mod);
+    }
+
+    protected override void OnFactRemoved(Fact fact)
+    {
+        if (fact.Entity is Player p && fact.Data is Modifier mod)
         {
-            fact.Remove();
-            g.pline(off());
-            onEnd?.Invoke();
+            p.Attributes.Str.Modifiers.RemoveModifier(mod);
+            g.pline("The divine strength fades.");
         }
+    }
+}
+
+public class LawBlessingMinor() : ActionBrick("Law (minor)")
+{
+    public override object? CreateData() => new CooldownTracker();
+    public override ActionCost GetCost(IUnit unit, object? data, Target target) => BlessingHelper.Cost(unit);
+    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot) => ((CooldownTracker)data!).CanExecute(out whyNot);
+
+    public override void Execute(IUnit unit, object? data, Target target)
+    {
+        ((CooldownTracker)data!).CooldownUntil = g.CurrentRound + BlessingHelper.Cooldown(unit, 80);
+        g.pline("Law buff on");
+        unit.AddFact(LawBuff.Instance, duration: 10);
+    }
+}
+
+public class LawBuff : LogicBrick
+{
+    public static readonly LawBuff Instance = new();
+    public override bool IsBuff => true;
+    public override string? BuffName => "Law";
+
+    protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
+    {
+        "ac" => new Modifier(ModifierCategory.CircumstanceBonus, 2, "law"),
+        _ => null
+    };
+
+    protected override void OnFactRemoved(Fact fact)
+    {
+        if (fact.Entity is IUnit { IsPlayer: true })
+            g.pline("Law buff off");
     }
 }
 
@@ -340,40 +349,6 @@ public static class BlessingHelper
         if (unit.Has("blessing_cooldown_reduction"))
             rolled = rolled * 3 / 4;
         return Math.Max(10, rolled);
-    }
-
-    public static ActionBrick MakeBlessing(string name, Func<string> on, Func<string> off, Action onAdd, Action onRemove, DiceFormula cd, DiceFormula dur)
-    {
-        return new AddBuffAction(
-                name,
-                on,
-                expiresAt => { onAdd(); return new BuffBrick(expiresAt, name, onRemove, null, off); },
-                cd,
-                dur);
-    }
-
-    public static ActionBrick MakeBlessing<T>(string name, Func<string> on, Func<string> off, Func<T> onAdd, Action<T> onRemove, DiceFormula cd, DiceFormula dur)
-    {
-        return new AddBuffAction(
-                name,
-                on,
-                expiresAt =>
-                {
-                    var val = onAdd();
-                    return new BuffBrick(expiresAt, name, () => onRemove(val), null, off);
-                },
-                cd,
-                dur);
-    }
-
-    public static ActionBrick MakeBlessing(string name, Func<string> on, Func<string> off, Func<string, string?, object?> query, DiceFormula cd, DiceFormula dur)
-    {
-        return new AddBuffAction(
-                name,
-                on,
-                expiresAt => new BuffBrick(expiresAt, name, null, query, off),
-                cd,
-                dur);
     }
 }
 
@@ -451,7 +426,7 @@ public class SunBlessingMinor() : ActionBrick("Sun Blessing")
             new Glyph('*', ConsoleColor.DarkYellow),
             new Glyph('.', ConsoleColor.DarkYellow));
 
-        g.FlashLit(result);
+        FlashLit(result);
 
         foreach (var tgt in result.Select(lvl.UnitAt))
         {
@@ -478,7 +453,7 @@ public class LuckBlessingPassive : LogicBrick
     public override bool IsBuff => true;
     public override string? BuffName => "Luck";
 
-    public override void OnBeforeCheck(Fact fact, PHContext context)
+    protected override void OnBeforeCheck(Fact fact, PHContext context)
     {
         if (context.Source != fact.Entity) return;
         var data = (LuckBlessingData)fact.Data!;
@@ -518,32 +493,59 @@ public class DarknessBlessingMinor() : ActionBrick("Darkness Blessing", Targetin
         {
             var victim = lvl.UnitAt(pos);
             if (victim.IsNullOrDead() || victim == unit) continue;
-            victim.AddFact(new BlindBuff(g.CurrentRound + BlindDuration));
+            victim.AddFact(new TimedBlind(), duration: BlindDuration);
             if (unit.IsPlayer)
                 g.pline("{0:The} is blinded!", victim);
         }
     }
 }
 
-public class BlindBuff(int expiresAt) : LogicBrick
+public class BlindBuff : LogicBrick
 {
+    public static readonly BlindBuff Instance = new();
+    
     public override bool IsBuff => true;
     public override string? BuffName => "Blind";
-    public override bool IsActive => true;
+    public override StackMode StackMode => StackMode.Stack;
 
-    public override void OnBeforeCheck(Fact fact, PHContext context)
+    protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
     {
-        if (context.Source != fact.Entity) return;
+        "can_see" => false,
+        _ => null,
+    };
+
+    protected override void OnBeforeCheck(Fact fact, PHContext context)
+    {
+        if (context.Source != fact.Entity || context.Weapon == null) return;
         context.Check!.Disadvantage++;
     }
 
-    public override void OnRoundEnd(Fact fact, PHContext context)
+    protected override void OnStackRemoved(Fact fact)
     {
-        if (g.CurrentRound >= expiresAt)
-        {
-            fact.Remove();
-            if (fact.Entity is IUnit { IsPlayer: true })
-                g.pline("You can see again.");
-        }
+        if (fact.Entity is not IUnit { IsPlayer: true }) return;
+        if (fact.Stacks == 0)
+            g.pline("You can see again.");
+        else
+            g.pline("Your vision clears slightly.");
     }
+}
+
+public class TimedBlind : LogicBrick
+{
+    public override bool IsActive => true;
+
+    protected override void OnFactAdded(Fact fact) =>
+        fact.Entity.AddFact(BlindBuff.Instance);
+
+    protected override void OnFactRemoved(Fact fact) =>
+        fact.Entity.RemoveStack<BlindBuff>();
+}
+
+public class ApplyOnEquip(LogicBrick brick) : LogicBrick
+{
+    protected override void OnEquip(Fact fact, PHContext ctx) =>
+        ctx.Source!.AddFact(brick);
+
+    protected override void OnUnequip(Fact fact, PHContext ctx) =>
+        ctx.Source!.RemoveStack(brick.GetType());
 }

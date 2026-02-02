@@ -4,7 +4,7 @@ namespace Pathhack.Game.Classes;
 
 public class SacredStrikeBrick : LogicBrick
 {
-    public override void OnBeforeAttackRoll(Fact fact, PHContext ctx)
+    protected override void OnBeforeAttackRoll(Fact fact, PHContext ctx)
     {
         if (fact.Entity is not Player p) return;
         if (ctx.Source != p) return;
@@ -26,7 +26,7 @@ public class SacredWeapon : LogicBrick
 
     static DiceFormula ScaledDie(int level) => LevelScaling[Math.Min(level / 5, LevelScaling.Length - 1)];
 
-    public override void OnBeforeDamageRoll(Fact fact, PHContext ctx)
+    protected override void OnBeforeDamageRoll(Fact fact, PHContext ctx)
     {
         if (fact.Entity is not Player player) return;
         if (ctx.Source != player) return;

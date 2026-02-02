@@ -45,13 +45,12 @@ public static class BasicLevel1Spells
         foreach (var step in Beam.Fire(c.Pos, t.Pos.Value, canBounce: true, range))
         {
           var unit = lvl.UnitAt(step.Pos);
-          bool hit = unit != null;
 
-          if (lvl.UnitAt(step.Pos) is {} tgt)
+          if (unit != null)
           {
             Draw.AnimateBeam(step.SegmentStart, step.Pos, new Glyph('*', ConsoleColor.Magenta));
-            g.YouObserve(tgt, "The magic missile hits {0}.");
-            using var ctx = PHContext.Create(c, Target.From(unit!));
+            g.YouObserve(unit, "The magic missile hits {0}.");
+            using var ctx = PHContext.Create(c, Target.From(unit));
             for (int i = 0; i < missiles; i++)
             {
               ctx.Damage.Add(new()

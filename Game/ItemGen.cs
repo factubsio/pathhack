@@ -14,7 +14,7 @@ public static class ItemGen
                 RollPropertyRunes(item, depth);
         }
 
-        item.Fire(b => b.OnSpawn, null);
+        LogicBrick.FireOnSpawn(item, PHContext.Create(null, Target.None));
         return item;
     }
 
@@ -178,7 +178,7 @@ public class BonusRune(int dice) : LogicBrick
 {
     public int Dice => dice;
 
-    public override void OnBeforeAttackRoll(Fact fact, PHContext context)
+    protected override void OnBeforeAttackRoll(Fact fact, PHContext context)
     {
         if (!fact.IsEquipped() || context.Weapon != fact.Entity) return;
         context.Check!.Modifiers.AddModifier(new(ModifierCategory.ItemBonus, context.Weapon.Potency + d(dice, 4).Roll(), "bonus rune"));
@@ -189,16 +189,12 @@ public class StrikingRune(int extraDice) : LogicBrick
 {
     public int ExtraDice => extraDice;
     
-    public override void OnBeforeDamageRoll(Fact fact, PHContext context)
+    protected override void OnBeforeDamageRoll(Fact fact, PHContext context)
     {
         if (!fact.IsEquipped() || context.Weapon != fact.Entity) return;
         if (context.Weapon?.Def is not WeaponDef wdef) return;
-        var baseDie = wdef.BaseDamage.Dice[0];
-        context.Damage.Add(new DamageRoll
-        {
-            Formula = new Dice(extraDice * baseDie.D, baseDie.F),
-            Type = wdef.DamageType
-        });
+        if (context.Damage.Count == 0 || context.Damage[0].Formula != wdef.BaseDamage) return;
+        context.Damage[0].ExtraDice = extraDice;
     }
 }
 
@@ -207,7 +203,7 @@ public class ElementalRune(DamageType type, int quality) : LogicBrick
     public DamageType Type => type;
     public int Quality => quality;
 
-    public override void OnBeforeDamageRoll(Fact fact, PHContext context)
+    protected override void OnBeforeDamageRoll(Fact fact, PHContext context)
     {
         if (!fact.IsEquipped()) return;
         if (context.Weapon != fact.Entity) return;

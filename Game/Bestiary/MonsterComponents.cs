@@ -4,7 +4,7 @@ namespace Pathhack.Game.Bestiary;
 
 public class Equip(ItemDef itemDef) : LogicBrick
 {
-    public override void OnSpawn(Fact fact, PHContext context)
+    protected override void OnSpawn(Fact fact, PHContext context)
     {
         var item = ItemGen.GenerateItem(itemDef);
         context.Source!.Inventory.Add(item);
@@ -24,7 +24,7 @@ public class EquipSet(params Outfit[] outfits) : LogicBrick
     public static EquipSet Roll(ItemDef item, int chance) =>
         new(new Outfit(1, new OutfitItem(item, chance)));
 
-    public override void OnSpawn(Fact fact, PHContext context)
+    protected override void OnSpawn(Fact fact, PHContext context)
     {
         int total = outfits.Sum(o => o.Weight);
         int roll = g.Rn2(total);
@@ -98,15 +98,15 @@ public static class NaturalWeapons
 
 public class SayOnDeath(string message) : LogicBrick
 {
-    public override void OnDeath(Fact fact, PHContext ctx) => LoreDump(message);
+    protected override void OnDeath(Fact fact, PHContext ctx) => LoreDump(message);
 }
 
 public class DropOnDeath(ItemDef def) : LogicBrick
 {
-    public override void OnDeath(Fact fact, PHContext ctx) => lvl.PlaceItem(Item.Create(def), ctx.Target.Unit!.Pos);
+    protected override void OnDeath(Fact fact, PHContext ctx) => lvl.PlaceItem(Item.Create(def), ctx.Target.Unit!.Pos);
 }
 
 public class GenerateDropOnDeath(ItemDef item) : LogicBrick
 {
-  public override void OnDeath(Fact fact, PHContext ctx) => lvl.PlaceItem(ItemGen.GenerateItem(item), ctx.Target.Unit!.Pos);
+  protected override void OnDeath(Fact fact, PHContext ctx) => lvl.PlaceItem(ItemGen.GenerateItem(item), ctx.Target.Unit!.Pos);
 }
