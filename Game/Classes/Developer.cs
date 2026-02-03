@@ -35,6 +35,38 @@ public class BlindSelf() : ActionBrick("Blind Self")
     }
 }
 
+public class GreaseFx : CellFx
+{
+    public static readonly GreaseFx Instance = new();
+
+    public override void OnSpawn(IUnit unit)
+    {
+        unit.AddFact(ProneBuff.Instance);
+    }
+
+    public override void OnEnter(IUnit unit)
+    {
+        unit.AddFact(ProneBuff.Instance);
+    }
+}
+
+public class GreaseAround() : ActionBrick("grease test")
+{
+    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
+    {
+        whyNot = "";
+        return true;
+    }
+
+    public override void Execute(IUnit unit, object? data, Target target)
+    {
+        foreach (Pos p in unit.Pos.Neighbours())
+        {
+            lvl.AddFx(p, GreaseFx.Instance, 3);
+        }
+    }
+}
+
 public static partial class ClassDefs
 {
     public static ClassDef Developer => new()
