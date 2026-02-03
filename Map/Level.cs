@@ -63,9 +63,11 @@ public class DummyCellDef : BaseDef
     public static readonly DummyCellDef Instance = new();
 }
 
-public class CellFx
+public class CellFx(string id)
 {
     public virtual StackMode Stack => StackMode.Extend;
+
+    public string Id => id;
 
     public virtual void OnSpawn(IUnit unit) {}
     public virtual void OnDespawn(IUnit unit) {}
@@ -228,6 +230,7 @@ public class Level(LevelId id, int width, int height)
     public IEnumerable<IUnit> LiveUnits => Units.Where(u => !u.IsDead);
     public readonly Dictionary<Pos, Trap> Traps = [];
     public List<Room> Rooms { get; } = [];
+    public List<Area> Areas { get; } = [];
     public Pos? StairsUp { get; set; }
     public Pos? StairsDown { get; set; }
     public Pos? BranchUp { get; set; }
@@ -352,11 +355,20 @@ public class Level(LevelId id, int width, int height)
             return;
         }
 
-        if (UnitAt(Unit.Pos) == Unit)
-            GetOrCreateState(Unit.Pos).Unit = null;
+        var from = Unit.Pos;
+        if (UnitAt(from) == Unit)
+            GetOrCreateState(from).Unit = null;
         Unit.Pos = to;
         GetOrCreateState(to).Unit = Unit;
         Unit.Energy -= Unit.LandMove.Value;
+
+        foreach (var area in Areas)
+        {
+            bool wasIn = area.Contains(from);
+            bool nowIn = area.Contains(to);
+            if (wasIn && !nowIn) area.HandleExit(Unit);
+            if (!wasIn && nowIn) area.HandleEnter(Unit);
+        }
 
         if (Traps.TryGetValue(to, out var trap))
         {

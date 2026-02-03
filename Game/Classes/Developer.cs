@@ -35,18 +35,34 @@ public class BlindSelf() : ActionBrick("Blind Self")
     }
 }
 
-public class GreaseFx : CellFx
+public class GreaseArea(IUnit? source, int dc, int duration) : Area(duration)
 {
-    public static readonly GreaseFx Instance = new();
+    public override string Name => "Grease";
+    public override Glyph Glyph => new('~', ConsoleColor.DarkYellow);
 
-    public override void OnSpawn(IUnit unit)
+    protected override void OnEnter(IUnit unit)
     {
-        unit.AddFact(ProneBuff.Instance);
+        if (unit.HasFact<ProneBuff>()) return;
+
+        using var ctx = PHContext.Create(source, Target.From(unit));
+        var slips = VTense(unit, "slip");
+        if (!CreateAndDoCheck(ctx, "reflex_save", dc, "grease"))
+        {
+            g.pline($"{unit:The} {slips} and {VTense(unit, "fall")}!");
+            unit.AddFact(TimedProne.Instance, 1);
+        }
+        else
+        {
+            g.pline($"{unit:The} {slips} but {VTense(unit, "keep")} {unit:own} balance.");
+        }
     }
 
-    public override void OnEnter(IUnit unit)
+    protected override void OnTick()
     {
-        unit.AddFact(ProneBuff.Instance);
+        foreach (var unit in Occupants)
+        {
+            if (unit.HasFact<ProneBuff>()) unit.Energy -= unit.LandMove.Value;
+        }
     }
 }
 
@@ -60,10 +76,8 @@ public class GreaseAround() : ActionBrick("grease test")
 
     public override void Execute(IUnit unit, object? data, Target target)
     {
-        foreach (Pos p in unit.Pos.Neighbours())
-        {
-            lvl.AddFx(p, GreaseFx.Instance, 3);
-        }
+        var area = new GreaseArea(unit, 14, 6) { Tiles = [..unit.Pos.Neighbours().Where(p => !lvl[p].IsStructural)] };
+        lvl.Areas.Add(area);
     }
 }
 
@@ -135,6 +149,7 @@ public static partial class ClassDefs
             
             p.AddAction(new MagicMapping());
             p.AddAction(new BlindSelf());
+            p.AddAction(new GreaseAround());
             foreach (var blessing in Blessings.All)
                 blessing.ApplyMinor(p);
             g.DebugMode = true;
