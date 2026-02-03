@@ -575,7 +575,7 @@ public class GameState
         Log.Write($"  {target:The} takes {damage} total damage");
         target.HP -= damage;
 
-        if (target is Monster mon) mon.IsAsleep = false;
+        if (target is Monster mon && mon.IsAsleep && g.Rn2(100) != 0) mon.IsAsleep = false;
 
         if (target.IsPlayer)
             Movement.Stop();

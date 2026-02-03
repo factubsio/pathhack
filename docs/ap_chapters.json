@@ -1,0 +1,1408 @@
+{
+  "meaty": [
+    "Carrion Crown",
+    "Strange Aeons",
+    "Iron Gods",
+    "Serpent's Skull",
+    "Mummy's Mask",
+    "Ruins of Azlant",
+    "Abomination Vaults",
+    "Reign of Winter",
+    "Second Darkness"
+  ],
+  "chapters": [
+    {
+      "ap": "Carrion Crown",
+      "chapter": "The Haunting of Harrowstone",
+      "index": 1,
+      "allocatedTo": "meaty/carrion-crown",
+      "themes": []
+    },
+    {
+      "ap": "Carrion Crown",
+      "chapter": "Trial of the Beast",
+      "index": 2,
+      "allocatedTo": "meaty/carrion-crown",
+      "themes": []
+    },
+    {
+      "ap": "Carrion Crown",
+      "chapter": "Broken Moon",
+      "index": 3,
+      "allocatedTo": "meaty/carrion-crown",
+      "themes": []
+    },
+    {
+      "ap": "Carrion Crown",
+      "chapter": "Wake of the Watcher",
+      "index": 4,
+      "allocatedTo": "meaty/carrion-crown",
+      "themes": []
+    },
+    {
+      "ap": "Carrion Crown",
+      "chapter": "Ashes at Dawn",
+      "index": 5,
+      "allocatedTo": "meaty/carrion-crown",
+      "themes": []
+    },
+    {
+      "ap": "Carrion Crown",
+      "chapter": "Shadows of Gallowspire",
+      "index": 6,
+      "allocatedTo": "meaty/carrion-crown",
+      "themes": []
+    },
+    {
+      "ap": "Strange Aeons",
+      "chapter": "In Search of Sanity",
+      "index": 1,
+      "allocatedTo": "meaty/strange-aeons",
+      "themes": []
+    },
+    {
+      "ap": "Strange Aeons",
+      "chapter": "The Thrushmoor Terror",
+      "index": 2,
+      "allocatedTo": "meaty/strange-aeons",
+      "themes": []
+    },
+    {
+      "ap": "Strange Aeons",
+      "chapter": "Dreams of the Yellow King",
+      "index": 3,
+      "allocatedTo": "meaty/strange-aeons",
+      "themes": []
+    },
+    {
+      "ap": "Strange Aeons",
+      "chapter": "The Whisper Out of Time",
+      "index": 4,
+      "allocatedTo": "meaty/strange-aeons",
+      "themes": []
+    },
+    {
+      "ap": "Strange Aeons",
+      "chapter": "What Grows Within",
+      "index": 5,
+      "allocatedTo": "meaty/strange-aeons",
+      "themes": []
+    },
+    {
+      "ap": "Strange Aeons",
+      "chapter": "Black Stars Beckon",
+      "index": 6,
+      "allocatedTo": "meaty/strange-aeons",
+      "themes": []
+    },
+    {
+      "ap": "Iron Gods",
+      "chapter": "Fires of Creation",
+      "index": 1,
+      "allocatedTo": "meaty/iron-gods",
+      "themes": []
+    },
+    {
+      "ap": "Iron Gods",
+      "chapter": "Lords of Rust",
+      "index": 2,
+      "allocatedTo": "meaty/iron-gods",
+      "themes": []
+    },
+    {
+      "ap": "Iron Gods",
+      "chapter": "The Choking Tower",
+      "index": 3,
+      "allocatedTo": "meaty/iron-gods",
+      "themes": []
+    },
+    {
+      "ap": "Iron Gods",
+      "chapter": "Valley of the Brain Collectors",
+      "index": 4,
+      "allocatedTo": "meaty/iron-gods",
+      "themes": []
+    },
+    {
+      "ap": "Iron Gods",
+      "chapter": "Palace of Fallen Stars",
+      "index": 5,
+      "allocatedTo": "meaty/iron-gods",
+      "themes": []
+    },
+    {
+      "ap": "Iron Gods",
+      "chapter": "The Divinity Drive",
+      "index": 6,
+      "allocatedTo": "meaty/iron-gods",
+      "themes": []
+    },
+    {
+      "ap": "Serpent's Skull",
+      "chapter": "Souls for Smuggler's Shiv",
+      "index": 1,
+      "allocatedTo": "meaty/serpents-skull",
+      "themes": []
+    },
+    {
+      "ap": "Serpent's Skull",
+      "chapter": "Racing to Ruin",
+      "index": 2,
+      "allocatedTo": "meaty/serpents-skull",
+      "themes": []
+    },
+    {
+      "ap": "Serpent's Skull",
+      "chapter": "City of Seven Spears",
+      "index": 3,
+      "allocatedTo": "meaty/serpents-skull",
+      "themes": []
+    },
+    {
+      "ap": "Serpent's Skull",
+      "chapter": "Vaults of Madness",
+      "index": 4,
+      "allocatedTo": "meaty/serpents-skull",
+      "themes": []
+    },
+    {
+      "ap": "Serpent's Skull",
+      "chapter": "The Thousand Fangs Below",
+      "index": 5,
+      "allocatedTo": "meaty/serpents-skull",
+      "themes": []
+    },
+    {
+      "ap": "Serpent's Skull",
+      "chapter": "Sanctum of the Serpent God",
+      "index": 6,
+      "allocatedTo": "meaty/serpents-skull",
+      "themes": []
+    },
+    {
+      "ap": "Mummy's Mask",
+      "chapter": "The Half-Dead City",
+      "index": 1,
+      "allocatedTo": "meaty/mummys-mask",
+      "themes": []
+    },
+    {
+      "ap": "Mummy's Mask",
+      "chapter": "Empty Graves",
+      "index": 2,
+      "allocatedTo": "meaty/mummys-mask",
+      "themes": []
+    },
+    {
+      "ap": "Mummy's Mask",
+      "chapter": "Shifting Sands",
+      "index": 3,
+      "allocatedTo": "meaty/mummys-mask",
+      "themes": []
+    },
+    {
+      "ap": "Mummy's Mask",
+      "chapter": "Secrets of the Sphinx",
+      "index": 4,
+      "allocatedTo": "meaty/mummys-mask",
+      "themes": []
+    },
+    {
+      "ap": "Mummy's Mask",
+      "chapter": "The Slave Trenches of Hakotep",
+      "index": 5,
+      "allocatedTo": "meaty/mummys-mask",
+      "themes": []
+    },
+    {
+      "ap": "Mummy's Mask",
+      "chapter": "Pyramid of the Sky Pharaoh",
+      "index": 6,
+      "allocatedTo": "meaty/mummys-mask",
+      "themes": []
+    },
+    {
+      "ap": "Ruins of Azlant",
+      "chapter": "The Lost Outpost",
+      "index": 1,
+      "allocatedTo": "meaty/ruins-of-azlant",
+      "themes": []
+    },
+    {
+      "ap": "Ruins of Azlant",
+      "chapter": "Into the Shattered Continent",
+      "index": 2,
+      "allocatedTo": "meaty/ruins-of-azlant",
+      "themes": []
+    },
+    {
+      "ap": "Ruins of Azlant",
+      "chapter": "The Flooded Cathedral",
+      "index": 3,
+      "allocatedTo": "meaty/ruins-of-azlant",
+      "themes": []
+    },
+    {
+      "ap": "Ruins of Azlant",
+      "chapter": "City in the Deep",
+      "index": 4,
+      "allocatedTo": "meaty/ruins-of-azlant",
+      "themes": []
+    },
+    {
+      "ap": "Ruins of Azlant",
+      "chapter": "Tower of the Drowned Dead",
+      "index": 5,
+      "allocatedTo": "meaty/ruins-of-azlant",
+      "themes": []
+    },
+    {
+      "ap": "Ruins of Azlant",
+      "chapter": "Beyond the Veiled Past",
+      "index": 6,
+      "allocatedTo": "meaty/ruins-of-azlant",
+      "themes": []
+    },
+    {
+      "ap": "Abomination Vaults",
+      "chapter": "Ruins of Gauntlight",
+      "index": 1,
+      "allocatedTo": "meaty/abomination-vaults",
+      "themes": []
+    },
+    {
+      "ap": "Abomination Vaults",
+      "chapter": "Hands of the Devil",
+      "index": 2,
+      "allocatedTo": "meaty/abomination-vaults",
+      "themes": []
+    },
+    {
+      "ap": "Abomination Vaults",
+      "chapter": "Eyes of Empty Death",
+      "index": 3,
+      "allocatedTo": "meaty/abomination-vaults",
+      "themes": []
+    },
+    {
+      "ap": "Reign of Winter",
+      "chapter": "The Snows of Summer",
+      "index": 1,
+      "allocatedTo": "meaty/reign-of-winter",
+      "themes": []
+    },
+    {
+      "ap": "Reign of Winter",
+      "chapter": "The Shackled Hut",
+      "index": 2,
+      "allocatedTo": "meaty/reign-of-winter",
+      "themes": []
+    },
+    {
+      "ap": "Reign of Winter",
+      "chapter": "Maiden, Mother, Crone",
+      "index": 3,
+      "allocatedTo": "meaty/reign-of-winter",
+      "themes": []
+    },
+    {
+      "ap": "Reign of Winter",
+      "chapter": "The Frozen Stars",
+      "index": 4,
+      "allocatedTo": "meaty/reign-of-winter",
+      "themes": []
+    },
+    {
+      "ap": "Reign of Winter",
+      "chapter": "Rasputin Must Die!",
+      "index": 5,
+      "allocatedTo": "meaty/reign-of-winter",
+      "themes": []
+    },
+    {
+      "ap": "Reign of Winter",
+      "chapter": "The Witch Queen's Revenge",
+      "index": 6,
+      "allocatedTo": "meaty/reign-of-winter",
+      "themes": []
+    },
+    {
+      "ap": "Second Darkness",
+      "chapter": "Shadow in the Sky",
+      "index": 1,
+      "allocatedTo": "meaty/second-darkness",
+      "themes": []
+    },
+    {
+      "ap": "Second Darkness",
+      "chapter": "Children of the Void",
+      "index": 2,
+      "allocatedTo": "meaty/second-darkness",
+      "themes": []
+    },
+    {
+      "ap": "Second Darkness",
+      "chapter": "The Armageddon Echo",
+      "index": 3,
+      "allocatedTo": "meaty/second-darkness",
+      "themes": []
+    },
+    {
+      "ap": "Second Darkness",
+      "chapter": "Endless Night",
+      "index": 4,
+      "allocatedTo": "meaty/second-darkness",
+      "themes": []
+    },
+    {
+      "ap": "Second Darkness",
+      "chapter": "A Memory of Darkness",
+      "index": 5,
+      "allocatedTo": "meaty/second-darkness",
+      "themes": []
+    },
+    {
+      "ap": "Second Darkness",
+      "chapter": "Descent into Midnight",
+      "index": 6,
+      "allocatedTo": "meaty/second-darkness",
+      "themes": []
+    },
+    {
+      "ap": "Rise of the Runelords",
+      "chapter": "Burnt Offerings",
+      "index": 1,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Rise of the Runelords",
+      "chapter": "The Skinsaw Murders",
+      "index": 2,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Rise of the Runelords",
+      "chapter": "The Hook Mountain Massacre",
+      "index": 3,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Rise of the Runelords",
+      "chapter": "Fortress of the Stone Giants",
+      "index": 4,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Rise of the Runelords",
+      "chapter": "Sins of the Saviors",
+      "index": 5,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Rise of the Runelords",
+      "chapter": "Spires of Xin-Shalast",
+      "index": 6,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Curse of the Crimson Throne",
+      "chapter": "Edge of Anarchy",
+      "index": 1,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Curse of the Crimson Throne",
+      "chapter": "Seven Days to the Grave",
+      "index": 2,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Curse of the Crimson Throne",
+      "chapter": "Escape from Old Korvosa",
+      "index": 3,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Curse of the Crimson Throne",
+      "chapter": "A History of Ashes",
+      "index": 4,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Curse of the Crimson Throne",
+      "chapter": "Skeletons of Scarwall",
+      "index": 5,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Curse of the Crimson Throne",
+      "chapter": "Crown of Fangs",
+      "index": 6,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Legacy of Fire",
+      "chapter": "Howl of the Carrion King",
+      "index": 1,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Legacy of Fire",
+      "chapter": "House of the Beast",
+      "index": 2,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Legacy of Fire",
+      "chapter": "The Jackal's Price",
+      "index": 3,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Legacy of Fire",
+      "chapter": "The End of Eternity",
+      "index": 4,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Legacy of Fire",
+      "chapter": "The Impossible Eye",
+      "index": 5,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Legacy of Fire",
+      "chapter": "The Final Wish",
+      "index": 6,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Council of Thieves",
+      "chapter": "The Bastards of Erebus",
+      "index": 1,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Council of Thieves",
+      "chapter": "The Sixfold Trial",
+      "index": 2,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Council of Thieves",
+      "chapter": "What Lies in Dust",
+      "index": 3,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Council of Thieves",
+      "chapter": "The Infernal Syndrome",
+      "index": 4,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Council of Thieves",
+      "chapter": "Mother of Flies",
+      "index": 5,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Council of Thieves",
+      "chapter": "The Twice-Damned Prince",
+      "index": 6,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Kingmaker",
+      "chapter": "Stolen Land",
+      "index": 1,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Kingmaker",
+      "chapter": "Rivers Run Red",
+      "index": 2,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Kingmaker",
+      "chapter": "The Varnhold Vanishing",
+      "index": 3,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Kingmaker",
+      "chapter": "Blood for Blood",
+      "index": 4,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Kingmaker",
+      "chapter": "War of the River Kings",
+      "index": 5,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Kingmaker",
+      "chapter": "Sound of a Thousand Screams",
+      "index": 6,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Jade Regent",
+      "chapter": "The Brinewall Legacy",
+      "index": 1,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Jade Regent",
+      "chapter": "Night of Frozen Shadows",
+      "index": 2,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Jade Regent",
+      "chapter": "The Hungry Storm",
+      "index": 3,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Jade Regent",
+      "chapter": "Forest of Spirits",
+      "index": 4,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Jade Regent",
+      "chapter": "Tide of Honor",
+      "index": 5,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Jade Regent",
+      "chapter": "The Empty Throne",
+      "index": 6,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Skull & Shackles",
+      "chapter": "The Wormwood Mutiny",
+      "index": 1,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Skull & Shackles",
+      "chapter": "Raiders of the Fever Sea",
+      "index": 2,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Skull & Shackles",
+      "chapter": "Tempest Rising",
+      "index": 3,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Skull & Shackles",
+      "chapter": "Island of Empty Eyes",
+      "index": 4,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Skull & Shackles",
+      "chapter": "The Price of Infamy",
+      "index": 5,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Skull & Shackles",
+      "chapter": "From Hell's Heart",
+      "index": 6,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Shattered Star",
+      "chapter": "Shards of Sin",
+      "index": 1,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Shattered Star",
+      "chapter": "Curse of the Lady's Light",
+      "index": 2,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Shattered Star",
+      "chapter": "The Asylum Stone",
+      "index": 3,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Shattered Star",
+      "chapter": "Beyond the Doomsday Door",
+      "index": 4,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Shattered Star",
+      "chapter": "Into the Nightmare Rift",
+      "index": 5,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Shattered Star",
+      "chapter": "The Dead Heart of Xin",
+      "index": 6,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Wrath of the Righteous",
+      "chapter": "The Worldwound Incursion",
+      "index": 1,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Wrath of the Righteous",
+      "chapter": "Sword of Valor",
+      "index": 2,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Wrath of the Righteous",
+      "chapter": "Demon's Heresy",
+      "index": 3,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Wrath of the Righteous",
+      "chapter": "The Midnight Isles",
+      "index": 4,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Wrath of the Righteous",
+      "chapter": "Herald of the Ivory Labyrinth",
+      "index": 5,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Wrath of the Righteous",
+      "chapter": "City of Locusts",
+      "index": 6,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Giantslayer",
+      "chapter": "Battle of Bloodmarch Hill",
+      "index": 1,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Giantslayer",
+      "chapter": "The Hill Giant's Pledge",
+      "index": 2,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Giantslayer",
+      "chapter": "Forge of the Giant God",
+      "index": 3,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Giantslayer",
+      "chapter": "Ice Tomb of the Giant Queen",
+      "index": 4,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Giantslayer",
+      "chapter": "Anvil of Fire",
+      "index": 5,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Giantslayer",
+      "chapter": "Shadow of the Storm Tyrant",
+      "index": 6,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Hell's Rebels",
+      "chapter": "In Hell's Bright Shadow",
+      "index": 1,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Hell's Rebels",
+      "chapter": "Turn of the Torrent",
+      "index": 2,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Hell's Rebels",
+      "chapter": "Dance of the Damned",
+      "index": 3,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Hell's Rebels",
+      "chapter": "A Song of Silver",
+      "index": 4,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Hell's Rebels",
+      "chapter": "The Kintargo Contract",
+      "index": 5,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Hell's Rebels",
+      "chapter": "Breaking the Bones of Hell",
+      "index": 6,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Hell's Vengeance",
+      "chapter": "The Hellfire Compact",
+      "index": 1,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Hell's Vengeance",
+      "chapter": "Wrath of Thrune",
+      "index": 2,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Hell's Vengeance",
+      "chapter": "The Inferno Gate",
+      "index": 3,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Hell's Vengeance",
+      "chapter": "For Queen & Empire",
+      "index": 4,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Hell's Vengeance",
+      "chapter": "Scourge of the Godclaw",
+      "index": 5,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Hell's Vengeance",
+      "chapter": "Hell Comes to Westcrown",
+      "index": 6,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Ironfang Invasion",
+      "chapter": "Trail of the Hunted",
+      "index": 1,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Ironfang Invasion",
+      "chapter": "Fangs of War",
+      "index": 2,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Ironfang Invasion",
+      "chapter": "Assault on Longshadow",
+      "index": 3,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Ironfang Invasion",
+      "chapter": "Siege of Stone",
+      "index": 4,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Ironfang Invasion",
+      "chapter": "Prisoners of the Blight",
+      "index": 5,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Ironfang Invasion",
+      "chapter": "Vault of the Onyx Citadel",
+      "index": 6,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "War for the Crown",
+      "chapter": "Crownfall",
+      "index": 1,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "War for the Crown",
+      "chapter": "Songbird, Scion, Saboteur",
+      "index": 2,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "War for the Crown",
+      "chapter": "The Twilight Child",
+      "index": 3,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "War for the Crown",
+      "chapter": "City in the Lion's Eye",
+      "index": 4,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "War for the Crown",
+      "chapter": "The Reaper's Right Hand",
+      "index": 5,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "War for the Crown",
+      "chapter": "The Six-Legend Soul",
+      "index": 6,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Return of the Runelords",
+      "chapter": "Secrets of Roderic's Cove",
+      "index": 1,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Return of the Runelords",
+      "chapter": "It Came from Hollow Mountain",
+      "index": 2,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Return of the Runelords",
+      "chapter": "Runeplague",
+      "index": 3,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Return of the Runelords",
+      "chapter": "Temple of the Peacock Spirit",
+      "index": 4,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Return of the Runelords",
+      "chapter": "The City Outside of Time",
+      "index": 5,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Return of the Runelords",
+      "chapter": "Rise of New Thassilon",
+      "index": 6,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Tyrant's Grasp",
+      "chapter": "The Dead Roads",
+      "index": 1,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Tyrant's Grasp",
+      "chapter": "Eulogy for Roslar's Coffer",
+      "index": 2,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Tyrant's Grasp",
+      "chapter": "Last Watch",
+      "index": 3,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Tyrant's Grasp",
+      "chapter": "Gardens of Gallowspire",
+      "index": 4,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Tyrant's Grasp",
+      "chapter": "Borne by the Sun's Grace",
+      "index": 5,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Tyrant's Grasp",
+      "chapter": "Midwives to Death",
+      "index": 6,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Age of Ashes",
+      "chapter": "Hellknight Hill",
+      "index": 1,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Age of Ashes",
+      "chapter": "Cult of Cinders",
+      "index": 2,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Age of Ashes",
+      "chapter": "Tomorrow Must Burn",
+      "index": 3,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Age of Ashes",
+      "chapter": "Fires of the Haunted City",
+      "index": 4,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Age of Ashes",
+      "chapter": "Against the Scarlet Triad",
+      "index": 5,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Age of Ashes",
+      "chapter": "Broken Promises",
+      "index": 6,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Extinction Curse",
+      "chapter": "The Show Must Go On",
+      "index": 1,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Extinction Curse",
+      "chapter": "Legacy of the Lost God",
+      "index": 2,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Extinction Curse",
+      "chapter": "Life's Long Shadows",
+      "index": 3,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Extinction Curse",
+      "chapter": "Siege of the Dinosaurs",
+      "index": 4,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Extinction Curse",
+      "chapter": "Lord of the Black Sands",
+      "index": 5,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Extinction Curse",
+      "chapter": "The Apocalypse Prophet",
+      "index": 6,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Agents of Edgewatch",
+      "chapter": "Devil at the Dreaming Palace",
+      "index": 1,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Agents of Edgewatch",
+      "chapter": "Sixty Feet Under",
+      "index": 2,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Agents of Edgewatch",
+      "chapter": "All or Nothing",
+      "index": 3,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Agents of Edgewatch",
+      "chapter": "Assault on Hunting Lodge Seven",
+      "index": 4,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Agents of Edgewatch",
+      "chapter": "Belly of the Black Whale",
+      "index": 5,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Agents of Edgewatch",
+      "chapter": "Ruins of the Radiant Siege",
+      "index": 6,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Fists of the Ruby Phoenix",
+      "chapter": "Despair on Danger Island",
+      "index": 1,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Fists of the Ruby Phoenix",
+      "chapter": "Ready? Fight!",
+      "index": 2,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Fists of the Ruby Phoenix",
+      "chapter": "King of the Mountain",
+      "index": 3,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Strength of Thousands",
+      "chapter": "Kindled Magic",
+      "index": 1,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Strength of Thousands",
+      "chapter": "Spoken on the Song Wind",
+      "index": 2,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Strength of Thousands",
+      "chapter": "Hurricane's Howl",
+      "index": 3,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Strength of Thousands",
+      "chapter": "Secrets of the Temple-City",
+      "index": 4,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Strength of Thousands",
+      "chapter": "Doorway to the Red Star",
+      "index": 5,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Strength of Thousands",
+      "chapter": "Shadows of the Ancients",
+      "index": 6,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Quest for the Frozen Flame",
+      "chapter": "Broken Tusk Moon",
+      "index": 1,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Quest for the Frozen Flame",
+      "chapter": "Lost Mammoth Valley",
+      "index": 2,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Quest for the Frozen Flame",
+      "chapter": "Burning Tundra",
+      "index": 3,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Outlaws of Alkenstar",
+      "chapter": "Punks in a Powderkeg",
+      "index": 1,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Outlaws of Alkenstar",
+      "chapter": "Cradle of Quartz",
+      "index": 2,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Outlaws of Alkenstar",
+      "chapter": "The Smoking Gun",
+      "index": 3,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Blood Lords",
+      "chapter": "Zombie Feast",
+      "index": 1,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Blood Lords",
+      "chapter": "Graveclaw",
+      "index": 2,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Blood Lords",
+      "chapter": "Field of Maidens",
+      "index": 3,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Blood Lords",
+      "chapter": "The Ghouls Hunger",
+      "index": 4,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Blood Lords",
+      "chapter": "A Taste of Ashes",
+      "index": 5,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Blood Lords",
+      "chapter": "Ghost King's Rage",
+      "index": 6,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Gatewalkers",
+      "chapter": "The Seventh Arch",
+      "index": 1,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Gatewalkers",
+      "chapter": "They Watched the Stars",
+      "index": 2,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Gatewalkers",
+      "chapter": "Dreamers of the Nameless Spires",
+      "index": 3,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Stolen Fate",
+      "chapter": "The Choosing",
+      "index": 1,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Stolen Fate",
+      "chapter": "The Destiny War",
+      "index": 2,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Stolen Fate",
+      "chapter": "Worst of All Possible Worlds",
+      "index": 3,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Sky King's Tomb",
+      "chapter": "Mantle of Gold",
+      "index": 1,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Sky King's Tomb",
+      "chapter": "Cult of the Cave Worm",
+      "index": 2,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Sky King's Tomb",
+      "chapter": "Heavy is the Crown",
+      "index": 3,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Season of Ghosts",
+      "chapter": "The Summer That Never Was",
+      "index": 1,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Season of Ghosts",
+      "chapter": "Let the Leaves Fall",
+      "index": 2,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Season of Ghosts",
+      "chapter": "No Breath to Cry",
+      "index": 3,
+      "allocatedTo": null,
+      "themes": []
+    },
+    {
+      "ap": "Season of Ghosts",
+      "chapter": "To Bloom Below the Web",
+      "index": 4,
+      "allocatedTo": null,
+      "themes": []
+    }
+  ]
+}
