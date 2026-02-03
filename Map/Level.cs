@@ -1,5 +1,3 @@
-using System.Resources;
-
 namespace Pathhack.Map;
 
 // TileType, TileFlags, and TileInfo.DefaultFlags must be kept in sync
@@ -60,6 +58,54 @@ public class TileFeature(string id)
     public string Id => id;
 }
 
+public class DummyCellDef : BaseDef
+{
+    public static readonly DummyCellDef Instance = new();
+}
+
+public class CellFx
+{
+    public virtual StackMode Stack => StackMode.Extend;
+
+    public virtual void OnSpawn(IUnit unit) {}
+    public virtual void OnDespawn(IUnit unit) {}
+    public virtual void OnRoundStart(IUnit unit) {}
+    public virtual void OnRoundEnd(IUnit unit) {}
+    public virtual void OnEnter(IUnit unit) {}
+    public virtual void OnExit(IUnit unit) {}
+}
+
+public record class CellFxFact(CellFx Fx, int ExpiresAt);
+
+public class CellFxList
+{
+    public List<(CellFx Fx, int ExpiresAt)> Effects = [];
+    private int FxCount = 0;
+
+    public void AddFx(CellFx fx, int duration)
+    {
+        int expireAt = g.CurrentRound + duration;
+        var current = Effects.FirstOrDefault(x => x.Fx == fx);
+        if (current.Fx != null)
+        {
+            current.ExpiresAt = expireAt;
+        }
+        else
+        {
+            Effects.Add((fx, expireAt));
+            FxCount++;
+        }
+    }
+
+    public bool Tick()
+    {
+        Effects.RemoveAll(fx => fx.ExpiresAt <= g.CurrentRound);
+        return Effects.Count > 0;
+    }
+
+
+}
+
 public class CellState
 {
     public DoorState Door;
@@ -68,6 +114,7 @@ public class CellState
     public List<Item>? Items;
     public string? Message;
     internal TileFeature? Feature;
+    public CellFxList? Fx = null;
 }
 
 public readonly record struct Tile(TileType Type, TileFlags Flags)
@@ -190,6 +237,15 @@ public class Level(LevelId id, int width, int height)
     public string? FirstIntro;
     public string? ReturnIntro;
     public int GeometryVersion;
+
+    public void Spill(IEnumerable<Pos> to, CellFx fx, int duration)
+    {
+        foreach (var pos in to)
+        {
+            GetOrCreateState(pos).Fx ??= new();
+            GetOrCreateState(pos).Fx!.AddFx(fx, duration);
+        }
+    }
 
     public bool UnderConstruction = true;
     public void InvalidateGeometry()
@@ -499,6 +555,13 @@ public class Level(LevelId id, int width, int height)
 
     internal void ReapDead() => Units.RemoveAll(x => x.IsDead);
     internal void SortUnitsByInitiative() => Units.Sort((a, b) => b.Initiative.CompareTo(a.Initiative));
+
+    internal void AddFx<T>(Pos p, T fx, int endAt) where T : CellFx
+    {
+        var state = GetOrCreateState(p);
+        state.Fx ??= new();
+        state.Fx.AddFx(fx, endAt);
+    }
 }
 
 
