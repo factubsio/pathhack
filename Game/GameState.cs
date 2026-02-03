@@ -330,6 +330,9 @@ public class GameState
             entity.ExpireFacts();
             LogicBrick.FireOnRoundEnd(entity, PHContext.Create(null, Target.None));
         }
+        foreach (var area in lvl.Areas)
+            area.Tick();
+        lvl.Areas.RemoveAll(x => g.CurrentRound >= x.ExpiresAt);
         CleanupFacts();
         Perf.Stop("OnRoundEnd");
 

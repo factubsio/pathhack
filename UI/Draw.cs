@@ -373,6 +373,11 @@ public static class Draw
 
     public static void DrawLevel(Level level)
     {
+        Area?[,] areaMap = new Area?[level.Width, level.Height];
+        foreach (var area in level.Areas.OrderBy(a => a.ZOrder))
+            foreach (var p in area.Tiles)
+                areaMap[p.X, p.Y] = area;
+
         for (int y = 0; y < level.Height; y++)
         {
             for (int x = 0; x < level.Width; x++)
@@ -389,23 +394,31 @@ public static class Draw
                     }
                     else
                     {
-                        var items = level.ItemsAt(p);
-                        if (items.Count > 0)
+                        var area = areaMap[x, y];
+                        if (!level[p].IsStructural && area != null)
                         {
-                            var top = items[^1];
-                            Layers[0][x, y + MapRow] = Cell.From(top.Def.Glyph);
-                        }
-                        else if (level.GetState(p)?.Feature is {} feature && feature.Id[0] != '_')
-                        {
-                            Layers[0][x, y + MapRow] = new('_', ConsoleColor.DarkGreen);
-                        }
-                        else if (level.Traps.TryGetValue(p, out var trap) && trap.PlayerSeen)
-                        {
-                            Layers[0][x, y + MapRow] = Cell.From(trap.Glyph);
+                            Layers[0][x, y + MapRow] = Cell.From(area.Glyph);
                         }
                         else
                         {
-                            Layers[0][x, y + MapRow] = TileCell(level, p);
+                            var items = level.ItemsAt(p);
+                            if (items.Count > 0)
+                            {
+                                var top = items[^1];
+                                Layers[0][x, y + MapRow] = Cell.From(top.Def.Glyph);
+                            }
+                            else if (level.GetState(p)?.Feature is {} feature && feature.Id[0] != '_')
+                            {
+                                Layers[0][x, y + MapRow] = new('_', ConsoleColor.DarkGreen);
+                            }
+                            else if (level.Traps.TryGetValue(p, out var trap) && trap.PlayerSeen)
+                            {
+                                Layers[0][x, y + MapRow] = Cell.From(trap.Glyph);
+                            }
+                            else
+                            {
+                                Layers[0][x, y + MapRow] = TileCell(level, p);
+                            }
                         }
                     }
                 }

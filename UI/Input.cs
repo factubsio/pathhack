@@ -889,9 +889,9 @@ public static class Input
             }
         }
 
-        var msg = lvl.GetState(upos)?.Message;
-        if (msg != null)
-            g.pline(msg);
+        var cellMsg = lvl.GetState(upos)?.Message;
+        if (cellMsg != null)
+            g.pline(cellMsg);
     }
 
     static CommandArg GetArg(ArgType type) => type.Kind switch
