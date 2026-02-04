@@ -27,7 +27,7 @@ jobs:
           dotnet-version: '9.0'
       
       - name: Publish AOT
-        run: dotnet publish Pathhack.csproj -c Release -r ${{ matrix.rid }} /p:PublishAot=true -o publish
+        run: dotnet publish pathhack.csproj -c Release -r ${{ matrix.rid }} /p:PublishAot=true -o publish
       
       - name: Zip artifacts (unix)
         if: runner.os != 'Windows'
