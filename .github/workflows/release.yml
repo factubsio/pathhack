@@ -31,11 +31,11 @@ jobs:
       
       - name: Zip artifacts (unix)
         if: runner.os != 'Windows'
-        run: cd publish && zip -r ../pathhack-${{ matrix.rid }}.zip .
+        run: cd publish && zip -r ../pathhack-${{ matrix.rid }}.zip . -x "*.dSYM/*" -x "*.dbg"
       
       - name: Zip artifacts (windows)
         if: runner.os == 'Windows'
-        run: Compress-Archive -Path publish/* -DestinationPath pathhack-${{ matrix.rid }}.zip
+        run: Compress-Archive -Path publish/*.exe -DestinationPath pathhack-${{ matrix.rid }}.zip
       
       - uses: actions/upload-artifact@v4
         with:
