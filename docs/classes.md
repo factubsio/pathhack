@@ -136,7 +136,18 @@ maybe too much choice not enough spellbooks? not enough randos?
 
 ## Casting Depth
 
-we won't limit max slots (?) like pf, but if you were full caster in pf you'll get more higher level slots
+max spell level = 5, we'll compress 9th level to 5th but it will be all a bit hand wavy, it's ok, we will manage
+
+ALL CASTERS CAN CAST SPELL LEVEL 5 
+
+we won't limit max LEVEL SLOTS (?) like pf, but if you were full caster in pf you'll get more higher level slots in pathhack
+
+ALL CASTERS = CAN CAST LEVEL 5
+BIG CASTERS IN PF = MORE LEVEL 5 SLOTS (EARLIER?)
+MEDIUM CASTERS IN PF = FEWER LEVEL 5 SLOTS (LATER?)
+LITTLE CASTERS IN PF = ONE LEVEL 5 SLOT? (LATER??)
+
+I dunno if we even care about little casters from 1e?
 
 Currently cos ui width max 5 slots per level - FUNCTION FOLLOW FORM :-(
 
