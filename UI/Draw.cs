@@ -464,6 +464,7 @@ public static class Draw
         TileType.Door => ConsoleColor.DarkYellow,
         TileType.StairsUp => ConsoleColor.Gray,
         TileType.StairsDown => ConsoleColor.Gray,
+        TileType.Grass => ConsoleColor.Green,
         _ => ConsoleColor.Gray,
     };
 
@@ -486,6 +487,7 @@ public static class Draw
             TileType.StairsDown => '>',
             TileType.BranchUp => '<',
             TileType.BranchDown => '>',
+            TileType.Grass => ',',
             _ => '?',
         };
         return new(ch, fg, Dec: dec);

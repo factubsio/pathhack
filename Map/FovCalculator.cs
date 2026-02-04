@@ -129,6 +129,17 @@ public static class FovCalculator
                 level.SetLit(p);
         }
 
+        if (level.Outdoors)
+        {
+            for (int y = 0; y < level.Height; y++)
+            for (int x = 0; x < level.Width; x++)
+            {
+                Pos p = new(x, y);
+                if (level[p].Type == TileType.Grass)
+                    level.SetLit(p);
+            }
+        }
+
         if (moreLit != null) level.Lit.Set(moreLit);
 
         // todo other lights, for now we just use a light radius centered on the

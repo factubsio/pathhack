@@ -7,8 +7,20 @@ public static class MundaneArmory
         id = "dagger",
         Name = "dagger",
         BaseDamage = d(4),
-        Profiency = Proficiencies.Dagger,
+        Profiency = Proficiencies.LightBlade,
+        WeaponType = WeaponTypes.Dagger,
         DamageType = DamageTypes.Piercing,
+        Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
+    };
+
+    public static readonly WeaponDef Shortsword = new()
+    {
+        id = "shortsword",
+        Name = "shortsword",
+        BaseDamage = d(6),
+        Profiency = Proficiencies.LightBlade,
+        WeaponType = WeaponTypes.Shortsword,
+        DamageType = DamageTypes.Slashing,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
     };
 
@@ -17,18 +29,43 @@ public static class MundaneArmory
         id = "longsword",
         Name = "longsword",
         BaseDamage = d(8),
-        Profiency = Proficiencies.Longsword,
+        Profiency = Proficiencies.HeavyBlade,
+        WeaponType = WeaponTypes.Longsword,
         DamageType = DamageTypes.Slashing,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
     };
 
-    public static readonly WeaponDef Mace = new()
+    public static readonly WeaponDef Scimitar = new()
     {
-        id = "mace",
-        Name = "mace",
+        id = "scimitar",
+        Name = "scimitar",
         BaseDamage = d(6),
-        Profiency = Proficiencies.Mace,
-        DamageType = DamageTypes.Blunt,
+        Profiency = Proficiencies.HeavyBlade,
+        WeaponType = WeaponTypes.Scimitar,
+        DamageType = DamageTypes.Slashing,
+        Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
+    };
+
+    public static readonly WeaponDef Rapier = new()
+    {
+        id = "rapier",
+        Name = "rapier",
+        BaseDamage = d(6),
+        Profiency = Proficiencies.LightBlade,
+        WeaponType = WeaponTypes.Rapier,
+        DamageType = DamageTypes.Piercing,
+        Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
+    };
+
+    public static readonly WeaponDef Falchion = new()
+    {
+        id = "falchion",
+        Name = "falchion",
+        BaseDamage = d(2, 4),
+        Profiency = Proficiencies.HeavyBlade,
+        WeaponType = WeaponTypes.Falchion,
+        DamageType = DamageTypes.Slashing,
+        Hands = 2,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
     };
 
@@ -38,6 +75,7 @@ public static class MundaneArmory
         Name = "club",
         BaseDamage = d(6),
         Profiency = Proficiencies.Club,
+        WeaponType = WeaponTypes.Club,
         DamageType = DamageTypes.Blunt,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
     };
@@ -48,8 +86,43 @@ public static class MundaneArmory
         Name = "spiked club",
         BaseDamage = d(8),
         Profiency = Proficiencies.Club,
+        WeaponType = WeaponTypes.Club,
         DamageType = DamageTypes.Blunt,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
+    };
+
+    public static readonly WeaponDef Greatclub = new()
+    {
+        id = "greatclub",
+        Name = "greatclub",
+        BaseDamage = d(10),
+        Profiency = Proficiencies.Club,
+        WeaponType = WeaponTypes.Greatclub,
+        DamageType = DamageTypes.Blunt,
+        Hands = 2,
+        Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
+    };
+
+    public static readonly WeaponDef Mace = new()
+    {
+        id = "mace",
+        Name = "mace",
+        BaseDamage = d(6),
+        Profiency = Proficiencies.Club,
+        WeaponType = WeaponTypes.Mace,
+        DamageType = DamageTypes.Blunt,
+        Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
+    };
+
+    public static readonly WeaponDef Flail = new()
+    {
+        id = "flail",
+        Name = "flail",
+        BaseDamage = d(6),
+        Profiency = Proficiencies.Flail,
+        WeaponType = WeaponTypes.Flail,
+        DamageType = DamageTypes.Blunt,
+        Glyph = new(ItemClasses.Weapon, ConsoleColor.Gray),
     };
 
     public static readonly WeaponDef Quarterstaff = new()
@@ -57,30 +130,49 @@ public static class MundaneArmory
         id = "quarterstaff",
         Name = "quarterstaff",
         BaseDamage = d(6),
-        Profiency = Proficiencies.Club,
+        Profiency = Proficiencies.Staff,
+        WeaponType = WeaponTypes.Quarterstaff,
         DamageType = DamageTypes.Blunt,
         Hands = 2,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
     };
 
-    public static readonly WeaponDef Scimitar = new()
+    public static readonly WeaponDef BoStaff = new()
     {
-        id = "scimitar",
-        Name = "scimitar",
-        BaseDamage = d(6),
-        Profiency = Proficiencies.Scimitar,
-        DamageType = DamageTypes.Slashing,
-        Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
+        id = "bo_staff",
+        Name = "bo staff",
+        BaseDamage = d(8),
+        Profiency = Proficiencies.Staff,
+        WeaponType = WeaponTypes.BoStaff,
+        DamageType = DamageTypes.Blunt,
+        Hands = 2,
+        Range = 2,
+        Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
     };
 
-    public static readonly WeaponDef Rapier = new()
+    public static readonly WeaponDef Spear = new()
     {
-        id = "rapier",
-        Name = "rapier",
+        id = "spear",
+        Name = "spear",
         BaseDamage = d(6),
-        Profiency = Proficiencies.Rapier,
+        Profiency = Proficiencies.Polearm,
+        WeaponType = WeaponTypes.Spear,
         DamageType = DamageTypes.Piercing,
-        Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
+        Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
+        Launcher = "hand",
+        MeleeVerb = "thrusts",
+    };
+
+    public static readonly WeaponDef Scythe = new()
+    {
+        id = "scythe",
+        Name = "scythe",
+        BaseDamage = d(10),
+        Profiency = Proficiencies.Polearm,
+        WeaponType = WeaponTypes.Scythe,
+        DamageType = DamageTypes.Slashing,
+        Hands = 2,
+        Glyph = new(ItemClasses.Weapon, ConsoleColor.Gray),
     };
 
     public static readonly WeaponDef Whip = new()
@@ -89,6 +181,7 @@ public static class MundaneArmory
         Name = "whip",
         BaseDamage = d(4),
         Profiency = Proficiencies.Whip,
+        WeaponType = WeaponTypes.Whip,
         DamageType = DamageTypes.Slashing,
         Range = 2,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
@@ -99,45 +192,25 @@ public static class MundaneArmory
         id = "spiked_chain",
         Name = "spiked chain",
         BaseDamage = d(8),
-        Profiency = Proficiencies.SpikedChain,
+        Profiency = Proficiencies.Whip,
+        WeaponType = WeaponTypes.SpikedChain,
         DamageType = DamageTypes.Piercing,
         Range = 2,
         Hands = 2,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkGray),
     };
 
-    public static readonly WeaponDef Scythe = new()
+    public static readonly WeaponDef Longbow = new()
     {
-        id = "scythe",
-        Name = "scythe",
-        BaseDamage = d(10),
-        Profiency = Proficiencies.Scythe,
-        DamageType = DamageTypes.Slashing,
-        Hands = 2,
-        Glyph = new(ItemClasses.Weapon, ConsoleColor.Gray),
-    };
-
-    public static readonly WeaponDef Falchion = new()
-    {
-        id = "falchion",
-        Name = "falchion",
-        BaseDamage = d(2, 4),
-        Profiency = Proficiencies.Falchion,
-        DamageType = DamageTypes.Slashing,
-        Hands = 2,
-        Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
-    };
-
-    public static readonly WeaponDef Spear = new()
-    {
-        id = "spear",
-        Name = "spear",
-        BaseDamage = d(6),
-        Profiency = Proficiencies.Spear,
+        id = "longbow",
+        Name = "longbow",
+        BaseDamage = d(8),
+        Profiency = Proficiencies.Bow,
+        WeaponType = WeaponTypes.Longbow,
         DamageType = DamageTypes.Piercing,
+        Hands = 2,
+        Range = 10,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
-        Launcher = "hand",
-        MeleeVerb = "thrusts",
     };
 
     public static readonly WeaponDef Dart = new()
@@ -145,12 +218,25 @@ public static class MundaneArmory
         id = "dart",
         Name = "dart",
         BaseDamage = d(4),
-        Profiency = Proficiencies.Dart,
+        Profiency = Proficiencies.Thrown,
+        WeaponType = WeaponTypes.Dart,
         DamageType = DamageTypes.Piercing,
         Range = 4,
         Stackable = true,
         Launcher = "hand",
         Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
+    };
+
+    public static readonly WeaponDef Bola = new()
+    {
+        id = "bola",
+        Name = "bola",
+        BaseDamage = d(6),
+        Profiency = Proficiencies.Thrown,
+        WeaponType = WeaponTypes.Bola,
+        DamageType = DamageTypes.Blunt,
+        Launcher = "hand",
+        Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
     };
 
     public static readonly ArmorDef LeatherArmor = new()
@@ -180,8 +266,8 @@ public static class MundaneArmory
         Name = "ring of knives",
         Glyph = new(ItemClasses.Ring, ConsoleColor.Cyan),
         DefaultEquipSlot = ItemSlots.Ring,
-        Components = [new GrantProficiency(Proficiencies.Dagger, ProficiencyLevel.Trained, requiresEquipped: true)],
+        Components = [new GrantProficiency(Proficiencies.LightBlade, ProficiencyLevel.Trained, requiresEquipped: true)],
     };
 
-    public static readonly WeaponDef[] AllWeapons = [Dagger, Longsword, Scimitar, Rapier, Whip, SpikedChain, Scythe, Falchion];
+    public static readonly WeaponDef[] AllWeapons = [Dagger, Shortsword, Longsword, Scimitar, Rapier, Falchion, Club, SpikedClub, Greatclub, Mace, Flail, Quarterstaff, BoStaff, Spear, Scythe, Whip, SpikedChain, Longbow, Dart, Bola];
 }

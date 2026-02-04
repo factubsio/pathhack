@@ -34,6 +34,8 @@ public static class Input
         ["dbg.jump"] = new("dbg.jump", ArgType.Int("Level"), DebugJump),
         ["levelup"] = new("levelup", ArgType.None, _ => DoLevelUp()),
         ["invoke"] = new("invoke", ArgType.None, _ => InvokeItem()),
+        ["chat"] = new("chat", ArgType.Dir, Chat),
+        ["exp"] = new("exp", ArgType.None, _ => DebugExp()),
     };
 
     static readonly Dictionary<char, Command> _commands = new()
@@ -59,6 +61,14 @@ public static class Input
     {
         if (!g.DebugMode || arg is not IntArg(var depth) || depth < 1) return;
         g.GoToLevel(new(u.Level.Branch, depth), SpawnAt.StairsUp);
+    }
+
+    static void DebugExp()
+    {
+        // if (!g.DebugMode) return;
+        int needed = Progression.XpForLevel(u.CharacterLevel + 1) - u.XP;
+        if (needed > 0) g.GainExp(needed);
+        g.pline($"XP set to {u.XP}. Level up available.");
     }
 
     public static void DoLevelUp()
@@ -249,6 +259,23 @@ public static class Input
         else
         {
             g.pline("There is no door there.");
+        }
+    }
+
+    static void Chat(CommandArg arg)
+    {
+        if (arg is not DirArg(var d)) return;
+        Pos target = upos + d;
+        if (lvl.UnitAt(target) is Monster m)
+        {
+            if (m.Def.OnChat != null)
+                m.Def.OnChat(m);
+            else
+                g.pline($"{m:The} has nothing to say.");
+        }
+        else
+        {
+            g.pline("There is no one there.");
         }
     }
 
@@ -953,8 +980,23 @@ public static class Input
     static string? ReadLine(IEnumerable<string>? completions = null)
     {
         List<char> chars = [];
+        int autoCompleteLen = 0; // how many chars were auto-filled
         while (true)
         {
+            // auto-complete if unambiguous
+            if (completions != null && chars.Count > 0 && autoCompleteLen == 0)
+            {
+                string prefix = new([.. chars]);
+                var matches = completions.Where(c => c.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)).ToList();
+                if (matches.Count == 1 && matches[0].Length > chars.Count)
+                {
+                    string suffix = matches[0][chars.Count..];
+                    Console.Write(suffix);
+                    chars.AddRange(suffix);
+                    autoCompleteLen = suffix.Length;
+                }
+            }
+
             ConsoleKeyInfo k = NextKey();
             if (k.Key == ConsoleKey.Enter) return new string([.. chars]);
             if (k.Key == ConsoleKey.Escape) return null;
@@ -962,6 +1004,7 @@ public static class Input
             {
                 chars.RemoveAt(chars.Count - 1);
                 Console.Write("\b \b");
+                autoCompleteLen = Math.Max(0, autoCompleteLen - 1);
             }
             else if (k.Key == ConsoleKey.Tab && completions != null)
             {
@@ -972,11 +1015,30 @@ public static class Input
                     Console.Write(match[chars.Count..]);
                     chars.AddRange(match[chars.Count..]);
                 }
+                autoCompleteLen = 0;
             }
             else if (!char.IsControl(k.KeyChar))
             {
-                chars.Add(k.KeyChar);
-                Console.Write(k.KeyChar);
+                // if typing matches autocompleted char, just consume it
+                if (autoCompleteLen > 0 && char.ToLowerInvariant(k.KeyChar) == char.ToLowerInvariant(chars[chars.Count - autoCompleteLen]))
+                {
+                    autoCompleteLen--;
+                }
+                else
+                {
+                    // clear autocomplete suffix if typing something different
+                    if (autoCompleteLen > 0)
+                    {
+                        for (int i = 0; i < autoCompleteLen; i++)
+                        {
+                            chars.RemoveAt(chars.Count - 1);
+                            Console.Write("\b \b");
+                        }
+                        autoCompleteLen = 0;
+                    }
+                    chars.Add(k.KeyChar);
+                    Console.Write(k.KeyChar);
+                }
             }
         }
     }
@@ -1042,10 +1104,15 @@ public static class Input
                 Pos next = upos + dir;
                 if (!lvl.InBounds(next)) return;
                 var tgt = lvl.UnitAt(next);
-                if (tgt != null)
+                if (tgt != null && (tgt is not Monster m || !m.Def.Peaceful))
                 {
                     g.Attack(u, tgt, u.GetWieldedItem());
                     u.Energy -= ActionCosts.OneAction.Value;
+                }
+                else if (tgt != null)
+                {
+                    // peaceful - can't walk through
+                    g.pline($"{tgt:The} is in the way.");
                 }
                 else if (lvl.CanMoveTo(upos, next, u) || g.DebugMode)
                 {

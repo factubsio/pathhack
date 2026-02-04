@@ -157,6 +157,7 @@ public static class Movement
         foreach (var n in upos.Neighbours())
         {
             if (n == upos - Dir) continue;
+            if (!lvl.InBounds(n)) continue;
             if (lvl.UnitAt(n) is { IsDead: false } m && m != u)
             {
                 Log.Verbose("movement", $"Stop: monster at {n}");

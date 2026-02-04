@@ -37,8 +37,9 @@ public enum WeaponCategory { Unarmed, Natural, Item }
 public class WeaponDef : ItemDef
 {
     public required DiceFormula BaseDamage;
-    public required string Profiency;
+    public required string Profiency; // weapon group
     public required DamageType DamageType;
+    public string? WeaponType; // specific weapon type for feats/sacred weapon
     public int Range = 1;
     public int Hands = 1;
     public ActionCost Cost = 12;

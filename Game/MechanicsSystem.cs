@@ -58,36 +58,52 @@ public sealed class PHContext : IDisposable
 
 public static class Proficiencies
 {
+    // Weapon groups
     public const string Unarmed = "unarmed";
-
-    // Simple weapons
-    public const string Dagger = "dagger";
+    public const string Natural = "natural";
+    public const string HeavyBlade = "heavy_blade";
+    public const string LightBlade = "light_blade";
     public const string Club = "club";
-    public const string Spear = "spear";
-    public const string Shortbow = "shortbow";
-    public const string Dart = "dart";
-
-    // Martial weapons
-    public const string Longsword = "longsword";
-    public const string Battleaxe = "battleaxe";
-    public const string Longbow = "longbow";
-    public const string Scimitar = "scimitar";
-    public const string Rapier = "rapier";
+    public const string Axe = "axe";
+    public const string Polearm = "polearm";
+    public const string Staff = "staff";
+    public const string Bow = "bow";
+    public const string Thrown = "thrown";
+    public const string Flail = "flail";
     public const string Whip = "whip";
-    public const string Scythe = "scythe";
-    public const string Falchion = "falchion";
-    public const string Mace = "mace";
-
-    public const string SimpleGroup = "g/simple";
-
-    // Exotic / other
-    public const string DogSlicer = "dogslicer";
-    public const string SpikedChain = "spiked_chain";
+    public const string Close = "close";
 
     // Armor
     public const string LightArmor = "light_armor";
     public const string MediumArmor = "medium_armor";
     public const string HeavyArmor = "heavy_armor";
+}
+
+public static class WeaponTypes
+{
+    public const string Unarmed = "unarmed";
+    public const string Dagger = "dagger";
+    public const string Shortsword = "shortsword";
+    public const string Longsword = "longsword";
+    public const string Rapier = "rapier";
+    public const string Scimitar = "scimitar";
+    public const string Falchion = "falchion";
+    public const string Club = "club";
+    public const string Greatclub = "greatclub";
+    public const string Mace = "mace";
+    public const string Flail = "flail";
+    public const string Quarterstaff = "quarterstaff";
+    public const string BoStaff = "bo_staff";
+    public const string Spear = "spear";
+    public const string Scythe = "scythe";
+    public const string Whip = "whip";
+    public const string SpikedChain = "spiked_chain";
+    public const string Longbow = "longbow";
+    public const string Shortbow = "shortbow";
+    public const string Dart = "dart";
+    public const string Bola = "bola";
+    public const string OrcKnuckleDagger = "orc_knuckle_dagger";
+    public const string OrcNecksplitter = "orc_necksplitter";
 }
 
 public enum ProficiencyLevel
@@ -295,6 +311,7 @@ public static class ActionCosts
     public static readonly ActionCost OneAction = 12;
     // 30ft speed equivalent, let's say?
     public static readonly ActionCost StandardLandMove = 12;
+    public static readonly ActionCost LandMove25 = 15;
     internal static readonly ActionCost LandMove20 = 18;
     internal static readonly ActionCost LandMove10 = 24;
 }

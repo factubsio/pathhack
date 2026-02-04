@@ -2,6 +2,27 @@ using System.Reflection.Metadata.Ecma335;
 
 namespace Pathhack.Game.Bestiary;
 
+public class DataFlag
+{
+    public bool Triggered;
+}
+
+public class Ferocity : LogicBrick
+{
+    public override object? CreateData() => new DataFlag();
+
+    protected override void OnDamageTaken(Fact fact, PHContext ctx)
+    {
+        if (((DataFlag)fact.Data!).Triggered) return; // already used
+        var unit = ctx.Target.Unit!;
+        if (unit.HP.Current > 0) return; // not dying
+        
+        unit.HP.Current = 1;
+        ((DataFlag)fact.Data!).Triggered = true;
+        g.pline($"{unit:The} refuses to fall!");
+    }
+}
+
 public class Equip(ItemDef itemDef) : LogicBrick
 {
     protected override void OnSpawn(Fact fact, PHContext context)
