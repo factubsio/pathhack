@@ -1,6 +1,13 @@
 # Pathfinder Adventure Paths - Chapters
 
-Auto-generated from pathfinderwiki.com
+I don't know if this is legit? it's a super brief summary of the ap chapters so I can read it in one place. I really think it's ok because it's just the super high level descriptions.
+
+this + ap_chapters.json is where track what chapters/Ap for what purpose, at the mo-mo that's class quests and the meaty ones
+
+meaty ones play the role of the dnh alignment quests, but we will just pick 3 of N rather than fixed? I dunno if that's fun or not  but it's ok to implement and gives a bit of variety, and can start small and add.
+
+will find out if terrible idea or not!
+
 
 ## Rise of the Runelords
 
