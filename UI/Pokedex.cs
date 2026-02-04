@@ -24,7 +24,7 @@ public static class Pokedex
             Draw.OverlayWrite(0, Draw.MsgRow, desc.PadRight(Draw.ViewWidth));
             
             Draw.Blit();
-            var key = Console.ReadKey(true);
+            var key = Input.NextKey();
 
             if (key.Key == ConsoleKey.Escape) break;
 

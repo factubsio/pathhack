@@ -2,6 +2,16 @@ using System.Runtime.Intrinsics.Arm;
 using Pathhack.Dat;
 using static Pathhack.Map.DepthAnchor;
 
+DateTime lastCtrlC = DateTime.UnixEpoch;
+
+Console.CancelKeyPress += (o, e) =>
+{
+    var now = DateTime.Now;
+    if ((now - lastCtrlC).TotalMilliseconds > 160)
+        e.Cancel = true;
+    lastCtrlC = now;
+};
+
 List<BranchTemplate> templates = [
     new("dungeon", "Dungeon", (6, 9)) {
         Levels = [
@@ -29,6 +39,27 @@ List<BranchTemplate> templates = [
         ]
     }
 ];
+
+if (args.Length > 0 && args[0] == "--test-dungeon")
+{
+    Console.WriteLine("Testing dungeon generation...");
+    for (int i = 0; ; i++)
+    {
+        try
+        {
+            g.Branches = DungeonResolver.Resolve(templates, i, log: false);
+            var dungeon = g.Branches["dungeon"];
+            LevelGen.Generate(new LevelId(dungeon, 1), i);
+            if (i % 100 == 0) Console.Write($"\r{i} seeds OK");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"\nFailed at seed {i}: {ex.Message}");
+            break;
+        }
+    }
+    return;
+}
 
 if (args.Length > 0)
 {
@@ -84,6 +115,11 @@ while (true)
     Input.DoLevelUp(); // Level 1
 
     g.CurrentLevel = startLevel;
+
+    u.RecalculateMaxHp();
+    u.HP.Current = u.HP.Max;
+    Log.Write($"hp => {u.HP.Max}");
+
     u.XP = 980;
     lvl.PlaceUnit(u, (lvl.BranchUp ?? lvl.StairsUp)!.Value);
 

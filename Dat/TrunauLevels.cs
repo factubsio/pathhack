@@ -60,6 +60,16 @@ public static class TrunauLevels
         Unarmed = NaturalWeapons.Fist,
         SpawnWeight = 0,
         Peaceful = true,
+        OnChat = _ =>
+        {
+            g.pline(g.Rn2(3) switch
+            {
+                0 => "Talk to Halgra, she knows what to do.",
+                1 => $"Orcs at the gate? We put our faith in {u.Deity.Name}!",
+                2 => "Could be worse, no Uruk Hai...",
+                _ => "I want to get off mr bubbles's wild ride.",
+            });
+        },
     };
 
     static List<Pos> _exitPath = [];

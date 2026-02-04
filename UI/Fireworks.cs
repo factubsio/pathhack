@@ -22,7 +22,7 @@ public static class Fireworks
         {
             if (Console.KeyAvailable)
             {
-                Console.ReadKey(true);
+                Input.NextKey();
                 break;
             }
 
@@ -72,6 +72,6 @@ public static class Fireworks
         Console.WriteLine("YOU WON!");
         Console.WriteLine();
         Console.WriteLine("Press any key...");
-        Console.ReadKey(true);
+        Input.NextKey();
     }
 }

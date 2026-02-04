@@ -50,7 +50,6 @@ public enum DoorState : byte
     Open,
     Locked,
     Broken,
-    None, // doorway with no door - converted to floor after levelgen
 }
 
 public record struct TileMemory(Tile Tile, DoorState Door, Item? TopItem);
@@ -127,7 +126,6 @@ public readonly record struct Tile(TileType Type, TileFlags Flags)
     public bool IsDiggable => (Flags & TileFlags.Diggable) != 0;
     public bool IsStructural => (Flags & TileFlags.Structural) != 0;
 
-    public bool IsDoor => Type == TileType.Door;
     public bool IsStairs => Type is TileType.StairsUp or TileType.StairsDown or TileType.BranchUp or TileType.BranchDown;
 
 
@@ -367,6 +365,7 @@ public class Level(LevelId id, int width, int height)
 
         foreach (var area in Areas)
         {
+            if (Unit.Has("ignore_difficult_terrain") && area.IsDifficultTerrain) continue;
             bool wasIn = area.Contains(from);
             bool nowIn = area.Contains(to);
             if (wasIn && !nowIn) area.HandleExit(Unit);
@@ -419,8 +418,8 @@ public class Level(LevelId id, int width, int height)
         int dy = to.Y - from.Y;
         if (dx != 0 && dy != 0) // diagonal
         {
-            bool fromDoor = from.IsValid && this[from].IsDoor;
-            if (t.Type == TileType.Door || fromDoor)
+            bool fromDoor = from.IsValid && IsDoor(from) && !IsDoorBroken(from);
+            if ((t.Type == TileType.Door && !IsDoorBroken(to)) || fromDoor)
             {
                 Log.Write($"blocking movement: {from} -> {to}: fd:{fromDoor}, td:{t.Type == TileType.Door}");
                 return false;

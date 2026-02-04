@@ -27,7 +27,7 @@ public static class ListPicker
         while (true)
         {
             DrawPicker(layer, items, index, prompt, null, 0);
-            var key = Console.ReadKey(true);
+            var key = Input.NextKey();
             switch (key.Key)
             {
                 case ConsoleKey.UpArrow or ConsoleKey.K:
@@ -54,7 +54,7 @@ public static class ListPicker
         while (true)
         {
             DrawPicker(layer, items, index, prompt, selected, count);
-            var key = Console.ReadKey(true);
+            var key = Input.NextKey();
             switch (key.Key)
             {
                 case ConsoleKey.UpArrow or ConsoleKey.K:

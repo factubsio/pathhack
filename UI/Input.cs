@@ -142,11 +142,6 @@ public static class Input
                 step++;
         }
 
-        // Apply everything
-        int hpGain = (u.Class?.HpPerLevel ?? 6) + Player.Mod(u.Attributes.Con.Value);
-        u.HP.Max += hpGain;
-        u.HP.Current += hpGain;
-
         if (classEntry != null)
             foreach (var brick in classEntry.Grants)
                 u.AddFact(brick);
@@ -155,6 +150,14 @@ public static class Input
             stage.Apply();
 
         u.CharacterLevel = newLevel;
+
+        // Apply hp gains (after level set!)
+        int hpGain = u.Class!.HpPerLevel;
+        u.HP.BaseMax += hpGain;
+        u.HP.Current += hpGain;
+
+        u.RecalculateMaxHp();
+
         g.pline($"Welcome to level {newLevel}!");
     }
 
@@ -746,9 +749,7 @@ public static class Input
         
         if (_msgHistoryIdx < 2 && _msgHistoryIdx < history.Count)
         {
-            g.Messages.Clear();
-            g.Messages.Add(history[history.Count - 1 - _msgHistoryIdx]);
-            Draw.DrawCurrent();
+            Draw.RenderTopLine(history[history.Count - 1 - _msgHistoryIdx]);
         }
         else
         {
@@ -802,15 +803,8 @@ public static class Input
             Draw.DrawCurrent(cursor);
             var key = NextKey();
             
-            if (key.Key == ConsoleKey.Escape)
-            {
-                g.Messages.Clear();
-                return;
-            }
-            
             if (key.Key == ConsoleKey.Enter || key.KeyChar == '.')
             {
-                g.Messages.Clear();
                 if (cursor == upos) return;
                 var path = Pathfinding.FindPath(lvl, upos, cursor);
                 if (path == null || path.Count == 0)
@@ -909,7 +903,7 @@ public static class Input
             if (!lvl.Traps.TryGetValue(n, out var trap) || trap.PlayerSeen) continue;
 
             using var ctx = PHContext.Create(Monster.DM, Target.From(u));
-            if (CreateAndDoCheck(ctx, "perception", trap.DetectDC, "detect trap"))
+            if (CreateAndDoCheck(ctx, "perception", trap.DetectDC, "trap"))
             {
                 g.pline("You find a trap.");
                 trap.PlayerSeen = true;
@@ -1117,13 +1111,13 @@ public static class Input
                 else if (lvl.CanMoveTo(upos, next, u) || g.DebugMode)
                 {
                     lvl.MoveUnit(u, next);
+                    LookHere();
                 }
                 else if (lvl.IsDoorClosed(next))
                 {
                     OpenDoor(new DirArg(dir));
                 }
             }
-            LookHere();
         }
         else if (key.KeyChar == '>')
         {
@@ -1152,11 +1146,10 @@ public static class Input
             return;
         }
 
-        Draw.ClearMessages();
-
         Perf.Pause();
         var key = NextKey();
         Perf.Resume();
+        Draw.ClearTopLine();
         HandleKey(key);
     }
 }

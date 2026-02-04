@@ -1,3 +1,5 @@
+using System.Data;
+using System.Diagnostics;
 using System.Reflection.Metadata;
 using System.Text;
 using Pathhack.Core;
@@ -267,9 +269,12 @@ public static class Draw
     public static int TotalBytesWritten { get; private set; } = 0;
     public static int DamagedCellCount { get; private set; } = 0;
 
-    public static void Blit()
+    public static void Blit(int row = -1)
     {
-        for (int y = 0; y < ScreenHeight; y++)
+        int start = row < 0 ? 0 : row;
+        int end = row < 0 ? ScreenHeight : row + 1;
+
+        for (int y = start; y < end; y++)
         {
             for (int x = 0; x < ViewWidth; x++)
             {
@@ -455,13 +460,18 @@ public static class Draw
         return TileCellInner(level, p, mem.Tile.Type, mem.Door, isMemory: true, memoryColor);
     }
 
-    static ConsoleColor TileColor(TileType t) => t switch
+    static ConsoleColor TileColor(TileType t, DoorState door) => t switch
     {
         TileType.Floor => ConsoleColor.Gray,
         TileType.Wall => ConsoleColor.Gray,
         TileType.Rock => ConsoleColor.Gray,
         TileType.Corridor => ConsoleColor.Gray,
-        TileType.Door => ConsoleColor.DarkYellow,
+        TileType.Door => door switch
+        {
+            DoorState.Closed => ConsoleColor.DarkYellow,
+            DoorState.Open => ConsoleColor.DarkYellow,
+            _ => ConsoleColor.Gray,
+        },
         TileType.StairsUp => ConsoleColor.Gray,
         TileType.StairsDown => ConsoleColor.Gray,
         TileType.Grass => ConsoleColor.Green,
@@ -470,7 +480,7 @@ public static class Draw
 
     static Cell TileCellInner(Level level, Pos p, TileType t, DoorState door, bool isMemory, ConsoleColor memoryColor = default)
     {
-        ConsoleColor fg = isMemory ? memoryColor : TileColor(t);
+        ConsoleColor fg = isMemory ? memoryColor : TileColor(t, door);
         if (t == TileType.BranchUp)
             fg = level.BranchUpTarget?.Branch.Color ?? ConsoleColor.Cyan;
         else if (t == TileType.BranchDown)
@@ -482,7 +492,12 @@ public static class Draw
             TileType.Wall => WallChar(level, p),
             TileType.Rock => ' ',
             TileType.Corridor => '#',
-            TileType.Door => door == DoorState.Open ? 'a' : door == DoorState.Broken ? '~' : '+',
+            TileType.Door => door switch
+            {
+                DoorState.Broken => '~',
+                DoorState.Open => 'a',
+                _ => '+',
+            },
             TileType.StairsUp => '<',
             TileType.StairsDown => '>',
             TileType.BranchUp => '<',
@@ -493,13 +508,99 @@ public static class Draw
         return new(ch, fg, Dec: dec);
     }
 
+    private static string TopLine = "";
+    private static TopLineState TopLineState = TopLineState.Empty;
+
+    private static bool More(bool save, int col, int row)
+    {
+        if (save) SaveTopLine();
+        Layers[0].Write(col, row, "--more--");
+        Blit(0);
+        Input.NextKey();
+        TopLine = "";
+        TopLineState = TopLineState.Empty;
+        return false; //return true if skip rest (esc?)
+    }
+
+    private static int MessageViewWidth => ViewWidth; //Console.WindowWidth; - this doens't work with layers very well, need maybe tty style windows but bleh
+    private static int messageWidth => MessageViewWidth - 8;
+    const string messageDelimit = "   ";
+
+    private static bool CanAppendMessage(string msg) => TopLine.Length + messageDelimit.Length + msg.Length < messageWidth;
+
+    private static void SaveTopLine()
+    {
+        if (TopLine.Length > 0) g.MessageHistory.Add(TopLine);
+    }
+    
+    public static void ClearTopLine()
+    {
+        SaveTopLine();
+        TopLine = "";
+        TopLineState = TopLineState.Empty;
+        for (int x = 0; x < MessageViewWidth; x++)
+            Layers[0][x, 0] = null;
+        Blit(0);
+    }
+
+    internal static void RenderTopLine(string? v = null)
+    {
+        v ??= TopLine;
+
+        int row = 0;
+        int col = 0;
+        string remaining = v;
+        while (remaining.Length > 0)
+        {
+            int len = Math.Min(MessageViewWidth, remaining.Length);
+            if (len < remaining.Length)
+            {
+                int space = remaining.LastIndexOf(' ', len);
+                if (space > 0) len = space;
+            }
+            Layers[0].Write(0, row, remaining[..len].PadRight(MessageViewWidth));
+            remaining = remaining[len..].TrimStart();
+            col = len;
+            row++;
+        }
+
+        if (row > 1)
+        {
+            Blit();
+            More(v == null, col, row);
+            DrawCurrent();
+        }
+        else
+        {
+            Blit(0);
+        }
+    }
+
+    internal static void DrawMessage(string msg)
+    {
+        // Can we append to current line?
+        if (TopLineState != TopLineState.Empty && CanAppendMessage(msg))
+        {
+            TopLine += messageDelimit + msg;
+        }
+        else
+        {
+            // Need fresh line - if unread content, prompt to flush it
+            if (TopLineState == TopLineState.PresentMustShow) More(true, TopLine.Length, 0);
+
+            TopLine = msg;
+        }
+
+        RenderTopLine();
+
+        TopLineState = TopLineState.PresentMustShow;
+    }
+
+
     public static void DrawCurrent(Pos? cursor = null)
     {
         if (g.CurrentLevel is { } level)
         {
-            Perf.Start();
-            DrawMessages();
-            Perf.Stop("DrawMessages");
             Perf.Start();
             DrawLevel(level);
             Perf.Stop("DrawLevel");
@@ -519,38 +620,6 @@ public static class Draw
             Perf.Stop("Blit");
         }
     }
-
-    static void DrawMessages()
-    {
-        if (g.Messages.Count == 0)
-        {
-            Layers[0].Write(0, MsgRow, new string(' ', ViewWidth));
-            return;
-        }
-
-        const string more = "--More--";
-        string all = string.Join(" ", g.Messages);
-        g.Messages.Clear();
-
-        while (all.Length > ViewWidth)
-        {
-            int cut = ViewWidth - more.Length - 1;
-            int space = all.LastIndexOf(' ', cut);
-            if (space <= 0) space = cut;
-
-            Layers[0].Write(0, MsgRow, all[..space] + " " + more);
-            Blit();
-            Console.ReadKey(true);
-
-            all = all[(space + 1)..];
-        }
-
-        g.Messages.Add(all);
-        Layers[0].Write(0, MsgRow, all.PadRight(ViewWidth));
-        Blit();
-    }
-
-    public static void ClearMessages() => g.Messages.Clear();
 
     static void DrawStatus(Level level)
     {
@@ -590,4 +659,12 @@ public static class Draw
             Layers[0].Write(left, StatusRow + 1, sb.ToString());
         }
     }
+
+}
+
+internal enum TopLineState
+{
+    Empty,
+    PresentMustShow,
+    PresentCanClear
 }

@@ -517,6 +517,7 @@ public class BlindBuff : LogicBrick
     protected override void OnBeforeCheck(Fact fact, PHContext context)
     {
         if (context.Source != fact.Entity || context.Weapon == null) return;
+        if (context.Source.Has("blind_fight")) return;
         context.Check!.Disadvantage++;
     }
 

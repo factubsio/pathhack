@@ -39,6 +39,7 @@ public class GreaseArea(IUnit? source, int dc, int duration) : Area(duration)
 {
     public override string Name => "Grease";
     public override Glyph Glyph => new('~', ConsoleColor.DarkYellow);
+    public override bool IsDifficultTerrain => true;
 
     protected override void OnEnter(IUnit unit)
     {
@@ -46,7 +47,7 @@ public class GreaseArea(IUnit? source, int dc, int duration) : Area(duration)
 
         using var ctx = PHContext.Create(source, Target.From(unit));
         var slips = VTense(unit, "slip");
-        if (!CreateAndDoCheck(ctx, "reflex_save", dc, "grease"))
+        if (!CreateAndDoCheck(ctx, "reflex_save", dc, "difficult_terrain"))
         {
             g.pline($"{unit:The} {slips} and {VTense(unit, "fall")}!");
             unit.AddFact(TimedProne.Instance, 1);
