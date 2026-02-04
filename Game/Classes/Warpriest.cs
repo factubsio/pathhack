@@ -135,7 +135,7 @@ public static partial class ClassDefs
         GrantStartingEquipment = p =>
         {
             // Deity's favored weapon
-            var weaponDef = GetWeaponForProficiency(p.Deity!.FavoredWeapon);
+            var weaponDef = GetWeaponForType(p.Deity!.FavoredWeapon);
             if (weaponDef != null)
             {
                 var weapon = ItemGen.GenerateItem(weaponDef, depth: 1, maxPotency: 1, propertyRunes: false);
@@ -146,17 +146,17 @@ public static partial class ClassDefs
         },
     };
 
-    static WeaponDef? GetWeaponForProficiency(string prof) => prof switch
+    static WeaponDef? GetWeaponForType(string type) => type switch
     {
-        Proficiencies.Longsword => MundaneArmory.Longsword,
-        Proficiencies.Scimitar => MundaneArmory.Scimitar,
-        Proficiencies.Rapier => MundaneArmory.Rapier,
-        Proficiencies.Whip => MundaneArmory.Whip,
-        Proficiencies.SpikedChain => MundaneArmory.SpikedChain,
-        Proficiencies.Scythe => MundaneArmory.Scythe,
-        Proficiencies.Falchion => MundaneArmory.Falchion,
-        Proficiencies.Dagger => MundaneArmory.Dagger,
-        Proficiencies.Unarmed => null,
+        WeaponTypes.Longsword => MundaneArmory.Longsword,
+        WeaponTypes.Scimitar => MundaneArmory.Scimitar,
+        WeaponTypes.Rapier => MundaneArmory.Rapier,
+        WeaponTypes.Whip => MundaneArmory.Whip,
+        WeaponTypes.SpikedChain => MundaneArmory.SpikedChain,
+        WeaponTypes.Scythe => MundaneArmory.Scythe,
+        WeaponTypes.Falchion => MundaneArmory.Falchion,
+        WeaponTypes.Dagger => MundaneArmory.Dagger,
+        WeaponTypes.Unarmed => null,
         _ => null,
     };
 

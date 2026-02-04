@@ -159,6 +159,16 @@ public class GameState
     public Level? CurrentLevel { get; set; }
     public HashSet<IEntity> PendingFactCleanup { get; } = [];
     public HashSet<IEntity> ActiveEntities { get; } = [];
+    public List<Action> DeferredActions { get; } = [];
+
+    public void Defer(Action action) => DeferredActions.Add(action);
+
+    void FlushDeferred()
+    {
+        foreach (var action in DeferredActions)
+            action();
+        DeferredActions.Clear();
+    }
 
     private Random _rng = new();
 
@@ -352,6 +362,7 @@ public class GameState
         }
 
         lvl.ReapDead();
+        FlushDeferred();
 
         foreach (var unit in lvl.LiveUnits)
         {

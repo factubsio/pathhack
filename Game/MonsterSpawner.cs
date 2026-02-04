@@ -64,17 +64,22 @@ public static class MonsterSpawner
             .Where(m => depth >= m.MinDepth && m.CR <= maxLevel)
             .ToList();
 
+        return PickWeighted(candidates);
+    }
+
+    public static MonsterDef? PickWeighted(IReadOnlyList<MonsterDef> candidates)
+    {
         if (candidates.Count == 0) return null;
 
         int totalWeight = candidates.Sum(m => m.SpawnWeight);
-        int roll = g.Rn2(totalWeight);
+        if (totalWeight == 0) return candidates[g.Rn2(candidates.Count)];
 
+        int roll = g.Rn2(totalWeight);
         foreach (var m in candidates)
         {
             roll -= m.SpawnWeight;
             if (roll < 0) return m;
         }
-
         return candidates[^1];
     }
 }

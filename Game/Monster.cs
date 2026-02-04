@@ -23,8 +23,11 @@ public class MonsterDef : BaseDef
   public int SpawnWeight = 1;
   public int MinDepth = 1;
   public bool IsUnique = false;
+  public bool Peaceful = false;
+  public bool Stationary = false;
   public int MaxDepth = 99;
   public string? Family;
+  public Action<Monster>? OnChat;
 }
 
 public enum MonsterTemplate { Normal, Elite, Weak }
@@ -160,6 +163,8 @@ public class Monster : Unit<MonsterDef>, IFormattable
     m.HP.Reset(Math.Max(1, def.HP + hpMod));
     using var ctx = PHContext.Create(m, Target.None);
     LogicBrick.FireOnSpawn(m, ctx);
+    if (g.DebugMode)
+      m.HP.Current = m.HP.Current / 4;
     return m;
   }
 
@@ -174,23 +179,28 @@ public class Monster : Unit<MonsterDef>, IFormattable
 
     if (Def.Brain?.DoTurn(this) == true) return;
 
-    // try any action that can execute
-    Target playerTarget = new(u, upos);
-    foreach (var action in Actions)
+    // peaceful monsters don't attack
+    if (!Def.Peaceful)
     {
-      var data = ActionData.GetValueOrDefault(action);
-      if (action.CanExecute(this, data, playerTarget, out var _))
+      // try any action that can execute
+      Target playerTarget = new(u, upos);
+      foreach (var action in Actions)
       {
-        Log.Write($"{this} uses {action.Name}");
-        action.Execute(this, data, playerTarget);
-        Energy -= ActionCosts.OneAction.Value;
-        return;
+        var data = ActionData.GetValueOrDefault(action);
+        if (action.CanExecute(this, data, playerTarget, out var _))
+        {
+          Log.Write($"{this} uses {action.Name}");
+          action.Execute(this, data, playerTarget);
+          Energy -= ActionCosts.OneAction.Value;
+          return;
+        }
       }
     }
 
-    if (Def.LandMove.Value <= 0) return;
+    if (Def.LandMove.Value <= 0 || Def.Stationary) return;
 
-    UpdateApparentPos();
+    if (!Def.Peaceful)
+      UpdateApparentPos();
     Pos mp = Pos;
 
     // move toward goal, or wander if none
@@ -200,6 +210,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
     foreach (var dir in Pos.AllDirs)
     {
       Pos candidate = mp + dir;
+      if (!lvl.InBounds(candidate)) continue;
       if (!lvl.CanMoveTo(mp, candidate, this)) continue;
       if (lvl.UnitAt(candidate) != null) continue;
 

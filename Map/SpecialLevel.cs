@@ -88,6 +88,7 @@ public static class SpecialLevelParser
         ['#'] = TileType.Corridor,
         ['-'] = TileType.Wall,
         ['|'] = TileType.Wall,
+        [','] = TileType.Grass,
     };
     
     static readonly HashSet<char> MarkerChars = ['+', '<', '>', 'S', '^', '_'];
@@ -131,7 +132,21 @@ public static class SpecialLevelParser
                 }
                 else if (MarkerChars.Contains(c) || char.IsLetter(c))
                 {
-                    ctx.level.Set(p, TileType.Floor);
+                    // infer tile type from neighbors
+                    var counts = new Dictionary<TileType, int>();
+                    foreach (var d in Pos.CardinalDirs)
+                    {
+                        int nx = x + d.X, ny = y + d.Y;
+                        if (ny >= 0 && ny < lines.Length && nx >= 0 && nx < lines[ny].Length)
+                        {
+                            char nc = lines[ny][nx];
+                            if (TileMap.TryGetValue(nc, out var nt))
+                                counts[nt] = counts.GetValueOrDefault(nt) + 1;
+                        }
+                    }
+                    var tile = counts.MaxBy(kv => kv.Value).Key;
+                    if (tile == TileType.Rock || tile == TileType.Wall) tile = TileType.Floor;
+                    ctx.level.Set(p, tile);
                     AddMark(marks, c, p);
                 }
             }

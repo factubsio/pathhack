@@ -103,6 +103,11 @@ public static class LevelGen
         ["bigroom_rect"] = Dat.BigRoomLevels.Rectangle,
         ["bigroom_oval"] = Dat.BigRoomLevels.Oval,
         ["sanctuary_1"] = Dat.EndShrineLevels.EndShrine1,
+        ["trunau_home"] = Dat.TrunauLevels.Home,
+        ["trunau_siege"] = Dat.TrunauLevels.Siege,
+        ["trunau_tomb"] = Dat.TrunauLevels.Tomb,
+        ["redlake_outer"] = Dat.TrunauLevels.FortOuter,
+        ["redlake_inner"] = Dat.TrunauLevels.RedlakeInner,
     };
     
     static SpecialLevel? FindSpecialLevel(string id) => 
@@ -177,6 +182,15 @@ public static class LevelGen
 
     static void GenSpecial(LevelGenContext ctx, SpecialLevel spec)
     {
+        // Empty map = use room+corridor gen but still run hooks
+        if (string.IsNullOrWhiteSpace(spec.Map))
+        {
+            spec.PreRender?.Invoke(new LevelBuilder([], ctx));
+            GenRoomsAndCorridors(ctx, populate: false);
+            spec.PostRender?.Invoke(new LevelBuilder([], ctx));
+            return;
+        }
+
         // Fill with rock
         for (int y = 0; y < ctx.level.Height; y++)
             for (int x = 0; x < ctx.level.Width; x++)
@@ -199,7 +213,7 @@ public static class LevelGen
         spec.PostRender?.Invoke(new LevelBuilder(marks, ctx));
     }
 
-    static void GenRoomsAndCorridors(LevelGenContext ctx)
+    static void GenRoomsAndCorridors(LevelGenContext ctx, bool populate = true)
     {
         // Fill with rock
         for (int y = 0; y < ctx.level.Height; y++)
@@ -223,6 +237,8 @@ public static class LevelGen
 
         // Connect rooms with corridors
         MakeCorridors(ctx);
+
+        if (!populate) return;
 
         // Assign special room types
         AssignRoomTypes(ctx);

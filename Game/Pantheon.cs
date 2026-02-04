@@ -34,7 +34,7 @@ public static class Pantheon
         Name = "Iomedae",
         Description = "Iomedae, the youngest among the prominent deities of the Inner Sea region, had already proven herself worthy of divinity before her ascension. Born in Cheliax, she followed the path of the sword and fought evil, eventually becoming a paladin of Aroden’s herald Arazni. She became a legend among the Shining Crusade, leading the Knights of Ozem in a series of victories over the Whispering Tyrant. Iomedae became the third known mortal to pass the Test of the Starstone when she ascended to divinity in 3832 AR. As Arazni had been slain during the Shining Crusade, Aroden elevated the newly ascended goddess to be his new herald. When Aroden himself died, Iomedae inherited most of his worshippers and became a major deity of honor and justice.",
         Alignment = "LG",
-        FavoredWeapon = Proficiencies.Longsword,
+        FavoredWeapon = WeaponTypes.Longsword,
     };
 
     public static readonly DeityDef Sarenrae = new()
@@ -44,7 +44,7 @@ public static class Pantheon
         Name = "Sarenrae",
         Description = "The Dawnflower. Goddess of the [fg=yellow]sun[/fg], redemption, and healing. Offers mercy to those who seek it.",
         Alignment = "NG",
-        FavoredWeapon = Proficiencies.Scimitar,
+        FavoredWeapon = WeaponTypes.Scimitar,
     };
 
     public static readonly DeityDef CaydenCailean = new()
@@ -54,7 +54,7 @@ public static class Pantheon
         Name = "Cayden Cailean",
         Description = "The Drunken Hero. God of [fg=yellow]freedom[/fg], ale, and bravery. Ascended mortal who won godhood on a dare.",
         Alignment = "CG",
-        FavoredWeapon = Proficiencies.Rapier,
+        FavoredWeapon = WeaponTypes.Rapier,
     };
 
     public static readonly DeityDef Irori = new()
@@ -64,7 +64,7 @@ public static class Pantheon
         Name = "Irori",
         Description = "Master of Masters. God of [fg=yellow]self-perfection[/fg], knowledge, and discipline. Achieved godhood through self-mastery.",
         Alignment = "LN",
-        FavoredWeapon = Proficiencies.Unarmed,
+        FavoredWeapon = WeaponTypes.Unarmed,
     };
 
     public static readonly DeityDef Calistria = new()
@@ -74,7 +74,7 @@ public static class Pantheon
         Name = "Calistria",
         Description = "The Savored Sting. Goddess of [fg=yellow]revenge[/fg], lust, and trickery. Patron of elves and the scorned.",
         Alignment = "CN",
-        FavoredWeapon = Proficiencies.Whip,
+        FavoredWeapon = WeaponTypes.Whip,
     };
 
     public static readonly DeityDef ZonKuthon = new()
@@ -84,7 +84,7 @@ public static class Pantheon
         Name = "Zon-Kuthon",
         Description = "The Midnight Lord. God of [fg=red]pain[/fg], darkness, and loss. Once a god of beauty, now twisted beyond recognition.",
         Alignment = "LE",
-        FavoredWeapon = Proficiencies.SpikedChain,
+        FavoredWeapon = WeaponTypes.SpikedChain,
     };
 
     public static readonly DeityDef Urgathoa = new()
@@ -94,7 +94,7 @@ public static class Pantheon
         Name = "Urgathoa",
         Description = "The Pallid Princess. Goddess of [fg=red]undeath[/fg], disease, and gluttony. First mortal to reject the cycle of souls.",
         Alignment = "NE",
-        FavoredWeapon = Proficiencies.Scythe,
+        FavoredWeapon = WeaponTypes.Scythe,
     };
 
     public static readonly DeityDef Lamashtu = new()
@@ -104,7 +104,7 @@ public static class Pantheon
         Name = "Lamashtu",
         Description = "Mother of Monsters. Goddess of [fg=red]madness[/fg], nightmares, and deformity. Creator of the world's foulest creatures.",
         Alignment = "CE",
-        FavoredWeapon = Proficiencies.Falchion,
+        FavoredWeapon = WeaponTypes.Falchion,
     };
 
     public static readonly DeityDef[] All = [Iomedae, Sarenrae, CaydenCailean, Irori, Calistria, ZonKuthon, Urgathoa, Lamashtu];

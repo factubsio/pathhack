@@ -16,6 +16,17 @@ List<BranchTemplate> templates = [
         Levels = [
             new("crypt_end", ["everflame_tomb"], FromBottom, 0),
         ]
+    },
+    new("trunau", "Trunau Quest", (2, 2)) {
+        Parent = "dungeon",
+        EntranceDepth = (1, 1),
+        Levels = [
+            new("trunau_home", ["trunau_home"], FromTop, 1),
+            new("trunau_siege", ["trunau_siege"], FromTop, 2),
+            // new("trunau_tomb", ["trunau_tomb"], FromTop, 3),
+            // new("redlake_outer", ["redlake_outer"], FromTop, 4),
+            // new("redlake_inner", ["redlake_inner"], FromBottom, 0),
+        ]
     }
 ];
 

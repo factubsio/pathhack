@@ -16,7 +16,7 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def), IFormattable
 
     public LevelId Level { get; set; }
     public int DarkVisionRadius => Math.Clamp(Ancestry.DarkVisionRadius + QueryModifiers("light_radius").Calculate(), 0, 100);
-    public override ActionCost LandMove => ActionCosts.StandardLandMove;
+    public override ActionCost LandMove => ActionCosts.StandardLandMove.Value - QueryModifiers("speed_bonus").Calculate();
 
     public StatBlock<ModifiableValue> Attributes = new(() => new(10));
     public readonly ModifiableValue LandSpeed = new(ActionCosts.StandardLandMove.Value);

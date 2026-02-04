@@ -104,7 +104,7 @@ public static partial class ClassDefs
             {
                 Grants = [
                     new GrantProficiency(Proficiencies.Unarmed, ProficiencyLevel.Legendary),
-                    new GrantProficiency(Proficiencies.Longsword, ProficiencyLevel.Legendary),
+                    new GrantProficiency(Proficiencies.HeavyBlade, ProficiencyLevel.Legendary),
                     new GrantProficiency(Proficiencies.LightArmor, ProficiencyLevel.Legendary),
                     new GrantProficiency(Proficiencies.MediumArmor, ProficiencyLevel.Legendary),
                     new GrantProficiency(Proficiencies.HeavyArmor, ProficiencyLevel.Legendary),

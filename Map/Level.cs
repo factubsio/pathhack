@@ -12,6 +12,7 @@ public enum TileType : ushort
     StairsDown,
     BranchUp,
     BranchDown,
+    Grass,
 }
 
 // TileType, TileFlags, and TileInfo.DefaultFlags must be kept in sync
@@ -38,6 +39,7 @@ public static class TileInfo
         TileType.StairsDown => TileFlags.Passable | TileFlags.Structural,
         TileType.BranchUp => TileFlags.Passable | TileFlags.Structural,
         TileType.BranchDown => TileFlags.Passable | TileFlags.Structural,
+        TileType.Grass => TileFlags.Passable,
         _ => TileFlags.None,
     };
 }
@@ -240,6 +242,7 @@ public class Level(LevelId id, int width, int height)
     
     public long LastExitTurn { get; set; }
     public bool NoInitialSpawns;
+    public bool Outdoors;
     public string? FirstIntro;
     public string? ReturnIntro;
     public int GeometryVersion;
