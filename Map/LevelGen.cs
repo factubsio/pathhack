@@ -19,7 +19,7 @@ public static class LevelGen
     // 1/3 has door: 1/5 open, 1/6 locked, rest closed. null = no door.
     static DoorState RollDoorState()
     {
-        if (Rn2(3) != 0) return DoorState.None;
+        if (Rn2(3) != 0) return DoorState.Broken;
         if (Rn2(5) == 0) return DoorState.Open;
         // if (Rn2(6) == 0) return DoorState.Locked;
         return DoorState.Closed;
@@ -50,7 +50,7 @@ public static class LevelGen
 
     public static Level Generate(LevelId id, int gameSeed)
     {
-        _log = new StreamWriter($"levelgen_{id.Branch.Name}_{id.Depth}.log");
+        _log = new StreamWriter($"levelgen_{id.Branch.Name}_{id.Depth}.log") { AutoFlush = false };
         try
         {
             Log($"Generating {id.Branch.Name}:{id.Depth} seed={gameSeed}");
@@ -70,27 +70,32 @@ public static class LevelGen
             
             if (special != null)
             {
+                Log($"GenSpecial: {special.Id}");
                 GenSpecial(ctx, special);
+                Log("GenSpecial done");
             }
             else
             {
+                Log("GenRoomsAndCorridors...");
                 GenRoomsAndCorridors(ctx);
+                Log("GenRoomsAndCorridors done");
             }
 
+            Log("Resolving commands...");
             foreach (var cmd in resolved.Commands)
             {
-                Log($"executing resolved action: {cmd.Debug}");
+                Log($"  executing: {cmd.Debug}");
                 cmd.Action(ctx);
             }
+            Log("Resolved commands done");
             
-            PatchEmptyDoors(ctx.level);
             LogLevel(ctx.level);
             ctx.level.UnderConstruction = false;
             return ctx.level;
         }
         finally
         {
-            _log.Dispose();
+            _log?.Dispose();
             _log = null;
         }
     }
@@ -112,17 +117,6 @@ public static class LevelGen
     
     static SpecialLevel? FindSpecialLevel(string id) => 
         SpecialLevels.GetValueOrDefault(id);
-
-    static void PatchEmptyDoors(Level level)
-    {
-        for (int y = 0; y < level.Height; y++)
-            for (int x = 0; x < level.Width; x++)
-            {
-                Pos p = new(x, y);
-                if (level[p].Type == TileType.Door && level.GetState(p)?.Door == DoorState.None)
-                    level.Set(p, TileType.Floor);
-            }
-    }
 
     static void LogLevel(Level level)
     {
@@ -229,22 +223,31 @@ public static class LevelGen
         while (triesRemaining > 0 && ctx.Stamps.Count < targetRooms)
             triesRemaining -= TryPlaceRoom(ctx, triesRemaining);
 
+        Log($"Placed {ctx.Stamps.Count} rooms");
+
         // Render rooms to tiles
+        Log("RenderRooms...");
         RenderRooms(ctx);
 
         // Merge adjacent rooms (after render so we can modify tiles)
+        Log("MergeAdjacentRooms...");
         MergeAdjacentRooms(ctx);
 
         // Connect rooms with corridors
+        Log("MakeCorridors...");
         MakeCorridors(ctx);
+        Log("MakeCorridors done");
 
         if (!populate) return;
 
         // Assign special room types
+        Log("AssignRoomTypes...");
         AssignRoomTypes(ctx);
 
         // Populate special rooms
+        Log("PopulateRooms...");
         PopulateRooms(ctx);
+        Log("PopulateRooms done");
     }
 
     public static void PlaceRoom(LevelGenContext ctx, Rect bounds)
@@ -507,6 +510,28 @@ public static class LevelGen
         int Find(int x) => group[x] == x ? x : group[x] = Find(group[x]);
         void Union(int a, int b) => group[Find(a)] = Find(b);
 
+        // Pre-union merged adjacent rooms - they're already connected
+        for (int i = 0; i < connectable.Count; i++)
+        {
+            if ((connectable[i].Flags & RoomFlags.Merged) == 0) continue;
+            var a = connectable[i].Bounds!.Value;
+            for (int j = i + 1; j < connectable.Count; j++)
+            {
+                if ((connectable[j].Flags & RoomFlags.Merged) == 0) continue;
+                var b = connectable[j].Bounds!.Value;
+                // Check if adjacent
+                bool xAdj = a.X + a.W == b.X || b.X + b.W == a.X;
+                bool yAdj = a.Y + a.H == b.Y || b.Y + b.H == a.Y;
+                bool xOverlap = a.X < b.X + b.W && b.X < a.X + a.W;
+                bool yOverlap = a.Y < b.Y + b.H && b.Y < a.Y + a.H;
+                if ((xAdj && yOverlap) || (yAdj && xOverlap))
+                {
+                    Log($"Pre-union merged rooms {i} and {j}");
+                    Union(i, j);
+                }
+            }
+        }
+
         Log($"MakeCorridors: {connectable.Count} rooms");
 
         // Connect each room to next neighbor
@@ -527,7 +552,9 @@ public static class LevelGen
 
         // Ensure full connectivity - only if needed
         bool any = true;
-        while (any)
+        int connectAttempts = 0;
+        const int maxConnectAttempts = 100;
+        while (any && connectAttempts++ < maxConnectAttempts)
         {
             any = false;
             for (int i = 0; i < connectable.Count; i++)
@@ -544,6 +571,8 @@ public static class LevelGen
                 }
             }
         }
+        if (connectAttempts >= maxConnectAttempts)
+            Log($"WARNING: gave up connecting rooms after {maxConnectAttempts} attempts");
 
         // Random extra connections for loops - but limit to one corridor per room pair
         if (connectable.Count > 2)
@@ -568,13 +597,13 @@ public static class LevelGen
                     continue;
                 if ((connectable[b].Flags & RoomFlags.Merged) != 0 && Rn2(8) != 0)
                     continue;
-                if (TryDigCorridor(ctx, connectable[a], connectable[b]))
+                if (TryDigCorridor(ctx, connectable[a], connectable[b], nxcor: true))
                     connected.Add(pair);
             }
         }
     }
 
-    static bool TryDigCorridor(LevelGenContext ctx, Room roomA, Room roomB)
+    static bool TryDigCorridor(LevelGenContext ctx, Room roomA, Room roomB, bool nxcor = false)
     {
         var level = ctx.level;
         Rect a = roomA.Bounds!.Value;
@@ -671,9 +700,17 @@ public static class LevelGen
 
         List<Pos> dug = [];
         int x = org.X, y = org.Y;
+        int maxSteps = 500;
 
-        while (true)
+        while (maxSteps-- > 0)
         {
+            // Randomly abandon non-essential corridors (creates dead ends)
+            if (nxcor && Rn2(35) == 0)
+            {
+                Log($"  Randomly abandoned nxcor after {dug.Count} tiles");
+                return false; // leave the partial corridor as a dead end
+            }
+
             Tile t = level[new(x, y)];
             if (t.IsDiggable)
             {
@@ -747,6 +784,15 @@ public static class LevelGen
             return false;
         }
 
+        // Exceeded max steps - probably oscillating
+        if (maxSteps <= 0)
+        {
+            Log($"  Exceeded max steps, undoing {dug.Count} tiles");
+            foreach (Pos p in dug)
+                level.Set(p, TileType.Rock);
+            return false;
+        }
+
         // Place doors if not adjacent to existing doors along wall (reuse existing door is ok)
         if (level[doorA].Type != TileType.Door && CanPlaceDoor(level, doorA))
         {
@@ -782,14 +828,14 @@ public static class LevelGen
 }
 
 
-public class LevelGenContext(TextWriter log)
+public class LevelGenContext(TextWriter? log)
 {
     public uint[] occupied = new uint[80];
     public required Level level;
     public bool NoSpawns;
     public List<RoomStamp> Stamps = [];
 
-    public void Log(string str) => log.WriteLine(str);
+    public void Log(string str) => log?.WriteLine(str);
 
     public void MarkOccupied(Rect bounds)
     {

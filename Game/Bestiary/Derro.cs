@@ -59,7 +59,7 @@ public class DazeAction(int range, int dc, string pool) : ActionBrick("Daze")
         u.AddFact(DazeImmunity.Instance, 4);
 
         using var ctx = PHContext.Create(unit, Target.From(u));
-        if (CreateAndDoCheck(ctx, "will_save", dc, "Daze"))
+        if (CreateAndDoCheck(ctx, "will_save", dc, "daze"))
         {
             g.pline($"{msg}, but {tgt:the} resists.");
             return;

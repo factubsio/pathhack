@@ -45,6 +45,8 @@ public static class DungeonResolver
 {
     static Random _rng = new();
     static StreamWriter? _log;
+    static int _iterations;
+    const int MaxIterations = 10000;
 
     static void Log(string msg) => _log?.WriteLine(msg);
 
@@ -52,15 +54,16 @@ public static class DungeonResolver
     static int RnRange(int min, int max) => _rng.RnRange(min, max);
     static T Pick<T>(T[] arr) => arr[Rn2(arr.Length)];
 
-    public static Dictionary<string, Branch> Resolve(List<BranchTemplate> templates, int gameSeed)
+    public static Dictionary<string, Branch> Resolve(List<BranchTemplate> templates, int gameSeed, bool log = true)
     {
-        _log = new StreamWriter("dungeongen.log");
+        if (log) _log = new StreamWriter("dungeongen.log");
         try { return ResolveInner(templates, gameSeed); }
-        finally { _log.Dispose(); _log = null; }
+        finally { _log?.Dispose(); _log = null; }
     }
 
     static Dictionary<string, Branch> ResolveInner(List<BranchTemplate> templates, int gameSeed)
     {
+        _iterations = 0;
         Log($"Resolving dungeon structure, seed={gameSeed}");
         byte[] bytes = SHA256.HashData(Encoding.UTF8.GetBytes($"{gameSeed}:dungeon_structure"));
         _rng = new Random(BitConverter.ToInt32(bytes, 0));
@@ -187,6 +190,9 @@ public static class DungeonResolver
     static bool PlaceLevels(List<LevelRule> rules, int idx, int branchDepth,
           List<ResolvedLevel> resolved, Dictionary<string, int> placed)
     {
+        if (++_iterations > MaxIterations)
+            throw new Exception($"DungeonResolver exceeded {MaxIterations} iterations - check branch constraints");
+        
         string indent = new(' ', idx * 2);
         if (idx >= rules.Count) return true;
 

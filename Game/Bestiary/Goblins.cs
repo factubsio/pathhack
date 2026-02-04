@@ -29,11 +29,9 @@ public class FireBreath(int radius, Dice damage, int dc, string pool = "fire_bre
 
             using var ctx = PHContext.Create(unit, Target.From(victim));
             
-            bool saved = CreateAndDoCheck(ctx, "reflex_save", dc, Name, true);
-            
-            var dmg = new DamageRoll { Formula = damage, Type = DamageTypes.Fire };
-            Log.Write($"versus dmg: {saved}");
-            if (saved) dmg.Halve();
+            CreateAndDoCheck(ctx, "reflex_save", dc, "fire");
+
+            var dmg = new DamageRoll { Formula = damage, Type = DamageTypes.Fire, HalfOnSave = true };
             ctx.Damage = [dmg];
             DoDamage(ctx);
         }

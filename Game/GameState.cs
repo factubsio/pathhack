@@ -148,7 +148,7 @@ public class GameState
             Console.WriteLine(reason);
             Console.WriteLine();
             Console.WriteLine("Press any key...");
-            Console.ReadKey(true);
+            Input.NextKey();
         }
         throw new GameOverException();
     }
@@ -219,35 +219,27 @@ public class GameState
         string advStr = hasAdv ? " (adv)" : hasDis ? " (dis)" : "";
         Log.Write("{0}: d20={1}{2} {3}= {4} vs DC {5}", label, baseRoll, advStr, modStr, check.Roll, check.DC);
 
-        return check.ForcedResult ?? (check.Roll >= check.DC);
+        return check.Result;
     }
 
-    public static bool CreateAndDoCheck(PHContext ctx, string modifierKey, int dc, string label, bool silent = true)
+    public static bool CreateAndDoCheck(PHContext ctx, string modifierKey, int dc, string label)
     {
         var target = ctx.Target.Unit!;
-        Check check = new() { DC = dc };
+        Check check = new() { DC = dc, Tag = label, Key = modifierKey };
         ctx.Check = check;
 
         check.Modifiers.AddAll(target.QueryModifiers(modifierKey));
 
         bool didSave = DoCheck(ctx, label);
-        if (didSave && !silent)
-        {
-            var verb = VTense(target, "save");
-            g.pline($"{target:The} {verb} versus {label}.");
-            Log.Write($"  {target:the} {verb} versus {label}.");
-        }
 
         return didSave;
     }
 
-    public List<string> Messages { get; } = [];
     public List<string> MessageHistory { get; } = [];
 
     public void pline(string msg)
     {
-        Messages.Add(msg);
-        MessageHistory.Add(msg);
+        Draw.DrawMessage(msg);
         PlineLog?.WriteLine($"[{CurrentRound}] {msg}");
     }
     public void pline(string fmt, params object[] args) => pline(string.Format(fmt, args));
@@ -329,6 +321,7 @@ public class GameState
 
         // OnRoundEnd for all units
         Perf.Start();
+        u.RecalculateMaxHp();
         foreach (var unit in lvl.LiveUnits)
         {
             unit.ExpireFacts();
@@ -452,7 +445,7 @@ public class GameState
         int y = RichText.Write(Draw.Overlay, 2, 2, 52, message);
         Draw.OverlayWrite(2, y + 2, "press (space) to continue");
         Draw.Blit();
-        while (Console.ReadKey(true).Key != ConsoleKey.Spacebar)
+        while (Input.NextKey().Key != ConsoleKey.Spacebar)
             Draw.Blit();
     }
 
@@ -582,10 +575,19 @@ public class GameState
         int damage = 0;
         foreach (var dmg in ctx.Damage)
         {
+            if (dmg.Negated) continue;
+
+            if (dmg.HalfOnSave && ctx.Check?.Result == true) dmg.Halve();
+            if (dmg.DoubleOnFail && ctx.Check?.Result == false) dmg.Double();
+
             int rolled = DoRoll(dmg.Formula, dmg.Modifiers, $"  {dmg} damage");
             rolled = (int)Math.Floor(rolled * dmg.Multiplier);
             damage += Math.Max(1, rolled);
         }
+        
+        // this can happen if all damage instances were negated
+        if (damage == 0) return;
+
         Log.Write($"  {target:The} takes {damage} total damage");
         target.HP -= damage;
 

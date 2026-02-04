@@ -253,7 +253,9 @@ public class Monster : Unit<MonsterDef>, IFormattable
   public override bool IsAwareOf(Trap trap) => (trap.Type & KnownTraps) != 0;
   public override void ObserveTrap(Trap trap) => KnownTraps |= trap.Type;
 
+  // BLEH
   public override int CasterLevel => Math.Clamp(Def.CR, 1, 20);
+  public override int EffectiveLevel => Math.Clamp(Def.CR, 1, 20);
 
   public TrapType KnownTraps;
 

@@ -307,7 +307,7 @@ public class VeryDrunkJinkinBrain : MonsterBrain
                 using var ctx = PHContext.Create(m, Target.From(tgt));
 
                 // dodge the acid bullet
-                if (CreateAndDoCheck(ctx, "reflex_save", 10, "Vomit spray", true))
+                if (CreateAndDoCheck(ctx, "reflex_save", 10, "acid"))
                 {
                     g.pline($"{m:The} throws up but misses {tgt:the}.");
                     return true;
@@ -325,7 +325,7 @@ public class VeryDrunkJinkinBrain : MonsterBrain
                 DoDamage(ctx);
 
                 // yucky yucky
-                if (CreateAndDoCheck(ctx, "fortitude_save", 14, "Nauseated", false)) return true;
+                if (CreateAndDoCheck(ctx, "fortitude_save", 14, "nauseated")) return true;
                 g.pline($"{tgt:The} can barely hold {tgt:own} own lunch down.");
                 tgt.AddFact(TimedNauseated.Instance, duration: 4);
             }

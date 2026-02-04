@@ -7,18 +7,23 @@ General feats at levels 3, 9, 15, 19. Pool is shuffled per run, maybe 2/3 chosen
 **Toughness**
 - +level HP
 - CL 10: Ferocity (act at 0 HP for 1 round)
+done (ferocity todo)
 
 **Fleet**
 - -2 move cost (base 12 → 10)
 - CL 10+: -3 move cost
+done
 
 **Blind-Fight**
 - No blind/invisible penalties (primarily on attack rolls)
 - CL +5: Tremorsense (detect adjacent) - granting at +5CL is kind cool 
+done
+but tremorsense not yet implemented (Currently returning an int directly since this is like a base value)
 
 **Evasion**
 - Reflex save success: half → no damage
 - Stacks with class evasion for rank 2 (fail → half)
+rank1 done
 
 uncanny dodge is similar to evasion (to the point always mix them up) but we're less in the flat footed systems yet
 
@@ -28,10 +33,12 @@ uncanny dodge is similar to evasion (to the point always mix them up) but we're 
 
 **Feather Step**
 - Ignore difficult terrain (in pf I am not sure grease counts, but defo you'll ignore grease and stuff)
+done - areas report if they are difficult terrain or not
 
 **Trap Sense**
 - Bonus to detect traps
 - Bonus to saves vs traps
+done
 
 ## Stealth Chain
 
@@ -41,8 +48,11 @@ Tier 1:
 Tier 2 (15+, requires Stealthy):
 - **Legendary Sneak** - always hidden unless you choose not to be, this could be way over strong, but it's lvl15 and needs the probabnly underperforming stealthy feat?
 
-**Dirty Fighting**
-- Melee hits have chance to inflict random debuff (blind/slow/clumsy)
+**Debilitating Strikes**
+- Melee hits have chance to inflict random debuff (bewilder,hamper,something)
+feat is there and brick is, but we need the status (and timed version)
+
+NEED TO IMPLEMENT TOGGLES!!! Probably on ActionBrick
 
 ## Combat Stance Chain
 

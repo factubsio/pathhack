@@ -5,6 +5,7 @@ public abstract class Area(int duration)
     public abstract string Name { get; }
     public abstract Glyph Glyph { get; }
     public virtual int ZOrder => 0;
+    public virtual bool IsDifficultTerrain => false;
 
     public HashSet<Pos> Tiles = [];
     public int ExpiresAt = g.CurrentRound + duration;

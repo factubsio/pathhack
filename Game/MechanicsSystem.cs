@@ -178,6 +178,8 @@ public class Check
     public int Roll;
     public int DC;
     public Modifiers Modifiers = new();
+    public string Tag = "_";
+    public string Key = "_";
 
     public bool? ForcedResult;
     public int Advantage;
@@ -195,6 +197,9 @@ public class DamageRoll
     public DamageType Type;
     public Modifiers Modifiers = new();
 
+    public bool HalfOnSave;
+    public bool DoubleOnFail;
+
     public bool Negated { get; private set; }
     public bool Halved { get; private set; }
     public bool Doubled { get; private set; }
@@ -207,6 +212,7 @@ public class DamageRoll
     }
 
     int? _rolled;
+
     public int Base => _rolled ??= Formula.Roll(_extraDice);
 
     public int Total

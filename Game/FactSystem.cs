@@ -23,6 +23,8 @@ public interface IEntity
     bool Has(string key);
     bool Can(string key);
     bool HasFact<T>() where T : LogicBrick;
+
+    int EffectiveLevel { get; }
 }
 
 public class Fact(IEntity entity, LogicBrick brick, object? data)
@@ -345,6 +347,8 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
 
     public void RemoveStack<T>() where T : LogicBrick => RemoveStack(typeof(T));
 
+    public virtual int EffectiveLevel => 1;
+
     public void ExpireFacts()
     {
         foreach (var fact in LiveFacts)
@@ -457,11 +461,13 @@ public class Inventory(IUnit owner) : IEnumerable<Item>
 
 public class Hitpoints
 {
-    public int Max;
+    public int BaseMax; //unmodified
+    public int Max; //modified, kinda scary to cache here but bleh
     public int Current;
 
     public void Reset(int max)
     {
+        BaseMax = max;
         Max = max;
         Current = max;
     }
@@ -477,12 +483,14 @@ public class Hitpoints
 
     public static Hitpoints operator -(Hitpoints hp, int delta) => new()
     {
+        BaseMax = hp.BaseMax,
         Max = hp.Max,
         Current = Math.Clamp(hp.Current - delta, 0, hp.Max),
     };
 
     public static Hitpoints operator +(Hitpoints hp, int delta) => new()
     {
+        BaseMax = hp.BaseMax,
         Max = hp.Max,
         Current = Math.Clamp(hp.Current + delta, 0, hp.Max),
     };

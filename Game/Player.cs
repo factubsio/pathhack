@@ -68,11 +68,11 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def), IFormattable
         foreach (var flaw in ancestry.Flaws)
             p.ApplyStatMod(flaw, -2);
 
-        // HP from class
-        p.HP.Reset(cls.HpPerLevel + Mod(p.Attributes.Con.Value) + 12);
-
         // Starting equipment
         cls.GrantStartingEquipment?.Invoke(p);
+
+        // base max hp
+        p.HP.Reset(p.Class.HpPerLevel + 12);
 
         return p;
     }
@@ -107,6 +107,7 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def), IFormattable
         return prof == ProficiencyLevel.Untrained ? 0 : CharacterLevel + (int)prof;
     }
 
+    public static int Mod(ModifiableValue stat) => Mod(stat.Value);
     public static int Mod(int stat) => (stat - 10) / 2;
 
     public override Glyph Glyph => new('@', ConsoleColor.White);
@@ -130,8 +131,23 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def), IFormattable
 
     public override bool IsAwareOf(Trap trap) => trap.PlayerSeen;
     public override void ObserveTrap(Trap trap) => trap.PlayerSeen = true;
+
+    public int CalculateMaxHp(int baseVal)
+    {
+        var hpMod = QueryModifiers("max_hp");
+        Log.Write($"max hp: base={baseVal}, con={CharacterLevel}*{Mod(Attributes.Con)}, mod={hpMod.Calculate()}");
+        return baseVal + CharacterLevel * Mod(Attributes.Con) + hpMod.Calculate();
+    }
+
+    internal void RecalculateMaxHp()
+    {
+        u.HP.Max = CalculateMaxHp(u.HP.BaseMax);
+        u.HP.Current = Math.Clamp(u.HP.Current, 1, u.HP.Max);
+    }
+
     public override bool IsDM => false;
     public override int CasterLevel => CharacterLevel;
+    public override int EffectiveLevel => CharacterLevel;
 }
 
 internal class PlayerSkills : LogicBrick

@@ -46,13 +46,12 @@ public class PitTrap(int depth) : Trap(TrapType.Pit, depth, 15, 15, 4)
 
         g.pline($"{unit:The} {VTense(unit, "fall")} into a {Name}!");
         using var ctx = PHContext.Create(Monster.DM, Target.From(unit));
-        ctx.Damage.Add(new DamageRoll { Formula = d(1, 6), Type = DamageTypes.Blunt });
+        ctx.Damage.Add(new DamageRoll { Formula = d(1, 6), Type = DamageTypes.Blunt, HalfOnSave = true });
         if (IsSpiked)
         {
             ctx.Damage.Add(new DamageRoll { Formula = d(1, 6), Type = DamageTypes.Piercing });
         }
-        if (CreateAndDoCheck(ctx, "reflex_save", 15, "pit trap"))
-            ctx.Damage[0].Halve();
+        CreateAndDoCheck(ctx, "reflex_save", 15, "trap");
         DoDamage(ctx);
         unit.TrappedIn = this;
         unit.EscapeAttempts = 0;
