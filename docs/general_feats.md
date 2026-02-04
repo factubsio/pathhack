@@ -1,6 +1,6 @@
 # General Feats
 
-General feats at levels 3, 9, 15, 19. Pool is shuffled per run - you see a subset.
+General feats at levels 3, 9, 15, 19. Pool is shuffled per run, maybe 2/3 chosen?
 
 ## Standalone Feats
 
@@ -13,19 +13,21 @@ General feats at levels 3, 9, 15, 19. Pool is shuffled per run - you see a subse
 - CL 10+: -3 move cost
 
 **Blind-Fight**
-- No blind/invisible penalties
-- CL +5: Tremorsense (detect adjacent)
+- No blind/invisible penalties (primarily on attack rolls)
+- CL +5: Tremorsense (detect adjacent) - granting at +5CL is kind cool 
 
 **Evasion**
 - Reflex save success: half → no damage
 - Stacks with class evasion for rank 2 (fail → half)
 
+uncanny dodge is similar to evasion (to the point always mix them up) but we're less in the flat footed systems yet
+
 **Fast Recovery**
 - 2x resting HP regen
-- Chance to shrug off disease/poison per turn
+- Chance to shrug off disease/poison per turn, maybe CL scaled?
 
 **Feather Step**
-- Ignore difficult terrain
+- Ignore difficult terrain (in pf I am not sure grease counts, but defo you'll ignore grease and stuff)
 
 **Trap Sense**
 - Bonus to detect traps
@@ -34,10 +36,10 @@ General feats at levels 3, 9, 15, 19. Pool is shuffled per run - you see a subse
 ## Stealth Chain
 
 Tier 1:
-- **Stealthy** - reduced detection range, bonus to stealth
+- **Stealthy** - reduced detection range, bonus to stealth (or just grant stealth)?
 
 Tier 2 (15+, requires Stealthy):
-- **Legendary Sneak** - always hidden unless you choose not to be
+- **Legendary Sneak** - always hidden unless you choose not to be, this could be way over strong, but it's lvl15 and needs the probabnly underperforming stealthy feat?
 
 **Dirty Fighting**
 - Melee hits have chance to inflict random debuff (blind/slow/clumsy)
@@ -61,6 +63,8 @@ Tier 1 (pick one):
 
 Tier 2 (15+, requires any tier 1):
 - **Scare to Death** - frightened enemies can die
+
+this is either lol strong or not - Phantasmal killer intensifies (talking of which should we do pk for the lols? GIVE IT TO MONSTERS???)
 
 ## Spell Penetration Chain
 
@@ -91,8 +95,8 @@ Tier 2 (15+, requires any tier 1):
 - Perception bonus
 
 **Cloud Jump**
-- Jump 2+ tiles reliably (base jump is risky check)
-- Extended range
+- Jump 2+ tiles reliably (jumping should be distance-based check, this would probably give you jump at nh range with 100% chance, and increase chance for bigger ranges)
+- Extended range - maybe jump to unseen? tbd, it's not got pre-reqs so it may become "mandatory" which would be against the point
 
 ## Maybe Later
 

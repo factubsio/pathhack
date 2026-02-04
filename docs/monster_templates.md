@@ -25,3 +25,6 @@
 ## 2e Simple
 - **Elite** (+1 level) - tougher
 - **Weak** (-1 level) - easier
+
+
+I don't want to give mosnters actual PC but we may want some templates that give some spells as SLA or somethoing

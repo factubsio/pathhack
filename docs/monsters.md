@@ -1,5 +1,7 @@
 # Monster Reference
 
+not complrehenvi really just what's in wp quest cos that what I do now/next
+
 ## Orcs (2e NPC Core)
 - Orc Scrapper (0)
 - Orc Veteran (1)

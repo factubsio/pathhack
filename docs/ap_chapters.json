@@ -22,7 +22,7 @@
       "ap": "Carrion Crown",
       "chapter": "Trial of the Beast",
       "index": 2,
-      "allocatedTo": "meaty/carrion-crown",
+      "allocatedTo": "class/alchemist",
       "themes": []
     },
     {
@@ -456,14 +456,14 @@
       "ap": "Legacy of Fire",
       "chapter": "Howl of the Carrion King",
       "index": 1,
-      "allocatedTo": null,
+      "allocatedTo": "class/sorcerer",
       "themes": []
     },
     {
       "ap": "Legacy of Fire",
       "chapter": "House of the Beast",
       "index": 2,
-      "allocatedTo": null,
+      "allocatedTo": "class/sorcerer",
       "themes": []
     },
     {
@@ -624,14 +624,14 @@
       "ap": "Skull & Shackles",
       "chapter": "The Wormwood Mutiny",
       "index": 1,
-      "allocatedTo": null,
+      "allocatedTo": "class/swashbuckler",
       "themes": []
     },
     {
       "ap": "Skull & Shackles",
       "chapter": "Raiders of the Fever Sea",
       "index": 2,
-      "allocatedTo": null,
+      "allocatedTo": "class/swashbuckler",
       "themes": []
     },
     {
@@ -666,14 +666,14 @@
       "ap": "Shattered Star",
       "chapter": "Shards of Sin",
       "index": 1,
-      "allocatedTo": null,
+      "allocatedTo": "class/magus",
       "themes": []
     },
     {
       "ap": "Shattered Star",
       "chapter": "Curse of the Lady's Light",
       "index": 2,
-      "allocatedTo": null,
+      "allocatedTo": "class/magus",
       "themes": []
     },
     {
@@ -729,7 +729,7 @@
       "ap": "Wrath of the Righteous",
       "chapter": "The Midnight Isles",
       "index": 4,
-      "allocatedTo": null,
+      "allocatedTo": "class/sorcerer",
       "themes": []
     },
     {
@@ -750,14 +750,14 @@
       "ap": "Giantslayer",
       "chapter": "Battle of Bloodmarch Hill",
       "index": 1,
-      "allocatedTo": null,
+      "allocatedTo": "class/warpriest",
       "themes": []
     },
     {
       "ap": "Giantslayer",
       "chapter": "The Hill Giant's Pledge",
       "index": 2,
-      "allocatedTo": null,
+      "allocatedTo": "class/warpriest",
       "themes": []
     },
     {
@@ -876,14 +876,14 @@
       "ap": "Ironfang Invasion",
       "chapter": "Trail of the Hunted",
       "index": 1,
-      "allocatedTo": null,
+      "allocatedTo": "class/druid",
       "themes": []
     },
     {
       "ap": "Ironfang Invasion",
       "chapter": "Fangs of War",
       "index": 2,
-      "allocatedTo": null,
+      "allocatedTo": "class/druid",
       "themes": []
     },
     {
@@ -960,14 +960,14 @@
       "ap": "Return of the Runelords",
       "chapter": "Secrets of Roderic's Cove",
       "index": 1,
-      "allocatedTo": null,
+      "allocatedTo": "class/sorcerer",
       "themes": []
     },
     {
       "ap": "Return of the Runelords",
       "chapter": "It Came from Hollow Mountain",
       "index": 2,
-      "allocatedTo": null,
+      "allocatedTo": "class/sorcerer",
       "themes": []
     },
     {
@@ -1002,14 +1002,14 @@
       "ap": "Tyrant's Grasp",
       "chapter": "The Dead Roads",
       "index": 1,
-      "allocatedTo": null,
+      "allocatedTo": "class/oracle",
       "themes": []
     },
     {
       "ap": "Tyrant's Grasp",
       "chapter": "Eulogy for Roslar's Coffer",
       "index": 2,
-      "allocatedTo": null,
+      "allocatedTo": "class/oracle",
       "themes": []
     },
     {
@@ -1044,14 +1044,14 @@
       "ap": "Age of Ashes",
       "chapter": "Hellknight Hill",
       "index": 1,
-      "allocatedTo": null,
+      "allocatedTo": "class/kineticist",
       "themes": []
     },
     {
       "ap": "Age of Ashes",
       "chapter": "Cult of Cinders",
       "index": 2,
-      "allocatedTo": null,
+      "allocatedTo": "class/kineticist",
       "themes": []
     },
     {
@@ -1170,14 +1170,14 @@
       "ap": "Fists of the Ruby Phoenix",
       "chapter": "Despair on Danger Island",
       "index": 1,
-      "allocatedTo": null,
+      "allocatedTo": "class/monk",
       "themes": []
     },
     {
       "ap": "Fists of the Ruby Phoenix",
       "chapter": "Ready? Fight!",
       "index": 2,
-      "allocatedTo": null,
+      "allocatedTo": "class/monk",
       "themes": []
     },
     {
@@ -1254,14 +1254,14 @@
       "ap": "Outlaws of Alkenstar",
       "chapter": "Punks in a Powderkeg",
       "index": 1,
-      "allocatedTo": null,
+      "allocatedTo": "class/swashbuckler",
       "themes": []
     },
     {
       "ap": "Outlaws of Alkenstar",
       "chapter": "Cradle of Quartz",
       "index": 2,
-      "allocatedTo": null,
+      "allocatedTo": "free",
       "themes": []
     },
     {
