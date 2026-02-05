@@ -23,6 +23,8 @@ public static class EndShrineLevels
     // HP = 1,
     Unarmed = NaturalWeapons.Claw_1d6,
     SpawnWeight = 0,
+    MoralAxis = MoralAxis.Neutral,
+    EthicalAxis = EthicalAxis.Neutral,
     Components = [
       new GrantAction(AttackWithWeapon.Instance),
       EquipSet.OneOf(MundaneArmory.Longsword, MundaneArmory.Spear, MundaneArmory.Mace),
@@ -41,6 +43,8 @@ public static class EndShrineLevels
     // HP = 1,
     Unarmed = NaturalWeapons.Claw_1d6,
     SpawnWeight = 0,
+    MoralAxis = MoralAxis.Neutral,
+    EthicalAxis = EthicalAxis.Neutral,
     Components = [
       new GrantAction(AttackWithWeapon.Instance),
       new Equip(BadPlayerDoThePuzzle)

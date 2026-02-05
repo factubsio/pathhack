@@ -5,7 +5,7 @@ public class TKAttackBonus(int bonus) : LogicBrick
     protected override void OnBeforeAttackRoll(Fact fact, PHContext ctx)
     {
         if (ctx.Weapon?.Def.id == "tk_projectile")
-            ctx.Check!.Modifiers.AddModifier(new(ModifierCategory.UntypedStackable, bonus, "telekinesis"));
+            ctx.Check!.Modifiers.Untyped(bonus, "telekinesis");
     }
 }
 
@@ -172,6 +172,8 @@ public static class Derro
         Unarmed = NaturalWeapons.Fist,
         Size = UnitSize.Small,
         CR = 1,
+        MoralAxis = MoralAxis.Evil,
+        EthicalAxis = EthicalAxis.Chaotic,
         Components = [
             new EquipSet(new Outfit(1, new OutfitItem(MundaneArmory.Dagger))),
             new GrantAction(AttackWithWeapon.Instance),
@@ -194,6 +196,8 @@ public static class Derro
         Unarmed = NaturalWeapons.Fist,
         Size = UnitSize.Small,
         CR = 2,
+        MoralAxis = MoralAxis.Evil,
+        EthicalAxis = EthicalAxis.Chaotic,
         Components = [
             new EquipSet(new Outfit(1, new OutfitItem(MundaneArmory.Club))),
             new GrantAction(AttackWithWeapon.Instance),
@@ -215,6 +219,8 @@ public static class Derro
         Unarmed = NaturalWeapons.Fist,
         Size = UnitSize.Small,
         CR = 3,
+        MoralAxis = MoralAxis.Evil,
+        EthicalAxis = EthicalAxis.Chaotic,
         Components = [
             new EquipSet(new Outfit(1, new OutfitItem(MundaneArmory.SpikedClub))),
             new GrantAction(AttackWithWeapon.Instance),
@@ -235,6 +241,8 @@ public static class Derro
         Unarmed = NaturalWeapons.Fist,
         Size = UnitSize.Small,
         CR = 4,
+        MoralAxis = MoralAxis.Evil,
+        EthicalAxis = EthicalAxis.Chaotic,
         Components = [
             new EquipSet(new Outfit(1, new OutfitItem(MundaneArmory.Quarterstaff))),
             new GrantAction(AttackWithWeapon.Instance),

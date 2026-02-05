@@ -208,7 +208,7 @@ public class WarBlessingPassive : LogicBrick
             _ => 0
         };
         if (bonus > 0)
-            context.Check!.Modifiers.AddModifier(new(ModifierCategory.UntypedStackable, bonus, "war"));
+            context.Check!.Modifiers.Untyped(bonus, "war");
     }
 
     protected override void OnRoundEnd(Fact fact, PHContext context)
@@ -433,7 +433,7 @@ public class SunBlessingMinor() : ActionBrick("Sun Blessing")
             if (tgt.IsNullOrDead()) continue;
 
             Log.Verbose("sun", $"Sun hits {tgt} at {tgt.Pos}");
-            var formula = tgt.Has("undead") ? d(6) : d(2);
+            var formula = tgt.IsCreature(CreatureTypes.Undead) ? d(6) : d(2);
             using var ctx = PHContext.Create(unit, Target.From(tgt));
             ctx.Damage = [new() { Formula = formula, Type = DamageTypes.Fire }];
             DoDamage(ctx);

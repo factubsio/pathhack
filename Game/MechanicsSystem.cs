@@ -31,6 +31,7 @@ public sealed class PHContext : IDisposable
     public SpellBrick? Spell;
     public ActionBrick? Action;
     public Item? Weapon;
+    public bool Melee = false;
     public Check? Check;
     public List<DamageRoll> Damage = [];
     public DiceFormula HealFormula;
@@ -74,9 +75,10 @@ public static class Proficiencies
     public const string Close = "close";
 
     // Armor
-    public const string LightArmor = "light_armor";
-    public const string MediumArmor = "medium_armor";
-    public const string HeavyArmor = "heavy_armor";
+    public const string NakedArmor = "armor_naked";
+    public const string LightArmor = "armor_light";
+    public const string MediumArmor = "armor_medium";
+    public const string HeavyArmor = "armor_heavy";
 }
 
 public static class WeaponTypes
@@ -121,6 +123,10 @@ public class Modifiers
     public readonly List<Modifier> Stackable = [];
     public Modifier? Override { get; private set; }
 
+    public Modifier Untyped(int value, string why) => Mod(ModifierCategory.UntypedStackable, value, why);
+
+    public Modifier Mod(ModifierCategory cat, int value, string why) => AddModifier(new(cat, value, why));
+
     public Modifier AddModifier(Modifier modifier)
     {
         if (modifier.Category == ModifierCategory.Override)
@@ -163,6 +169,14 @@ public class Modifiers
         foreach (var m in mods.Unstackable.Values)
             AddModifier(m);
     }
+
+    public override string ToString()
+    {
+        var parts = Stackable.Concat(Unstackable.Values)
+            .Where(m => m.Value != 0)
+            .Select(m => m.Value > 0 ? $"+{m.Value} ({m.Label})" : $"{m.Value} ({m.Label})");
+        return string.Join(" ", parts);
+    }
 }
 
 public enum Degree
@@ -189,6 +203,8 @@ public class Check
     public void ForceFailure() => ForcedResult = false;
 
     public bool Result => ForcedResult ?? (Roll >= DC);
+
+    public bool IsSave => Key == "reflex_save" || Key == "fortitude_save" || Key == "will_save";
 }
 
 public class DamageRoll

@@ -2,7 +2,7 @@ namespace Pathhack.Game;
 
 public class PlayerDef : BaseDef { }
 
-public class Player(PlayerDef def) : Unit<PlayerDef>(def), IFormattable
+public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IFormattable
 {
     public static Player u { get; set; } = null!;
     public static Pos upos
@@ -13,6 +13,11 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def), IFormattable
 
     public override int NaturalRegen => 15 * CharacterLevel;
     public override int StrMod => Mod(Attributes.Str.Value);
+
+    public override MoralAxis MoralAxis => Query("moral_axis", null, MergeStrategy.Replace, MoralAxis.Neutral);
+    public override EthicalAxis EthicalAxis => Query("ethical_axis", null, MergeStrategy.Replace, EthicalAxis.Neutral);
+    public override bool IsCreature(string? type = null, string? subtype = null) =>
+      (type == null || type == CreatureTypes.Humanoid) && (subtype == null || Has(subtype));
 
     public LevelId Level { get; set; }
     public int DarkVisionRadius => Math.Clamp(Ancestry.DarkVisionRadius + QueryModifiers("light_radius").Calculate(), 0, 100);
@@ -116,9 +121,10 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def), IFormattable
     {
         int dexMod = Mod(Attributes.Dex.Value);
         int dexCap = Query("dex_cap", null, MergeStrategy.Min, 99);
+        var armorProf = (Equipped.TryGetValue(ItemSlots.BodySlot, out var armor) && armor.Def is ArmorDef armorDef) ? armorDef.Proficiency : Game.Proficiencies.NakedArmor;
         var mods = QueryModifiers("ac");
         // Log.Write("GetAC: dexMod={0} dexCap={1} mods={2}", dexMod, dexCap, mods.Calculate());
-        return 10 + Math.Min(dexMod, dexCap) + mods.Calculate();
+        return 10 + Math.Min(dexMod, dexCap) + mods.Calculate() + ProfBonus(armorProf);
     }
 
     public override int GetAttackBonus(WeaponDef weapon) => Mod(Attributes.Str.Value) + ProfBonus(weapon.Profiency);

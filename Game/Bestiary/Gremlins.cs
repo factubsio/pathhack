@@ -50,7 +50,7 @@ public class WeaponCurse : LogicBrick
         if (fact.Entity is not Item item) return;
         if (ctx.Source != item.Holder) return;
         if (ctx.Weapon != item) return;
-        ctx.Check!.Modifiers.AddModifier(new(ModifierCategory.UntypedStackable, -2, "cursed"));
+        ctx.Check!.Modifiers.Untyped(-2, "cursed");
     }
 }
 
@@ -147,6 +147,8 @@ public static class Gremlins
         SpawnWeight = 3,
         MinDepth = 1,
         MaxDepth = 3,
+        MoralAxis = MoralAxis.Evil,
+        EthicalAxis = EthicalAxis.Chaotic,
         Components = [
             new EquipSet(
                 new Outfit(1, new OutfitItem(MundaneArmory.Dart, 100, d(2) + 2)),
@@ -170,6 +172,8 @@ public static class Gremlins
         Unarmed = NaturalWeapons.Bite_1d3,
         Size = UnitSize.Small,
         CR = 0,
+        MoralAxis = MoralAxis.Evil,
+        EthicalAxis = EthicalAxis.Chaotic,
         Components = [
             new GrantPool(CurseWeaponInRange.Resource, 1, 10),
             new GrantAction(CurseWeaponInRange.Instance),
@@ -190,6 +194,8 @@ public static class Gremlins
         Unarmed = NaturalWeapons.Claw_1d4,
         Size = UnitSize.Small,
         CR = 1,
+        MoralAxis = MoralAxis.Evil,
+        EthicalAxis = EthicalAxis.Chaotic,
         Components = [
             new ApplyFactOnAttackHit(JinkinCurse.Instance, duration: 10),
             ..CommonEquip
@@ -209,6 +215,8 @@ public static class Gremlins
         Unarmed = NaturalWeapons.Bite_1d3,
         Size = UnitSize.Small,
         CR = 2,
+        MoralAxis = MoralAxis.Evil,
+        EthicalAxis = EthicalAxis.Chaotic,
         Components = [
             new ApplyFactOnAttackHit(TimedProne.Instance, duration: 2),
             ..CommonEquip,
@@ -229,6 +237,8 @@ public static class Gremlins
         Unarmed = NaturalWeapons.Bite_1d3,
         Size = UnitSize.Small,
         CR = -1,
+        MoralAxis = MoralAxis.Evil,
+        EthicalAxis = EthicalAxis.Chaotic,
         Components = [
             new ApplyFactOnAttackHit(FilthFever.Instance),
             ..CommonEquip,
@@ -248,6 +258,8 @@ public static class Gremlins
         Unarmed = NaturalWeapons.Claw_1d4,
         Size = UnitSize.Small,
         CR = -1,
+        MoralAxis = MoralAxis.Evil,
+        EthicalAxis = EthicalAxis.Chaotic,
         Brain = new VeryDrunkJinkinBrain(),
         Components = [
             DrunkenDodge.Instance,

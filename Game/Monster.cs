@@ -1,4 +1,53 @@
+using System.Net.NetworkInformation;
+
 namespace Pathhack.Game;
+
+public enum MoralAxis { Evil = -1, Neutral = 0, Good = 1 }
+public enum EthicalAxis { Chaotic = -1, Neutral = 0, Lawful = 1 }
+
+public static class CreatureTypes
+{
+  public const string Humanoid = "humanoid";
+  public const string Beast = "beast";
+  public const string Undead = "undead";
+  public const string Construct = "construct";
+  public const string Elemental = "elemental";
+  public const string Outsider = "outsider";
+  public const string Aberration = "aberration";
+  public const string Dragon = "dragon";
+  public const string Fey = "fey";
+  public const string Plant = "plant";
+  public const string Ooze = "ooze";
+  public const string Giant = "giant";
+}
+
+public static class CreatureTags
+{
+  public const string Fire = "fire";
+  public const string Cold = "cold";
+  public const string Air = "air";
+  public const string Earth = "earth";
+  public const string Water = "water";
+  public const string Acid = "acid";
+  public const string Incorporeal = "incorporeal";
+  public const string Swarm = "swarm";
+  public const string Aquatic = "aquatic";
+  public const string Flying = "flying";
+  public const string Mindless = "mindless";
+}
+
+public static class CreatureSubtypes
+{
+  public const string Demon = "demon";
+  public const string Devil = "devil";
+  public const string Angel = "angel";
+  public const string Shapechanger = "shapechanger";
+  public const string Goblinoid = "goblinoid";
+  public const string Orc = "orc";
+  public const string Elf = "elf";
+  public const string Dwarf = "dwarf";
+  public const string Giant = "giant";
+}
 
 public abstract class MonsterBrain
 {
@@ -28,13 +77,27 @@ public class MonsterDef : BaseDef
   public int MaxDepth = 99;
   public string? Family;
   public Action<Monster>? OnChat;
+  public required MoralAxis MoralAxis;
+  public required EthicalAxis EthicalAxis;
+  public string CreatureType = CreatureTypes.Humanoid;
+  public HashSet<string> Subtypes = [];
 }
 
-public enum MonsterTemplate { Normal, Elite, Weak }
+public abstract class MonsterTemplate(string id)
+{
+  public string Id => id;
+  public abstract bool CanApplyTo(MonsterDef def);
+  public virtual IEnumerable<LogicBrick> GetComponents(MonsterDef def) => def.Components;
+  public virtual void ModifySpawn(Monster m) { }
+
+  public static readonly List<MonsterTemplate> All = [
+    new ZombieTemplate(),
+  ];
+}
 
 public class Monster : Unit<MonsterDef>, IFormattable
 {
-  private Monster(MonsterDef def) : base(def) { }
+  private Monster(MonsterDef def, IEnumerable<LogicBrick> components) : base(def, components) { }
 
   public static readonly Monster DM = new(new()
   {
@@ -44,38 +107,43 @@ public class Monster : Unit<MonsterDef>, IFormattable
     AC = 1,
     AttackBonus = 0,
     Unarmed = NaturalWeapons.Fist,
-  });
+    MoralAxis = MoralAxis.Neutral,
+    EthicalAxis = EthicalAxis.Neutral,
+  }, []);
 
   public override bool IsDM => this == DM;
-
-  public MonsterTemplate Template { get; private set; } = MonsterTemplate.Normal;
-  int TemplateBonus => Template switch { MonsterTemplate.Elite => 2, MonsterTemplate.Weak => -2, _ => 0 };
 
   public override int NaturalRegen => 5;
   public override int StrMod => Def.StrMod;
 
-  // where monster thinks player is (perfect vision for now)
+  // These are copied from def by default but we modify them if we need (typically through the template)
+  public string? OwnCreatureType;
+  public HashSet<string>? OwnSubtypes;
+  public MoralAxis? OwnMoralAxis;
+  public EthicalAxis? OwnEthicalAxis;
+  public Glyph? OwnGlyph;
+
+  public override MoralAxis MoralAxis => Query("moral_axis", null, MergeStrategy.Replace, OwnMoralAxis ?? Def.MoralAxis);
+  public override EthicalAxis EthicalAxis => Query("ethical_axis", null, MergeStrategy.Replace, OwnEthicalAxis ?? Def.EthicalAxis);
+  public override bool IsCreature(string? type = null, string? subtype = null) =>
+    (type == null || (OwnCreatureType ?? Def.CreatureType) == type) && (subtype == null || (OwnSubtypes ?? Def.Subtypes).Contains(subtype));
+
+  // where monster thinks player is
   public Pos? ApparentPlayerPos { get; private set; }
 
   public bool IsAsleep;
 
   // anti-oscillation: last N positions
-  const int TrackSize = 5;
-  readonly Pos[] _track = new Pos[TrackSize];
+  readonly Pos[] _track = [Pos.Invalid, Pos.Invalid, Pos.Invalid, Pos.Invalid, Pos.Invalid];
   int _trackIdx;
 
   void RecordMove(Pos p)
   {
     _track[_trackIdx] = p;
-    _trackIdx = (_trackIdx + 1) % TrackSize;
+    _trackIdx = (_trackIdx + 1) % _track.Length;
   }
 
-  bool WasRecentlyAt(Pos p)
-  {
-    foreach (var t in _track)
-      if (t == p) return true;
-    return false;
-  }
+  bool WasRecentlyAt(Pos p) => _track.Any(x => x == p);
 
   public bool CanSeeYou
   {
@@ -136,31 +204,37 @@ public class Monster : Unit<MonsterDef>, IFormattable
 
   public override bool IsPlayer => false;
 
-  public override int GetAC() => Def.AC + TemplateBonus;
-  public override ActionCost LandMove => Def.LandMove;
-  public override int GetAttackBonus(WeaponDef weapon) => Def.AttackBonus + TemplateBonus;
-  public override int GetDamageBonus() => Def.DamageBonus + TemplateBonus;
+  public int TemplateBonusLevels = 0;
+
+  public override int GetAC() => Def.AC + TemplateBonusLevels;
+  public override ActionCost LandMove => Def.LandMove.Value - QueryModifiers("speed_bonus").Calculate();
+  public override int GetAttackBonus(WeaponDef weapon) => Def.AttackBonus + TemplateBonusLevels;
+  public override int GetDamageBonus() => Def.DamageBonus + TemplateBonusLevels;
   public override int GetSpellDC() => 10 + Def.CR;
   protected override WeaponDef GetUnarmedDef() => Def.Unarmed;
-  public override Glyph Glyph => Def.Glyph;
+  public override Glyph Glyph => OwnGlyph ?? Def.Glyph;
 
-  public override string ToString() => Def.Name;
+  public string RealName => TemplatedName ?? Def.Name;
+
+  public override string ToString() => RealName;
+
   public string ToString(string? format, IFormatProvider? provider) => format switch
   {
-    "the" => Def.IsUnique ? Def.Name : Def.Name.The(),
-    "The" => Def.IsUnique ? Def.Name : Def.Name.The().Capitalize(),
-    "an" => Def.IsUnique ? Def.Name : Def.Name.An(),
-    "An" => Def.IsUnique ? Def.Name : Def.Name.An().Capitalize(),
+    "the" => Def.IsUnique ? RealName : RealName.The(),
+    "The" => Def.IsUnique ? RealName : RealName.The().Capitalize(),
+    "an" => Def.IsUnique ? RealName : RealName.An(),
+    "An" => Def.IsUnique ? RealName : RealName.An().Capitalize(),
     "own" => "his",
     "Own" => "His",
-    _ => Def.Name
+    _ => RealName,
   };
 
-  public static Monster Spawn(MonsterDef def, MonsterTemplate template = MonsterTemplate.Normal)
+  public string? TemplatedName;
+  public static Monster Spawn(MonsterDef def, MonsterTemplate? template = null)
   {
-    Monster m = new(def) { Template = template };
-    int hpMod = template switch { MonsterTemplate.Elite => def.HP / 10 + 1, MonsterTemplate.Weak => -(def.HP / 10 + 1), _ => 0 };
-    m.HP.Reset(Math.Max(1, def.HP + hpMod));
+    Monster m = new(def, template?.GetComponents(def) ?? def.Components);
+    m.HP.Reset(Math.Max(1, def.HP));
+    template?.ModifySpawn(m);
     using var ctx = PHContext.Create(m, Target.None);
     LogicBrick.FireOnSpawn(m, ctx);
     if (g.DebugMode)
@@ -255,7 +329,9 @@ public class Monster : Unit<MonsterDef>, IFormattable
 
   // BLEH
   public override int CasterLevel => Math.Clamp(Def.CR, 1, 20);
-  public override int EffectiveLevel => Math.Clamp(Def.CR, 1, 20);
+  public override int EffectiveLevel => Math.Clamp(Def.CR + TemplateBonusLevels, 1, 30);
+
+  public string CreatureTypeRendered => $"{OwnCreatureType ?? Def.CreatureType} [{string.Join(", ", OwnSubtypes ?? Def.Subtypes)}] {OwnEthicalAxis ?? Def.EthicalAxis}/{OwnMoralAxis ?? Def.MoralAxis}";
 
   public TrapType KnownTraps;
 

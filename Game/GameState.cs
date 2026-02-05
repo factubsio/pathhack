@@ -184,12 +184,9 @@ public class GameState
     public static int DoRoll(DiceFormula dice, Modifiers mods, string label)
     {
         int baseRoll = dice.Roll();
-        int total = baseRoll + mods.Calculate();
-        var parts = mods.Stackable.Concat(mods.Unstackable.Values)
-            .Where(m => m.Value != 0)
-            .Select(m => m.Value > 0 ? $"+{m.Value} ({m.Label})" : $"{m.Value} ({m.Label})");
-        string modStr = string.Join(" ", parts);
-        Log.Write("{0}: {1}={2} {3}= {4}", label, dice, baseRoll, modStr, total);
+        int modValue = mods.Calculate();
+        int total = baseRoll + modValue;
+        Log.Write($"{label}: {dice}:{baseRoll} + {mods}:{modValue} = {total}");
         return total;
     }
 
@@ -472,22 +469,23 @@ public class GameState
         Target target = new(defender, defender.Pos);
         using var ctx = PHContext.Create(attacker, target);
         ctx.Weapon = with;
+        ctx.Melee = !thrown;
 
         string verb = thrown
             ? "throws"
             : weapon?.MeleeVerb ?? "attacks with";
 
-        Check check = new() { DC = defender.GetAC() };
+        Check check = new() { DC = defender.GetAC(), Tag = "attack" };
         ctx.Check = check;
 
         if (weapon != null)
         {
             bool improvised = thrown && weapon.Launcher == null;
             if (improvised)
-                check.Modifiers.AddModifier(new(ModifierCategory.UntypedStackable, -2, "improvised"));
+                check.Modifiers.Untyped(-2, "improvised");
             else
-                check.Modifiers.AddModifier(new(ModifierCategory.UntypedStackable, attacker.GetAttackBonus(weapon), "atk"));
-            check.Modifiers.AddModifier(new(ModifierCategory.ItemBonus, with.Potency, "potency"));
+                check.Modifiers.Untyped(attacker.GetAttackBonus(weapon), "atk");
+            check.Modifiers.Mod(ModifierCategory.ItemBonus, with.Potency, "potency");
         }
 
         LogicBrick.FireOnBeforeAttackRoll(attacker, ctx);
@@ -505,7 +503,7 @@ public class GameState
                 Formula = weapon?.BaseDamage ?? d(2),
                 Type = weapon?.DamageType ?? DamageTypes.Blunt
             };
-            dmg.Modifiers.AddModifier(new(ModifierCategory.UntypedStackable, attacker.GetDamageBonus(), "str_inherent"));
+            dmg.Modifiers.Untyped(attacker.GetDamageBonus(), "str_inherent");
             ctx.Damage.Add(dmg);
 
             if (thrown)
@@ -701,7 +699,7 @@ public class GameState
         if (item == null)
         {
             // bare hands
-            unit.Unequip(new(ItemSlots.Hand, "_"));
+            unit.Unequip(ItemSlots.HandSlot);
         }
         else
         {

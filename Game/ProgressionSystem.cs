@@ -18,6 +18,7 @@ public class FeatDef : BaseDef, ISelectable
     public FeatType Type;
     public int Level = 1;
     public Func<Player, Availability>? Prereq;
+    public Func<Player, string?>? NotAvailableBecause;
 }
 
 public class FeatSelection
@@ -93,26 +94,28 @@ public static class Progression
 
     public static FeatType[] FeatsAtLevel(int level) => level switch
     {
-        1 => [FeatType.Class],
         2 => [FeatType.Class],
         3 => [FeatType.General],
-        4 => [FeatType.Class, FeatType.AttributeBoost],
-        5 => [FeatType.Class],
+        4 => [FeatType.Class],
+        5 => [FeatType.AttributeBoost],
         6 => [FeatType.Class],
         7 => [FeatType.Ancestry],
-        8 => [FeatType.Class, FeatType.AttributeBoost],
+        8 => [FeatType.Class],
         9 => [FeatType.General],
         10 => [FeatType.Class],
-        11 => [FeatType.Ancestry],
-        12 => [FeatType.Class, FeatType.AttributeBoost],
+        11 => [FeatType.AttributeBoost],
+        12 => [FeatType.Class],
+        13 => [FeatType.Ancestry],
         14 => [FeatType.Class],
-        15 => [FeatType.General, FeatType.Ancestry],
-        16 => [FeatType.Class, FeatType.AttributeBoost],
+        15 => [FeatType.General],
+        16 => [FeatType.AttributeBoost],
+        17 => [FeatType.Ancestry],
         18 => [FeatType.Class],
         19 => [FeatType.General],
-        20 => [FeatType.Class, FeatType.AttributeBoost],
+        20 => [FeatType.Class],
         _ => [],
     };
+
 
     public static bool HasPendingLevelUp(Player p) => p.CharacterLevel < LevelForXp(p.XP);
 }

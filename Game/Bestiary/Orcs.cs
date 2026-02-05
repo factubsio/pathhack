@@ -29,6 +29,8 @@ public static class Orcs
         CR = 0,
         SpawnWeight = 100,
         MinDepth = 1,
+        MoralAxis = MoralAxis.Evil,
+        EthicalAxis = EthicalAxis.Chaotic,
         Components = [
             ..Common,
             new Equip(OrcishArmory.KnuckleDagger),
@@ -52,6 +54,8 @@ public static class Orcs
         CR = 1,
         SpawnWeight = 80,
         MinDepth = 2,
+        MoralAxis = MoralAxis.Evil,
+        EthicalAxis = EthicalAxis.Chaotic,
         Components = [
             ..Common,
             new Equip(OrcishArmory.Necksplitter),
@@ -76,6 +80,8 @@ public static class Orcs
         CR = 2,
         SpawnWeight = 60,
         MinDepth = 4,
+        MoralAxis = MoralAxis.Evil,
+        EthicalAxis = EthicalAxis.Chaotic,
         Components = [
             ..Common,
             new Equip(MundaneArmory.Greatclub),
@@ -99,6 +105,8 @@ public static class Orcs
         CR = 4,
         SpawnWeight = 40,
         MinDepth = 6,
+        MoralAxis = MoralAxis.Evil,
+        EthicalAxis = EthicalAxis.Chaotic,
         Components = [
             ..Common,
             new Equip(OrcishArmory.Necksplitter),
@@ -122,6 +130,8 @@ public static class Orcs
         CR = 4,
         SpawnWeight = 30,
         MinDepth = 6,
+        MoralAxis = MoralAxis.Evil,
+        EthicalAxis = EthicalAxis.Chaotic,
         Components = [
             ..Common,
             new Equip(MundaneArmory.Whip),
@@ -145,6 +155,8 @@ public static class Orcs
         CR = 5,
         SpawnWeight = 25,
         MinDepth = 8,
+        MoralAxis = MoralAxis.Evil,
+        EthicalAxis = EthicalAxis.Chaotic,
         Components = [
             ..Common,
             new Equip(MundaneArmory.Flail),
@@ -167,6 +179,8 @@ public static class Orcs
         CR = 10,
         SpawnWeight = 10,
         MinDepth = 12,
+        MoralAxis = MoralAxis.Evil,
+        EthicalAxis = EthicalAxis.Chaotic,
         Components = [
             ..Common,
             new Equip(MundaneArmory.BoStaff),

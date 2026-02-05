@@ -48,10 +48,18 @@ public static class MonsterSpawner
         var def = PickMonster(level.Depth, playerLevel);
         if (def == null) return false;
 
+        MonsterTemplate? template = null;
+
+        // FIXME
+        if (g.Rn2(10) < 10)
+        {
+            template = MonsterTemplate.All.Shuffled().FirstOrDefault(x => x.CanApplyTo(def));
+        }
+
         Pos? pos = findPos(def);
         if (pos == null) return false;
 
-        var mon = Monster.Spawn(def);
+        var mon = Monster.Spawn(def, template);
         level.PlaceUnit(mon, pos.Value);
         return true;
     }

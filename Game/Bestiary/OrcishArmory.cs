@@ -28,6 +28,7 @@ public static class OrcishArmory
     {
         id = "orcish_chain_mail",
         Name = "orcish chain mail",
+        Proficiency = Proficiencies.MediumArmor,
         ACBonus = 2,
         DexCap = 1,
         CheckPenalty = -2,

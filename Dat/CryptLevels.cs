@@ -17,6 +17,8 @@ public static class CryptLevels
         CR = 4,
         SpawnWeight = 0, // unique, don't spawn randomly
         IsUnique = true,
+        MoralAxis = MoralAxis.Evil,
+        EthicalAxis = EthicalAxis.Neutral,
         Components = [
             new GrantAction(new NaturalAttack(NaturalWeapons.Claw_1d4)),
             new DropOnDeath(QuestItems.Everflame),

@@ -58,6 +58,7 @@ public class WeaponDef : ItemDef
 public class ArmorDef : ItemDef
 {
     public required int ACBonus;
+    public required string Proficiency;
     public int DexCap = 99;
     public int CheckPenalty = 0;
     public int SpeedPenalty = 0;
@@ -69,7 +70,7 @@ public class ArmorDef : ItemDef
     }
 }
 
-public class Item(ItemDef def) : Entity<ItemDef>(def), IFormattable
+public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormattable
 {
     public char InvLet;
     public IUnit? Holder;
@@ -203,6 +204,10 @@ public static class ItemSlots
     public const string Ring = "ring";
     public const string Amulet = "amulet";
     public const string Face = "face";
+
+    public static readonly EquipSlot BodySlot = new(Body, "_");
+    public static readonly EquipSlot FaceSlot = new(Face, "_");
+    public static readonly EquipSlot HandSlot = new(Hand, "_");
 }
 
 public static class ItemClasses

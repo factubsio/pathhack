@@ -76,14 +76,14 @@ public class WarChantBuff : LogicBrick
     {
         if (context.Source != fact.Entity) return;
         if (context.Weapon == null) return;
-        context.Check!.Modifiers.AddModifier(new(ModifierCategory.CircumstanceBonus, 2, "war chant"));
+        context.Check!.Modifiers.Mod(ModifierCategory.CircumstanceBonus, 2, "war chant");
     }
 
     protected override void OnBeforeDamageRoll(Fact fact, PHContext context)
     {
         if (context.Source != fact.Entity) return;
         if (context.Weapon == null) return;
-        context.Damage[0].Modifiers.AddModifier(new(ModifierCategory.CircumstanceBonus, 1, "war chant"));
+        context.Damage[0].Modifiers.Mod(ModifierCategory.CircumstanceBonus, 1, "war chant");
     }
 }
 
@@ -106,6 +106,8 @@ public static class Goblins
         MinDepth = 1,
         MaxDepth = 3,
         Family = "goblin",
+        MoralAxis = MoralAxis.Evil,
+        EthicalAxis = EthicalAxis.Chaotic,
         Components = [
             new Equip(NaturalWeapons.DogSlicer),
             new GrantAction(AttackWithWeapon.Instance),
@@ -129,6 +131,8 @@ public static class Goblins
         MinDepth = 1,
         MaxDepth = 4,
         Family = "goblin",
+        MoralAxis = MoralAxis.Evil,
+        EthicalAxis = EthicalAxis.Chaotic,
         Components = [
             new GrantAction(AttackWithWeapon.Instance),
         ],
@@ -151,6 +155,8 @@ public static class Goblins
         MinDepth = 1,
         MaxDepth = 4,
         Family = "goblin",
+        MoralAxis = MoralAxis.Evil,
+        EthicalAxis = EthicalAxis.Chaotic,
         Components = [
             new GrantPool("fire_breath", 2, 50),
             new GrantAction(new FireBreath(2, d(6), 12)),
@@ -175,6 +181,8 @@ public static class Goblins
         MinDepth = 1,
         MaxDepth = 4,
         Family = "goblin",
+        MoralAxis = MoralAxis.Evil,
+        EthicalAxis = EthicalAxis.Chaotic,
         Components = [
             new GrantPool("war_chant", 1, 10),
             new GrantAction(new WarChant()),
@@ -199,6 +207,8 @@ public static class Goblins
         MinDepth = 2,
         MaxDepth = 5,
         Family = "goblin",
+        MoralAxis = MoralAxis.Evil,
+        EthicalAxis = EthicalAxis.Chaotic,
         Components = [
             new Equip(NaturalWeapons.DogSlicer),
             new GrantAction(AttackWithWeapon.Instance),
@@ -222,6 +232,8 @@ public static class Goblins
         MinDepth = 1,
         MaxDepth = 3,
         Family = "goblin",
+        MoralAxis = MoralAxis.Evil,
+        EthicalAxis = EthicalAxis.Chaotic,
         Components = [
             new Equip(NaturalWeapons.DogSlicer),
             new GrantAction(AttackWithWeapon.Instance),

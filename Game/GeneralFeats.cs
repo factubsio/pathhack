@@ -68,6 +68,64 @@ public class FleetBrick : LogicBrick
         key == "speed_bonus" ? new Modifier(ModifierCategory.CircumstanceBonus, fact.Entity.EffectiveLevel >= 10 ? 3 : 2, "fleet") : null;
 }
 
+public class IsActiveData
+{
+    public bool Yes;
+}
+
+internal static class LevelScaling
+{
+    internal static (int Penalty, int Bonus) Basic(int level) => level switch
+    {
+        < 5 => (-1, 2),
+        < 10 => (-2, 4),
+        < 15 => (-3, 6),
+        _ => (-4, 8),
+    };
+}
+
+public class RecklessAttackBuff : LogicBrick
+{
+    public override StackMode StackMode => StackMode.Stack;
+
+    public override object? CreateData() => new IsActiveData();
+
+    protected override void OnRoundEnd(Fact fact, PHContext context) => fact.As<IsActiveData>().Yes = false;
+
+    protected override void OnBeforeAttackRoll(Fact fact, PHContext context)
+    {
+        if (!context.Melee) return;
+        context.Check?.Modifiers.Untyped(LevelScaling.Basic(fact.Entity.EffectiveLevel).Bonus, "reckless attack");
+        fact.As<IsActiveData>().Yes = true;
+    }
+
+    protected override object? OnQuery(Fact fact, string key, string? arg) =>
+        key == "ac" && fact.As<IsActiveData>().Yes
+            ? new Modifier(ModifierCategory.UntypedStackable, LevelScaling.Basic(fact.Entity.EffectiveLevel).Penalty, "reckless attack")
+            : null;
+
+}
+
+public class PowerAttackBuff : LogicBrick
+{
+    public override StackMode StackMode => StackMode.Stack;
+
+    protected override void OnBeforeAttackRoll(Fact fact, PHContext context)
+    {
+        if (!context.Melee) return;
+        context.Check?.Modifiers.Untyped(LevelScaling.Basic(fact.Entity.EffectiveLevel).Penalty, "power attack");
+    }
+
+    protected override void OnBeforeDamageRoll(Fact fact, PHContext context)
+    {
+        if (!context.Melee) return;
+        context.Damage[0].Modifiers.Untyped(LevelScaling.Basic(fact.Entity.EffectiveLevel).Bonus, "power attack");
+    }
+}
+
+public class PowerAttackToggle() : SimpleToggleAction<PowerAttackBuff>("Power Attack", new PowerAttackBuff());
+public class RecklessAttackToggle() : SimpleToggleAction<RecklessAttackBuff>("Reckless Attack", new RecklessAttackBuff());
+
 public static class GeneralFeats
 {
     public static readonly FeatDef Fleet = new()
@@ -140,5 +198,28 @@ public static class GeneralFeats
         Components = [new DebilitatingStrikes()],
     };
 
-    public static readonly FeatDef[] All = [Fleet, Toughness, BlindFight, FeatherStep, TrapSense, Evasion, DebilitatingStrikes];
+    public static readonly FeatDef PowerAttack = new()
+    {
+        id = "power_attack",
+        Name = "Power Attack",
+        Description = "You can choose to take a –1 penalty on all melee attack rolls to gain a +2 bonus on all melee damage rolls. When your character reaches level 5, and every 5 levels thereafter, the penalty increases by –1 and the bonus to damage increases by +2. The bonus damage does not apply to touch attacks or effects that do not deal hit point damage.",
+        Type = FeatType.General,
+        Level = 1,
+        Prereq = p => p.TakenFeats.Contains("reck_attack") ? Availability.Never : Availability.Now,
+        NotAvailableBecause = p => p.TakenFeats.Contains("reck_attack") ? "Cannot have 'Reckless Attack'" : null,
+        Components = [new GrantAction(new PowerAttackToggle())],
+    };
+    public static readonly FeatDef RecklessAttack = new()
+    {
+        id = "reck_attack",
+        Name = "Reckless Attack",
+        Description = "You can choose to take a –1 penalty on AC to gain a +2 bonus on all melee attack rolls. When your character reaches level 5, and every 5 levels thereafter, the penalty increases by –1 and the bonus to damage increases by +2.",
+        Type = FeatType.General,
+        Prereq = p => p.TakenFeats.Contains("power_attack") ? Availability.Never : Availability.Now,
+        NotAvailableBecause = p => p.TakenFeats.Contains("reck_attack") ? "Cannot have 'Power Attack'" : null,
+        Level = 1,
+        Components = [new GrantAction(new RecklessAttackToggle())],
+    };
+
+    public static readonly FeatDef[] All = [Fleet, Toughness, BlindFight, FeatherStep, TrapSense, Evasion, DebilitatingStrikes, PowerAttack, RecklessAttack];
 }
