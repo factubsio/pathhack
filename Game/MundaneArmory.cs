@@ -243,6 +243,7 @@ public static class MundaneArmory
     {
         id = "leather_armor",
         Name = "leather armor",
+        Proficiency = Proficiencies.LightArmor,
         ACBonus = 1,
         DexCap = 4,
         Glyph = new(ItemClasses.Armor, ConsoleColor.DarkYellow),
@@ -253,6 +254,7 @@ public static class MundaneArmory
     {
         id = "chain_shirt",
         Name = "chain shirt",
+        Proficiency = Proficiencies.LightArmor,
         ACBonus = 2,
         DexCap = 2,
         CheckPenalty = -1,

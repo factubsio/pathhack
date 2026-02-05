@@ -1,10 +1,5 @@
 using System.Data;
-using System.Diagnostics;
-using System.Reflection.Metadata;
 using System.Text;
-using Pathhack.Core;
-using Pathhack.Game;
-using Pathhack.Map;
 
 namespace Pathhack.UI;
 
@@ -71,7 +66,7 @@ public record struct Cell(char Ch, ConsoleColor Fg = ConsoleColor.Gray, ConsoleC
 {
     internal static readonly Cell Empty = new(' ');
 
-    internal static Cell From(Glyph glyph) => new(glyph.Value, glyph.Color);
+    internal static Cell From(Glyph glyph) => new(glyph.Value, glyph.Color, glyph.Background ?? ConsoleColor.Black, (CellStyle)glyph.Flags);
 }
 
 

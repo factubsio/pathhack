@@ -34,6 +34,8 @@ public static class MiscMonsters
         SpawnWeight = 4,
         MinDepth = 1,
         MaxDepth = 2,
+        MoralAxis = MoralAxis.Neutral,
+        EthicalAxis = EthicalAxis.Neutral,
         Components = [
             new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d3)),
         ],
@@ -55,6 +57,8 @@ public static class MiscMonsters
         SpawnWeight = 2,
         MinDepth = 2,
         MaxDepth = 4,
+        MoralAxis = MoralAxis.Evil,
+        EthicalAxis = EthicalAxis.Neutral,
         Components = [
             new GrantAction(new NaturalAttack(NaturalWeapons.Claw_1d4)),
         ],
@@ -76,6 +80,9 @@ public static class MiscMonsters
         SpawnWeight = 1,
         MinDepth = 1,
         MaxDepth = 5,
+        MoralAxis = MoralAxis.Neutral,
+        CreatureType = CreatureTypes.Plant,
+        EthicalAxis = EthicalAxis.Neutral,
         Components = [
             new Thorns(d(2), DamageTypes.Piercing),
         ],

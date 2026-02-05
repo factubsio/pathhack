@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices.Marshalling;
 using Pathhack.Core;
 using Pathhack.Game;
 using Pathhack.Map;
@@ -116,22 +117,24 @@ public static class Pokedex
 
     static void ShowMonsterEntry(Monster m)
     {
-        var def = m.Def;
         var menu = new Menu();
         
-        menu.Add($"{def.Name,-40} Creature CR {def.CR}", LineStyle.Heading);
-        menu.Add($"{def.Size}");
+        menu.Add($"{m.RealName,-24} Creature CR {m.Def.CR} {m.CreatureTypeRendered}", LineStyle.Heading);
+        menu.Add($"{m.Def.Size}");
         menu.Add("");
-        menu.Add($"AC {def.AC}; HP {def.HP}");
-        menu.Add($"Movement: {SpeedDesc(def.LandMove)}");
+        menu.Add($"AC {m.Def.AC}; HP {m.Def.HP}");
+        var speed = m.QueryModifiers("speed_bonus");
+        Log.Write($"speed: {speed}");
+        menu.Add($"Movement: {SpeedDesc(m.LandMove)}");
         menu.Add("");
         
-        foreach (var grant in def.Components.OfType<GrantAction>())
+        foreach (var fact in m.LiveFacts.Where(f => f.Brick is GrantAction))
         {
+            var grant = (GrantAction)fact.Brick;
             if (grant.Action is AttackWithWeapon)
-                menu.Add($"Melee weapon +{def.AttackBonus}{Bonus(def.DamageBonus, " damage")}");
+                menu.Add($"Melee weapon +{m.Def.AttackBonus}{Bonus(m.Def.DamageBonus, " damage")}");
             else if (grant.Action is NaturalAttack nat)
-                menu.Add($"Melee {nat.Weapon.Name} +{def.AttackBonus}, Damage {nat.Weapon.BaseDamage}{Bonus(def.DamageBonus)} {nat.Weapon.DamageType.SubCat}");
+                menu.Add($"Melee {nat.Weapon.Name} +{m.Def.AttackBonus}, Damage {nat.Weapon.BaseDamage}{Bonus(m.Def.DamageBonus)} {nat.Weapon.DamageType.SubCat}");
             else
                 menu.Add($"  {grant.Action.Name}");
         }

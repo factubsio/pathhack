@@ -1,6 +1,31 @@
-using System.Reflection.Metadata;
-
 namespace Pathhack.Game.Classes;
+
+public class DivineFortitudeBrick : LogicBrick
+{
+    protected override void OnBeforeCheck(Fact fact, PHContext ctx)
+    {
+        if (fact.Entity is not Player p) return;
+        if (ctx.Check == null || !ctx.Check.IsSave) return;
+        int bonus = p.EffectiveLevel < 10 ? 1 : 2;
+        ctx.Check!.Modifiers.Mod(ModifierCategory.StatusBonus, bonus, "divine fort");
+    }
+}
+
+public class SacredArmor : LogicBrick
+{
+    protected override object? OnQuery(Fact fact, string key, string? arg)
+    {
+        if (fact.Entity is not Player) return null;
+        if (key != "ac") return null;
+        var armor = u.Equipped.GetValueOrDefault(ItemSlots.BodySlot);
+
+        if (armor == null) return null; // query prc sacred fist = unarmed?
+
+        if ((armor.Def as ArmorDef)?.Proficiency != Proficiencies.MediumArmor) return null;
+        int bonus = u.EffectiveLevel < 10 ? 1 : 2;
+        return new Modifier(ModifierCategory.StatusBonus, bonus, "sacred armor");
+    }
+}
 
 public class SacredStrikeBrick : LogicBrick
 {
@@ -10,7 +35,7 @@ public class SacredStrikeBrick : LogicBrick
         if (ctx.Source != p) return;
         if (ctx.Weapon?.Def is not WeaponDef w) return;
         if (w.Profiency != p.Deity?.FavoredWeapon) return;
-        ctx.Check!.Modifiers.AddModifier(new(ModifierCategory.UntypedStackable, 2, "sacred strike"));
+        ctx.Check!.Modifiers.Untyped(2, "sacred strike");
     }
 }
 
@@ -79,6 +104,26 @@ public static class WarpriestFeats
         Level = 2,
         Components = [new SacredStrikeBrick()]
     };
+
+    public static readonly FeatDef DivineFortitude = new()
+    {
+        id = "divine_fort",
+        Name = "Divine Fortitude",
+        Description = "+1 Status bonus to all saves, increasing to +2 at level 10.",
+        Type = FeatType.Class,
+        Level = 2,
+        Components = [new DivineFortitudeBrick()],
+    };
+
+    public static readonly FeatDef SacredArmor = new()
+    {
+        id = "sacred_armor",
+        Name = "Sacred Armor",
+        Description = "+1 Status bonus to AC, increasing to +2 at level 10.",
+        Type = FeatType.Class,
+        Level = 2,
+        Components = [new SacredArmor()],
+    };
 }
 
 public static partial class ClassDefs
@@ -131,7 +176,7 @@ public static partial class ClassDefs
                 ],
             },
         ],
-        ClassFeats = [WarpriestFeats.SwiftBlessing, WarpriestFeats.TrulyBlessed, WarpriestFeats.SacredStrike],
+        ClassFeats = [WarpriestFeats.SwiftBlessing, WarpriestFeats.TrulyBlessed, WarpriestFeats.SacredStrike, WarpriestFeats.DivineFortitude, WarpriestFeats.SacredArmor],
         GrantStartingEquipment = p =>
         {
             // Deity's favored weapon

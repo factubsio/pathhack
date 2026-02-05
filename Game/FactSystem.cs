@@ -2,9 +2,19 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Pathhack.Game;
 
-public record struct Glyph(char Value, ConsoleColor Color = ConsoleColor.White)
+// This is a valiant attempt to not leak Draw into here, is it worth it?
+[Flags]
+public enum GlyphFlags : byte
 {
-  public static readonly Glyph Null = new(' ');
+    None = 0,
+    Bold = 1,
+    Underline = 2,
+    Reverse = 4,
+}
+
+public record struct Glyph(char Value, ConsoleColor Color = ConsoleColor.White, ConsoleColor? Background = null, GlyphFlags Flags = GlyphFlags.None)
+{
+    public static readonly Glyph Null = new(' ');
 }
 
 
@@ -33,6 +43,8 @@ public class Fact(IEntity entity, LogicBrick brick, object? data)
     public LogicBrick Brick => brick;
     public object? Data => data;
     public bool MarkedForRemoval;
+
+    public T As<T>() => (T)data!;
 
     public int Stacks { get; set; } = 1;
     public int? ExpiresAt { get; set; }
@@ -166,15 +178,47 @@ public enum MergeStrategy { Replace, Max, Min, Sum, Or, And }
 
 public enum TargetingType { None, Direction, Unit, Pos }
 
+public enum ToggleState { NotAToggle, Off, On }
+
 public abstract class ActionBrick(string name, TargetingType targeting = TargetingType.None)
 {
     public string Name => name;
     public TargetingType Targeting => targeting;
 
+    public virtual ToggleState IsToggleOn(object? data) => ToggleState.NotAToggle;
+
     public virtual object? CreateData() => null;
     public virtual ActionCost GetCost(IUnit unit, object? data, Target target) => ActionCosts.OneAction;
     public abstract bool CanExecute(IUnit unit, object? data, Target target, out string whyNot);
     public abstract void Execute(IUnit unit, object? data, Target target);
+}
+
+public abstract class SimpleToggleAction<T>(string name, T fact) : ActionBrick(name, TargetingType.None) where T : LogicBrick
+{
+    class ToggleData
+    {
+        public bool On;
+    }
+
+    public override ToggleState IsToggleOn(object? data) => ((ToggleData)data!).On ? ToggleState.On : ToggleState.Off;
+
+    public override object? CreateData() => new ToggleData();
+
+    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
+    {
+        whyNot = "";
+        return true;
+    }
+
+    public override void Execute(IUnit unit, object? data, Target target)
+    {
+        ToggleData dat = (ToggleData)data!;
+        dat.On = !dat.On;
+        if (dat.On)
+            unit.AddFact(fact);
+        else
+            unit.RemoveStack<T>();
+    }
 }
 
 public static class ActionHelpers
@@ -265,6 +309,7 @@ public static class EntityExts
 
 }
 
+
 public class ArmorBrick(int acBonus, int dexCap) : LogicBrick
 {
     protected override object? OnQuery(Fact fact, string key, string? arg) =>
@@ -287,10 +332,10 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
     public readonly DefT Def;
     public int ActiveFactCount;
     
-    protected Entity(DefT def)
+    protected Entity(DefT def, IEnumerable<LogicBrick> components)
     {
         Def = def;
-        foreach (var c in Def.Components)
+        foreach (var c in components)
             AddFact(c);
     }
     private readonly List<Fact> Facts = [];
@@ -527,6 +572,10 @@ public interface IUnit : IEntity
     bool IsDM { get; }
     int CasterLevel { get; }
 
+    MoralAxis MoralAxis { get; }
+    EthicalAxis EthicalAxis { get; }
+    bool IsCreature(string? type = null, string? subtype = null);
+
     int GetAC();
     int GetAttackBonus(WeaponDef weapon);
     int GetDamageBonus();
@@ -563,8 +612,12 @@ public class ChargePool(int max, int regenRate)
     }
 }
 
-public abstract class Unit<TDef>(TDef def) : Entity<TDef>(def), IUnit where TDef : BaseDef
+public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) : Entity<TDef>(def, components), IUnit where TDef : BaseDef
 {
+    public abstract MoralAxis MoralAxis { get; }
+    public abstract EthicalAxis EthicalAxis { get; }
+    public abstract bool IsCreature(string? type = null, string? subtype = null);
+
     public Dictionary<EquipSlot, Item> Equipped { get; } = [];
     Inventory? _inventory;
     public Inventory Inventory => _inventory ??= new(this);
@@ -678,8 +731,7 @@ public abstract class Unit<TDef>(TDef def) : Entity<TDef>(def), IUnit where TDef
 
     public Item GetWieldedItem()
     {
-        EquipSlot handSlot = new(ItemSlots.Hand, "_");
-        if (Equipped.TryGetValue(handSlot, out var item) && item.Def is WeaponDef)
+        if (Equipped.TryGetValue(ItemSlots.HandSlot, out var item) && item.Def is WeaponDef)
             return item;
         return _unarmedItem ??= new(GetUnarmedDef());
     }

@@ -604,7 +604,15 @@ public static class Input
         {
             var data = u.ActionData.GetValueOrDefault(action);
             bool ready = action.CanExecute(u, data, Target.None, out whyNot);
-            string status = ready ? "" : $" ({whyNot})";
+            var toggle = action.IsToggleOn(data);
+            string status = toggle switch
+            {
+              ToggleState.NotAToggle => "",
+              ToggleState.Off => " [off]",
+              ToggleState.On => " [on]",
+              _ => "???",
+            };
+            status += ready ? "" : $" ({whyNot})";
             menu.Add(let++, action.Name + status, action);
         }
         var picked = menu.Display(MenuMode.PickOne);

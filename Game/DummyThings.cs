@@ -46,5 +46,7 @@ public static class DummyThings
         AC = 10,
         LandMove = 0,
         Unarmed = Bestiary.NaturalWeapons.Fist,
+        MoralAxis = MoralAxis.Neutral,
+        EthicalAxis = EthicalAxis.Neutral,
     };
 }

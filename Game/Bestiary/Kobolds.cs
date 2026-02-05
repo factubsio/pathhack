@@ -18,6 +18,8 @@ public static class Kobolds
         SpawnWeight = 4,
         MinDepth = 1,
         MaxDepth = 3,
+        MoralAxis = MoralAxis.Evil,
+        EthicalAxis = EthicalAxis.Lawful,
         Components = [
             EquipSet.OneOf(MundaneArmory.Dagger, MundaneArmory.Spear),
             new GrantAction(AttackWithWeapon.Instance),
@@ -40,6 +42,8 @@ public static class Kobolds
         SpawnWeight = 2,
         MinDepth = 1,
         MaxDepth = 4,
+        MoralAxis = MoralAxis.Evil,
+        EthicalAxis = EthicalAxis.Lawful,
         Components = [
             new Equip(MundaneArmory.Dagger),
             EquipSet.Roll(MundaneArmory.LeatherArmor, 50),
@@ -63,6 +67,8 @@ public static class Kobolds
         SpawnWeight = 2,
         MinDepth = 2,
         MaxDepth = 5,
+        MoralAxis = MoralAxis.Evil,
+        EthicalAxis = EthicalAxis.Lawful,
         Components = [
             new Equip(MundaneArmory.Spear),
             new Equip(MundaneArmory.LeatherArmor),

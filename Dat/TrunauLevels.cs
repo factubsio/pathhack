@@ -60,6 +60,8 @@ public static class TrunauLevels
         Unarmed = NaturalWeapons.Fist,
         SpawnWeight = 0,
         Peaceful = true,
+        MoralAxis = MoralAxis.Good,
+        EthicalAxis = EthicalAxis.Neutral,
         OnChat = _ =>
         {
             g.pline(g.Rn2(3) switch
@@ -86,6 +88,8 @@ public static class TrunauLevels
         Peaceful = true,
         IsUnique = true,
         Stationary = true,
+        MoralAxis = MoralAxis.Good,
+        EthicalAxis = EthicalAxis.Lawful,
         OnChat = _ => {
             LoreDump("""
 [fg=yellow]Chief Defender Halgra[/fg] looks up from her maps.
@@ -218,6 +222,8 @@ She taps a worn parchment. "There's an ancient tomb beneath Trunau. Most folk ha
                 Unarmed = NaturalWeapons.Fist,
                 Size = UnitSize.Huge,
                 SpawnWeight = 0,
+                MoralAxis = MoralAxis.Neutral,
+                EthicalAxis = EthicalAxis.Neutral,
                 Components = [tracker, spawner],
             };
             b.Monster(catapult, b['S']);

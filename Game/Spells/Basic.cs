@@ -13,7 +13,7 @@ public static class BasicLevel1Spells
         int dice = (1 + c.CasterLevel) / 2;
         using var ctx = PHContext.Create(c, t);
 
-        if (target.Has("undead") == true)
+        if (target.IsCreature(CreatureTypes.Undead) == true)
         {
           ctx.Damage.Add(new()
           {

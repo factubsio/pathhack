@@ -304,9 +304,9 @@ public static class LevelGen
     record RoomRule(RoomType Type, Func<Level, Room, int> Chance);
 
     static readonly RoomRule[] RoomRules = [
-        new(RoomType.GoblinNest, (l, r) => RequireNoUpStairs(l, r) * RequireSize(r, 9) * MapRange(l.Depth, 1..6, 30..0)),
-        new(RoomType.GremlinParty, (l, r) => RequireNoUpStairs(l, r) * RequireDepth(l, 2) * 30),
-        new(RoomType.GremlinPartyBig, (l, r) => RequireNoUpStairs(l, r) * RequireSize(r, 16) * RequireDepth(l, 4) * 20),
+        new(RoomType.GoblinNest, (l, r) => RequireNoUpStairs(l, r) * RequireSize(r, 9) * MapRange(l.Depth, 1..6, 12..0)),
+        new(RoomType.GremlinParty, (l, r) => RequireNoUpStairs(l, r) * RequireDepth(l, 2) * 10),
+        new(RoomType.GremlinPartyBig, (l, r) => RequireNoUpStairs(l, r) * RequireSize(r, 16) * RequireDepth(l, 4) * 5),
     ];
 
     static void AssignRoomTypes(LevelGenContext ctx)
