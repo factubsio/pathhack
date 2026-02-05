@@ -20,7 +20,9 @@ Each PrC is exactly 3 feats:
 - Feat 2: STUFF
 - Feat 3: STUFF
 
-Feats can grant multiple abilities or features or whatever we want
+Feats can grant multiple abilities or features or whatever we want, they don't really have to be balanced versus class feats cos anyone can pick prc
+
+Do we just force prc picks over class? I don't like that, feels icky
 
 **Prereqs can include:**
 - Level requirements
@@ -44,17 +46,12 @@ Reduces total feats to write lazy bubbles
 
 ## PrC Ideas
 
-**Early access:**
 - Shadowdancer (stealth/teleport)
 - Assassin (death attack)
 - Arcane Archer (spell + bow)
-
-**Mid access:**
 - Holy Vindicator (divine tank)
 - Hellknight (law/armor)
 - Rage Prophet (oracle/barb)
-
-**Late/Long con:**
 - Lichdom (undead transformation, feat 1 is negative, must take at level 4)
 - Apotheosis (demigod)
 - Mythic Champion

@@ -1,6 +1,6 @@
 # General Feats
 
-General feats at levels 3, 9, 15, 19. Pool is shuffled per run, maybe 2/3 chosen?
+General feats at levels ???. Pool is shuffled per run, maybe 2/3 chosen?
 
 ## Standalone Feats
 
@@ -16,7 +16,7 @@ done
 
 **Blind-Fight**
 - No blind/invisible penalties (primarily on attack rolls)
-- CL +5: Tremorsense (detect adjacent) - granting at +5CL is kind cool 
+- CL +5: Tremorsense (detect adjacent) - granting at +5CL is kind cool , will be lazy and do at CL10
 done
 but tremorsense not yet implemented (Currently returning an int directly since this is like a base value)
 
@@ -52,15 +52,15 @@ Tier 2 (15+, requires Stealthy):
 - Melee hits have chance to inflict random debuff (bewilder,hamper,something)
 feat is there and brick is, but we need the status (and timed version)
 
-NEED TO IMPLEMENT TOGGLES!!! Probably on ActionBrick
-
 ## Combat Stance Chain
 
 Tier 1 (pick one):
 - **Power Attack** - toggle: -2 hit, +4 damage
+    done
 - **Lunge** - attack at +1 range, -AC until next turn
 - **Knockback** - hits push enemy 1 tile
 - **Reckless Attack** - toggle: +2 hit, -2 AC
+    done
 
 Tier 2 (15+, requires any tier 1):
 - **Combat Stances** - unlock toggle between all stances (PA/Lunge/Knockback/Reckless/Cleave)
