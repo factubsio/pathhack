@@ -46,7 +46,7 @@ Class feats can reduce cooldown, add charges, enhance effects.
 - **Weapon of Faith** - favored weapon counts as holy/silver/etc
 
 ### Defensive
-- **Divine Health** - +2 vs disease/poison, kidna poo
+- **Divine Fortitude** - +1 vs disease/poison, kidna poo
 - **Resilient Mind** - +1 vs mental, +2 vs undead mental
 - **Sacred Armor** - +AC in medium armor - maybe modify ferbor to unlock the prop stuff?
 
