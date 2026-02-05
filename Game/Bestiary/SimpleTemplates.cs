@@ -16,8 +16,7 @@ public class ZombieTemplate() : MonsterTemplate("zombie")
 {
   class ZombieFacts : LogicBrick
   {
-    protected override object? OnQuery(Fact fact, string key, string? arg) =>
-    key switch
+    protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
     {
       "speed_bonus" => new Modifier(ModifierCategory.UntypedStackable, -4, "zombie"),
       "mindless" => true,
@@ -31,6 +30,7 @@ public class ZombieTemplate() : MonsterTemplate("zombie")
 
   public override IEnumerable<LogicBrick> GetComponents(MonsterDef def)
   {
+    // TODO: remove abilities with mental/good tags (first implement ability tags)
     foreach (var c in def.Components) yield return c;
     yield return ZombieFacts.Instance;
   }
@@ -51,6 +51,5 @@ public class ZombieTemplate() : MonsterTemplate("zombie")
       m.TemplatedName = $"Zombie {m.Def.Name}";
     else
       m.TemplatedName = $"{m.Def.Name} zombie";
-    
   }
 }
