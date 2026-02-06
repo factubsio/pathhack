@@ -166,6 +166,19 @@ public abstract class LogicBrick
     public static void FireOnDeath(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnDeath(f.Brick, f, c); }
 }
 
+public class DataFlag
+{
+    public bool On;
+
+    public static implicit operator bool(DataFlag flag) => flag.On;
+}
+
+public abstract class LogicBrick<T> : LogicBrick where T : class, new()
+{
+  public sealed override object? CreateData() => new T();
+  protected static T X(Fact fact) => (T)fact.Data!;
+}
+
 public class ApplyFactOnAttackHit(LogicBrick toApply, int? duration = null) : LogicBrick
 {
     protected override void OnAfterAttackRoll(Fact fact, PHContext context)
@@ -191,6 +204,12 @@ public abstract class ActionBrick(string name, TargetingType targeting = Targeti
     public virtual ActionCost GetCost(IUnit unit, object? data, Target target) => ActionCosts.OneAction;
     public abstract bool CanExecute(IUnit unit, object? data, Target target, out string whyNot);
     public abstract void Execute(IUnit unit, object? data, Target target);
+
+    protected static bool Always(out string _)
+    {
+        _ = "";
+        return true;
+    }
 }
 
 public abstract class SimpleToggleAction<T>(string name, T fact) : ActionBrick(name, TargetingType.None) where T : LogicBrick

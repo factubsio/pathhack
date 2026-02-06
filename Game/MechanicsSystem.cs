@@ -280,18 +280,9 @@ public class DamageRoll
     }
 }
 
-public class ModifiableValue(int baseValue)
-{
-    public Modifiers Modifiers = new();
-
-    public int BaseValue = baseValue;
-
-    public int Value => BaseValue + Modifiers.Calculate();
-}
-
 public enum AbilityStat { Str, Dex, Con, Int, Wis, Cha }
 
-public class ValueStatBlock<T> where T : struct
+public struct ValueStatBlock<T> where T : struct
 {
     public required T Str;
     public required T Dex;
@@ -299,6 +290,42 @@ public class ValueStatBlock<T> where T : struct
     public required T Int;
     public required T Wis;
     public required T Cha;
+
+    internal void Modify(AbilityStat stat, Func<T, T> modify)
+    {
+        switch (stat)
+        {
+            case AbilityStat.Str:
+                Str = modify(Str);
+                break;
+            case AbilityStat.Dex:
+                Dex = modify(Dex);
+                break;
+            case AbilityStat.Con:
+                Con = modify(Con);
+                break;
+            case AbilityStat.Int:
+                Int = modify(Int);
+                break;
+            case AbilityStat.Wis:
+                Wis = modify(Wis);
+                break;
+            case AbilityStat.Cha:
+                Cha = modify(Cha);
+                break;
+        }
+    }
+
+    internal readonly T Get(AbilityStat stat) => stat switch
+    {
+        AbilityStat.Str => Str,
+        AbilityStat.Dex => Dex,
+        AbilityStat.Con => Con,
+        AbilityStat.Int => Int,
+        AbilityStat.Wis => Wis,
+        AbilityStat.Cha => Cha,
+        _ => throw new ArgumentException($"not a valid stat: {stat}")
+    };
 }
 
 public class StatBlock<T>(Func<T> creat)

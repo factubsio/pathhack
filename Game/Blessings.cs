@@ -1,6 +1,3 @@
-using System.Runtime.InteropServices;
-using System.Text;
-
 namespace Pathhack.Game;
 
 public class BlessingDef
@@ -192,15 +189,14 @@ public class WarBlessingData : CooldownTracker
     public int BonusRoll;
 }
 
-public class WarBlessingPassive : LogicBrick
+public class WarBlessingPassive : LogicBrick<WarBlessingData>
 {
-    public override object? CreateData() => new WarBlessingData();
     public override bool IsActive => true;
 
     protected override void OnBeforeAttackRoll(Fact fact, PHContext context)
     {
         if (context.Source != fact.Entity) return;
-        var data = (WarBlessingData)fact.Data!;
+        var data = X(fact);
         int bonus = data.State switch
         {
             WarBlessingState.Ready => 1,
@@ -213,7 +209,7 @@ public class WarBlessingPassive : LogicBrick
 
     protected override void OnRoundEnd(Fact fact, PHContext context)
     {
-        var data = (WarBlessingData)fact.Data!;
+        var data = X(fact);
         if (data.State == WarBlessingState.Buffed && g.CurrentRound >= data.BuffUntil)
         {
             data.State = WarBlessingState.Cooldown;
@@ -283,25 +279,10 @@ public class StrengthBuff : LogicBrick
 {
     public static readonly StrengthBuff Instance = new();
     public override bool IsBuff => true;
-    public override bool IsActive => true;
     public override string? BuffName => "Strength";
 
-    public override object? CreateData() => new Modifier(ModifierCategory.UntypedStackable, 4, "Strength (minor)");
-
-    protected override void OnFactAdded(Fact fact)
-    {
-        if (fact.Entity is Player p && fact.Data is Modifier mod)
-            p.Attributes.Str.Modifiers.AddModifier(mod);
-    }
-
-    protected override void OnFactRemoved(Fact fact)
-    {
-        if (fact.Entity is Player p && fact.Data is Modifier mod)
-        {
-            p.Attributes.Str.Modifiers.RemoveModifier(mod);
-            g.pline("The divine strength fades.");
-        }
-    }
+    protected override object? OnQuery(Fact fact, string key, string? arg) =>
+      key == "stat/Str" ? new Modifier(ModifierCategory.CircumstanceBonus, 4, "Strength Blessing") : null;
 }
 
 public class LawBlessingMinor() : ActionBrick("Law (minor)")
@@ -447,16 +428,15 @@ public class LuckBlessingData
     public int NextAvailable;
 }
 
-public class LuckBlessingPassive : LogicBrick
+public class LuckBlessingPassive : LogicBrick<LuckBlessingData>
 {
-    public override object? CreateData() => new LuckBlessingData();
     public override bool IsBuff => true;
     public override string? BuffName => "Luck";
 
     protected override void OnBeforeCheck(Fact fact, PHContext context)
     {
         if (context.Source != fact.Entity) return;
-        var data = (LuckBlessingData)fact.Data!;
+        var data = X(fact);
         if (g.CurrentRound < data.NextAvailable) return;
 
         data.NextAvailable = g.CurrentRound + 6 + d(12).Roll();

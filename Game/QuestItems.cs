@@ -1,23 +1,21 @@
 namespace Pathhack.Game;
 
-public class EverflameComponent : LogicBrick
+public class EverflameData
+{
+    public Pos Shrine = Pos.Invalid;
+    public Pos Lock = Pos.Invalid;
+    public int DistanceToShrine = 100;
+    public int LightRadiusForced = 100;
+    public bool Locked = true;
+}
+
+public class EverflameComponent : LogicBrick<EverflameData>
 {
     public override bool IsActive => true;
 
-    class EverflameData
-    {
-        public Pos Shrine = Pos.Invalid;
-        public Pos Lock = Pos.Invalid;
-        public int DistanceToShrine = 100;
-        public int LightRadiusForced = 100;
-        public bool Locked = true;
-    }
-
-    public override object? CreateData() => new EverflameData();
-
     protected override void OnRoundStart(Fact fact, PHContext context)
     {
-        var data = (EverflameData)fact.Data!;
+        var data = X(fact);
 
         if (lvl.Branch.Name == "Dungeon" && lvl.Depth == lvl.Branch.MaxDepth)
         {
@@ -45,7 +43,7 @@ public class EverflameComponent : LogicBrick
 
     protected override object? OnQuery(Fact fact, string key, string? arg)
     {
-        var data = (EverflameData)fact.Data!;
+        var data = X(fact);
         if (data.LightRadiusForced != 100 && key == "light_radius")
             return new Modifier(ModifierCategory.Override, data.LightRadiusForced, "everflame", 10);
 

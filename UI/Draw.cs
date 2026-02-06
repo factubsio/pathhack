@@ -511,7 +511,8 @@ public static class Draw
         if (save) SaveTopLine();
         Layers[0].Write(col, row, "--more--");
         Blit(0);
-        Input.NextKey();
+        while (Input.NextKey().Key != ConsoleKey.Spacebar)
+            ;
         TopLine = "";
         TopLineState = TopLineState.Empty;
         return false; //return true if skip rest (esc?)
