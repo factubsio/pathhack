@@ -1,3 +1,5 @@
+using System.Transactions;
+
 namespace Pathhack.Game;
 
 public class PlayerDef : BaseDef { }
@@ -12,7 +14,30 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
     }
 
     public override int NaturalRegen => 15 * CharacterLevel;
-    public override int StrMod => Mod(Attributes.Str.Value);
+
+    public int GetAttribute(AbilityStat stat) => BaseAttributes.Get(stat) + QueryModifiers($"stat/{stat}").Calculate();
+    public int Str => BaseAttributes.Str + QueryModifiers("stat/Str").Calculate();
+    public int Dex => BaseAttributes.Dex + QueryModifiers("stat/Dex").Calculate();
+    public int Con => BaseAttributes.Con + QueryModifiers("stat/Con").Calculate();
+    public int Int => BaseAttributes.Int + QueryModifiers("stat/Int").Calculate();
+    public int Wis => BaseAttributes.Wis + QueryModifiers("stat/Wis").Calculate();
+    public int Cha => BaseAttributes.Cha + QueryModifiers("stat/Cha").Calculate();
+    public override int StrMod => Mod(Str);
+    public int DexMod => Mod(Dex);
+    public int ConMod => Mod(Con);
+    public int IntMod => Mod(Int);
+    public int WisMod => Mod(Wis);
+    public int ChaMod => Mod(Cha);
+    public int KeyAttribute => Class.KeyAbility switch
+    {
+        AbilityStat.Str => Str,
+        AbilityStat.Dex => Dex,
+        AbilityStat.Con => Con,
+        AbilityStat.Int => Int,
+        AbilityStat.Wis => Wis,
+        AbilityStat.Cha => Cha,
+        _ => throw new NotImplementedException(),
+    };
 
     public override MoralAxis MoralAxis => Query("moral_axis", null, MergeStrategy.Replace, MoralAxis.Neutral);
     public override EthicalAxis EthicalAxis => Query("ethical_axis", null, MergeStrategy.Replace, EthicalAxis.Neutral);
@@ -23,8 +48,8 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
     public int DarkVisionRadius => Math.Clamp(Ancestry.DarkVisionRadius + QueryModifiers("light_radius").Calculate(), 0, 100);
     public override ActionCost LandMove => ActionCosts.StandardLandMove.Value - QueryModifiers("speed_bonus").Calculate();
 
-    public StatBlock<ModifiableValue> Attributes = new(() => new(10));
-    public readonly ModifiableValue LandSpeed = new(ActionCosts.StandardLandMove.Value);
+    public ValueStatBlock<int> BaseAttributes;
+    public readonly int BaseLandSpeed = ActionCosts.StandardLandMove.Value;
     private readonly Dictionary<string, ProficiencyLevel> Proficiencies = [];
     public int CharacterLevel = 0;
     public int XP = 0;
@@ -57,21 +82,15 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
             Ancestry = ancestry,
         };
 
-        // Apply class starting stats
-        p.Attributes.Str.BaseValue = cls.StartingStats.Str;
-        p.Attributes.Dex.BaseValue = cls.StartingStats.Dex;
-        p.Attributes.Con.BaseValue = cls.StartingStats.Con;
-        p.Attributes.Int.BaseValue = cls.StartingStats.Int;
-        p.Attributes.Wis.BaseValue = cls.StartingStats.Wis;
-        p.Attributes.Cha.BaseValue = cls.StartingStats.Cha;
+        p.BaseAttributes = cls.StartingStats;
 
         p.AddFact(new PlayerSkills());
 
         // Apply ancestry boosts
         foreach (var boost in ancestry.Boosts)
-            p.ApplyStatMod(boost, 2);
+            p.BaseAttributes.Modify(boost, current => current + 2);
         foreach (var flaw in ancestry.Flaws)
-            p.ApplyStatMod(flaw, -2);
+            p.BaseAttributes.Modify(flaw, current => current - 2);
 
         // Starting equipment
         cls.GrantStartingEquipment?.Invoke(p);
@@ -80,21 +99,6 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
         p.HP.Reset(p.Class.HpPerLevel + 12);
 
         return p;
-    }
-
-    protected void ApplyStatMod(AbilityStat stat, int mod)
-    {
-        var attr = stat switch
-        {
-            AbilityStat.Str => Attributes.Str,
-            AbilityStat.Dex => Attributes.Dex,
-            AbilityStat.Con => Attributes.Con,
-            AbilityStat.Int => Attributes.Int,
-            AbilityStat.Wis => Attributes.Wis,
-            AbilityStat.Cha => Attributes.Cha,
-            _ => throw new ArgumentException()
-        };
-        attr.BaseValue += mod;
     }
 
     public ProficiencyLevel GetProficiency(string skill)
@@ -112,14 +116,13 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
         return prof == ProficiencyLevel.Untrained ? 0 : CharacterLevel + (int)prof;
     }
 
-    public static int Mod(ModifiableValue stat) => Mod(stat.Value);
     public static int Mod(int stat) => (stat - 10) / 2;
 
     public override Glyph Glyph => new('@', ConsoleColor.White);
 
     public override int GetAC()
     {
-        int dexMod = Mod(Attributes.Dex.Value);
+        int dexMod = DexMod;
         int dexCap = Query("dex_cap", null, MergeStrategy.Min, 99);
         var armorProf = (Equipped.TryGetValue(ItemSlots.BodySlot, out var armor) && armor.Def is ArmorDef armorDef) ? armorDef.Proficiency : Game.Proficiencies.NakedArmor;
         var mods = QueryModifiers("ac");
@@ -127,11 +130,11 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
         return 10 + Math.Min(dexMod, dexCap) + mods.Calculate() + ProfBonus(armorProf);
     }
 
-    public override int GetAttackBonus(WeaponDef weapon) => Mod(Attributes.Str.Value) + ProfBonus(weapon.Profiency);
+    public override int GetAttackBonus(WeaponDef weapon) => StrMod + ProfBonus(weapon.Profiency);
 
-    public override int GetDamageBonus() => Mod(Attributes.Str.Value);
+    public override int GetDamageBonus() => StrMod;
 
-    public override int GetSpellDC() => 10 + CasterLevel + Mod(Attributes[Class.KeyAbility].Value);
+    public override int GetSpellDC() => 10 + CasterLevel + Mod(KeyAttribute);
 
     protected override WeaponDef GetUnarmedDef() => NaturalWeapons.Fist;
 
@@ -141,8 +144,7 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
     public int CalculateMaxHp(int baseVal)
     {
         var hpMod = QueryModifiers("max_hp");
-        Log.Write($"max hp: base={baseVal}, con={CharacterLevel}*{Mod(Attributes.Con)}, mod={hpMod.Calculate()}");
-        return baseVal + CharacterLevel * Mod(Attributes.Con) + hpMod.Calculate();
+        return baseVal + CharacterLevel * ConMod + hpMod.Calculate();
     }
 
     internal void RecalculateMaxHp()
@@ -162,7 +164,12 @@ internal class PlayerSkills : LogicBrick
   {
     return key switch
     {
-        "perception" => new Modifier(ModifierCategory.UntypedStackable, u.CharacterLevel + Mod(u.Attributes.Wis.Value)),
+        "perception" => new Modifier(ModifierCategory.UntypedStackable, u.CharacterLevel + u.WisMod),
+
+        // Hmm, how do we let classes override this? Tbh attributes are kinda lame?
+        "reflex_save" => new Modifier(ModifierCategory.UntypedStackable, u.CharacterLevel + u.DexMod),
+        "fortitude_save" => new Modifier(ModifierCategory.UntypedStackable, u.CharacterLevel + u.ConMod),
+        "will_save" => new Modifier(ModifierCategory.UntypedStackable, u.CharacterLevel + u.WisMod),
         _ => null,
     };
   }

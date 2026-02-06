@@ -1,3 +1,5 @@
+using System.Numerics;
+
 namespace Pathhack.Game;
 
 
@@ -68,11 +70,6 @@ public class FleetBrick : LogicBrick
         key == "speed_bonus" ? new Modifier(ModifierCategory.CircumstanceBonus, fact.Entity.EffectiveLevel >= 10 ? 3 : 2, "fleet") : null;
 }
 
-public class IsActiveData
-{
-    public bool Yes;
-}
-
 internal static class LevelScaling
 {
     internal static (int Penalty, int Bonus) Basic(int level) => level switch
@@ -84,26 +81,23 @@ internal static class LevelScaling
     };
 }
 
-public class RecklessAttackBuff : LogicBrick
+public class RecklessAttackBuff : LogicBrick<DataFlag>
 {
     public override StackMode StackMode => StackMode.Stack;
 
-    public override object? CreateData() => new IsActiveData();
-
-    protected override void OnRoundEnd(Fact fact, PHContext context) => fact.As<IsActiveData>().Yes = false;
+    protected override void OnRoundEnd(Fact fact, PHContext context) => X(fact).On = false;
 
     protected override void OnBeforeAttackRoll(Fact fact, PHContext context)
     {
         if (!context.Melee) return;
         context.Check?.Modifiers.Untyped(LevelScaling.Basic(fact.Entity.EffectiveLevel).Bonus, "reckless attack");
-        fact.As<IsActiveData>().Yes = true;
+        X(fact).On = true;
     }
 
     protected override object? OnQuery(Fact fact, string key, string? arg) =>
-        key == "ac" && fact.As<IsActiveData>().Yes
+        key == "ac" && X(fact)
             ? new Modifier(ModifierCategory.UntypedStackable, LevelScaling.Basic(fact.Entity.EffectiveLevel).Penalty, "reckless attack")
             : null;
-
 }
 
 public class PowerAttackBuff : LogicBrick
