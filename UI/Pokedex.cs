@@ -22,7 +22,7 @@ public static class Pokedex
             Draw.OverlayWrite(cursor.X, cursor.Y + Draw.MapRow, "X", ConsoleColor.Yellow, ConsoleColor.Black, CellStyle.Bold);
             
             string desc = DescribeAt(cursor);
-            Draw.OverlayWrite(0, Draw.MsgRow, desc.PadRight(Draw.ViewWidth));
+            Draw.OverlayWrite(0, Draw.MsgRow, desc.PadRight(Draw.ScreenWidth));
             
             Draw.Blit();
             var key = Input.NextKey();
