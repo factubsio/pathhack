@@ -57,7 +57,7 @@ public static class LevelGen
             Seed(id, gameSeed);
             LevelGenContext ctx = new(_log)
             {
-                level = new(id, 80, 21),
+                level = new(id, Draw.MapWidth, Draw.MapHeight),
             };
             
             var resolved = id.Branch.ResolvedLevels[id.Depth - 1];

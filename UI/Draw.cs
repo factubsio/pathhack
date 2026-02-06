@@ -128,20 +128,22 @@ public static class Draw
 {
     public static bool Enabled = true;
 
-    public const int ViewWidth = 80;
-    public const int ViewHeight = 21;
+    public static readonly int ScreenWidth = Console.WindowWidth;
+    public static readonly int ScreenHeight = Console.WindowHeight;
+
+    public const int MapWidth = 80;
+    public const int MapHeight = 21;
     public const int MsgRow = 0;
     public const int MapRow = 1;
-    public const int StatusRow = MapRow + ViewHeight;
-    public const int ScreenHeight = StatusRow + 2;
+    public const int StatusRow = MapRow + MapHeight;
 
     public static readonly ScreenBuffer[] Layers = [
-        new(ViewWidth, ScreenHeight),
-        new(ViewWidth, ScreenHeight),
-        new(ViewWidth, ScreenHeight),
+        new(ScreenWidth, ScreenHeight),
+        new(ScreenWidth, ScreenHeight),
+        new(ScreenWidth, ScreenHeight),
     ];
 
-    static readonly Cell[] _prev = new Cell[ViewWidth * ScreenHeight];
+    static readonly Cell[] _prev = new Cell[ScreenWidth * ScreenHeight];
 
     public static ScreenBuffer Overlay => Layers[^1];
 
@@ -271,7 +273,7 @@ public static class Draw
 
         for (int y = start; y < end; y++)
         {
-            for (int x = 0; x < ViewWidth; x++)
+            for (int x = 0; x < ScreenWidth; x++)
             {
                 Cell? cell = null;
                 for (int i = Layers.Length - 1; i >= 0 && cell == null; i--)
@@ -286,7 +288,7 @@ public static class Draw
                 }
                 cell ??= Cell.Empty;
 
-                int idx = (y * ViewWidth) + x;
+                int idx = (y * ScreenWidth) + x;
                 if (_prev[idx] == cell.Value) continue;
                 DamagedCellCount++;
                 _prev[idx] = cell.Value;
@@ -518,11 +520,10 @@ public static class Draw
         return false; //return true if skip rest (esc?)
     }
 
-    private static int MessageViewWidth => ViewWidth; //Console.WindowWidth; - this doens't work with layers very well, need maybe tty style windows but bleh
-    private static int messageWidth => MessageViewWidth - 8;
+    private static int MessageWidth => ScreenWidth - 8;
     const string messageDelimit = "   ";
 
-    private static bool CanAppendMessage(string msg) => TopLine.Length + messageDelimit.Length + msg.Length < messageWidth;
+    private static bool CanAppendMessage(string msg) => TopLine.Length + messageDelimit.Length + msg.Length < MessageWidth;
 
     private static void SaveTopLine()
     {
@@ -534,7 +535,7 @@ public static class Draw
         SaveTopLine();
         TopLine = "";
         TopLineState = TopLineState.Empty;
-        for (int x = 0; x < MessageViewWidth; x++)
+        for (int x = 0; x < ScreenWidth; x++)
             Layers[0][x, 0] = null;
         Blit(0);
     }
@@ -548,13 +549,13 @@ public static class Draw
         string remaining = v;
         while (remaining.Length > 0)
         {
-            int len = Math.Min(MessageViewWidth, remaining.Length);
+            int len = Math.Min(ScreenWidth, remaining.Length);
             if (len < remaining.Length)
             {
                 int space = remaining.LastIndexOf(' ', len);
                 if (space > 0) len = space;
             }
-            Layers[0].Write(0, row, remaining[..len].PadRight(MessageViewWidth));
+            Layers[0].Write(0, row, remaining[..len].PadRight(ScreenWidth));
             remaining = remaining[len..].TrimStart();
             col = len;
             row++;
@@ -619,12 +620,12 @@ public static class Draw
 
     static void DrawStatus(Level level)
     {
-        Layers[0].Write(0, StatusRow, $"{level.Branch.Name}:{level.Depth} R:{g.CurrentRound} E:{u.Energy}".PadRight(ViewWidth));
+        Layers[0].Write(0, StatusRow, $"{level.Branch.Name}:{level.Depth} R:{g.CurrentRound} E:{u.Energy}".PadRight(ScreenWidth));
         int nextLvl = u.CharacterLevel + 1;
         int needed = Progression.XpForLevel(nextLvl) - Progression.XpForLevel(u.CharacterLevel);
         int progress = u.XP - Progression.XpForLevel(u.CharacterLevel);
         string xpStr = Progression.HasPendingLevelUp(u) ? $"XP:{progress}/{needed}*" : $"XP:{progress}/{needed} ";
-        Layers[0].Write(0, StatusRow + 1, $"HP:{u.HP.Current}/{u.HP.Max} AC:{u.GetAC()} CL:{u.CharacterLevel} {xpStr}".PadRight(ViewWidth));
+        Layers[0].Write(0, StatusRow + 1, $"HP:{u.HP.Current}/{u.HP.Max} AC:{u.GetAC()} CL:{u.CharacterLevel} {xpStr}".PadRight(ScreenWidth));
         DrawSpellPips();
     }
 

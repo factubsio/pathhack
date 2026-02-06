@@ -90,6 +90,9 @@ public static class ListPicker
             layer.Write(2, 3 + i, prefix + items[i].Name, ConsoleColor.White, ConsoleColor.Black, style);
         }
 
+        // feels weird when it is mega wide, but has to be at least map wide?
+        int paddedWidth = Math.Clamp(Draw.ScreenWidth - 10, Draw.MapWidth, 120);
+
         var current = items[cursor];
         layer.Write(DetailX, 3, current.Name, ConsoleColor.Yellow);
         if (current.Tags.Length > 0)
@@ -98,15 +101,15 @@ public static class ListPicker
         }
         if (current.Subtitle != null)
         {
-            RichText.Write(layer, DetailX, 4, Draw.ViewWidth - DetailX - 2, current.Subtitle);
+            RichText.Write(layer, DetailX, 4, paddedWidth - DetailX - 2, current.Subtitle);
         }
 
-        int descEnd = RichText.Write(layer, DetailX, 5, Draw.ViewWidth - DetailX - 2, current.Description);
+        int descEnd = RichText.Write(layer, DetailX, 5, paddedWidth - DetailX - 2, current.Description);
 
         int detailY = descEnd + 2;
         foreach (var detail in current.Details)
         {
-            RichText.Write(layer, DetailX, detailY++, Draw.ViewWidth - DetailX - 2, detail);
+            RichText.Write(layer, DetailX, detailY++, paddedWidth - DetailX - 2, detail);
         }
 
         string help = selected != null

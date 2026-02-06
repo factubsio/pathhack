@@ -142,11 +142,11 @@ public sealed class TileBitset(int width, int height) : IEnumerable<Pos>, IDispo
 
     public void Clear() => Array.Clear(_bits);
 
-    private static readonly TileBitset _pooled = new(80, 21);
+    private static readonly TileBitset _pooled = new(Draw.MapWidth, Draw.MapHeight);
     internal static TileBitset GetPooled()
     {
         // TODO: pooling if we need it
-        return new(80, 21);
+        return new(Draw.MapWidth, Draw.MapHeight);
     }
 
     public IEnumerator<Pos> GetEnumerator()

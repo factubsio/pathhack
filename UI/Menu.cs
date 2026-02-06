@@ -18,7 +18,7 @@ public class Menu<T>
         var layer = Draw.Overlay;
         using var _ = layer.Activate();
         
-        int maxLines = Draw.ViewHeight - 3;
+        int maxLines = Draw.MapHeight - 3;
         int pages = (_items.Count + maxLines - 1) / maxLines;
         bool fullscreen = _items.Count > maxLines;
         
@@ -41,15 +41,15 @@ public class Menu<T>
         int menuWidth = contentWidth + 2;
 
         // if too wide or multi-page, go fullscreen (offx=0), else right-align
-        int menuX = (menuWidth >= Draw.ViewWidth - 10 || fullscreen)
+        int menuX = (menuWidth >= Draw.ScreenWidth - 10 || fullscreen)
             ? 0
-            : Draw.ViewWidth - menuWidth - 1;
+            : Draw.ScreenWidth - menuWidth - 1;
         
         // fullscreen uses full width
         if (menuX == 0)
         {
-            contentWidth = Draw.ViewWidth - 2;
-            menuWidth = Draw.ViewWidth;
+            contentWidth = Draw.ScreenWidth - 2;
+            menuWidth = Draw.ScreenWidth;
         }
 
         int startY = fullscreen ? 0 : Draw.MapRow;
