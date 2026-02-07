@@ -42,7 +42,7 @@ public static class DummyThings
         Name = "training dummy",
         Glyph = new('d', ConsoleColor.DarkYellow),
         AttackBonus = 0,
-        HP = 100,
+        HpPerLevel = 100,
         AC = 10,
         LandMove = 0,
         Unarmed = Bestiary.NaturalWeapons.Fist,

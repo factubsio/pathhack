@@ -285,7 +285,7 @@ public class Level(LevelId id, int width, int height)
         GetOrCreateState(p).Unit = Unit;
     }
 
-    public void MoveUnit(IUnit Unit, Pos to)
+    public void MoveUnit(IUnit Unit, Pos to, bool free = false)
     {
         if (Unit.TrappedIn is {} trappedIn)
         {
@@ -301,7 +301,8 @@ public class Level(LevelId id, int width, int height)
             GetOrCreateState(from).Unit = null;
         Unit.Pos = to;
         GetOrCreateState(to).Unit = Unit;
-        Unit.Energy -= Unit.LandMove.Value;
+
+        if (!free) Unit.Energy -= Unit.LandMove.Value;
 
         foreach (var area in Areas)
         {

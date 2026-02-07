@@ -1,5 +1,3 @@
-using Pathhack.Map;
-
 namespace Pathhack.Game;
 
 public static class MonsterSpawner
@@ -50,8 +48,8 @@ public static class MonsterSpawner
 
         MonsterTemplate? template = null;
 
-        // FIXME
-        if (g.Rn2(10) < 10)
+        // FIXME: logic, etc.
+        if (g.Rn2(10) < 1)
         {
             template = MonsterTemplate.All.Shuffled().FirstOrDefault(x => x.CanApplyTo(def));
         }
@@ -69,7 +67,7 @@ public static class MonsterSpawner
         int maxLevel = (depth + playerLevel) / 2;
 
         var candidates = AllMonsters.All
-            .Where(m => depth >= m.MinDepth && m.CR <= maxLevel)
+            .Where(m => depth >= m.MinDepth && m.BaseLevel <= maxLevel)
             .ToList();
 
         return PickWeighted(candidates);

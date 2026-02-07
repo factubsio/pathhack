@@ -740,7 +740,7 @@ public static class Input
         else
         {
             foreach (var fact in buffs)
-                menu.Add($"  {fact.Brick.BuffName}");
+                menu.Add($"  {fact.DisplayName}");
         }
         menu.Display();
     }

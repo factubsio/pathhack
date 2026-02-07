@@ -75,6 +75,7 @@ public static class NaturalWeapons
 
     public static readonly WeaponDef Bite_1d3 = new()
     {
+        id = "bite_1d3",
         Name = "bite",
         BaseDamage = d(3),
         DamageType = DamageTypes.Piercing,
@@ -82,8 +83,59 @@ public static class NaturalWeapons
         Category = WeaponCategory.Natural,
     };
 
+    public static readonly WeaponDef Bite_1d4 = new()
+    {
+        id = "bite_1d4",
+        Name = "bite",
+        BaseDamage = d(4),
+        DamageType = DamageTypes.Piercing,
+        Profiency = Proficiencies.Unarmed,
+        Category = WeaponCategory.Natural,
+    };
+
+    public static readonly WeaponDef Bite_1d6 = new()
+    {
+        id = "bite_1d6",
+        Name = "bite",
+        BaseDamage = d(6),
+        DamageType = DamageTypes.Piercing,
+        Profiency = Proficiencies.Unarmed,
+        Category = WeaponCategory.Natural,
+    };
+
+    public static readonly WeaponDef Bite_1d8 = new()
+    {
+        id = "bite_1d8",
+        Name = "bite",
+        BaseDamage = d(8),
+        DamageType = DamageTypes.Piercing,
+        Profiency = Proficiencies.Unarmed,
+        Category = WeaponCategory.Natural,
+    };
+
+    public static readonly WeaponDef Bite_2d6 = new()
+    {
+        id = "bite_2d6",
+        Name = "bite",
+        BaseDamage = d(2, 6),
+        DamageType = DamageTypes.Piercing,
+        Profiency = Proficiencies.Unarmed,
+        Category = WeaponCategory.Natural,
+    };
+
+    public static readonly WeaponDef Claw_1d3 = new()
+    {
+        id = "claw_1d3",
+        Name = "claw",
+        BaseDamage = d(3),
+        DamageType = DamageTypes.Slashing,
+        Profiency = Proficiencies.Unarmed,
+        Category = WeaponCategory.Natural,
+    };
+
     public static readonly WeaponDef Claw_1d4 = new()
     {
+        id = "claw_1d4",
         Name = "claw",
         BaseDamage = d(4),
         DamageType = DamageTypes.Slashing,
@@ -93,8 +145,19 @@ public static class NaturalWeapons
 
     public static readonly WeaponDef Claw_1d6 = new()
     {
+        id = "claw_1d6",
         Name = "claw",
         BaseDamage = d(6),
+        DamageType = DamageTypes.Slashing,
+        Profiency = Proficiencies.Unarmed,
+        Category = WeaponCategory.Natural,
+    };
+
+    public static readonly WeaponDef Claw_1d8 = new()
+    {
+        id = "claw_1d8",
+        Name = "claw",
+        BaseDamage = d(8),
         DamageType = DamageTypes.Slashing,
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,

@@ -1,4 +1,3 @@
-using System.Runtime.Intrinsics.Arm;
 using Pathhack.Dat;
 using static Pathhack.Map.DepthAnchor;
 
@@ -61,6 +60,12 @@ if (args.Length > 0 && args[0] == "--test-dungeon")
     return;
 }
 
+if (args.Length > 0 && args[0] == "--monsters")
+{
+    MonsterTable.Print();
+    return;
+}
+
 if (args.Length > 0)
 {
     var field = typeof(TestLevel).GetField(args[0]);
@@ -106,6 +111,17 @@ while (true)
     LevelId startId = new(dungeon, 1);
     Level startLevel = LevelGen.Generate(startId, g.Seed);
     MonsterSpawner.SpawnInitialMonsters(startLevel);
+
+    // DEBUG: spawn cats for testing
+    // foreach (var cat in Cats.All)
+    //     if (startLevel.FindLocation(p => startLevel.NoUnit(p) && !startLevel[p].IsStairs) is { } pos)
+    //         startLevel.PlaceUnit(Monster.Spawn(cat), pos);
+
+    // DEBUG: spawn snakes for testing
+    foreach (var snake in Snakes.All)
+        if (startLevel.FindLocation(p => startLevel.NoUnit(p) && !startLevel[p].IsStairs) is { } pos)
+            startLevel.PlaceUnit(Monster.Spawn(snake), pos);
+
     g.Levels[startId] = startLevel;
 
     u = Create(creation.Class!, creation.Deity!, creation.Ancestry!);

@@ -30,122 +30,6 @@ public class GrantBlessingBrick(BlessingDef blessing) : LogicBrick
     }
 }
 
-public class FireBlessingMinor() : ActionBrick("Fire Blessing")
-{
-    public override object? CreateData() => new CooldownTracker();
-
-    public override ActionCost GetCost(IUnit unit, object? data, Target target) =>
-        BlessingHelper.Cost(unit);
-
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot) => ((CooldownTracker)data!).CanExecute(out whyNot);
-
-    public override void Execute(IUnit unit, object? data, Target target)
-    {
-        ((CooldownTracker)data!).CooldownUntil = g.CurrentRound + BlessingHelper.Cooldown(unit, BlessingHelper.MinorCooldown);
-
-        int duration = (unit is Player p ? p.CharacterLevel : 1) + 5 + g.Rn1(1, 10);
-        var weapon = unit.GetWieldedItem();
-
-        if (weapon.Def is WeaponDef w && w.Profiency == Proficiencies.Unarmed)
-            g.pline("Your fists burn with flame!");
-        else if (weapon.Has("flaming"))
-            g.pline("Your weapon burns brighter!");
-        else
-            g.pline("Your weapon bursts into flame!");
-
-        weapon.AddFact(DamageRiderBuff.FlamingD4, duration: duration);
-    }
-}
-
-public class DamageRiderBuff(string name, DamageType type, int faces) : LogicBrick
-{
-    public override StackMode StackMode => StackMode.Extend;
-
-    public static readonly DamageRiderBuff UnholyD4 = new("Unholy Weapon", DamageTypes.Unholy, 4);
-    public static readonly DamageRiderBuff UnholyD8 = new("Unholy Weapon", DamageTypes.Unholy, 8);
-    public static readonly DamageRiderBuff HolyD4 = new("Holy Weapon", DamageTypes.Holy, 4);
-    public static readonly DamageRiderBuff HolyD8 = new("Holy Weapon", DamageTypes.Holy, 8);
-    public static readonly DamageRiderBuff FreezeD4 = new("Freezing Weapon", DamageTypes.Cold, 4);
-    public static readonly DamageRiderBuff FreezeD8 = new("Freezing Weapon", DamageTypes.Cold, 8);
-    public static readonly DamageRiderBuff ShockD4 = new("Shocking Weapon", DamageTypes.Shock, 4);
-    public static readonly DamageRiderBuff ShockD8 = new("Shocking Weapon", DamageTypes.Shock, 8);
-    public static readonly DamageRiderBuff FlamingD4 = new("Flaming Weapon", DamageTypes.Fire, 4);
-    public static readonly DamageRiderBuff FlamingD8 = new("Flaming Weapon", DamageTypes.Fire, 8);
-
-    private string OnStr(IUnit unit, string weapon) => type.SubCat switch
-    {
-        "fire" => $"Flames surround {unit:own} {weapon}.",
-        "cold" => $"Icicles swirl round {unit:own} {weapon}.",
-        "shock" => $"{unit:Own} {weapon} start to crackle.",
-        "holy" => $"{unit:Own} {weapon} glow gold.",
-        "unholy" => $"{unit:Own} {weapon} glow black.",
-        _ => "??",
-    };
-
-    private string OffStr(IUnit unit, string weapon) => type.SubCat switch
-    {
-        "fire" => $"The flames surrounding {unit:own} {weapon} die out.",
-        "cold" => $"Icicles around {unit:own} {weapon} start melting.",
-        "shock" => $"{unit:Own} {weapon} stops crackling.",
-        "holy" => $"{unit:Own} {weapon} stops glowing gold.",
-        "unholy" => $"{unit:Own} {weapon} stops glowing black.",
-        _ => "??",
-    };
-
-    private string Key => type.SubCat switch
-    {
-        "fire" => "flaming",
-        "cold" => "freeze",
-        "shock" => "shock",
-        "holy" => "holy",
-        "unholy" => "unholy",
-        _ => "___",
-    };
-
-    public override bool IsBuff => true;
-    public override string? BuffName => name;
-    public override bool IsActive => true;
-
-    protected override object? OnQuery(Fact fact, string key, string? arg) => key == Key ? true : null;
-
-    protected override void OnFactAdded(Fact fact)
-    {
-        if (fact.Entity is Item item && item.Holder?.IsPlayer == true)
-        {
-            bool isUnarmed = item.Def is WeaponDef w && w.Profiency == Proficiencies.Unarmed;
-            string weaponName = isUnarmed ? "fists" : item.Def.Name;
-            if (item.Has(Key))
-                g.pline($"{item.Holder:Own} {weaponName} seems more energised.");
-            else
-                g.pline(OnStr(u, weaponName));
-        }
-    }
-
-    protected override void OnFactRemoved(Fact fact)
-    {
-        if (fact.Entity is Item item && item.Holder is { IsPlayer: true })
-        {
-            bool isUnarmed = item.Def is WeaponDef w && w.Profiency == Proficiencies.Unarmed;
-            string weaponName = isUnarmed ? "fists" : item.Def.Name;
-            if (item.Has(Key))
-                g.pline($"{item.Holder:Own} {weaponName} seems slightly less energised.");
-            else
-                g.pline(OffStr(u, weaponName));
-        }
-    }
-
-    protected override void OnBeforeDamageRoll(Fact fact, PHContext context)
-    {
-        if (context.Weapon != fact.Entity) return;
-
-        context.Damage.Add(new DamageRoll
-        {
-            Formula = d(faces),
-            Type = type,
-        });
-    }
-}
-
 public static class Blessings
 {
     public static readonly BlessingDef Fire = new()
@@ -161,11 +45,7 @@ public static class Blessings
         Id = "war",
         Name = "War",
         Description = "Channel the fury of battle.",
-        ApplyMinor = unit =>
-        {
-            var fact = unit.AddFact(new WarBlessingPassive());
-            unit.AddAction(new WarBlessingAction(fact));
-        }
+        ApplyMinor = unit => unit.AddAction(new WarBlessingAction()),
     };
 
     public static readonly BlessingDef Strength = new()
@@ -197,7 +77,7 @@ public static class Blessings
         Id = "magic",
         Name = "Magic",
         Description = "Hurl a bolt of arcane force.",
-        ApplyMinor = unit => {} // unit.AddAction(new MagicBlessingMinor())
+        ApplyMinor = unit => { } // unit.AddAction(new MagicBlessingMinor())
     };
 
     public static readonly BlessingDef Sun = new()
@@ -231,120 +111,84 @@ public static class Blessings
     public static readonly BlessingDef[] All = [Fire, War, Strength, Law, Healing, Magic, Sun, Luck, Darkness];
 }
 
-public enum WarBlessingState { Ready, Buffed, Cooldown }
-
-public class WarBlessingData : CooldownTracker
+public abstract class BlessingAction(string name, TargetingType target = TargetingType.None, Func<IUnit, int>? cooldown = null) : CooldownAction(name, target, cooldown ?? MinorCooldown)
 {
-    public WarBlessingState State = WarBlessingState.Ready;
-    public int BuffUntil;
-    public int BonusRoll;
+    public override ActionCost GetCost(IUnit unit, object? data, Target tgt) => unit.Has("blessing_free_action") ? ActionCosts.Free : ActionCosts.OneAction;
+
+    public static Func<IUnit, int> Cooldown(DiceFormula cd)
+    {
+        return u =>
+        {
+            int rolled = cd.Roll();
+            if (u.Has("blessing_cooldown_reduction"))
+                rolled = rolled * 3 / 4;
+            return Math.Max(10, rolled);
+        };
+    }
+
+    public static Func<IUnit, int> MinorCooldown = Cooldown(d(50) + 50);
+
 }
 
-public class WarBlessingPassive : LogicBrick<WarBlessingData>
+public class FireBlessingMinor() : BlessingAction("Fire Blessing")
 {
-    public override bool IsActive => true;
+    protected override void Execute(IUnit unit, Target target)
+    {
+        int duration = (unit is Player p ? p.CharacterLevel : 1) + 5 + g.Rn1(1, 10);
+        var weapon = unit.GetWieldedItem();
+        weapon?.AddFact(WeaponDamageRider.FlamingD4, duration: duration);
+    }
+}
+
+public enum WarBlessingState { Ready, Buffed, Cooldown }
+
+public class WarBlessingBuff : LogicBrick
+{
+    internal static WarBlessingBuff Instance = new();
 
     protected override void OnBeforeAttackRoll(Fact fact, PHContext context)
     {
         if (context.Source != fact.Entity) return;
-        var data = X(fact);
-        int bonus = data.State switch
-        {
-            WarBlessingState.Ready => 1,
-            WarBlessingState.Buffed => 1 + data.BonusRoll,
-            _ => 0
-        };
-        if (bonus > 0)
-            context.Check!.Modifiers.Untyped(bonus, "war");
-    }
-
-    protected override void OnRoundEnd(Fact fact, PHContext context)
-    {
-        var data = X(fact);
-        if (data.State == WarBlessingState.Buffed && g.CurrentRound >= data.BuffUntil)
-        {
-            data.State = WarBlessingState.Cooldown;
-            if (fact.Entity is IUnit unit)
-                data.CooldownUntil = g.CurrentRound + BlessingHelper.Cooldown(unit, BlessingHelper.MinorCooldown);
-            if (fact.Entity is IUnit { IsPlayer: true })
-                g.pline("Your focus wanes.");
-        }
-        else if (data.State == WarBlessingState.Cooldown && g.CurrentRound >= data.CooldownUntil)
-        {
-            data.State = WarBlessingState.Ready;
-            if (fact.Entity is IUnit { IsPlayer: true })
-                g.pline("You feel ready for battle again.");
-        }
+        int adjacent = context.Source.Pos.Neighbours().Count(x => lvl.UnitAt(x) != null);
+        int bonus = Math.Max(adjacent, 4);
+        context.Check!.Modifiers.Mod(ModifierCategory.CircumstanceBonus, bonus, "war");
     }
 }
 
-public class WarBlessingAction(Fact fact) : ActionBrick("War Blessing")
+public class WarBlessingAction() : BlessingAction("War Blessing")
 {
-    const int BuffDuration = 20;
-
-    WarBlessingData Data => (WarBlessingData)fact.Data!;
-
-    public override ActionCost GetCost(IUnit unit, object? data, Target target) =>
-        BlessingHelper.Cost(unit);
-
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot) => Data.CanExecute(out whyNot);
-
-    public override void Execute(IUnit unit, object? data, Target target)
+    protected override void Execute(IUnit unit, Target target)
     {
-        Data.BonusRoll = 1 + g.Rn2(2);
-        Data.BuffUntil = g.CurrentRound + BuffDuration;
-        Data.State = WarBlessingState.Buffed;
+        unit.AddFact(WarBlessingBuff.Instance, 20);
         g.pline("To war!");
     }
 }
 
-// Strength Blessing - +4 STR for duration
-
-public class CooldownTracker
+public class StrengthBlessingMinor() : BlessingAction("Strength (minor)")
 {
-    public int CooldownUntil;
-
-    public bool CanExecute(out string whyNot)
+    protected override void Execute(IUnit unit, Target target)
     {
-        int remaining = CooldownUntil - g.CurrentRound;
-        whyNot = $"{remaining} rounds left";
-        return remaining <= 0;
-    }
-}
-
-public class StrengthBlessingMinor() : ActionBrick("Strength (minor)")
-{
-    public override object? CreateData() => new CooldownTracker();
-    public override ActionCost GetCost(IUnit unit, object? data, Target target) => BlessingHelper.Cost(unit);
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot) => ((CooldownTracker)data!).CanExecute(out whyNot);
-
-    public override void Execute(IUnit unit, object? data, Target target)
-    {
-        ((CooldownTracker)data!).CooldownUntil = g.CurrentRound + BlessingHelper.Cooldown(unit, BlessingHelper.MinorCooldown);
         g.pline("Divine might surges through you!");
-        unit.AddFact(StrengthBuff.Instance, duration: d(10).Roll() + 10);
+        unit.AddFact(StrengthBuff.Plus4.Timed(), duration: d(10).Roll() + 10);
     }
 }
 
-public class StrengthBuff : LogicBrick
+public class StrengthBuff(int mod) : LogicBrick
 {
-    public static readonly StrengthBuff Instance = new();
+    public static readonly StrengthBuff Plus2 = new(2);
+    public static readonly StrengthBuff Plus4 = new(4);
+
     public override bool IsBuff => true;
     public override string? BuffName => "Strength";
 
     protected override object? OnQuery(Fact fact, string key, string? arg) =>
-      key == "stat/Str" ? new Modifier(ModifierCategory.CircumstanceBonus, 4, "Strength Blessing") : null;
+      key == "stat/Str" ? new Modifier(ModifierCategory.CircumstanceBonus, mod, "Strength Blessing") : null;
 }
 
-public class LawBlessingMinor() : ActionBrick("Law (minor)")
+public class LawBlessingMinor() : BlessingAction("Law Blessing (minor)")
 {
-    public override object? CreateData() => new CooldownTracker();
-    public override ActionCost GetCost(IUnit unit, object? data, Target target) => BlessingHelper.Cost(unit);
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot) => ((CooldownTracker)data!).CanExecute(out whyNot);
-
-    public override void Execute(IUnit unit, object? data, Target target)
+    protected override void Execute(IUnit unit, Target target)
     {
-        ((CooldownTracker)data!).CooldownUntil = g.CurrentRound + BlessingHelper.Cooldown(unit, 80);
         g.pline("Law buff on");
         unit.AddFact(LawBuff.Instance, duration: 10);
     }
@@ -369,37 +213,11 @@ public class LawBuff : LogicBrick
     }
 }
 
-public static class BlessingHelper
-{
-    public static readonly DiceFormula MinorCooldown = d(50) + 50;
-
-    public static ActionCost Cost(IUnit unit) => unit.Has("blessing_free_action") ? ActionCosts.Free : ActionCosts.OneAction;
-
-    public static int Cooldown(IUnit unit, DiceFormula cd)
-    {
-        int rolled = cd.Roll();
-        if (unit.Has("blessing_cooldown_reduction"))
-            rolled = rolled * 3 / 4;
-        return Math.Max(10, rolled);
-    }
-}
-
 // Healing Blessing - heal 1d6+level
-public class HealingBlessingMinor() : ActionBrick("Healing Blessing")
+public class HealingBlessingMinor() : BlessingAction("Healing Blessing", TargetingType.None, Cooldown(150))
 {
-    const int Cooldown = 150;
-
-    public override object? CreateData() => new CooldownTracker();
-
-    public override ActionCost GetCost(IUnit unit, object? data, Target target) =>
-        BlessingHelper.Cost(unit);
-
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot) => ((CooldownTracker)data!).CanExecute(out whyNot);
-
-    public override void Execute(IUnit unit, object? data, Target target)
+    protected override void Execute(IUnit unit, Target target)
     {
-        ((CooldownTracker)data!).CooldownUntil = g.CurrentRound + Cooldown;
-
         int level = unit is Player p ? p.CharacterLevel : 1;
         g.DoHeal(unit, unit, d(6) + level);
 
@@ -408,18 +226,10 @@ public class HealingBlessingMinor() : ActionBrick("Healing Blessing")
     }
 }
 
-public class MagicBlessingMinor() : ActionBrick("Magic Blessing", TargetingType.Direction)
+public class MagicBlessingMinor() : BlessingAction("Magic Blessing", TargetingType.Direction, Cooldown(100))
 {
-    const int Cooldown = 100;
-
-    public override object? CreateData() => new CooldownTracker();
-
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot) => ((CooldownTracker)data!).CanExecute(out whyNot);
-
-    public override void Execute(IUnit unit, object? data, Target target)
+    protected override void Execute(IUnit unit, Target target)
     {
-        ((CooldownTracker)data!).CooldownUntil = g.CurrentRound + Cooldown;
-
         var range = g.RnRange(3, 6);
 
         foreach (var tgt in lvl.CollectLine(unit.Pos, target.Pos!.Value, range, lvl.UnitAt))
@@ -435,23 +245,14 @@ public class MagicBlessingMinor() : ActionBrick("Magic Blessing", TargetingType.
 }
 
 // Sun Blessing - passive +1 light radius, active AoE burn
-public class SunBlessingMinor() : ActionBrick("Sun Blessing")
+public class SunBlessingMinor() : BlessingAction("Sun Blessing")
 {
     const int radius = 4;
 
-    public override object? CreateData() => new CooldownTracker();
-
-    public override ActionCost GetCost(IUnit unit, object? data, Target target) =>
-        BlessingHelper.Cost(unit);
-
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot) => ((CooldownTracker)data!).CanExecute(out whyNot);
-
-    public override void Execute(IUnit unit, object? data, Target target)
+    protected override void Execute(IUnit unit, Target target)
     {
-        ((CooldownTracker)data!).CooldownUntil = g.CurrentRound + BlessingHelper.Cooldown(unit, BlessingHelper.MinorCooldown);
-
         Log.Verbose("sun", "Sun blessing radius={0} from {1}", radius, unit.Pos);
-        
+
         using TileBitset result = lvl.CollectCircle(upos, radius, false);
         Draw.AnimateCone(unit.Pos, result,
             new Glyph('*', ConsoleColor.Yellow),
@@ -499,22 +300,13 @@ public class LuckBlessingPassive : LogicBrick<LuckBlessingData>
 }
 
 // Darkness Blessing - cone blind
-public class DarknessBlessingMinor() : ActionBrick("Darkness Blessing", TargetingType.Direction)
+public class DarknessBlessingMinor() : BlessingAction("Darkness Blessing", TargetingType.Direction)
 {
     const int Radius = 4;
     const int BlindDuration = 10;
 
-    public override object? CreateData() => new CooldownTracker();
-
-    public override ActionCost GetCost(IUnit unit, object? data, Target target) =>
-        BlessingHelper.Cost(unit);
-
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot) => ((CooldownTracker)data!).CanExecute(out whyNot);
-
-    public override void Execute(IUnit unit, object? data, Target target)
+    protected override void Execute(IUnit unit, Target target)
     {
-        ((CooldownTracker)data!).CooldownUntil = g.CurrentRound + BlessingHelper.Cooldown(unit, BlessingHelper.MinorCooldown);
-
         using var cone = lvl.CollectCone(unit.Pos, target.Pos!.Value, Radius);
 
         Draw.AnimateFlash(cone, new Glyph('*', ConsoleColor.DarkGray));

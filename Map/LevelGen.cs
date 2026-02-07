@@ -88,6 +88,15 @@ public static class LevelGen
                 cmd.Action(ctx);
             }
             Log("Resolved commands done");
+
+            if (!ctx.NoRoomAssignment)
+            {
+                Log("AssignRoomTypes...");
+                AssignRoomTypes(ctx);
+                Log("PopulateRooms...");
+                PopulateRooms(ctx);
+                Log("PopulateRooms done");
+            };
             
             LogLevel(ctx.level);
             ctx.level.UnderConstruction = false;
@@ -176,6 +185,8 @@ public static class LevelGen
 
     static void GenSpecial(LevelGenContext ctx, SpecialLevel spec)
     {
+        ctx.NoRoomAssignment = true;
+        
         // Empty map = use room+corridor gen but still run hooks
         if (string.IsNullOrWhiteSpace(spec.Map))
         {
@@ -239,15 +250,6 @@ public static class LevelGen
         Log("MakeCorridors done");
 
         if (!populate) return;
-
-        // Assign special room types
-        Log("AssignRoomTypes...");
-        AssignRoomTypes(ctx);
-
-        // Populate special rooms
-        Log("PopulateRooms...");
-        PopulateRooms(ctx);
-        Log("PopulateRooms done");
     }
 
     public static void PlaceRoom(LevelGenContext ctx, Rect bounds)
@@ -833,6 +835,7 @@ public class LevelGenContext(TextWriter? log)
     public uint[] occupied = new uint[80];
     public required Level level;
     public bool NoSpawns;
+    public bool NoRoomAssignment;
     public List<RoomStamp> Stamps = [];
 
     public void Log(string str) => log?.WriteLine(str);

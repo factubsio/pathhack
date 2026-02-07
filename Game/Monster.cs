@@ -60,13 +60,19 @@ public abstract class MonsterBrain
   public abstract bool DoTurn(Monster m);
 }
 
+// Item ac is added on based on rolled equipment.
+public record struct MonsterAC(int Combined, int FlatFooted)
+{
+  public static implicit operator MonsterAC(int ac) => new(ac, ac);
+}
+
 public class MonsterDef : BaseDef
 {
   public MonsterBrain? Brain;
   public required string Name;
   public required Glyph Glyph;
-  public required int HP;
-  public required int AC;
+  public required int HpPerLevel;
+  public required MonsterAC AC;
   public required int AttackBonus;
   public int DamageBonus = 0;
   public int StrMod = 0;
@@ -74,7 +80,7 @@ public class MonsterDef : BaseDef
   public ActionCost LandMove = 12;
   public required WeaponDef Unarmed;
   public UnitSize Size = UnitSize.Small;
-  public int CR = 0;
+  public int BaseLevel = 1;
   public int SpawnWeight = 1;
   public int MinDepth = 1;
   public bool IsUnique = false;
@@ -93,12 +99,14 @@ public abstract class MonsterTemplate(string id)
 {
   public string Id => id;
   public abstract bool CanApplyTo(MonsterDef def);
+  public abstract int LevelBonus(MonsterDef def, int level);
   public virtual IEnumerable<LogicBrick> GetComponents(MonsterDef def) => def.Components;
   public virtual void ModifySpawn(Monster m) { }
 
   public static readonly List<MonsterTemplate> All = [
     new ZombieTemplate(),
   ];
+
 }
 
 public class Monster : Unit<MonsterDef>, IFormattable
@@ -109,7 +117,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
   {
     Name = "DM",
     Glyph = Glyph.Null,
-    HP = 1,
+    HpPerLevel = 1,
     AC = 1,
     AttackBonus = 0,
     Unarmed = NaturalWeapons.Fist,
@@ -207,16 +215,25 @@ public class Monster : Unit<MonsterDef>, IFormattable
     }
   }
 
-
   public override bool IsPlayer => false;
 
   public int TemplateBonusLevels = 0;
+  public int ItemBonusAC = 0;
 
-  public override int GetAC() => Def.AC + TemplateBonusLevels;
+  public override int GetAC()
+  {
+    // TODO: check for flat footed
+    return LevelDC + Def.AC.Combined + ItemBonusAC;
+  }
+
+  private int LevelDC => 12 + (Def.BaseLevel + TemplateBonusLevels + 1) / 2;
+
+  private const int ATTACK_BONUS_FUDGE = -5;
+
   public override ActionCost LandMove => Def.LandMove.Value - QueryModifiers("speed_bonus").Calculate();
-  public override int GetAttackBonus(WeaponDef weapon) => Def.AttackBonus + TemplateBonusLevels;
+  public override int GetAttackBonus(WeaponDef weapon) => LevelDC - ATTACK_BONUS_FUDGE + Def.AttackBonus;
   public override int GetDamageBonus() => Def.DamageBonus + TemplateBonusLevels;
-  public override int GetSpellDC() => 10 + Def.CR;
+  public override int GetSpellDC() => LevelDC;
   protected override WeaponDef GetUnarmedDef() => Def.Unarmed;
   public override Glyph Glyph => OwnGlyph ?? Def.Glyph;
 
@@ -239,7 +256,8 @@ public class Monster : Unit<MonsterDef>, IFormattable
   public static Monster Spawn(MonsterDef def, MonsterTemplate? template = null)
   {
     Monster m = new(def, template?.GetComponents(def) ?? def.Components);
-    m.HP.Reset(Math.Max(1, def.HP));
+    m.TemplateBonusLevels = template?.LevelBonus(def, m.EffectiveLevel) ?? 0;
+    m.HP.Reset(Math.Max(1, def.HpPerLevel * m.EffectiveLevel - 1));
     template?.ModifySpawn(m);
     using var ctx = PHContext.Create(m, Target.None);
     LogicBrick.FireOnSpawn(m, ctx);
@@ -248,16 +266,16 @@ public class Monster : Unit<MonsterDef>, IFormattable
     return m;
   }
 
-  internal void DoTurn()
+  internal bool DoTurn()
   {
     if (IsAsleep)
     {
       UpdateApparentPos();
-      if (ApparentPlayerPos == null) { Energy = 0; return; }
+      if (ApparentPlayerPos == null) { return false; }
       IsAsleep = false;
     }
 
-    if (Def.Brain?.DoTurn(this) == true) return;
+    if (Def.Brain?.DoTurn(this) == true) return true;
 
     // peaceful monsters don't attack
     if (!Def.Peaceful)
@@ -271,13 +289,13 @@ public class Monster : Unit<MonsterDef>, IFormattable
         {
           Log.Write($"{this} uses {action.Name}");
           action.Execute(this, data, playerTarget);
-          Energy -= ActionCosts.OneAction.Value;
-          return;
+          Energy -= action.GetCost(this, data, playerTarget).Value;
+          return true;
         }
       }
     }
 
-    if (Def.LandMove.Value <= 0 || Def.Stationary) return;
+    if (Def.LandMove.Value <= 0 || Def.Stationary) return false;
 
     if (!Def.Peaceful)
       UpdateApparentPos();
@@ -327,15 +345,18 @@ public class Monster : Unit<MonsterDef>, IFormattable
     {
       RecordMove(mp);
       lvl.MoveUnit(this, target);
+      return true;
     }
+
+    return false;
   }
 
   public override bool IsAwareOf(Trap trap) => (trap.Type & KnownTraps) != 0;
   public override void ObserveTrap(Trap trap) => KnownTraps |= trap.Type;
 
   // BLEH
-  public override int CasterLevel => Math.Clamp(Def.CR, 1, 20);
-  public override int EffectiveLevel => Math.Clamp(Def.CR + TemplateBonusLevels, 1, 30);
+  public override int CasterLevel => Math.Clamp(Def.BaseLevel, 1, 20);
+  public override int EffectiveLevel => Math.Clamp(Def.BaseLevel + TemplateBonusLevels, 1, 30);
 
   public string CreatureTypeRendered => $"{OwnCreatureType ?? Def.CreatureType} [{string.Join(", ", OwnSubtypes ?? Def.Subtypes)}] {OwnEthicalAxis ?? Def.EthicalAxis}/{OwnMoralAxis ?? Def.MoralAxis}";
 

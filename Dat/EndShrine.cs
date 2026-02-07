@@ -14,11 +14,11 @@ public static class EndShrineLevels
   private static readonly MonsterDef ShrineAttendant = new()
   {
     Name = "Shrine Attendant",
-    AttackBonus = 2,
+    AttackBonus = 1,
     DamageBonus = 0,
     Glyph = new('7', ConsoleColor.White),
-    AC = 17,
-    HP = 16,
+    AC = 2,
+    HpPerLevel = 8,
     // AC = 1,
     // HP = 1,
     Unarmed = NaturalWeapons.Claw_1d6,
@@ -38,7 +38,7 @@ public static class EndShrineLevels
     DamageBonus = 10,
     Glyph = new('7', ConsoleColor.Magenta),
     AC = 100,
-    HP = 100,
+    HpPerLevel = 100,
     // AC = 1,
     // HP = 1,
     Unarmed = NaturalWeapons.Claw_1d6,
