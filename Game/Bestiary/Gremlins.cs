@@ -71,30 +71,6 @@ public class JinkinCurse : LogicBrick
     }
 }
 
-// Prone: -2 AC, half speed
-public class ProneBuff : LogicBrick
-{
-    public static readonly ProneBuff Instance = new();
-    public override bool IsBuff => true;
-    public override string? BuffName => "Hamstrung";
-    public override StackMode StackMode => StackMode.Stack;
-
-    protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
-    {
-        "ac" => new Modifier(ModifierCategory.UntypedStackable, -2, "prone"),
-        "speed_mult" => 0.5,
-        _ => null
-    };
-}
-
-public class TimedProne : LogicBrick
-{
-    public static readonly TimedProne Instance = new();
-    public override bool IsActive => true;
-    protected override void OnFactAdded(Fact fact) => fact.Entity.AddFact(ProneBuff.Instance);
-    protected override void OnFactRemoved(Fact fact) => fact.Entity.RemoveStack<ProneBuff>();
-}
-
 // FilthFever: periodic damage/penalty until cured
 public class FilthFever : LogicBrick
 {
@@ -218,7 +194,7 @@ public static class Gremlins
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
         Components = [
-            new ApplyFactOnAttackHit(TimedProne.Instance, duration: 2),
+            new ApplyFactOnAttackHit(ProneBuff.Instance.Timed(), duration: 2),
             ..CommonEquip,
         ],
     };
@@ -269,31 +245,6 @@ public static class Gremlins
     public static readonly MonsterDef[] All = [Mitflit, Pugwampi, Jinkin, Nuglub, Grimple, VeryDrunkJinkin];
 }
 
-public class NauseatedBuff : LogicBrick
-{
-    public static readonly NauseatedBuff Instance = new();
-    public override bool IsBuff => true;
-    public override string? BuffName => "Nauseated";
-    public override StackMode StackMode => StackMode.Stack;
-
-    protected override void OnBeforeCheck(Fact fact, PHContext context)
-    {
-        if (context.Source == fact.Entity)
-        {
-            context.Check!.Disadvantage++;
-            fact.Entity.RemoveStack<NauseatedBuff>();
-        }
-    }
-}
-
-public class TimedNauseated : LogicBrick
-{
-    public static readonly TimedNauseated Instance = new();
-    public override bool IsActive => true;
-    protected override void OnFactAdded(Fact fact) => fact.Entity.AddFact(NauseatedBuff.Instance);
-    protected override void OnFactRemoved(Fact fact) => fact.Entity.RemoveStack<NauseatedBuff>();
-}
-
 public class VeryDrunkJinkinBrain : MonsterBrain
 {
     // 10%: vomit on adjacent (reflex avoids, otherwise acid damage and nauseate on failed fort save)
@@ -339,7 +290,7 @@ public class VeryDrunkJinkinBrain : MonsterBrain
                 // yucky yucky
                 if (CreateAndDoCheck(ctx, "fortitude_save", 14, "nauseated")) return true;
                 g.pline($"{tgt:The} can barely hold {tgt:own} own lunch down.");
-                tgt.AddFact(TimedNauseated.Instance, duration: 4);
+                tgt.AddFact(NauseatedBuff.Instance.Timed(), duration: 4);
             }
         }
         else if (roll < 50)

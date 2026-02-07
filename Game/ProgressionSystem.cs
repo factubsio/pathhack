@@ -47,7 +47,7 @@ public class ClassDef : BaseDef, ISelectable
     public required int HpPerLevel;
     public required AbilityStat KeyAbility;
     public required ValueStatBlock<int> StartingStats;
-    public LevelEntry[] Progression = [];
+    public LevelEntry?[] Progression = [];
     public IEnumerable<FeatDef> ClassFeats = [];
     public Action<Player>? GrantStartingEquipment;
 }

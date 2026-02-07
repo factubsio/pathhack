@@ -377,6 +377,9 @@ public static class DamageTypes
     public static readonly DamageType Shock = new("elem", "shock");
     public static readonly DamageType Acid = new("elem", "acid");
     public static readonly DamageType Magic = new("magic", "_");
+
+    public static readonly DamageType Holy = new("spirit", "good");
+    public static readonly DamageType Unholy = new("spirit", "evil");
 }
 
 public enum UnitSize
