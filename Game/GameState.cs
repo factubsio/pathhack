@@ -379,11 +379,8 @@ public class GameState
     {
         if (mon is not Monster m) { mon.Energy = 0; return; }
 
-        m.DoTurn();
-
-
-        // nothing to do
-        mon.Energy = 0;
+        if (!m.DoTurn())
+            mon.Energy = Math.Min(mon.Energy, 0);
     }
 
     public void GoToLevel(LevelId id, SpawnAt where, Pos? whereExactly = null)
@@ -609,7 +606,7 @@ public class GameState
                 {
                     g.pline($"You kill {target:the}!");
                     if (target is Monster m)
-                        g.GainExp(10 * (1 << m.Def.CR));
+                        g.GainExp(10 * (1 << m.Def.BaseLevel));
                 }
                 else if (ctx.DeathReason != null)
                     g.pline($"{target:The} dies by {ctx.DeathReason}!");

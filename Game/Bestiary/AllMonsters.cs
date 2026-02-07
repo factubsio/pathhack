@@ -7,5 +7,7 @@ public static class AllMonsters
         .. Kobolds.All,
         .. Gremlins.All,
         .. MiscMonsters.All,
+        .. Cats.All,
+        .. Snakes.All,
     ];
 }

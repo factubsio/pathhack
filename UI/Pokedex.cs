@@ -119,10 +119,10 @@ public static class Pokedex
     {
         var menu = new Menu();
         
-        menu.Add($"{m.RealName,-24} Creature CR {m.Def.CR} {m.CreatureTypeRendered}", LineStyle.Heading);
+        menu.Add($"{m.RealName,-24} Creature CR {m.Def.BaseLevel} {m.CreatureTypeRendered}", LineStyle.Heading);
         menu.Add($"{m.Def.Size}");
         menu.Add("");
-        menu.Add($"AC {m.Def.AC}; HP {m.Def.HP}");
+        menu.Add($"AC {m.Def.AC}; HP {m.Def.HpPerLevel}");
         var speed = m.QueryModifiers("speed_bonus");
         Log.Write($"speed: {speed}");
         menu.Add($"Movement: {SpeedDesc(m.LandMove)}");

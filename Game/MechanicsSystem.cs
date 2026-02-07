@@ -380,6 +380,7 @@ public static class DamageTypes
 
     public static readonly DamageType Holy = new("spirit", "good");
     public static readonly DamageType Unholy = new("spirit", "evil");
+    public static readonly DamageType Poison = new("poison", "_");
 }
 
 public enum UnitSize

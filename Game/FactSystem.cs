@@ -1,5 +1,7 @@
+using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices.Marshalling;
 
 namespace Pathhack.Game;
 
@@ -40,7 +42,7 @@ public interface IEntity
 public class Fact(IEntity entity, LogicBrick brick, object? data)
 {
     public IEntity Entity => entity;
-    public LogicBrick Brick => brick;
+    public LogicBrick Brick { get; set; } = brick;
     public object? Data => data;
     public bool MarkedForRemoval;
 
@@ -50,6 +52,22 @@ public class Fact(IEntity entity, LogicBrick brick, object? data)
     public int? ExpiresAt { get; set; }
 
     public int? RemainingRounds => ExpiresAt.HasValue ? Math.Max(0, ExpiresAt.Value - g.CurrentRound) : null;
+
+    public string DisplayName
+    {
+        get
+        {
+            List<string> parts = [];
+            if (Brick.DisplayMode.HasFlag(FactDisplayMode.Name))
+                parts.Add(Brick.BuffName ?? Brick.GetType().Name);
+            if (Brick.DisplayMode.HasFlag(FactDisplayMode.Stacks))
+                parts.Add(Stacks.ToString());
+            if (Brick.DisplayMode.HasFlag(FactDisplayMode.Duration))
+                parts.Add($"{RemainingRounds} left");
+
+            return string.Join(" ", parts);
+        }
+    }
 
     public void Remove()
     {
@@ -65,15 +83,26 @@ public class Fact(IEntity entity, LogicBrick brick, object? data)
 
 public enum StackMode { Independent, Stack, Extend }
 
+[Flags]
+public enum FactDisplayMode
+{
+    Name = 1,
+    Stacks = 2,
+    Duration = 4,
+}
+
 public abstract class LogicBrick
 {
     public static LogicBrick? GlobalHook;
+
+    public virtual LogicBrick? MergeWith(LogicBrick other) => this == other ? this : null;
 
     public virtual object? CreateData() => null;
     public virtual bool IsBuff => false;
     public virtual string? BuffName => null;
     public virtual bool IsActive => false;
     public virtual StackMode StackMode => StackMode.Independent;
+    public virtual FactDisplayMode DisplayMode => 0;
     public virtual int MaxStacks => int.MaxValue;
     public virtual bool RequiresEquipped => false;
 
@@ -173,6 +202,13 @@ public class DataFlag
     public static implicit operator bool(DataFlag flag) => flag.On;
 }
 
+public class ScalarData<T>(T val) where T : struct
+{
+    public T Value = val;
+
+    public static implicit operator T(ScalarData<T> val) => val.Value;
+}
+
 public abstract class LogicBrick<T> : LogicBrick where T : class, new()
 {
   public sealed override object? CreateData() => new T();
@@ -186,51 +222,6 @@ public class ApplyFactOnAttackHit(LogicBrick toApply, int? duration = null) : Lo
         if (context.Check!.Result)
             context.Target?.Unit?.AddFact(toApply, duration);
     }
-}
-
-internal static class WrapperHelper<T>
-{
-    private static readonly Dictionary<LogicBrick, T> cache = [];
-
-    public static T For(LogicBrick brick, Func<LogicBrick, T> factory)
-    {
-        if (!cache.TryGetValue(brick, out var timed))
-        {
-            timed = factory(brick);
-            cache[brick] = timed;
-        }
-        return timed;
-    }
-}
-
-public class ApplyWhenEquipped(LogicBrick brick) : LogicBrick
-{
-    public static ApplyWhenEquipped For(LogicBrick brick) => WrapperHelper<ApplyWhenEquipped>.For(brick, brick => new(brick));
-
-    protected override void OnEquip(Fact fact, PHContext ctx) =>
-        ctx.Source!.AddFact(brick);
-
-    protected override void OnUnequip(Fact fact, PHContext ctx) =>
-        ctx.Source!.RemoveStack(brick);
-}
-
-public class TimedBuff(LogicBrick brick) : LogicBrick
-{
-    public static TimedBuff For(LogicBrick brick) => WrapperHelper<TimedBuff>.For(brick, brick => new(brick));
-
-    public override bool IsActive => true;
-
-    protected override void OnFactAdded(Fact fact) =>
-        fact.Entity.AddFact(brick);
-
-    protected override void OnFactRemoved(Fact fact) =>
-        fact.Entity.RemoveStack(brick);
-}
-
-public static class LogicBrickExts
-{
-    public static TimedBuff Timed(this LogicBrick brick) => TimedBuff.For(brick);
-    public static ApplyWhenEquipped WhenEquipped(this LogicBrick brick) => ApplyWhenEquipped.For(brick);
 }
 
 public enum MergeStrategy { Replace, Max, Min, Sum, Or, And }
@@ -258,16 +249,43 @@ public abstract class ActionBrick(string name, TargetingType targeting = Targeti
     }
 }
 
-public abstract class SimpleToggleAction<T>(string name, T fact) : ActionBrick(name, TargetingType.None) where T : LogicBrick
+public abstract class CooldownAction(string name, TargetingType target, Func<IUnit, int> cooldown) : ActionBrick(name, target)
 {
-    class ToggleData
+    public class CooldownTracker(Func<IUnit, int> cd)
     {
-        public bool On;
+        public int CooldownUntil;
+
+        public bool CanExecute(out string whyNot)
+        {
+            int remaining = CooldownUntil - g.CurrentRound;
+            whyNot = $"{remaining} rounds left";
+            return remaining <= 0;
+        }
+
+        public void OnActivate(IUnit unit)
+        {
+            CooldownUntil = g.CurrentRound + cd(unit);
+        }
     }
 
-    public override ToggleState IsToggleOn(object? data) => ((ToggleData)data!).On ? ToggleState.On : ToggleState.Off;
+    public sealed override object? CreateData() => new CooldownTracker(cooldown);
 
-    public override object? CreateData() => new ToggleData();
+    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot) => ((CooldownTracker)data!).CanExecute(out whyNot);
+
+    public sealed override void Execute(IUnit unit, object? data, Target target)
+    {
+        ((CooldownTracker)data!).OnActivate(unit);
+        Execute(unit, target);
+    }
+
+    protected abstract void Execute(IUnit unit, Target target);
+}
+
+public abstract class SimpleToggleAction<T>(string name, T fact) : ActionBrick(name, TargetingType.None) where T : LogicBrick
+{
+    public override ToggleState IsToggleOn(object? data) => ((DataFlag)data!).On ? ToggleState.On : ToggleState.Off;
+
+    public override object? CreateData() => new DataFlag();
 
     public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
     {
@@ -277,7 +295,7 @@ public abstract class SimpleToggleAction<T>(string name, T fact) : ActionBrick(n
 
     public override void Execute(IUnit unit, object? data, Target target)
     {
-        ToggleData dat = (ToggleData)data!;
+        DataFlag dat = (DataFlag)data!;
         dat.On = !dat.On;
         if (dat.On)
             unit.AddFact(fact);
@@ -415,20 +433,29 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
             Facts.Add(fact);
     }
 
-    private Fact? GetFact(LogicBrick brick) => LiveFacts.FirstOrDefault(f => f.Brick == brick);
+    private Fact? GetFact(LogicBrick brick, bool doMerge)
+    {
+        foreach (var fact in LiveFacts)
+        {
+            var res = fact.Brick.MergeWith(brick);
+            if (res != null)
+            {
+                if (doMerge) fact.Brick = res;
+                return fact;
+            }
+        }
+        return null;
+    }
 
     public Fact AddFact(LogicBrick brick, int? duration = null)
     {
-        var existing = GetFact(brick);
+        var existing = GetFact(brick, true);
         if (brick.StackMode == StackMode.Stack)
         {
             if (existing != null)
             {
-                if (existing.Stacks < brick.MaxStacks)
-                {
-                    existing.Stacks++;
-                    LogicBrick.FireOnStackAdded(existing.Brick, existing);
-                }
+                existing.Stacks = Math.Min(existing.Brick.MaxStacks, existing.Stacks + 1);
+                LogicBrick.FireOnStackAdded(existing.Brick, existing);
                 return existing;
             }
         }
@@ -460,7 +487,7 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
 
     public void RemoveStack(LogicBrick brick)
     {
-        var fact = GetFact(brick);
+        var fact = GetFact(brick, false);
         if (fact == null) return;
         fact.Stacks--;
         LogicBrick.FireOnStackRemoved(fact.Brick, fact);

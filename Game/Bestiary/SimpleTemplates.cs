@@ -28,6 +28,8 @@ public class ZombieTemplate() : MonsterTemplate("zombie")
 
   public override bool CanApplyTo(MonsterDef def) => !TemplateHelper.CannotBeUndead.Contains(def.CreatureType);
 
+  public override int LevelBonus(MonsterDef def, int level) => Math.Clamp((int)(level * 0.2), 1, 3);
+
   public override IEnumerable<LogicBrick> GetComponents(MonsterDef def)
   {
     // TODO: remove abilities with mental/good tags (first implement ability tags)
@@ -40,8 +42,6 @@ public class ZombieTemplate() : MonsterTemplate("zombie")
     // Undead are ALWAYS evil and NEVER lawful
     m.OwnMoralAxis = MoralAxis.Evil;
     if (m.Def.EthicalAxis == EthicalAxis.Lawful) m.OwnEthicalAxis = EthicalAxis.Neutral;
-
-    m.TemplateBonusLevels = Math.Clamp((int)(m.Def.CR * 0.2), 1, 3);
 
     m.OwnCreatureType = CreatureTypes.Undead;
 

@@ -1,0 +1,32 @@
+// dotnet run -- --monsters
+
+using System.Reflection;
+using Pathhack.Game;
+
+public static class MonsterTable
+{
+    public static void Print()
+    {
+        var defs = Assembly.GetExecutingAssembly()
+            .GetTypes()
+            .Where(t => t.IsClass && t.IsAbstract && t.IsSealed) // static classes
+            .SelectMany(t => t.GetFields(BindingFlags.Public | BindingFlags.Static))
+            .Where(f => f.FieldType == typeof(MonsterDef))
+            .Select(f => (MonsterDef)f.GetValue(null)!)
+            .OrderBy(m => m.BaseLevel)
+            .ThenBy(m => m.Name);
+
+        Console.WriteLine($"{"Name",-24} {"Lvl",3} {"HP/L",4} {"AC",3} {"AB",3} {"Dmg",3} {"Move",4} {"Size",-8} Actions");
+        Console.WriteLine(new string('-', 100));
+
+        foreach (var m in defs)
+        {
+            var actions = m.Components
+                .OfType<GrantAction>()
+                .Select(ga => ga.Action.Name)
+                .ToList();
+            string actStr = string.Join(", ", actions);
+            Console.WriteLine($"{m.Name,-24} {m.BaseLevel,3} {m.HpPerLevel,4} {m.AC.Combined,3} {m.AttackBonus,3} {m.DamageBonus,3} {m.LandMove.Value,4} {m.Size,-8} {actStr}");
+        }
+    }
+}
