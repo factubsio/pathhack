@@ -8,7 +8,7 @@ public class SiegeEngineTracker(List<Pos> stairs) : LogicBrick
     {
         _remaining--;
         if (_remaining > 0) return;
-        
+
         Pos? best = null;
         int bestDist = int.MaxValue;
         foreach (var p in stairs)
@@ -17,7 +17,7 @@ public class SiegeEngineTracker(List<Pos> stairs) : LogicBrick
             if (dist < bestDist) { best = p; bestDist = dist; }
         }
         if (best is null) return;
-        
+
         lvl.Set(best.Value, TileType.StairsDown);
         g.pline("The way forward opens!");
     }

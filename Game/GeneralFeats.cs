@@ -16,8 +16,9 @@ public class BlindFight : LogicBrick
     }
 }
 
-public class DebilitatingStrikes : LogicBrick
+public class DebilitatingStrikesBrick : LogicBrick
 {
+    public static readonly DebilitatingStrikesBrick Instance = new();
     protected override void OnDamageDone(Fact fact, PHContext context)
     {
         // roll for effect todo: we need the effects
@@ -25,8 +26,9 @@ public class DebilitatingStrikes : LogicBrick
     }
 }
 
-public class Evasion : LogicBrick
+public class EvasionBrick : LogicBrick
 {
+    public static readonly EvasionBrick Instance = new();
     protected override void OnBeforeDamageIncomingRoll(Fact fact, PHContext context)
     {
         // no check, no evade
@@ -44,6 +46,7 @@ public class Evasion : LogicBrick
 
 public class TrapSense : LogicBrick
 {
+    public static readonly TrapSense Instance = new();
     protected override object? OnQuery(Fact fact, string key, string? arg) =>
       key == "trap_sense" ? true : null;
 
@@ -83,6 +86,7 @@ internal static class LevelScaling
 
 public class RecklessAttackBuff : LogicBrick<DataFlag>
 {
+    public static readonly RecklessAttackBuff Instance = new();
     public override StackMode StackMode => StackMode.Stack;
 
     protected override void OnRoundEnd(Fact fact, PHContext context) => X(fact).On = false;
@@ -102,6 +106,7 @@ public class RecklessAttackBuff : LogicBrick<DataFlag>
 
 public class PowerAttackBuff : LogicBrick
 {
+    public static readonly PowerAttackBuff Instance = new();
     public override StackMode StackMode => StackMode.Stack;
 
     protected override void OnBeforeAttackRoll(Fact fact, PHContext context)
@@ -117,8 +122,8 @@ public class PowerAttackBuff : LogicBrick
     }
 }
 
-public class PowerAttackToggle() : SimpleToggleAction<PowerAttackBuff>("Power Attack", new PowerAttackBuff());
-public class RecklessAttackToggle() : SimpleToggleAction<RecklessAttackBuff>("Reckless Attack", new RecklessAttackBuff());
+public class PowerAttackToggle() : SimpleToggleAction<PowerAttackBuff>("Power Attack", PowerAttackBuff.Instance);
+public class RecklessAttackToggle() : SimpleToggleAction<RecklessAttackBuff>("Reckless Attack", RecklessAttackBuff.Instance);
 
 public static class GeneralFeats
 {
@@ -179,7 +184,7 @@ public static class GeneralFeats
         Description = "You can avoid even magical and unusual attacks with great agility. If you makes a successful Reflex saving throw against an attack that normally deals half damage on a successful save, you instead take no damage.",
         Type = FeatType.General,
         Level = 1,
-        Components = [new Evasion()],
+        Components = [EvasionBrick.Instance],
     };
 
     public static readonly FeatDef DebilitatingStrikes = new()
@@ -189,7 +194,7 @@ public static class GeneralFeats
         Description = "Whenever you strike a creature with a weapon you have a chance to debilitate your target, randomly chosing (Bewildered, Disorientated, Hampered). These penalties do not stack with themselves.",
         Type = FeatType.General,
         Level = 1,
-        Components = [new DebilitatingStrikes()],
+        Components = [DebilitatingStrikesBrick.Instance],
     };
 
     public static readonly FeatDef PowerAttack = new()

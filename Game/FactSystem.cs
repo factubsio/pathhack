@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 
 namespace Pathhack.Game;
 
@@ -24,15 +25,14 @@ public interface IEntity
     public IEnumerable<Fact> GetAllFacts(PHContext? ctx);
     public void CleanupMarkedFacts();
     public Fact AddFact(LogicBrick brick, int? duration = null);
-    public void RemoveStack(Type type);
-    public void RemoveStack<T>() where T : LogicBrick;
+    public void RemoveStack(LogicBrick brick);
     public void DecrementActiveFact();
     public void ExpireFacts();
     object? Query(string key, string? arg = null, MergeStrategy merge = MergeStrategy.Replace);
     T Query<T>(string key, string? arg, MergeStrategy merge, T defaultValue);
     bool Has(string key);
     bool Can(string key);
-    bool HasFact<T>() where T : LogicBrick;
+    bool HasFact(LogicBrick brick);
 
     int EffectiveLevel { get; }
 }
@@ -63,7 +63,7 @@ public class Fact(IEntity entity, LogicBrick brick, object? data)
     }
 }
 
-public enum StackMode { Independent, Stack, Replace, Extend }
+public enum StackMode { Independent, Stack, Extend }
 
 public abstract class LogicBrick
 {
@@ -187,6 +187,52 @@ public class ApplyFactOnAttackHit(LogicBrick toApply, int? duration = null) : Lo
             context.Target?.Unit?.AddFact(toApply, duration);
     }
 }
+
+internal static class WrapperHelper<T>
+{
+    private static readonly Dictionary<LogicBrick, T> cache = [];
+
+    public static T For(LogicBrick brick, Func<LogicBrick, T> factory)
+    {
+        if (!cache.TryGetValue(brick, out var timed))
+        {
+            timed = factory(brick);
+            cache[brick] = timed;
+        }
+        return timed;
+    }
+}
+
+public class ApplyWhenEquipped(LogicBrick brick) : LogicBrick
+{
+    public static ApplyWhenEquipped For(LogicBrick brick) => WrapperHelper<ApplyWhenEquipped>.For(brick, brick => new(brick));
+
+    protected override void OnEquip(Fact fact, PHContext ctx) =>
+        ctx.Source!.AddFact(brick);
+
+    protected override void OnUnequip(Fact fact, PHContext ctx) =>
+        ctx.Source!.RemoveStack(brick);
+}
+
+public class TimedBuff(LogicBrick brick) : LogicBrick
+{
+    public static TimedBuff For(LogicBrick brick) => WrapperHelper<TimedBuff>.For(brick, brick => new(brick));
+
+    public override bool IsActive => true;
+
+    protected override void OnFactAdded(Fact fact) =>
+        fact.Entity.AddFact(brick);
+
+    protected override void OnFactRemoved(Fact fact) =>
+        fact.Entity.RemoveStack(brick);
+}
+
+public static class LogicBrickExts
+{
+    public static TimedBuff Timed(this LogicBrick brick) => TimedBuff.For(brick);
+    public static ApplyWhenEquipped WhenEquipped(this LogicBrick brick) => ApplyWhenEquipped.For(brick);
+}
+
 public enum MergeStrategy { Replace, Max, Min, Sum, Or, And }
 
 public enum TargetingType { None, Direction, Unit, Pos }
@@ -236,7 +282,7 @@ public abstract class SimpleToggleAction<T>(string name, T fact) : ActionBrick(n
         if (dat.On)
             unit.AddFact(fact);
         else
-            unit.RemoveStack<T>();
+            unit.RemoveStack(fact);
     }
 }
 
@@ -369,11 +415,13 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
             Facts.Add(fact);
     }
 
+    private Fact? GetFact(LogicBrick brick) => LiveFacts.FirstOrDefault(f => f.Brick == brick);
+
     public Fact AddFact(LogicBrick brick, int? duration = null)
     {
+        var existing = GetFact(brick);
         if (brick.StackMode == StackMode.Stack)
         {
-            var existing = LiveFacts.FirstOrDefault(f => f.Brick.GetType() == brick.GetType());
             if (existing != null)
             {
                 if (existing.Stacks < brick.MaxStacks)
@@ -385,31 +433,40 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
             }
         }
 
-        var fact = new Fact(this, brick, brick.CreateData());
-        if (duration.HasValue)
-            fact.ExpiresAt = g.CurrentRound + duration.Value;
-        Facts.Add(fact);
-        Log.Write($"add fact {fact.Brick} => {this}");
-        if (brick.IsActive)
+        if (existing == null || brick.StackMode == StackMode.Independent)
         {
-            if (ActiveFactCount++ == 0 && this is not IUnit)
-                g.ActiveEntities.Add(this);
+            var fact = new Fact(this, brick, brick.CreateData());
+            if (duration.HasValue)
+                fact.ExpiresAt = g.CurrentRound + duration.Value;
+            Facts.Add(fact);
+            Log.Write($"add fact {fact.Brick} => {this}");
+            if (brick.IsActive)
+            {
+                if (ActiveFactCount++ == 0 && this is not IUnit)
+                    g.ActiveEntities.Add(this);
+            }
+            LogicBrick.FireOnFactAdded(brick, fact);
+            return fact;
         }
-        LogicBrick.FireOnFactAdded(brick, fact);
-        return fact;
+
+        // Extend (and existing is not null here): use new expiry if longer than remaining
+        if (duration.HasValue)
+        {
+            int existingExpiresAt = existing.ExpiresAt.GetValueOrDefault(0);
+            existing.ExpiresAt = Math.Max(existingExpiresAt, g.CurrentRound + duration.Value);
+        }
+        return existing;
     }
 
-    public void RemoveStack(Type type)
+    public void RemoveStack(LogicBrick brick)
     {
-        var fact = LiveFacts.FirstOrDefault(f => f.Brick.GetType() == type);
+        var fact = GetFact(brick);
         if (fact == null) return;
         fact.Stacks--;
         LogicBrick.FireOnStackRemoved(fact.Brick, fact);
         if (fact.Stacks <= 0)
             fact.Remove();
     }
-
-    public void RemoveStack<T>() where T : LogicBrick => RemoveStack(typeof(T));
 
     public virtual int EffectiveLevel => 1;
 
@@ -442,7 +499,7 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
     public virtual bool Has(string key) => Query(key, null, MergeStrategy.Or, false);
     public virtual bool Can(string key) => Query(key, null, MergeStrategy.And, true);
 
-    public bool HasFact<T>() where T : LogicBrick => LiveFacts.Any(f => f.Brick is T);
+    public bool HasFact(LogicBrick brick) => LiveFacts.Any(f => f.Brick == brick);
 
     protected static object? Merge(object? current, object? next, MergeStrategy strategy)
     {

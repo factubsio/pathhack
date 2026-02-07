@@ -5,6 +5,12 @@ namespace Pathhack.Game;
 public enum MoralAxis { Evil = -1, Neutral = 0, Good = 1 }
 public enum EthicalAxis { Chaotic = -1, Neutral = 0, Lawful = 1 }
 
+public static class AxisExts
+{
+  public static EthicalAxis Binary(this EthicalAxis a) => a == EthicalAxis.Chaotic ? EthicalAxis.Chaotic : EthicalAxis.Lawful;
+  public static MoralAxis Binary(this MoralAxis a) => a == MoralAxis.Evil ? MoralAxis.Evil : MoralAxis.Good;
+}
+
 public static class CreatureTypes
 {
   public const string Humanoid = "humanoid";

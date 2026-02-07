@@ -1,7 +1,63 @@
+using System.IO.Pipes;
+
 namespace Pathhack.Game.Classes;
+
+public static class Fervor
+{
+    public const string Resource = "fervor";
+
+    public class EnhanceWeaponAction() : ActionBrick("Fervor: Enhance Weapon")
+    {
+        public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot) => unit.HasCharge(Resource, out whyNot);
+
+        public override void Execute(IUnit unit, object? data, Target target)
+        {
+            if (!unit.TryUseCharge(Resource)) return;
+
+            Menu menu = new();
+            menu.Add($"Enhannce weapon:", LineStyle.Heading);
+
+            menu.Add("Flaming");
+            menu.Add("Freeze");
+            menu.Add("Shock");
+
+            if (u.MoralAxis == MoralAxis.Evil)
+                menu.Add("Unholy");
+            else
+                menu.Add("Holy");
+
+            
+            var picks = menu.Display(MenuMode.PickOne);
+            if (picks.Count == 0) return;
+
+            var weapon = unit.GetWieldedItem();
+
+            switch (picks[0])
+            {
+                case "Flaming":
+                    weapon.AddFact(DamageRiderBuff.FlamingD8, 12);
+                    break;
+                case "Freeze":
+                    weapon.AddFact(DamageRiderBuff.FreezeD8, 12);
+                    break;
+                case "Shock":
+                    weapon.AddFact(DamageRiderBuff.ShockD8, 12);
+                    break;
+                case "Holy":
+                    weapon.AddFact(DamageRiderBuff.HolyD8, 12);
+                    break;
+                case "Unholy":
+                    weapon.AddFact(DamageRiderBuff.UnholyD8, 12);
+                    break;
+            }
+        }
+    }
+
+}
 
 public class DivineFortitudeBrick : LogicBrick
 {
+    public static readonly DivineFortitudeBrick Instance = new();
     protected override void OnBeforeCheck(Fact fact, PHContext ctx)
     {
         if (fact.Entity is not Player p) return;
@@ -11,8 +67,20 @@ public class DivineFortitudeBrick : LogicBrick
     }
 }
 
-public class SacredArmor : LogicBrick
+public class WeaponsOfFaithBrick : LogicBrick
 {
+    public static readonly WeaponsOfFaithBrick Instance = new();
+
+  protected override void OnBeforeDamageRoll(Fact fact, PHContext context)
+  {
+    // TODO
+    // Mark DR bypass on context.Damage
+  }
+}
+
+public class SacredArmorBrick : LogicBrick
+{
+    public static readonly SacredArmorBrick Instance = new();
     protected override object? OnQuery(Fact fact, string key, string? arg)
     {
         if (fact.Entity is not Player) return null;
@@ -29,6 +97,7 @@ public class SacredArmor : LogicBrick
 
 public class SacredStrikeBrick : LogicBrick
 {
+    public static readonly SacredStrikeBrick Instance = new();
     protected override void OnBeforeAttackRoll(Fact fact, PHContext ctx)
     {
         if (fact.Entity is not Player p) return;
@@ -41,6 +110,7 @@ public class SacredStrikeBrick : LogicBrick
 
 public class SacredWeapon : LogicBrick
 {
+    public static readonly SacredWeapon Instance = new();
     static readonly DiceFormula[] LevelScaling = [
         d(6),   // 1-4
         d(8),   // 5-9
@@ -102,7 +172,7 @@ public static class WarpriestFeats
         Description = "+2 attack bonus with your deity's favored weapon.",
         Type = FeatType.Class,
         Level = 2,
-        Components = [new SacredStrikeBrick()]
+        Components = [SacredStrikeBrick.Instance]
     };
 
     public static readonly FeatDef DivineFortitude = new()
@@ -112,7 +182,7 @@ public static class WarpriestFeats
         Description = "+1 Status bonus to all saves, increasing to +2 at level 10.",
         Type = FeatType.Class,
         Level = 2,
-        Components = [new DivineFortitudeBrick()],
+        Components = [DivineFortitudeBrick.Instance],
     };
 
     public static readonly FeatDef SacredArmor = new()
@@ -122,7 +192,17 @@ public static class WarpriestFeats
         Description = "+1 Status bonus to AC, increasing to +2 at level 10.",
         Type = FeatType.Class,
         Level = 2,
-        Components = [new SacredArmor()],
+        Components = [SacredArmorBrick.Instance],
+    };
+
+    public static readonly FeatDef WeaponsOfFaith = new()
+    {
+        id = "weapons_of_faith",
+        Name = "Weapons of Faith",
+        Description = $"Your weapon attacks are treated as Good/Evil and Lawful/Chaotic for the purposes of bypassing DR.",
+        Type = FeatType.Class,
+        Level = 4,
+        Components = [WeaponsOfFaithBrick.Instance],
     };
 }
 
@@ -163,16 +243,20 @@ public static partial class ClassDefs
                     new GrantPool("spell_l3", 3, 60),
                     new GrantPool("spell_l4", 3, 100),
                     new GrantPool("spell_l5", 2, 150),
-                    new GrantAction(new ConsumeSpell(1)),
-                    new GrantAction(new ConsumeSpell(2)),
-                    new GrantAction(new ConsumeSpell(3)),
-                    new GrantAction(new ConsumeSpell(4)),
-                    new GrantAction(new ConsumeSpell(5)),
                 ],
                 Selections = [
                     new() { Label = "Choose a blessing", Options = Blessings.All.Select(b => b.ToFeat()) },
-                    // new() { Label = "Choose a cantrip", Options = Blessings.All.Select(b => b.ToFeat()) },
                     new() { Label = "Choose a spell", Options = WarpriestList.Select(b => b.ToFeat()) },
+                ],
+            },
+            null, //2
+            null, //3
+            null, //4
+            new() //5
+            {
+                Grants = [
+                    new GrantPool(Fervor.Resource, 1, 60),
+                    new GrantAction(new Fervor.EnhanceWeaponAction()),
                 ],
             },
         ],

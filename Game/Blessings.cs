@@ -53,44 +53,95 @@ public class FireBlessingMinor() : ActionBrick("Fire Blessing")
         else
             g.pline("Your weapon bursts into flame!");
 
-        weapon.AddFact(FlamingBuff.Instance, duration: duration);
+        weapon.AddFact(DamageRiderBuff.FlamingD4, duration: duration);
     }
 }
 
-public class FlamingBuff : LogicBrick
+public class DamageRiderBuff(string name, DamageType type, int faces) : LogicBrick
 {
-    public static readonly FlamingBuff Instance = new();
+    public override StackMode StackMode => StackMode.Extend;
+
+    public static readonly DamageRiderBuff UnholyD4 = new("Unholy Weapon", DamageTypes.Unholy, 4);
+    public static readonly DamageRiderBuff UnholyD8 = new("Unholy Weapon", DamageTypes.Unholy, 8);
+    public static readonly DamageRiderBuff HolyD4 = new("Holy Weapon", DamageTypes.Holy, 4);
+    public static readonly DamageRiderBuff HolyD8 = new("Holy Weapon", DamageTypes.Holy, 8);
+    public static readonly DamageRiderBuff FreezeD4 = new("Freezing Weapon", DamageTypes.Cold, 4);
+    public static readonly DamageRiderBuff FreezeD8 = new("Freezing Weapon", DamageTypes.Cold, 8);
+    public static readonly DamageRiderBuff ShockD4 = new("Shocking Weapon", DamageTypes.Shock, 4);
+    public static readonly DamageRiderBuff ShockD8 = new("Shocking Weapon", DamageTypes.Shock, 8);
+    public static readonly DamageRiderBuff FlamingD4 = new("Flaming Weapon", DamageTypes.Fire, 4);
+    public static readonly DamageRiderBuff FlamingD8 = new("Flaming Weapon", DamageTypes.Fire, 8);
+
+    private string OnStr(IUnit unit, string weapon) => type.SubCat switch
+    {
+        "fire" => $"Flames surround {unit:own} {weapon}.",
+        "cold" => $"Icicles swirl round {unit:own} {weapon}.",
+        "shock" => $"{unit:Own} {weapon} start to crackle.",
+        "holy" => $"{unit:Own} {weapon} glow gold.",
+        "unholy" => $"{unit:Own} {weapon} glow black.",
+        _ => "??",
+    };
+
+    private string OffStr(IUnit unit, string weapon) => type.SubCat switch
+    {
+        "fire" => $"The flames surrounding {unit:own} {weapon} die out.",
+        "cold" => $"Icicles around {unit:own} {weapon} start melting.",
+        "shock" => $"{unit:Own} {weapon} stops crackling.",
+        "holy" => $"{unit:Own} {weapon} stops glowing gold.",
+        "unholy" => $"{unit:Own} {weapon} stops glowing black.",
+        _ => "??",
+    };
+
+    private string Key => type.SubCat switch
+    {
+        "fire" => "flaming",
+        "cold" => "freeze",
+        "shock" => "shock",
+        "holy" => "holy",
+        "unholy" => "unholy",
+        _ => "___",
+    };
+
     public override bool IsBuff => true;
-    public override string? BuffName => "Flaming Weapon";
+    public override string? BuffName => name;
     public override bool IsActive => true;
 
-    protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
+    protected override object? OnQuery(Fact fact, string key, string? arg) => key == Key ? true : null;
+
+    protected override void OnFactAdded(Fact fact)
     {
-        "flaming" => true,
-        _ => null
-    };
+        if (fact.Entity is Item item && item.Holder?.IsPlayer == true)
+        {
+            bool isUnarmed = item.Def is WeaponDef w && w.Profiency == Proficiencies.Unarmed;
+            string weaponName = isUnarmed ? "fists" : item.Def.Name;
+            if (item.Has(Key))
+                g.pline($"{item.Holder:Own} {weaponName} seems more energised.");
+            else
+                g.pline(OnStr(u, weaponName));
+        }
+    }
 
     protected override void OnFactRemoved(Fact fact)
     {
         if (fact.Entity is Item item && item.Holder is { IsPlayer: true })
         {
             bool isUnarmed = item.Def is WeaponDef w && w.Profiency == Proficiencies.Unarmed;
-            if (isUnarmed)
-                g.pline("The flames around your fists fade.");
-            else if (item.Has("flaming"))
-                g.pline("Your weapon burns less brightly.");
+            string weaponName = isUnarmed ? "fists" : item.Def.Name;
+            if (item.Has(Key))
+                g.pline($"{item.Holder:Own} {weaponName} seems slightly less energised.");
             else
-                g.pline("Your weapon's flames die out.");
+                g.pline(OffStr(u, weaponName));
         }
     }
 
     protected override void OnBeforeDamageRoll(Fact fact, PHContext context)
     {
         if (context.Weapon != fact.Entity) return;
+
         context.Damage.Add(new DamageRoll
         {
-            Formula = d(4),
-            Type = DamageTypes.Fire
+            Formula = d(faces),
+            Type = type,
         });
     }
 }
@@ -473,60 +524,9 @@ public class DarknessBlessingMinor() : ActionBrick("Darkness Blessing", Targetin
         {
             var victim = lvl.UnitAt(pos);
             if (victim.IsNullOrDead() || victim == unit) continue;
-            victim.AddFact(new TimedBlind(), duration: BlindDuration);
+            victim.AddFact(BlindBuff.Instance.Timed(), duration: BlindDuration);
             if (unit.IsPlayer)
                 g.pline("{0:The} is blinded!", victim);
         }
     }
-}
-
-public class BlindBuff : LogicBrick
-{
-    public static readonly BlindBuff Instance = new();
-    
-    public override bool IsBuff => true;
-    public override string? BuffName => "Blind";
-    public override StackMode StackMode => StackMode.Stack;
-
-    protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
-    {
-        "can_see" => false,
-        _ => null,
-    };
-
-    protected override void OnBeforeCheck(Fact fact, PHContext context)
-    {
-        if (context.Source != fact.Entity || context.Weapon == null) return;
-        if (context.Source.Has("blind_fight")) return;
-        context.Check!.Disadvantage++;
-    }
-
-    protected override void OnStackRemoved(Fact fact)
-    {
-        if (fact.Entity is not IUnit { IsPlayer: true }) return;
-        if (fact.Stacks == 0)
-            g.pline("You can see again.");
-        else
-            g.pline("Your vision clears slightly.");
-    }
-}
-
-public class TimedBlind : LogicBrick
-{
-    public override bool IsActive => true;
-
-    protected override void OnFactAdded(Fact fact) =>
-        fact.Entity.AddFact(BlindBuff.Instance);
-
-    protected override void OnFactRemoved(Fact fact) =>
-        fact.Entity.RemoveStack<BlindBuff>();
-}
-
-public class ApplyOnEquip(LogicBrick brick) : LogicBrick
-{
-    protected override void OnEquip(Fact fact, PHContext ctx) =>
-        ctx.Source!.AddFact(brick);
-
-    protected override void OnUnequip(Fact fact, PHContext ctx) =>
-        ctx.Source!.RemoveStack(brick.GetType());
 }

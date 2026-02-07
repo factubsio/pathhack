@@ -30,7 +30,7 @@ public class BlindSelf() : ActionBrick("Blind Self")
     
     public override void Execute(IUnit unit, object? data, Target target)
     {
-        unit.AddFact(new TimedBlind(), duration: 5);
+        unit.AddFact(BlindBuff.Instance.Timed(), duration: 5);
         g.pline("You blind yourself!");
     }
 }
@@ -43,14 +43,14 @@ public class GreaseArea(IUnit? source, int dc, int duration) : Area(duration)
 
     protected override void OnEnter(IUnit unit)
     {
-        if (unit.HasFact<ProneBuff>()) return;
+        if (unit.HasFact(ProneBuff.Instance)) return;
 
         using var ctx = PHContext.Create(source, Target.From(unit));
         var slips = VTense(unit, "slip");
         if (!CreateAndDoCheck(ctx, "reflex_save", dc, "difficult_terrain"))
         {
             g.pline($"{unit:The} {slips} and {VTense(unit, "fall")}!");
-            unit.AddFact(TimedProne.Instance, 1);
+            unit.AddFact(ProneBuff.Instance.Timed(), 1);
         }
         else
         {
@@ -62,7 +62,7 @@ public class GreaseArea(IUnit? source, int dc, int duration) : Area(duration)
     {
         foreach (var unit in Occupants)
         {
-            if (unit.HasFact<ProneBuff>()) unit.Energy -= unit.LandMove.Value;
+            if (unit.HasFact(ProneBuff.Instance)) unit.Energy -= unit.LandMove.Value;
         }
     }
 }

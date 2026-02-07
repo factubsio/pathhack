@@ -2,6 +2,8 @@ namespace Pathhack.Game.Bestiary;
 
 public class TKAttackBonus(int bonus) : LogicBrick
 {
+    public static readonly TKAttackBonus Instance = new(2);
+
     protected override void OnBeforeAttackRoll(Fact fact, PHContext ctx)
     {
         if (ctx.Weapon?.Def.id == "tk_projectile")
@@ -43,14 +45,14 @@ public class DazeAction(int range, int dc, string pool) : ActionBrick("Daze")
         whyNot = "out of range";
         if (unit.Pos.ChebyshevDist(upos) > range) return false;
         whyNot = "target immune";
-        if (u.HasFact<DazeImmunity>()) return false;
+        if (u.HasFact(DazeImmunity.Instance)) return false;
         whyNot = "";
         return true;
     }
 
     public override void Execute(IUnit unit, object? data, Target target)
     {
-        if (target.Unit is not {} tgt) return;
+        if (target.Unit is not { } tgt) return;
 
         unit.TryUseCharge(pool);
         string msg = $"{unit:The} dazes {tgt:the}";
@@ -72,34 +74,9 @@ public class DazeAction(int range, int dc, string pool) : ActionBrick("Daze")
     }
 }
 
-public class SilencedBuff : LogicBrick
-{
-    public static readonly SilencedBuff Instance = new();
-    public override bool IsBuff => true;
-    public override string? BuffName => "Silenced";
-    public override StackMode StackMode => StackMode.Stack;
-
-    protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
-    {
-        "can_speak" => false,
-        _ => null
-    };
-}
-
-public class TimedSilence : LogicBrick
-{
-    public static readonly TimedSilence Instance = new();
-    public override bool IsActive => true;
-
-    protected override void OnFactAdded(Fact fact) =>
-        fact.Entity.AddFact(SilencedBuff.Instance);
-
-    protected override void OnFactRemoved(Fact fact) =>
-        fact.Entity.RemoveStack<SilencedBuff>();
-}
-
 public class TelekineticProjectile(int range, Dice damage, string pool) : ActionBrick("Telekinetic Projectile")
 {
+    internal static readonly TelekineticProjectile Minor = new(6, d(6), Resource);
     public const string Resource = "tk_projectile";
 
     readonly WeaponDef TKProjectile = new()
@@ -112,7 +89,6 @@ public class TelekineticProjectile(int range, Dice damage, string pool) : Action
         Glyph = new('*', ConsoleColor.Cyan),
         Launcher = "tk",
     };
-
     public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
     {
         if (!unit.HasCharge(pool, out whyNot)) return false;
@@ -150,7 +126,7 @@ public class TelekineticProjectile(int range, Dice damage, string pool) : Action
         var from = FindLaunchPos(unit)!.Value;
         var dir = (upos - from).Signed;
         var item = Item.Create(TKProjectile);
-        
+
         g.pline($"{unit:The} hurls a telekinetic bolt!");
         var landed = g.DoThrow(unit, item, dir, from);
         lvl.RemoveItem(item, landed);
@@ -178,8 +154,8 @@ public static class Derro
             new EquipSet(new Outfit(1, new OutfitItem(MundaneArmory.Dagger))),
             new GrantAction(AttackWithWeapon.Instance),
             new GrantPool(TelekineticProjectile.Resource, 2, 30),
-            new GrantAction(new TelekineticProjectile(6, d(6), TelekineticProjectile.Resource)),
-            new TKAttackBonus(2),
+            new GrantAction(TelekineticProjectile.Minor),
+            TKAttackBonus.Instance,
         ],
     };
 
@@ -224,7 +200,7 @@ public static class Derro
         Components = [
             new EquipSet(new Outfit(1, new OutfitItem(MundaneArmory.SpikedClub))),
             new GrantAction(AttackWithWeapon.Instance),
-            new ApplyFactOnAttackHit(TimedSilence.Instance, duration: 3),
+            new ApplyFactOnAttackHit(SilencedBuff.Instance.Timed(), duration: 3),
         ],
     };
 

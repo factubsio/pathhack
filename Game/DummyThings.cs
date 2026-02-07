@@ -19,7 +19,7 @@ public static class DummyThings
         Name = "blindfold",
         Glyph = new(ItemClasses.Amulet, ConsoleColor.DarkGray),
         DefaultEquipSlot = ItemSlots.Face,
-        Components = [new ApplyOnEquip(BlindBuff.Instance)],
+        Components = [ApplyWhenEquipped.For(BlindBuff.Instance)],
     };
 
     public static readonly WeaponDef Dart = new()
