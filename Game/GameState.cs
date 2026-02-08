@@ -719,13 +719,13 @@ public class GameState
                         g.GainExp(20 * Math.Max(1, m.EffectiveLevel), m.Def.Name);
                 }
                 else if (ctx.DeathReason != null)
-                    g.YouObserve(target, $"{0:The} dies by {ctx.DeathReason}!");
+                    g.YouObserve(target, $"{target:The} dies by {ctx.DeathReason}!");
                 else if (source.IsDM)
-                    g.YouObserve(target, $"{0:The} dies!");
+                    g.YouObserve(target, $"{target:The} dies!");
                 else if (source == target)
-                    g.YouObserve(source, $"{0:The} dies!");
+                    g.YouObserve(source, $"{source:The} dies!");
                 else
-                    g.YouObserve(source, $"{0:The} kills {target:the}!");
+                    g.YouObserve(source, $"{source:The} kills {target:the}!");
 
                 using (var death = PHContext.Create(source, Target.From(target)))
                     LogicBrick.FireOnDeath(target, death);
@@ -804,9 +804,11 @@ public class GameState
         Log.Write("pickup: {0}", item.Def.Name);
     }
 
+    const int XpMultiplier = 2;
+
     public void GainExp(int amount, string? source = null)
     {
-        amount *= 2;
+        amount *= XpMultiplier;
         u.XP += amount;
         Log.Write($"exp: +{amount} (total {u.XP}) XL={u.CharacterLevel} DL={lvl.Id.Depth} src={source ?? "?"}");
     }

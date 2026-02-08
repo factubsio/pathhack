@@ -27,8 +27,8 @@ public class LevelBuilder(Dictionary<char, List<Pos>> marks, LevelGenContext ctx
     public void Door(Pos p, DoorState state) => Level.PlaceDoor(p, state);
     
     public void Monster(MonsterDef def, Pos p) =>
-        Level.PlaceUnit(Game.Monster.Spawn(def), p);
-    
+        Level.PlaceUnit(Game.Monster.Spawn(def, $"special level: {Level.Id.Branch}/{Level.Id.Depth}"), p);
+
     public void PlaceItem(ItemDef def, Pos p) =>
         Level.PlaceItem(ItemGen.GenerateItem(def), p);
 

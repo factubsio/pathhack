@@ -562,6 +562,11 @@ public static partial class Input
             Draw.DrawCurrent(cursor);
             var key = NextKey();
             
+            if (key.Key == ConsoleKey.Escape)
+            {
+                return;
+            }
+            
             if (key.Key == ConsoleKey.Enter || key.KeyChar == '.')
             {
                 if (cursor == upos) return;

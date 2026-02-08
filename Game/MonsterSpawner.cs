@@ -18,11 +18,7 @@ public static class MonsterSpawner
         
         if (pos == null) return;
         
-        var def = PickMonster(level.Depth, u.CharacterLevel);
-        if (def == null) return;
-        
-        var mon = Monster.Spawn(def);
-        level.PlaceUnit(mon, pos.Value);
+        SpawnAndPlace(level, $"runtime DL={level.Depth}", null, true, pos);
     }
 
     public static void CatchUpSpawns(Level level, long turnDelta)
@@ -34,36 +30,35 @@ public static class MonsterSpawner
 
         for (int i = 0; i < actualSpawns; i++)
         {
-            if (!SpawnAndPlace(level, u.CharacterLevel, _ => level.FindLocation(p => 
-                level.NoUnit(p) && !level[p].IsStairs)))
+            if (!SpawnAndPlace(level, "catchup", null, true))
                 break;
         }
     }
 
-    static bool SpawnAndPlace(Level level, int playerLevel, Func<MonsterDef, Pos?> findPos)
+    public static bool SpawnAndPlace(Level level, string reason, MonsterDef? def, bool allowTemplate, Pos? pos = null)
     {
-        var def = PickMonster(level.Depth, playerLevel);
+        def ??= PickMonster(level.Depth, u?.CharacterLevel ?? 1);
         if (def == null) return false;
+
+        pos ??= level.FindLocation(p => level.NoUnit(p) && !level[p].IsStairs);
+        if (pos == null) return false;
 
         MonsterTemplate? template = null;
 
         // FIXME: logic, etc.
-        if (g.Rn2(10) < 1)
+        if (allowTemplate && g.Rn2(10) < 1)
         {
             template = MonsterTemplate.All.Shuffled().FirstOrDefault(x => x.CanApplyTo(def));
         }
 
-        Pos? pos = findPos(def);
-        if (pos == null) return false;
-
-        var mon = Monster.Spawn(def, template);
+        var mon = Monster.Spawn(def, reason, template);
         level.PlaceUnit(mon, pos.Value);
 
         TrySpawnGroup(level, def, pos.Value);
         return true;
     }
 
-    static void TrySpawnGroup(Level level, MonsterDef leader, Pos origin)
+    public static void TrySpawnGroup(Level level, MonsterDef leader, Pos origin)
     {
         if (leader.GroupSize == GroupSize.None) return;
 
@@ -101,7 +96,7 @@ public static class MonsterSpawner
             if (adj == null) break;
 
             var def = familyCandidates != null ? familyCandidates[g.Rn2(familyCandidates.Count)] : leader;
-            var mon = Monster.Spawn(def);
+            var mon = Monster.Spawn(def, "group");
             level.PlaceUnit(mon, adj.Value);
         }
     }

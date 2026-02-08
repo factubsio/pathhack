@@ -220,11 +220,15 @@ public class Level(LevelId id, int width, int height)
     public bool WasSeen(Pos p) => _seen[p];
     public TileMemory? GetMemory(Pos p) => _memory[p.Y * Width + p.X];
 
-    public void UpdateMemory(Pos p)
+    public void UpdateMemory(Pos p, bool includeItems = true)
     {
         _seen[p] = true;
-        var items = ItemsAt(p);
-        Item? top = items.Count > 0 ? items[^1] : null;
+        Item? top = null;
+        if (includeItems)
+        {
+            var items = ItemsAt(p);
+            top = items.Count > 0 ? items[^1] : null;
+        }
         _memory[p.Y * Width + p.X] = new TileMemory(this[p], GetState(p)?.Door ?? DoorState.Closed, top);
     }
 

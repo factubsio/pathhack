@@ -84,29 +84,30 @@ public static class MediumCaster
 
 public static class Progression
 {
-    // Exponential XP table, 1-indexed (index 0 unused)
+    // XP table, 1-indexed (index 0 unused)
+    // Early levels similar, mid/late compressed
     static readonly int[] XpTable = [
         0,      // 0 (unused)
         0,      // 1
         500,    // 2
-        1500,   // 3
-        3000,   // 4
-        5000,   // 5
-        7500,   // 6
-        10500,  // 7
-        14000,  // 8
-        18000,  // 9
-        22500,  // 10
-        27500,  // 11
-        33000,  // 12
-        39000,  // 13
-        45500,  // 14
-        52500,  // 15
-        60000,  // 16
-        68000,  // 17
-        76500,  // 18
-        85500,  // 19
-        95000,  // 20
+        1200,   // 3
+        2000,   // 4
+        3000,   // 5
+        4000,   // 6
+        5200,   // 7
+        6500,   // 8
+        8000,   // 9
+        9500,   // 10
+        11500,  // 11
+        13500,  // 12
+        16000,  // 13
+        18500,  // 14
+        21500,  // 15
+        24500,  // 16
+        28000,  // 17
+        32000,  // 18
+        36000,  // 19
+        40000,  // 20
     ];
 
     public const int MaxLevel = 20;

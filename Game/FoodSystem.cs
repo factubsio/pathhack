@@ -304,7 +304,7 @@ public class Activity
         Log.Write($"SpawnCookingThreat: {def.Name} at {spawnPos}");
         g.Defer(() =>
         {
-            var mon = Monster.Spawn(def);
+            var mon = Monster.Spawn(def, "hungry kitty");
             lvl.PlaceUnit(mon, spawnPos);
             g.pline("Something approaches, drawn by the smell!");
         });
@@ -335,7 +335,7 @@ public class Activity
             var spawnPos = pos.Value;
             g.Defer(() =>
             {
-                var mon = Monster.Spawn(def);
+                var mon = Monster.Spawn(def, "HUNGRY HUNGRY HIPPOS");
                 if (friends)
                     mon.Peaceful = g.Rn2(2) == 0;
                 lvl.PlaceUnit(mon, spawnPos);

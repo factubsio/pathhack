@@ -257,10 +257,58 @@ public static class MundaneArmory
         Name = "chain shirt",
         Proficiency = Proficiencies.LightArmor,
         ACBonus = 2,
-        DexCap = 2,
+        DexCap = 3,
         CheckPenalty = -1,
         Glyph = new(ItemClasses.Armor, ConsoleColor.Gray),
-        Components = [new ArmorBrick(2, 2)],
+        Components = [new ArmorBrick(2, 3)],
+    };
+
+    public static readonly ArmorDef HideArmor = new()
+    {
+        id = "hide_armor",
+        Name = "hide armor",
+        Proficiency = Proficiencies.MediumArmor,
+        ACBonus = 3,
+        DexCap = 2,
+        CheckPenalty = -2,
+        Glyph = new(ItemClasses.Armor, ConsoleColor.DarkYellow),
+        Components = [new ArmorBrick(3, 2)],
+    };
+
+    public static readonly ArmorDef Breastplate = new()
+    {
+        id = "breastplate",
+        Name = "breastplate",
+        Proficiency = Proficiencies.MediumArmor,
+        ACBonus = 4,
+        DexCap = 1,
+        CheckPenalty = -2,
+        Glyph = new(ItemClasses.Armor, ConsoleColor.Gray),
+        Components = [new ArmorBrick(4, 1)],
+    };
+
+    public static readonly ArmorDef SplintMail = new()
+    {
+        id = "splint_mail",
+        Name = "splint mail",
+        Proficiency = Proficiencies.HeavyArmor,
+        ACBonus = 4,
+        DexCap = 1,
+        CheckPenalty = -3,
+        Glyph = new(ItemClasses.Armor, ConsoleColor.DarkGray),
+        Components = [new ArmorBrick(4, 1)],
+    };
+
+    public static readonly ArmorDef FullPlate = new()
+    {
+        id = "full_plate",
+        Name = "full plate",
+        Proficiency = Proficiencies.HeavyArmor,
+        ACBonus = 6,
+        DexCap = 0,
+        CheckPenalty = -3,
+        Glyph = new(ItemClasses.Armor, ConsoleColor.White),
+        Components = [new ArmorBrick(6, 0)],
     };
 
     public static readonly ItemDef RingOfKnives = new()
@@ -273,4 +321,5 @@ public static class MundaneArmory
     };
 
     public static readonly WeaponDef[] AllWeapons = [Dagger, Shortsword, Longsword, Scimitar, Rapier, Falchion, Club, SpikedClub, Greatclub, Mace, Flail, Quarterstaff, BoStaff, Spear, Scythe, Whip, SpikedChain, Longbow, Dart, Bola];
+    public static readonly ArmorDef[] AllArmors = [LeatherArmor, ChainShirt, HideArmor, Breastplate, SplintMail, FullPlate];
 }

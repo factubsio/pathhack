@@ -61,7 +61,7 @@ public class PitTrap(int depth) : Trap(TrapType.Pit, depth, 0, 0, 4)
 
     public override bool TryEscape(IUnit unit)
     {
-        g.pline($"{unit:The} {VTense(unit, "climb")} out of the pit.");
+        g.YouObserve(unit, $"{unit:The} {VTense(unit, "climb")} out of the pit.");
         return true;
     }
 }
@@ -77,7 +77,7 @@ public class WebTrap(int depth) : Trap(TrapType.Web, depth, -2, 0, 4)
 
         if (unit.IsAwareOf(this) && g.Rn2(3) == 0)
         {
-            g.pline($"{unit:The} {VTense(unit, "avoid")} a web.");
+            g.YouObserve(unit, $"{unit:The} {VTense(unit, "avoid")} a web.");
             return false;
         }
 

@@ -33,7 +33,7 @@ public class CurseWeaponInRange(int range) : ActionBrick("Curse Weapon")
         if (!unit.TryUseCharge(Resource)) return;
         var weapon = u.GetWieldedItem();
         weapon.AddFact(WeaponCurse.Instance, duration: CurseDuration);
-        g.pline($"{unit:The} curses your {weapon}!");
+        g.YouObserve(unit, $"{unit:The} curses your {weapon}!", "something curses your {weapon}!", 100);
     }
 }
 
@@ -279,12 +279,12 @@ public class VeryDrunkJinkinBrain : MonsterBrain
                 // dodge the acid bullet
                 if (CreateAndDoCheck(ctx, "reflex_save", 10, "acid"))
                 {
-                    g.pline($"{m:The} throws up but misses {tgt:the}.");
+                    g.YouObserve(m, $"{m:The} throws up but misses {tgt:the}.");
                     return true;
                 }
                 else
                 {
-                    g.pline($"{m:The} throws up all over {tgt:the}.");
+                    g.YouObserve(m, $"{m:The} throws up all over {tgt:the}.");
                 }
 
                 ctx.Damage.Add(new()
@@ -296,7 +296,7 @@ public class VeryDrunkJinkinBrain : MonsterBrain
 
                 // yucky yucky
                 if (CreateAndDoCheck(ctx, "fortitude_save", 14, "nauseated")) return true;
-                g.pline($"{tgt:The} can barely hold {tgt:own} own lunch down.");
+                g.YouObserve(tgt, $"{tgt:The} can barely hold {tgt:own} own lunch down.");
                 tgt.AddFact(NauseatedBuff.Instance.Timed(), duration: 4);
             }
         }

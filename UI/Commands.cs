@@ -275,7 +275,7 @@ public static partial class Input
         var picked = menu.Display(MenuMode.PickOne);
         if (picked.Count == 0) return;
         g.DoUnequip(u, picked[0]);
-        g.pline("You take off {0}.", Grammar.DoName(picked[0]));
+        g.pline("You take off {0}.", DoName(picked[0]));
     }
 
     static void RemoveAccessory()
@@ -292,7 +292,7 @@ public static partial class Input
         var picked = menu.Display(MenuMode.PickOne);
         if (picked.Count == 0) return;
         g.DoUnequip(u, picked[0]);
-        g.pline("You remove {0}.", Grammar.DoName(picked[0]));
+        g.pline("You remove {0}.", DoName(picked[0]));
     }
 
     static void Quaff()
@@ -347,7 +347,7 @@ public static partial class Input
                 var cmenu = new Menu<Item>();
                 cmenu.Add("Cook what?", LineStyle.Heading);
                 for (int i = 0; i < corpses.Count; i++)
-                    cmenu.Add((char)('a' + i), Grammar.DoName(corpses[i]), corpses[i]);
+                    cmenu.Add((char)('a' + i), DoName(corpses[i]), corpses[i]);
                 var cpicked = cmenu.Display(MenuMode.PickOne);
                 if (cpicked.Count == 0) return;
                 corpse = cpicked[0];
@@ -362,7 +362,7 @@ public static partial class Input
             
             if (choice[0] == 'a')
             {
-                g.pline($"You start cooking {Grammar.DoNameOne(corpse)}.");
+                g.pline($"You start cooking {DoNameOne(corpse)}.");
                 u.HippoCounter++;
                 u.CurrentActivity = Activity.CookQuick(corpse);
                 lvl.RemoveItem(corpse, upos);
@@ -371,10 +371,11 @@ public static partial class Input
             {
                 bool isResuming = corpse.Eaten > 0;
                 if (isResuming)
-                    g.pline($"You continue cooking {Grammar.DoNameOne(corpse)}.");
+                    g.pline($"You continue cooking {DoNameOne(corpse)}.");
                 else
                 {
-                    g.pline($"You start carefully cooking {Grammar.DoNameOne(corpse)}.");
+                    corpse.Eaten = 1;
+                    g.pline($"You start carefully cooking {DoNameOne(corpse)}.");
                     u.HippoCounter++;
                 }
                 u.CurrentActivity = Activity.CookCareful(corpse);
@@ -386,7 +387,7 @@ public static partial class Input
         var menu = new Menu<Item>();
         menu.Add("Eat what?", LineStyle.Heading);
         foreach (var item in foods)
-            menu.Add(item.InvLet, Grammar.DoName(item), item);
+            menu.Add(item.InvLet, DoName(item), item);
         var foodPicked = menu.Display(MenuMode.PickOne);
         if (foodPicked.Count == 0) return;
 
@@ -396,7 +397,7 @@ public static partial class Input
         if (food.Count > 1 && food.Eaten == 0)
         {
             food = food.Split(1);
-            food.Eaten = 1; // prevent merge back
+            food.Eaten = -1; // prevent merge back
             u.Inventory.Add(food);
         }
         
@@ -404,7 +405,7 @@ public static partial class Input
         bool resuming = food.Eaten > 0;
         
         if (resuming)
-            g.pline($"You continue eating {Grammar.DoNameOne(food)}.");
+            g.pline($"You continue eating {DoNameOne(food)}.");
         
         u.CurrentActivity = Activity.Eat(food, canchoke);
         u.Energy -= ActionCosts.OneAction.Value;

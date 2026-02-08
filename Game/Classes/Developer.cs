@@ -14,7 +14,7 @@ public class MagicMapping() : ActionBrick("Magic Mapping")
         for (int x = 0; x < lvl.Width; x++)
         {
             Pos p = new(x, y);
-            lvl.UpdateMemory(p);
+            lvl.UpdateMemory(p, includeItems: false);
         }
         g.pline("A map coalesces in your mind.");
     }

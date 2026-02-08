@@ -100,7 +100,7 @@ public static class EndShrineLevels
       }
       else
       {
-        b.Level.PlaceUnit(Monster.Spawn(WrongShrineGuardian), shrines[i]);
+        b.Monster(WrongShrineGuardian, shrines[i]);
       }
     }
 
@@ -114,7 +114,7 @@ public static class EndShrineLevels
     {
       var pos = b.Context.FindLocationInRoom(bigRoom, p => lvl.UnitAt(p) == null);
       if (pos == null) break;
-      b.Level.PlaceUnit(Monster.Spawn(ShrineAttendant), pos.Value);
+      b.Monster(ShrineAttendant, pos.Value);
     }
   })
   {

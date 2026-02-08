@@ -265,7 +265,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
   };
 
   public string? TemplatedName;
-  public static Monster Spawn(MonsterDef def, MonsterTemplate? template = null)
+  public static Monster Spawn(MonsterDef def, string reason, MonsterTemplate? template = null)
   {
     Monster m = new(def, template?.GetComponents(def) ?? def.Components);
     m.Peaceful = def.Peaceful;
@@ -276,6 +276,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
     LogicBrick.FireOnSpawn(m, ctx);
     if (g.DebugMode)
       m.HP.Current = m.HP.Current / 4;
+    Log.Write($"mongen: {def.Name} ({reason})");
     return m;
   }
 

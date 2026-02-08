@@ -51,8 +51,7 @@ public static class ItemGen
 
     static Item? GenerateArmor(int depth)
     {
-        var armors = new ArmorDef[] { MundaneArmory.LeatherArmor, MundaneArmory.ChainShirt };
-        var def = armors[g.Rn2(armors.Length)];
+        var def = MundaneArmory.AllArmors.Pick();
         return GenerateItem(def, depth);
     }
 
@@ -67,6 +66,10 @@ public static class ItemGen
             RollFundamental(item, depth, genLog);
             if (propertyRunes)
                 RollPropertyRunes(item, depth, genLog);
+        }
+        else if (def is ArmorDef)
+        {
+            item.Potency = RollPotency(depth, genLog, maxPotency);
         }
 
         if (genLog.Count > 0)

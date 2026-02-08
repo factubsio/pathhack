@@ -149,9 +149,9 @@ while (true)
     //         startLevel.PlaceUnit(Monster.Spawn(cat), pos);
 
     // DEBUG: spawn orb weavers for testing
-    for (int i = 0; i < 3; i++)
-        if (startLevel.FindLocation(p => startLevel.NoUnit(p) && !startLevel[p].IsStairs) is { } pos)
-            startLevel.PlaceUnit(Monster.Spawn(Spiders.OrbWeaver), pos);
+    // for (int i = 0; i < 3; i++)
+    //     if (startLevel.FindLocation(p => startLevel.NoUnit(p) && !startLevel[p].IsStairs) is { } pos)
+    //         startLevel.PlaceUnit(Monster.Spawn(Spiders.OrbWeaver), pos);
 
     g.Levels[startId] = startLevel;
 

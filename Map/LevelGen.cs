@@ -370,10 +370,10 @@ public static class LevelGen
             var pos = ctx.FindLocationInRoom(room, p => level.NoUnit(p) && !level[p].IsStairs);
             if (pos != null)
             {
-                var def = MonsterSpawner.PickMonster(level.Depth, u.CharacterLevel);
+                var def = MonsterSpawner.PickMonster(level.Depth, u?.CharacterLevel ?? 1);
                 if (def != null)
                 {
-                    var mon = Monster.Spawn(def);
+                    var mon = Monster.Spawn(def, "OROOM");
                     mon.IsAsleep = true;
                     level.PlaceUnit(mon, pos.Value);
                     Log($"mongen: placed {def.Name} at {pos.Value}");
@@ -434,7 +434,7 @@ public static class LevelGen
             if (ctx.level.UnitAt(p) != null) continue;
             
             var def = pool.Pick();
-            var m = Monster.Spawn(def);
+            var m = Monster.Spawn(def, "goblin nest");
             m.IsAsleep = true;
             ctx.level.PlaceUnit(m, p);
         }
@@ -444,7 +444,7 @@ public static class LevelGen
     {
         Monster Place(MonsterDef def)
         {
-            var m = Monster.Spawn(def);
+            var m = Monster.Spawn(def, "gremlin party");
             m.IsAsleep = true;
             if (ctx.level.FindLocationInRoom(room, ctx.level.NoUnit) is { } pos)
                 ctx.level.PlaceUnit(m, pos);

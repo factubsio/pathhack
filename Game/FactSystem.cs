@@ -396,13 +396,17 @@ public static class EntityExts
 
 public class ArmorBrick(int acBonus, int dexCap) : LogicBrick
 {
-    protected override object? OnQuery(Fact fact, string key, string? arg) =>
-        fact.IsEquipped() ? key switch
+    protected override object? OnQuery(Fact fact, string key, string? arg)
+    {
+        if (!fact.IsEquipped()) return null;
+        var potency = (fact.Entity as Item)?.Potency ?? 0;
+        return key switch
         {
-            "ac" => new Modifier(ModifierCategory.ItemBonus, acBonus),
+            "ac" => new Modifier(ModifierCategory.ItemBonus, acBonus + potency),
             "dex_cap" => dexCap,
             _ => null,
-        } : null;
+        };
+    }
 }
 
 public class BaseDef

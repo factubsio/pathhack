@@ -38,7 +38,7 @@ public class SpawnOnDamage(MonsterDef[] pool, int chance = 50) : LogicBrick
                 var pos = ownerPos + Pos.AllDirs.Pick();
                 if (lvl.InBounds(pos) && lvl.NoUnit(pos) && lvl[pos].IsPassable)
                 {
-                    var mon = Monster.Spawn(def);
+                    var mon = Monster.Spawn(def, "orc defending catapault");
                     lvl.PlaceUnit(mon, pos);
                     g.pline($"{mon:An} rushes to defend!");
                     break;
@@ -150,7 +150,7 @@ She taps a worn parchment. "There's an ancient tomb beneath Trunau. Most folk ha
             b.Stair(b['>'], TileType.StairsDown);
             
             foreach (var p in b.Marks('P'))
-                b.Level.PlaceUnit(Monster.Spawn(Villager), p);
+                b.Level.PlaceUnit(Monster.Spawn(Villager, "quest/villager"), p);
             
             b.Monster(QuestGiver, b['Q']);
             _exitPath = b.Marks('_');
