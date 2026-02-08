@@ -90,7 +90,8 @@ Tier 2 (15+, requires any tier 1):
 ## Spell Conservation Chain
 
 Tier 1 (pick one):
-- **Spell Conservation** - X% chance to not consume slot
+- **crit** - crit (only on attack rolls) => slot cooldown reduced
+- **Spell Conservation** - X% chance to not consume slot (or cooldown reduced?)
 - **Blood Magic** - when out of slots, cast by paying HP
 - **Arcane Reservoir** - spell damage/DC scales with % slots remaining
 

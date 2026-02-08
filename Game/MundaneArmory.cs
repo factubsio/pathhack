@@ -161,6 +161,7 @@ public static class MundaneArmory
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
         Launcher = "hand",
         MeleeVerb = "thrusts",
+        Range = 4,
     };
 
     public static readonly WeaponDef Scythe = new()

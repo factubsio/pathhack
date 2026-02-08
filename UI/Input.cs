@@ -16,9 +16,15 @@ public record DirArg(Pos Dir) : CommandArg;
 public record IntArg(int Value) : CommandArg;
 public record StringArg(string Value) : CommandArg;
 
-public record Command(string Name, ArgType Arg, Action<CommandArg> Action);
+public record Command(string Name, string Desc, ArgType Arg, Action<CommandArg> Action, bool Hidden = false);
 
-public static class Input
+public record SpecialCommand(ConsoleKey Key, ConsoleModifiers Mods, string Desc, Action Action)
+{
+    public bool Matches(ConsoleKeyInfo k) => k.Key == Key && k.Modifiers == Mods;
+    public string KeyName => Mods.HasFlag(ConsoleModifiers.Control) ? $"Ctrl+{Key}" : Key.ToString();
+}
+
+public static partial class Input
 {
     public static Queue<ConsoleKey>? InjectedKeys;
 
@@ -30,38 +36,46 @@ public static class Input
     }
     static readonly Dictionary<string, Command> _extCommands = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["quit"] = new("quit", ArgType.None, _ => g.Done("Quit")),
-        ["dbg.jump"] = new("dbg.jump", ArgType.Int("Level"), DebugJump),
-        ["levelup"] = new("levelup", ArgType.None, _ => DoLevelUp()),
-        ["invoke"] = new("invoke", ArgType.None, _ => InvokeItem()),
-        ["chat"] = new("chat", ArgType.Dir, Chat),
-        ["exp"] = new("exp", ArgType.None, _ => DebugExp()),
+        ["quit"] = new("quit", "Quit game", ArgType.None, _ => g.Done("Quit")),
+        ["levelup"] = new("levelup", "Level up (if available)", ArgType.None, _ => DoLevelUp()),
+        ["invoke"] = new("invoke", "Invoke item power", ArgType.None, _ => InvokeItem()),
+        ["chat"] = new("chat", "Talk to adjacent creature", ArgType.Dir, Chat),
+        ["help"] = new("help", "Show help", ArgType.None, _ => ShowHelp()),
+        ["name"] = new("name", "Name an item type", ArgType.None, _ => CallItem()),
+        ["exp"] = new("exp", "", ArgType.None, _ => DebugExp(), Hidden: true),
     };
 
     static readonly Dictionary<char, Command> _commands = new()
     {
-        ['o'] = new("open", ArgType.Dir, OpenDoor),
-        ['i'] = new("inventory", ArgType.None, _ => ShowInventory()),
-        ['d'] = new("drop", ArgType.None, _ => DropItem()),
-        ['D'] = new("multidrop", ArgType.None, _ => DropItems()),
-        [','] = new("pickup", ArgType.None, _ => PickupItem()),
-        ['.'] = new("pickup", ArgType.None, _ => WaitTurn()),
-        ['w'] = new("wield", ArgType.None, _ => WieldWeapon()),
-        ['W'] = new("wear", ArgType.None, _ => WearArmor()),
-        ['P'] = new("puton", ArgType.None, _ => PutOnAccessory()),
-        ['T'] = new("takeoff", ArgType.None, _ => TakeOff()),
-        ['R'] = new("remove", ArgType.None, _ => RemoveAccessory()),
-        [';'] = new("farlook", ArgType.None, _ => Pokedex.Farlook()),
-        ['f'] = new("fire", ArgType.Dir, Fire),
-        ['Q'] = new("quiver", ArgType.None, _ => SetQuiver()),
-        ['Z'] = new("zap_spell", ArgType.None, _ => ZapSpell()),
+        ['o'] = new("open", "Open door", ArgType.Dir, OpenDoor),
+        ['i'] = new("inventory", "Show inventory", ArgType.None, _ => ShowInventory()),
+        ['d'] = new("drop", "Drop item", ArgType.None, _ => DropItem()),
+        ['D'] = new("multidrop", "Drop multiple items", ArgType.None, _ => DropItems()),
+        [','] = new("pickup", "Pick up item", ArgType.None, _ => PickupItem()),
+        ['.'] = new("wait", "Wait one turn", ArgType.None, _ => WaitTurn()),
+        ['w'] = new("wield", "Wield weapon", ArgType.None, _ => WieldWeapon()),
+        ['W'] = new("wear", "Wear armor", ArgType.None, _ => WearArmor()),
+        ['P'] = new("puton", "Put on accessory", ArgType.None, _ => PutOnAccessory()),
+        ['T'] = new("takeoff", "Take off armor", ArgType.None, _ => TakeOff()),
+        ['R'] = new("remove", "Remove accessory", ArgType.None, _ => RemoveAccessory()),
+        [';'] = new("farlook", "Examine (farlook)", ArgType.None, _ => Pokedex.Farlook()),
+        ['f'] = new("fire", "Fire quivered item", ArgType.Dir, Fire),
+        ['Q'] = new("quiver", "Set quiver", ArgType.None, _ => SetQuiver()),
+        ['Z'] = new("cast", "Cast spell", ArgType.None, _ => ZapSpell()),
+        ['q'] = new("quaff", "Drink potion", ArgType.None, _ => Quaff()),
+        ['r'] = new("read", "Read scroll", ArgType.None, _ => ReadScroll()),
+        ['e'] = new("eat", "Eat food", ArgType.None, _ => Eat()),
+        ['\\'] = new("discoveries", "Show discoveries", ArgType.None, _ => ShowDiscoveries()),
+        ['C'] = new("call", "Name an item type", ArgType.None, _ => CallItem()),
+        ['?'] = new("help", "Show help", ArgType.None, _ => ShowHelp()),
     };
 
-    static void DebugJump(CommandArg arg)
-    {
-        if (!g.DebugMode || arg is not IntArg(var depth) || depth < 1) return;
-        g.GoToLevel(new(u.Level.Branch, depth), SpawnAt.StairsUp);
-    }
+    static readonly List<SpecialCommand> _specialCommands = [
+        new(ConsoleKey.G, ConsoleModifiers.Control, "Use ability", ShowAbilities),
+        new(ConsoleKey.O, ConsoleModifiers.Control, "Branch overview", ShowBranchOverview),
+        new(ConsoleKey.X, ConsoleModifiers.Control, "Character info", ShowCharacterInfo),
+        new(ConsoleKey.P, ConsoleModifiers.Control, "Message history", ShowMessageHistory),
+    ];
 
     static void DebugExp()
     {
@@ -150,6 +164,7 @@ public static class Input
             stage.Apply();
 
         u.CharacterLevel = newLevel;
+        Log.Write("exp: level up to {0} (xp={1})", newLevel, u.XP);
 
         // Apply hp gains (after level set!)
         int hpGain = u.Class!.HpPerLevel;
@@ -236,299 +251,6 @@ public static class Input
                 u.BaseAttributes.Modify(ability, x => x + (x >= 18 ? 1 : 2));
             }
         }
-    }
-
-    static void OpenDoor(CommandArg arg)
-    {
-        if (arg is not DirArg(var d)) return;
-        Pos target = upos + d;
-        if (lvl.InBounds(target) && lvl[target].Type == TileType.Door)
-        {
-            if (lvl.OpenDoor(target))
-            {
-                u.Energy -= ActionCosts.OneAction.Value;
-            }
-            else
-            {
-                if (lvl.IsDoorOpen(target))
-                    g.pline("It's already open.");
-                else if (lvl.IsDoorBroken(target))
-                    g.pline("It's already broken beyond repair.");
-                else if (lvl.IsDoorLocked(target))
-                    g.pline("It's locked.");
-            }
-        }
-        else
-        {
-            g.pline("There is no door there.");
-        }
-    }
-
-    static void Chat(CommandArg arg)
-    {
-        if (arg is not DirArg(var d)) return;
-        Pos target = upos + d;
-        if (lvl.UnitAt(target) is Monster m)
-        {
-            if (m.Def.OnChat != null)
-                m.Def.OnChat(m);
-            else
-                g.pline($"{m:The} has nothing to say.");
-        }
-        else
-        {
-            g.pline("There is no one there.");
-        }
-    }
-
-    static void ShowInventory()
-    {
-        var menu = new Menu<Item>();
-        if (!u.Inventory.Any())
-        {
-            menu.Add("You have nothing.");
-            menu.Display();
-            return;
-        }
-        
-        int weight = u.Inventory.Sum(i => i.Def.Weight);
-        int maxWeight = 500; // TODO: calc from str
-        int slots = u.Inventory.Count();
-        int maxSlots = 52;
-        menu.Add($"Inventory: {weight}/{maxWeight} weight ({slots}/{maxSlots} slots)", LineStyle.Heading);
-        BuildItemList(menu, u.Inventory, u);
-        
-        var picked = menu.Display(MenuMode.PickOne);
-        if (picked.Count == 0) return;
-        
-        // TODO: add menu here later (option based?)
-        Pokedex.ShowItemEntry(picked[0]);
-    }
-
-    static void BuildItemList(Menu<Item> menu, IEnumerable<Item> items, IUnit? unit = null, bool useInvLet = true)
-    {
-        var sorted = items
-            .OrderBy(i => ItemClasses.Order.IndexOf(i.Def.Class))
-            .ThenBy(i => i.InvLet);
-
-        char? lastClass = null;
-        char autoLet = 'a';
-        foreach (var item in sorted)
-        {
-            if (item.Def.Class != lastClass)
-            {
-                lastClass = item.Def.Class;
-                menu.Add(ClassDisplayName(lastClass.Value), LineStyle.SubHeading);
-            }
-            char let = useInvLet ? item.InvLet : autoLet++;
-            string name = item.DisplayName;
-            if (unit?.Equipped.ContainsValue(item) == true)
-                name += item.Def is ArmorDef ? " (being worn)" : " (weapon in hand)";
-            if (item == u.Quiver)
-                name += " (quivered)";
-            menu.Add(let, name, item, item.Def.Class);
-        }
-    }
-
-    static string ClassDisplayName(char c) => c switch
-    {
-        ItemClasses.Weapon => "Weapons",
-        ItemClasses.Armor => "Armor",
-        ItemClasses.Food => "Comestibles",
-        ItemClasses.Potion => "Potions",
-        ItemClasses.Scroll => "Scrolls",
-        ItemClasses.Spellbook => "Spellbooks",
-        ItemClasses.Wand => "Wands",
-        ItemClasses.Ring => "Rings",
-        ItemClasses.Amulet => "Amulets",
-        ItemClasses.Tool => "Tools",
-        ItemClasses.Gem => "Gems",
-        ItemClasses.Gold => "Coins",
-        _ => "Other",
-    };
-
-    static void DropItem()
-    {
-        if (!u.Inventory.Any()) return;
-        var menu = new Menu<Item>();
-        menu.Add("Drop what?", LineStyle.Heading);
-        BuildItemList(menu, u.Inventory);
-        var picked = menu.Display(MenuMode.PickOne);
-        if (picked.Count == 0) return;
-        g.DoDrop(u, picked[0]);
-        g.pline($"You drop {picked[0].InvLet} - {picked[0]}.");
-        u.Energy -= ActionCosts.OneAction.Value;
-    }
-
-    static void DropItems()
-    {
-        if (!u.Inventory.Any()) return;
-        var menu = new Menu<Item>();
-        menu.Add("Drop what?", LineStyle.Heading);
-        BuildItemList(menu, u.Inventory);
-        var toDrop = menu.Display(MenuMode.PickAny);
-        if (toDrop.Count == 0) return;
-        foreach (var item in toDrop)
-            g.DoDrop(u, item);
-        g.pline("You drop {0} item{1}.", toDrop.Count, toDrop.Count == 1 ? "" : "s");
-        u.Energy -= ActionCosts.OneAction.Value;
-    }
-
-    static void InvokeItem()
-    {
-        if (!u.Inventory.Any())
-        {
-            g.pline("You have nothing to invoke.");
-            return;
-        }
-        var menu = new Menu<Item>();
-        menu.Add("Invoke what?", LineStyle.Heading);
-        BuildItemList(menu, u.Inventory);
-        var picked = menu.Display(MenuMode.PickOne);
-        if (picked.Count == 0) return;
-        ItemInvoke.Invoke(picked[0]);
-    }
-
-    static void WaitTurn() => u.Energy -= ActionCosts.OneAction.Value;
-
-    static void Fire(CommandArg arg)
-    {
-        if (arg is not DirArg(var dir)) return;
-        if (u.Quiver == null)
-        {
-            g.pline("You have nothing readied.");
-            return;
-        }
-        Item toThrow;
-        if (u.Quiver.Count > 1)
-            toThrow = u.Quiver.Split(1);
-        else
-        {
-            toThrow = u.Quiver;
-            u.Inventory.Remove(toThrow);
-            u.Quiver = null;
-        }
-        g.DoThrow(u, toThrow, dir);
-        u.Energy -= ActionCosts.OneAction.Value;
-    }
-
-    static void SetQuiver()
-    {
-        var throwable = u.Inventory.Where(i => i.Def is WeaponDef w && w.Range > 1).ToList();
-        if (throwable.Count == 0)
-        {
-            g.pline("You have nothing to ready.");
-            return;
-        }
-        var menu = new Menu<Item?>();
-        menu.Add("Ready what? (- for nothing)", LineStyle.Heading);
-        menu.AddHidden('-', null);
-        foreach (var item in throwable.OrderBy(i => i.InvLet))
-        {
-            string name = item.DisplayName;
-            if (item == u.Quiver)
-                name += " (quivered)";
-            menu.Add(item.InvLet, name, item);
-        }
-        var picked = menu.Display(MenuMode.PickOne);
-        if (picked.Count == 0) return;
-        u.Quiver = picked[0];
-        if (u.Quiver != null)
-            g.pline("You ready {0:the}.", u.Quiver);
-        else
-            g.pline("You empty your quiver.");
-    }
-
-    static void WieldWeapon()
-    {
-        var weapons = u.Inventory.Where(i => i.Def is WeaponDef).ToList();
-        var menu = new Menu<Item?>();
-        menu.Add("Wield what? (- for bare hands)", LineStyle.Heading);
-        menu.AddHidden('-', null);
-        foreach (var item in weapons.OrderBy(i => ItemClasses.Order.IndexOf(i.Def.Class)).ThenBy(i => i.InvLet))
-        {
-            string name = item.DisplayName;
-            if (u.Equipped.ContainsValue(item))
-                name += " (weapon in hand)";
-            menu.Add(item.InvLet, name, item);
-        }
-        var picked = menu.Display(MenuMode.PickOne);
-        if (picked.Count == 0) return;
-        g.DoEquip(u, picked[0]);
-        if (picked[0] == null)
-            g.pline("You are empty handed.");
-        else
-            g.pline("{0} - {1} (weapon in hand).", picked[0]!.InvLet, picked[0]!.Def.Name);
-    }
-
-    static void WearArmor()
-    {
-        var armors = u.Inventory.Where(i => i.Def is ArmorDef).ToList();
-        if (armors.Count == 0)
-        {
-            g.pline("You have no armor.");
-            return;
-        }
-        var menu = new Menu<Item>();
-        menu.Add("Wear what?", LineStyle.Heading);
-        BuildItemList(menu, armors, u);
-        var picked = menu.Display(MenuMode.PickOne);
-        if (picked.Count == 0) return;
-        var armor = picked[0];
-        g.DoEquip(u, armor);
-        g.pline("{0} - {1} (being worn).", armor.InvLet, armor.Def.Name);
-    }
-
-    static void PutOnAccessory()
-    {
-        var accessories = u.Inventory.Where(i => i.Def.Class is ItemClasses.Ring or ItemClasses.Amulet).ToList();
-        if (accessories.Count == 0)
-        {
-            g.pline("You have no accessories.");
-            return;
-        }
-        var menu = new Menu<Item>();
-        menu.Add("Put on what?", LineStyle.Heading);
-        BuildItemList(menu, accessories, u);
-        var picked = menu.Display(MenuMode.PickOne);
-        if (picked.Count == 0) return;
-        var item = picked[0];
-        g.DoEquip(u, item);
-        g.pline("{0} - {1} (being worn).", item.InvLet, item.DisplayName);
-    }
-
-    static void TakeOff()
-    {
-        var equipped = u.Equipped.Values.Where(i => i.Def is ArmorDef).ToList();
-        if (equipped.Count == 0)
-        {
-            g.pline("You have no armor equipped.");
-            return;
-        }
-        var menu = new Menu<Item>();
-        menu.Add("Take off what?", LineStyle.Heading);
-        BuildItemList(menu, equipped, u);
-        var picked = menu.Display(MenuMode.PickOne);
-        if (picked.Count == 0) return;
-        g.DoUnequip(u, picked[0]);
-        g.pline("You take off {0}.", Grammar.DoName(picked[0]));
-    }
-
-    static void RemoveAccessory()
-    {
-        var equipped = u.Equipped.Values.Where(i => i.Def.Class is ItemClasses.Ring or ItemClasses.Amulet).ToList();
-        if (equipped.Count == 0)
-        {
-            g.pline("You have no accessories equipped.");
-            return;
-        }
-        var menu = new Menu<Item>();
-        menu.Add("Remove what?", LineStyle.Heading);
-        BuildItemList(menu, equipped, u);
-        var picked = menu.Display(MenuMode.PickOne);
-        if (picked.Count == 0) return;
-        g.DoUnequip(u, picked[0]);
-        g.pline("You remove {0}.", Grammar.DoName(picked[0]));
     }
 
     static void ZapSpell()
@@ -708,6 +430,8 @@ public static class Input
         menu.Add($"  Level          : {levelDisplay}");
         menu.Add($"  HP             : {u.HP.Current}/{u.HP.Max}");
         menu.Add($"  AC             : {u.GetAC()}");
+        var hungerLabel = Hunger.GetLabel(Hunger.GetState(u.Nutrition));
+        menu.Add($"  Nutrition      : {u.Nutrition}/{Hunger.Max}{(hungerLabel != "" ? $" ({hungerLabel})" : "")}");
         menu.Add("");
         menu.Add("Attributes", LineStyle.SubHeading);
         menu.Add($"  STR {u.Str,2}  INT {u.Int,2}  DEX {u.Dex,2}  WIS {u.Wis,2}  CON {u.Con,2}  CHA {u.Cha,2}");
@@ -742,6 +466,34 @@ public static class Input
             foreach (var fact in buffs)
                 menu.Add($"  {fact.DisplayName}");
         }
+        menu.Display();
+    }
+
+    static void ShowHelp()
+    {
+        var menu = new Menu();
+        menu.Add("Pathhack Commands", LineStyle.Heading);
+        menu.Add("");
+        menu.Add("Movement", LineStyle.SubHeading);
+        menu.Add("  hjkl/yubn      Move (vi keys)");
+        menu.Add("  arrows         Move (arrow keys)");
+        menu.Add("  numpad         Move (numpad)");
+        menu.Add("  Shift+dir      Run until blocked");
+        menu.Add("  Ctrl+dir       Run until interesting");
+        menu.Add("  _              Travel to location");
+        menu.Add("  < >            Use stairs");
+        menu.Add("");
+        menu.Add("Commands", LineStyle.SubHeading);
+        foreach (var (key, cmd) in _commands.OrderBy(x => x.Key))
+            menu.Add($"  {key,-14} {cmd.Desc}");
+        menu.Add("");
+        menu.Add("Special Keys", LineStyle.SubHeading);
+        foreach (var cmd in _specialCommands)
+            menu.Add($"  {cmd.KeyName,-14} {cmd.Desc}");
+        menu.Add("");
+        menu.Add("Extended Commands (#)", LineStyle.SubHeading);
+        foreach (var (name, cmd) in _extCommands.Where(x => !x.Value.Hidden).OrderBy(x => x.Key))
+            menu.Add($"  #{name,-13} {cmd.Desc}");
         menu.Display();
     }
 
@@ -940,7 +692,20 @@ public static class Input
         if (prompt != null) Console.Write(prompt + ": ");
         string? s = ReadLine();
         Console.CursorVisible = false;
+        Console.SetCursorPosition(0, 0);
+        Console.Write(new string(' ', Console.WindowWidth));
         return s;
+    }
+
+    public static bool YesNo(string prompt)
+    {
+        g.pline($"{prompt} [yn]");
+        while (true)
+        {
+            var key = NextKey();
+            if (key.KeyChar is 'y' or 'Y') return true;
+            if (key.KeyChar is 'n' or 'N' or (char)27) return false; // ESC = no
+        }
     }
 
     public static Pos? GetDirection(ConsoleKey key, bool withCtrl = false) => key switch
@@ -1047,6 +812,8 @@ public static class Input
     public static void HandleKey(ConsoleKeyInfo key)
     {
         Log.Verbose("movement", $"HandleKey: Key={key.Key} Char={(int)key.KeyChar} Mods={key.Modifiers}");
+        
+        // Ctrl+P is special - doesn't reset message history
         if (key.Key == ConsoleKey.P && key.Modifiers.HasFlag(ConsoleModifiers.Control))
         {
             ShowMessageHistory();
@@ -1056,19 +823,13 @@ public static class Input
         ResetMessageHistory();
         Movement.Stop(); // any manual input stops running
         
-        if (key.Key == ConsoleKey.G && key.Modifiers.HasFlag(ConsoleModifiers.Control))
+        // Check special commands (ctrl+key)
+        foreach (var special in _specialCommands)
         {
-            ShowAbilities();
+            if (special.Matches(key)) { special.Action(); return; }
         }
-        else if (key.Key == ConsoleKey.O && key.Modifiers.HasFlag(ConsoleModifiers.Control))
-        {
-            ShowBranchOverview();
-        }
-        else if (key.Key == ConsoleKey.X && key.Modifiers.HasFlag(ConsoleModifiers.Control))
-        {
-            ShowCharacterInfo();
-        }
-        else if (key.KeyChar == '#')
+        
+        if (key.KeyChar == '#')
         {
             HandleExtended();
         }
@@ -1104,8 +865,29 @@ public static class Input
             {
                 Pos next = upos + dir;
                 if (!lvl.InBounds(next)) return;
+
+                // Grabbed: moving toward grabber = attack, away = struggle
+                if (u.GrabbedBy is { } grabber)
+                {
+                    if (next == grabber.Pos)
+                    {
+                        g.Attack(u, grabber, u.GetWieldedItem());
+                    }
+                    else
+                    {
+                        int dc = grabber.GetSpellDC();
+                        if (g.DoStruggle(u, dc) == StruggleResult.Escaped)
+                        {
+                            lvl.MoveUnit(u, next);
+                            LookHere();
+                        }
+                    }
+                    u.Energy -= ActionCosts.OneAction.Value;
+                    return;
+                }
+
                 var tgt = lvl.UnitAt(next);
-                if (tgt != null && (tgt is not Monster m || !m.Def.Peaceful))
+                if (tgt != null && (tgt is not Monster m || !m.Peaceful))
                 {
                     g.Attack(u, tgt, u.GetWieldedItem());
                     u.Energy -= ActionCosts.OneAction.Value;
@@ -1146,6 +928,15 @@ public static class Input
 
     public static void PlayerTurn()
     {
+        // Continue activity if one is in progress
+        if (u.CurrentActivity != null)
+        {
+            if (!u.CurrentActivity.Tick())
+                u.CurrentActivity = null;
+            u.Energy -= ActionCosts.OneAction.Value;
+            return;
+        }
+        
         // Continue running if in run mode
         if (Movement.TryContinueRun())
         {

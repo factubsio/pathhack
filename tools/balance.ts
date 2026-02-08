@@ -1,10 +1,7 @@
 // bun tools/balance.ts
 
-// === CONFIGURABLE FORMULAS ===
-
 const levelDC = (level: number) => 12 + Math.floor((level + 1) / 2);
 
-// Player bonuses by level (interpolated from tier table)
 const profBonus = (level: number, good: boolean) => {
   if (level <= 4) return good ? 2 : 2;
   if (level <= 9) return good ? 4 : 2;
@@ -90,14 +87,14 @@ const formatMargin = (bonus: number, dc: number): string => {
   }
   // in range: 2-19
   const fromFail = need - 1;    // distance from auto-fail (need=1)
-  const fromPass = 20 - need;   // distance from auto-pass (need=20)
+  // const fromPass = 20 - need;   // distance from auto-pass (need=20)
   
-  if (fromFail <= 1 && fromPass <= 1) return colorize("__", 1, true).padStart(3);
-  if (fromFail < fromPass) {
+  // if (fromFail <= 1 && fromPass <= 1) return colorize("__", 1, true).padStart(3);
+  // if (fromFail < fromPass) {
     return colorize(`[${fromFail}`.padStart(3), fromFail, true);
-  } else {
-    return colorize(`${fromPass}]`.padStart(3), fromPass, true);
-  }
+  // } else {
+    // return colorize(`${fromPass}]`.padStart(3), fromPass, true);
+  // }
 };
 
 // === OUTPUT ===

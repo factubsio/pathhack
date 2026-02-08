@@ -3,7 +3,7 @@ namespace Pathhack.Game;
 // Add damage to attacks with weapons
 public class WeaponDamageRider(string name, DamageType type, int faces) : LogicBrick
 {
-  public override StackMode StackMode => StackMode.Extend;
+  public override StackMode StackMode => StackMode.ExtendDuration;
 
   public static readonly WeaponDamageRider UnholyD4 = new("Unholy Weapon", DamageTypes.Unholy, 4);
   public static readonly WeaponDamageRider UnholyD8 = new("Unholy Weapon", DamageTypes.Unholy, 8);
@@ -88,4 +88,117 @@ public class WeaponDamageRider(string name, DamageType type, int faces) : LogicB
       Type = type,
     });
   }
+}
+
+public class SimpleDR(int amount, string bypass) : LogicBrick
+{
+  public class SimpleDRRamp(string bypass)
+  {
+    public readonly SimpleDR DR5 = new(5, bypass);
+    public readonly SimpleDR DR10 = new(10, bypass);
+    public readonly SimpleDR DR15 = new(15, bypass);
+    public readonly SimpleDR DR20 = new(20, bypass);
+
+    public SimpleDR Lookup(int level) => level switch {
+      _ when level <= 5 => DR5,
+      _ when level <= 10 => DR10,
+      _ when level <= 15 => DR15,
+      _  => DR20,
+    };
+  }
+
+  public static readonly SimpleDRRamp Slashing = new("slashing");
+  public static readonly SimpleDRRamp Blunt = new("blunt");
+  public static readonly SimpleDRRamp Piercing = new("piercing");
+
+  public static readonly SimpleDRRamp Silver = new("silver");
+  public static readonly SimpleDRRamp Adamantine = new("adamantine");
+  public static readonly SimpleDRRamp ColdIron = new("cold_iron");
+
+  public static readonly SimpleDRRamp Good = new("good");
+  public static readonly SimpleDRRamp Evil = new("evil");
+  public static readonly SimpleDRRamp Chaotic = new("chaotic");
+  public static readonly SimpleDRRamp Neutral = new("neutral");
+
+  protected override void OnBeforeDamageIncomingRoll(Fact fact, PHContext ctx)
+  {
+    ctx.Damage.ApplyDRUnless(amount, bypass);
+  }
+
+  public override string? PokedexDescription => $"DR {amount}/{bypass}";
+}
+
+public class ComplexDR(int amount, string[]? or = null, string[]? and = null) : LogicBrick
+{
+  public int Amount { get; init; } = amount;
+  public string[]? Or { get; init; } = or;
+  public string[]? And { get; init; } = and;
+
+  bool Bypassed(HashSet<string> tags)
+  {
+    if (Or != null && Or.Any(tags.Contains)) return true;
+    if (And != null && And.All(tags.Contains)) return true;
+    return false;
+  }
+
+  protected override void OnBeforeDamageIncomingRoll(Fact fact, PHContext ctx)
+  {
+    foreach (var roll in ctx.Damage)
+    {
+      if (Bypassed(roll.Tags)) continue;
+      roll.ApplyDR(Amount);
+    }
+  }
+
+}
+public static class DRHelper
+{
+  public static void ApplyDRUnless(this List<DamageRoll> rolls, int amount, string bypass)
+  {
+    foreach (var roll in rolls)
+      if (!roll.Has(bypass)) roll.ApplyDR(amount);
+  }
+}
+
+public class ProtectionBrick(DamageType type) : LogicBrick
+{
+    public static readonly ProtectionBrick Fire = new(DamageTypes.Fire);
+    public static readonly ProtectionBrick Cold = new(DamageTypes.Cold);
+    public static readonly ProtectionBrick Shock = new(DamageTypes.Shock);
+    public static readonly ProtectionBrick Acid = new(DamageTypes.Acid);
+    public static readonly ProtectionBrick Phys = new(new DamageType("phys", "_"));
+
+    bool Matches(DamageRoll roll) => type.SubCat == "_" 
+        ? roll.Type.Category == type.Category 
+        : roll.Type == type;
+
+    string Label => type.SubCat == "_" ? type.Category : type.SubCat;
+
+    public override bool IsBuff => true;
+    public override string? BuffName => $"Prot {Label}";
+    public override StackMode StackMode => StackMode.ExtendStacks;
+    public override int MaxStacks => 9999;
+    public override FactDisplayMode DisplayMode => FactDisplayMode.Name | FactDisplayMode.Stacks;
+
+    protected override void OnBeforeDamageIncomingRoll(Fact fact, PHContext ctx)
+    {
+        foreach (var roll in ctx.Damage)
+            if (Matches(roll))
+                roll.Protection = fact.Stacks;
+    }
+
+    protected override void OnDamageTaken(Fact fact, PHContext ctx)
+    {
+        int used = 0;
+        foreach (var roll in ctx.Damage)
+            if (Matches(roll))
+                used += roll.ProtectionUsed;
+
+        if (used <= 0) return;
+
+        if (fact.Entity is IUnit { IsPlayer: true })
+            g.pline($"Your protection absorbs {used} {Label} damage.");
+
+        ((IUnit)fact.Entity).RemoveStack(this, used);
+    }
 }

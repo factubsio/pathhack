@@ -2,6 +2,8 @@ namespace Pathhack.Game.Bestiary;
 
 public class Thorns(Dice damage, DamageType type) : LogicBrick
 {
+    public override string? PokedexDescription => $"Thorns ({damage} {type.SubCat} when hit)";
+
     protected override void OnDamageTaken(Fact fact, PHContext context)
     {
         if (context.Source is not IUnit attacker) return;
@@ -22,6 +24,7 @@ public static class MiscMonsters
     {
         id = "rat",
         Name = "rat",
+        Family = "rat",
         Glyph = new('r', ConsoleColor.DarkGray),
         HpPerLevel = 4,
         AC = -2,
@@ -45,6 +48,7 @@ public static class MiscMonsters
     {
         id = "skeleton",
         Name = "skeleton",
+        Family = "skeleton",
         Glyph = new('Z', ConsoleColor.White),
         HpPerLevel = 8,
         AC = 0,
@@ -68,6 +72,7 @@ public static class MiscMonsters
     {
         id = "thorn_bush",
         Name = "thorn bush",
+        Family = "plant",
         Glyph = new('{', ConsoleColor.Green),
         HpPerLevel = 6,
         AC = -2,

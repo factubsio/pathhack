@@ -1,5 +1,3 @@
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -15,7 +13,8 @@ public record LevelRule(
     int Range = 1,
     string? RelativeTo = null,
     bool Required = true,
-    string? BranchTarget = null // if set, place branch stairs here
+    string? BranchTarget = null, // if set, place branch stairs here
+    bool NoBranchEntrance = false // if true, no branch stairs can be placed here
 );
 
 public record BranchTemplate(
@@ -82,10 +81,22 @@ public static class DungeonResolver
             if (template.Parent != null && template.EntranceDepth is var (from, to))
             {
                 var parent = branches[template.Parent];
+                var parentTemplate = templates.First(t => t.Id == template.Parent);
                 int minD = from < 0 ? parent.MaxDepth + from + 1 : from;
                 int maxD = to < 0 ? parent.MaxDepth + to + 1 : to;
-                depthInParent = RnRange(minD, maxD) - 1;
-                Log($"  Entrance in {template.Parent} at depth {depthInParent} (range {minD}-{maxD})");
+                maxD = Math.Min(maxD, parent.MaxDepth);
+                minD = Math.Min(minD, maxD);
+                
+                // Exclude depths with NoBranchEntrance special levels
+                var blocked = parent.BlockedEntranceDepths;
+                var valid = Enumerable.Range(minD - 1, maxD - minD + 1).Where(d => !blocked.Contains(d)).ToList();
+                
+                if (valid.Count == 0)
+                    throw new Exception($"No valid entrance depth for {template.Id} in {template.Parent}");
+                
+                depthInParent = valid[_rng.Next(valid.Count)];
+                parent.BlockedEntranceDepths.Add(depthInParent.Value);
+                Log($"  Entrance in {template.Parent} at depth {depthInParent} (range {minD}-{maxD}, blocked: [{string.Join(",", blocked)}])");
             }
 
             List<ResolvedLevel> resolved = [.. new ResolvedLevel[branchLength]];
@@ -97,11 +108,17 @@ public static class DungeonResolver
             if (!PlaceLevels(template.Levels, 0, branchLength, resolved, placed))
                 throw new Exception($"Failed to resolve branch {template.Id}");
 
+            // Compute blocked entrance depths from NoBranchEntrance rules
+            var blockedDepths = template.Levels
+                .Where(r => r.NoBranchEntrance && placed.ContainsKey(r.Id))
+                .Select(r => placed[r.Id] - 1)
+                .ToHashSet();
 
             branches[template.Id] = new Branch(template.Id, template.Name, branchLength, template.Color, template.Dir)
             {
                 ResolvedLevels = resolved,
-                EntranceDepthInParent = depthInParent
+                EntranceDepthInParent = depthInParent,
+                BlockedEntranceDepths = blockedDepths
             };
         }
 

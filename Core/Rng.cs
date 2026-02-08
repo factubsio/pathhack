@@ -1,4 +1,4 @@
-using System.Numerics;
+using System.Runtime.InteropServices;
 
 namespace Pathhack.Core;
 
@@ -40,22 +40,14 @@ public static class RngExtensions
     public static T[] Shuffled<T>(this T[] array)
     {
         T[] copy = [..array];
-        for (int i = copy.Length - 1; i > 0; i--)
-        {
-            int j = g.Rn2(i + 1);
-            (copy[i], copy[j]) = (copy[j], copy[i]);
-        }
+        g.Shuffle(copy.AsSpan());
         return copy;
     }
 
     public static List<T> Shuffled<T>(this List<T> list)
     {
         List<T> copy = [..list];
-        for (int i = copy.Count - 1; i > 0; i--)
-        {
-            int j = g.Rn2(i + 1);
-            (copy[i], copy[j]) = (copy[j], copy[i]);
-        }
+        g.Shuffle(CollectionsMarshal.AsSpan(copy));
         return copy;
     }
     

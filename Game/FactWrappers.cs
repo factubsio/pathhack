@@ -26,6 +26,8 @@ public class ApplyWhenEquipped(LogicBrick brick) : LogicBrick
 
 public class ApplyAfflictionOnHit(AfflictionBrick affliction) : LogicBrick
 {
+  public override string? PokedexDescription => $"On hit: {affliction.AfflictionName} (DC {affliction.DC})";
+
   protected override void OnAfterAttackRoll(Fact fact, PHContext ctx)
   {
     if (!ctx.Check!.Result) return;

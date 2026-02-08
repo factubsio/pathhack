@@ -238,27 +238,39 @@ public static partial class ClassDefs
                     new GrantProficiency(Proficiencies.LightArmor, ProficiencyLevel.Trained),
                     new GrantProficiency(Proficiencies.MediumArmor, ProficiencyLevel.Trained),
                     new SacredWeapon(),
-                    new GrantPool("spell_l1", 5, 20),
-                    new GrantPool("spell_l2", 4, 40),
-                    new GrantPool("spell_l3", 3, 60),
-                    new GrantPool("spell_l4", 3, 100),
-                    new GrantPool("spell_l5", 2, 150),
+                    new GrantPool("spell_l1", 2, 20),
                 ],
                 Selections = [
                     new() { Label = "Choose a blessing", Options = Blessings.All.Select(b => b.ToFeat()) },
                     new() { Label = "Choose a spell", Options = WarpriestList.Select(b => b.ToFeat()) },
                 ],
             },
-            null, //2
-            null, //3
-            null, //4
-            new() //5
+            null, // 2
+            null, // 3
+            null, // 4
+            new() // 5
             {
                 Grants = [
+                    new GrantPool("spell_l2", 1, 40),
                     new GrantPool(Fervor.Resource, 1, 60),
                     new GrantAction(new Fervor.EnhanceWeaponAction()),
                 ],
             },
+            null, // 6
+            new() { Grants = [new GrantPool("spell_l1", 1, 20)] }, // 7
+            null, // 8
+            new() { Grants = [new GrantPool("spell_l3", 1, 60)] }, // 9
+            new() { Grants = [new GrantPool("spell_l2", 1, 40)] }, // 10
+            null, // 11
+            new() { Grants = [new GrantPool("spell_l3", 1, 60)] }, // 12
+            new() { Grants = [new GrantPool("spell_l4", 1, 100)] }, // 13
+            new() { Grants = [new GrantPool("spell_l1", 1, 20)] }, // 14
+            new() { Grants = [new GrantPool("spell_l2", 1, 40)] }, // 15
+            new() { Grants = [new GrantPool("spell_l3", 1, 60)] }, // 16
+            new() { Grants = [new GrantPool("spell_l5", 1, 150), new GrantPool("spell_l4", 1, 100)] }, // 17
+            new() { Grants = [new GrantPool("spell_l4", 1, 100)] }, // 18
+            null, // 19
+            null, // 20
         ],
         ClassFeats = [WarpriestFeats.SwiftBlessing, WarpriestFeats.TrulyBlessed, WarpriestFeats.SacredStrike, WarpriestFeats.DivineFortitude, WarpriestFeats.SacredArmor],
         GrantStartingEquipment = p =>
@@ -275,6 +287,18 @@ public static partial class ClassDefs
             var armor = Item.Create(MundaneArmory.LeatherArmor);
             p.Inventory.Add(armor);
             p.Equip(armor);
+            
+            // Starting potions
+            p.Inventory.Add(Item.Create(Potions.Healing, 2));
+            p.Inventory.Add(Item.Create(Potions.Speed));
+            p.Inventory.Add(Item.Create(Potions.Paralysis, 2));
+            
+            // Starting scrolls
+            p.Inventory.Add(Item.Create(Scrolls.MagicMapping));
+            p.Inventory.Add(Item.Create(Scrolls.Identify, 2));
+
+            p.Inventory.Add(Item.Create(Foods.Ration, 2));
+            p.Inventory.Add(Item.Create(Foods.Apple, 2));
         },
     };
 

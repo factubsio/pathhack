@@ -89,6 +89,7 @@ public class FilthFever : LogicBrick
 public class DrunkenDodge : LogicBrick
 {
     public static readonly DrunkenDodge Instance = new();
+    public override string? PokedexDescription => "30% dodge (drunken)";
 
     protected override void OnBeforeDefendRoll(Fact fact, PHContext ctx)
     {
@@ -111,6 +112,7 @@ public static class Gremlins
     {
         id = "mitflit",
         Name = "mitflit",
+        Family = "gremlin",
         Glyph = new('m', ConsoleColor.Blue),
         HpPerLevel = 5,
         AC = -1,
@@ -139,6 +141,7 @@ public static class Gremlins
     {
         id = "pugwampi",
         Name = "pugwampi",
+        Family = "gremlin",
         Glyph = new('m', ConsoleColor.Yellow),
         HpPerLevel = 6,
         AC = 0,
@@ -161,6 +164,7 @@ public static class Gremlins
     {
         id = "jinkin",
         Name = "jinkin",
+        Family = "gremlin",
         Glyph = new('m', ConsoleColor.Magenta),
         HpPerLevel = 6,
         AC = 1,
@@ -182,6 +186,7 @@ public static class Gremlins
     {
         id = "nuglub",
         Name = "nuglub",
+        Family = "gremlin",
         Glyph = new('m', ConsoleColor.Red),
         HpPerLevel = 7,
         AC = 1,
@@ -203,6 +208,7 @@ public static class Gremlins
     {
         id = "grimple",
         Name = "grimple",
+        Family = "gremlin",
         Glyph = new('m', ConsoleColor.DarkGreen),
         HpPerLevel = 5,
         AC = 0,
@@ -225,6 +231,7 @@ public static class Gremlins
     {
         id = "drunk_jinkin",
         Name = "very drunk jinkin",
+        Family = "gremlin",
         Glyph = new('m', ConsoleColor.DarkMagenta),
         HpPerLevel = 6,
         AC = -2,
@@ -312,7 +319,7 @@ public class VeryDrunkJinkinBrain : MonsterBrain
                 // 33% chance we bump our head against the wall, oops
                 if (g.Rn2(1) == 0)
                 {
-                    g.pline($"{m:The} bumps {m:own} head against the wall!");
+                    g.YouObserve(m, "{0:The} bumps {0:own} head against the wall!");
                     using var ctx = PHContext.Create(m, Target.From(m));
                     ctx.DeathReason = "the bottle";
                     ctx.Damage.Add(new()

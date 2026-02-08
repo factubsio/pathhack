@@ -116,6 +116,37 @@ public class GameState
     public static Level lvl => g.CurrentLevel!;
     public StreamWriter? PlineLog;
 
+    public record struct Awareness(bool CanTarget, bool Disadvantage, bool Visual);
+
+    public static Awareness GetAwareness(IUnit viewer, IUnit target)
+    {
+        // monster<->monster always full awareness (for now)
+        if (!viewer.IsPlayer && !target.IsPlayer)
+            return new(true, false, true);
+
+        int tremor = viewer.Query<int>("tremorsense", null, MergeStrategy.Max, 0);
+        bool hasTremor = tremor > 0 && viewer.Pos.ChebyshevDist(target.Pos) <= tremor;
+
+        bool blind = !viewer.Can("can_see");
+        bool targetInvis = target.Has("invisible") && !viewer.Has("see_invisible");
+        bool targetInDark = !lvl.IsLit(target.Pos) && !viewer.Has("darkvision");
+
+        // LOS check for visual detection (player-centric)
+        bool hasLOS = viewer.IsPlayer ? lvl.HasLOS(target.Pos) : lvl.HasLOS(viewer.Pos);
+
+        bool visual = !blind && !targetInvis && !targetInDark && hasLOS;
+        bool canTarget = visual || hasTremor;
+        bool disadvantage = canTarget && !visual && !hasTremor;
+
+        // blind_fight removes disadvantage but not visual
+        if (disadvantage && blind && viewer.Has("blind_fight"))
+            disadvantage = false;
+
+        return new(canTarget, disadvantage, visual);
+    }
+
+    public static bool CanSee(IUnit viewer, IUnit target) => GetAwareness(viewer, target).Visual;
+
     private int _seed;
     public int Seed
     {
@@ -180,6 +211,7 @@ public class GameState
     public int RnRange(int min, int max) => _rng.RnRange(min, max);
     /// geometric
     public int Rne(int n) => _rng.Rne(n);
+    public void Shuffle<T>(Span<T> values) => _rng.Shuffle(values);
 
     public static int DoRoll(DiceFormula dice, Modifiers mods, string label)
     {
@@ -252,6 +284,17 @@ public class GameState
             pline("You hear {0}.", sound!);
     }
 
+    public void YouObserve(Pos pos, string? ifSee, string? sound = null, int hearRadius = 6)
+    {
+        bool canSee = lvl.IsVisible(pos);
+        bool canHear = sound != null && upos.ChebyshevDist(pos) <= hearRadius;
+
+        if (canSee && ifSee != null)
+            pline(ifSee);
+        else if (canHear)
+            pline("You hear {0}.", sound!);
+    }
+
     public int CurrentRound;
 
     public void DoRound()
@@ -286,6 +329,15 @@ public class GameState
             {
                 if (u.Level != startLevel) break;
 
+                // Paralysis check (And merge so immunity can override)
+                if (unit.Query("paralyzed", null, MergeStrategy.And, false))
+                {
+                    if (unit.IsPlayer)
+                        g.pline("You are paralyzed!");
+                    unit.Energy -= ActionCosts.OneAction.Value;
+                    continue;
+                }
+
                 FovCalculator.Compute(lvl, upos, u.DarkVisionRadius);
 
                 Perf.Start();
@@ -319,11 +371,13 @@ public class GameState
         // OnRoundEnd for all units
         Perf.Start();
         u.RecalculateMaxHp();
+        Hunger.Tick(u);
         foreach (var unit in lvl.LiveUnits)
         {
             unit.ExpireFacts();
             LogicBrick.FireOnRoundEnd(unit, PHContext.Create(unit, Target.None));
             unit.TickPools();
+            unit.TickTempHp();
         }
         foreach (var entity in ActiveEntities)
         {
@@ -333,6 +387,28 @@ public class GameState
         foreach (var area in lvl.Areas)
             area.Tick();
         lvl.Areas.RemoveAll(x => g.CurrentRound >= x.ExpiresAt);
+        
+        // tick corpses on floor
+        for (int i = lvl.Corpses.Count - 1; i >= 0; i--)
+        {
+            var (corpse, pos) = lvl.Corpses[i];
+            if (Foods.TickCorpse(corpse, null, pos))
+            {
+                lvl.RemoveItem(corpse, pos);
+            }
+        }
+        
+        // tick corpses in inventories
+        foreach (var unit in lvl.LiveUnits)
+        {
+            for (int i = unit.Inventory.Count - 1; i >= 0; i--)
+            {
+                var item = unit.Inventory[i];
+                if (item.CorpseOf != null && Foods.TickCorpse(item, unit, null))
+                    unit.Inventory.RemoveAt(i);
+            }
+        }
+        
         CleanupFacts();
         Perf.Stop("OnRoundEnd");
 
@@ -395,7 +471,6 @@ public class GameState
         if (!Levels.TryGetValue(id, out Level? level))
         {
             level = LevelGen.Generate(id, Seed);
-            MonsterSpawner.SpawnInitialMonsters(level, u.CharacterLevel);
             Levels[id] = level;
             if (level.FirstIntro != null)
             {
@@ -460,7 +535,15 @@ public class GameState
         Log.Write("{0} heals {1} for {2} ({3} actual)", source, target, roll, actual);
     }
 
-    public void Attack(IUnit attacker, IUnit defender, Item with, bool thrown = false)
+    public void DoMapLevel()
+    {
+        for (int y = 0; y < lvl.Height; y++)
+        for (int x = 0; x < lvl.Width; x++)
+            lvl.UpdateMemory(new(x, y));
+        pline("A map coalesces in your mind.");
+    }
+
+    public void Attack(IUnit attacker, IUnit defender, Item with, bool thrown = false, int attackBonus = 0)
     {
         var weapon = with.Def as WeaponDef;
         Target target = new(defender, defender.Pos);
@@ -485,8 +568,19 @@ public class GameState
             check.Modifiers.Mod(ModifierCategory.ItemBonus, with.Potency, "potency");
         }
 
+        if (attackBonus != 0)
+            check.Modifiers.Untyped(attackBonus, "multi_atk");
+
         LogicBrick.FireOnBeforeAttackRoll(attacker, ctx);
         LogicBrick.FireOnBeforeDefendRoll(defender, ctx);
+
+        // awareness-based advantage/disadvantage
+        var atkAwareness = GetAwareness(attacker, defender);
+        if (atkAwareness.Disadvantage)
+            check.Disadvantage++;
+        var defAwareness = GetAwareness(defender, attacker);
+        if (!defAwareness.CanTarget)
+            check.Advantage++;  // unseen attacker
 
         bool hit = DoCheck(ctx, $"{attacker} attacks {defender}");
 
@@ -502,6 +596,11 @@ public class GameState
             };
             dmg.Modifiers.Untyped(attacker.GetDamageBonus(), "str_inherent");
             ctx.Damage.Add(dmg);
+            if (weapon != null)
+            {
+                dmg.Tags.Add(weapon.Material);
+                dmg.Tags.Add(weapon.DamageType.SubCat);
+            }
 
             if (thrown)
             {
@@ -576,14 +675,25 @@ public class GameState
             if (dmg.DoubleOnFail && ctx.Check?.Result == false) dmg.Double();
 
             int rolled = DoRoll(dmg.Formula, dmg.Modifiers, $"  {dmg} damage");
-            rolled = (int)Math.Floor(rolled * dmg.Multiplier);
-            damage += Math.Max(1, rolled);
+            damage += dmg.Resolve(rolled);
+
+            var tags = dmg.Tags.Count > 0 ? string.Join(",", dmg.Tags) : "none";
+            Log.Write($"    tags=[{tags}] dr={dmg.DR} prot={dmg.Protection} used={dmg.ProtectionUsed}");
         }
         
         // this can happen if all damage instances were negated
         if (damage == 0) return;
 
         Log.Write($"  {target:The} takes {damage} total damage");
+        target.LastDamagedOnTurn = g.CurrentRound;
+        
+        damage = target.AbsorbTempHp(damage);
+        if (damage == 0)
+        {
+            Log.Write($"  temp HP absorbed all damage");
+            return;
+        }
+        
         target.HP -= damage;
 
         if (target is Monster mon && mon.IsAsleep && g.Rn2(100) != 0) mon.IsAsleep = false;
@@ -606,16 +716,16 @@ public class GameState
                 {
                     g.pline($"You kill {target:the}!");
                     if (target is Monster m)
-                        g.GainExp(10 * (1 << m.Def.BaseLevel));
+                        g.GainExp(20 * Math.Max(1, m.EffectiveLevel), m.Def.Name);
                 }
                 else if (ctx.DeathReason != null)
-                    g.pline($"{target:The} dies by {ctx.DeathReason}!");
+                    g.YouObserve(target, $"{0:The} dies by {ctx.DeathReason}!");
                 else if (source.IsDM)
-                    g.pline($"{target:The} dies!");
+                    g.YouObserve(target, $"{0:The} dies!");
                 else if (source == target)
-                    g.pline($"{source:The} dies!");
+                    g.YouObserve(source, $"{0:The} dies!");
                 else
-                    g.pline($"{source:The} kills {target:the}!");
+                    g.YouObserve(source, $"{0:The} kills {target:the}!");
 
                 using (var death = PHContext.Create(source, Target.From(target)))
                     LogicBrick.FireOnDeath(target, death);
@@ -623,6 +733,26 @@ public class GameState
                 // drop inventory
                 foreach (var item in target.Inventory.ToList())
                     g.DoDrop(target, item);
+
+                // drop corpse
+                if (target is Monster m2 && !m2.Def.NoCorpse && CorpseChance(m2.Def))
+                {
+                    var corpse = Item.Create(Foods.Corpse);
+                    corpse.CorpseOf = m2.Def;
+                    lvl.PlaceItem(corpse, target.Pos);
+                }
+
+                // release grab
+                if (target.Grabbing is { } victim)
+                {
+                    victim.GrabbedBy = null;
+                    target.Grabbing = null;
+                }
+                if (target.GrabbedBy is { } grabber)
+                {
+                    grabber.Grabbing = null;
+                    target.GrabbedBy = null;
+                }
 
                 target.IsDead = true;
                 lvl.GetOrCreateState(target.Pos).Unit = null;
@@ -658,7 +788,7 @@ public class GameState
         if (frames > 0)
         {
             int perFrame = total / frames;
-            Draw.AnimateProjectile(from ?? thrower.Pos, last, item.Def.Glyph, perFrame);
+            Draw.AnimateProjectile(from ?? thrower.Pos, last, item.Glyph, perFrame);
         }
         if (hit != null)
             Attack(thrower, hit, item, thrown: true);
@@ -670,25 +800,45 @@ public class GameState
     {
         lvl.RemoveItem(item, unit.Pos);
 
-        // try merge with existing stack
-        foreach (var existing in unit.Inventory)
-        {
-            if (existing.CanMerge(item))
-            {
-                existing.MergeFrom(item);
-                Log.Write("pickup+merge: {0}", item.Def.Name);
-                return;
-            }
-        }
-
         unit.Inventory.Add(item);
         Log.Write("pickup: {0}", item.Def.Name);
     }
 
-    public void GainExp(int amount)
+    public void GainExp(int amount, string? source = null)
     {
+        amount *= 2;
         u.XP += amount;
-        Log.Write("GainExp: +{0} (total {1})", amount, u.XP);
+        Log.Write($"exp: +{amount} (total {u.XP}) XL={u.CharacterLevel} DL={lvl.Id.Depth} src={source ?? "?"}");
+    }
+
+    static bool CorpseChance(MonsterDef def)
+    {
+        if (def.Size >= UnitSize.Large) return true;
+        int denom = 2 + (def.SpawnWeight < 2 ? 1 : 0) + (def.Size == UnitSize.Tiny ? 1 : 0);
+        return g.Rn2(denom) == 0;
+    }
+
+    public enum StruggleResult { Escaped, Failed }
+
+    /// <summary>
+    /// Attempt to escape a grab. Returns Escaped if free, Failed if still grabbed (and attacks grabber).
+    /// </summary>
+    public StruggleResult DoStruggle(IUnit unit, int dc)
+    {
+        var grabber = unit.GrabbedBy!;
+        using var ctx = PHContext.Create(grabber, Target.From(unit));
+        
+        if (CreateAndDoCheck(ctx, "athletics", dc, "escape grab"))
+        {
+            pline($"{unit:The} {VTense(unit, "break")} free from {grabber:the}!");
+            unit.GrabbedBy = null;
+            grabber.Grabbing = null;
+            return StruggleResult.Escaped;
+        }
+        
+        pline($"{unit:The} {VTense(unit, "struggle")} against {grabber:the}!");
+        Attack(unit, grabber, unit is Player p ? p.GetWieldedItem() : ((Monster)unit).GetWieldedItem());
+        return StruggleResult.Failed;
     }
 
     public void DoEquip(IUnit unit, Item? item, EquipSlot? slotOverride = null)

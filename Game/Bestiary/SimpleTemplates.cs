@@ -35,6 +35,7 @@ public class ZombieTemplate() : MonsterTemplate("zombie")
     // TODO: remove abilities with mental/good tags (first implement ability tags)
     foreach (var c in def.Components) yield return c;
     yield return ZombieFacts.Instance;
+    yield return SimpleDR.Slashing.Lookup(def.BaseLevel);
   }
 
   public override void ModifySpawn(Monster m)

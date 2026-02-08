@@ -35,9 +35,9 @@ public class BlindSelf() : ActionBrick("Blind Self")
     }
 }
 
-public class GreaseArea(IUnit? source, int dc, int duration) : Area(duration)
+public class GreaseArea(string name, IUnit? source, int dc, int duration) : Area(duration)
 {
-    public override string Name => "Grease";
+    public override string Name => name;
     public override Glyph Glyph => new('~', ConsoleColor.DarkYellow);
     public override bool IsDifficultTerrain => true;
 
@@ -49,12 +49,12 @@ public class GreaseArea(IUnit? source, int dc, int duration) : Area(duration)
         var slips = VTense(unit, "slip");
         if (!CreateAndDoCheck(ctx, "reflex_save", dc, "difficult_terrain"))
         {
-            g.pline($"{unit:The} {slips} and {VTense(unit, "fall")}!");
+            g.pline($"{unit:The} {slips} on some {name} and {VTense(unit, "fall")}!");
             unit.AddFact(ProneBuff.Instance.Timed(), 1);
         }
         else
         {
-            g.pline($"{unit:The} {slips} but {VTense(unit, "keep")} {unit:own} balance.");
+            g.pline($"{unit:The} {slips} on some {name} but {VTense(unit, "keep")} {unit:own} balance.");
         }
     }
 
@@ -77,8 +77,57 @@ public class GreaseAround() : ActionBrick("grease test")
 
     public override void Execute(IUnit unit, object? data, Target target)
     {
-        var area = new GreaseArea(unit, 14, 6) { Tiles = [..unit.Pos.Neighbours().Where(p => !lvl[p].IsStructural)] };
+        var area = new GreaseArea("Grease", unit, 14, 6) { Tiles = [..unit.Pos.Neighbours().Where(p => !lvl[p].IsStructural)] };
         lvl.Areas.Add(area);
+    }
+}
+
+public class PoisonSelf() : ActionBrick("Poison Self")
+{
+    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
+    {
+        whyNot = "";
+        return true;
+    }
+
+    public override void Execute(IUnit unit, object? data, Target target)
+    {
+        unit.AddFact(new SpiderVenom(100));
+        g.pline("You inject yourself with spider venom!");
+    }
+}
+
+public class GrantProtection() : ActionBrick("Grant Protection")
+{
+    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
+    {
+        whyNot = "";
+        return true;
+    }
+
+    public override void Execute(IUnit unit, object? data, Target target)
+    {
+        unit.AddFact(ProtectionBrick.Fire, count: 20);
+        unit.AddFact(ProtectionBrick.Cold, count: 20);
+        unit.AddFact(ProtectionBrick.Shock, count: 20);
+        unit.AddFact(ProtectionBrick.Acid, count: 20);
+        unit.AddFact(ProtectionBrick.Phys, count: 20);
+        g.pline("You are protected from the elements!");
+    }
+}
+
+public class GrantTempHp() : ActionBrick("Grant Temp HP")
+{
+    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
+    {
+        whyNot = "";
+        return true;
+    }
+
+    public override void Execute(IUnit unit, object? data, Target target)
+    {
+        unit.GrantTempHp(10);
+        g.pline("You gain temporary hit points!");
     }
 }
 
@@ -93,12 +142,12 @@ public static partial class ClassDefs
         KeyAbility = AbilityStat.Int,
         StartingStats = new()
         {
-            Str = 18,
-            Dex = 18,
-            Con = 18,
-            Int = 18,
-            Wis = 18,
-            Cha = 18,
+            Str = 10,
+            Dex = 10,
+            Con = 10,
+            Int = 10,
+            Wis = 10,
+            Cha = 10,
         },
         Progression = [
             new() // Level 1
@@ -135,6 +184,8 @@ public static partial class ClassDefs
             p.Inventory.Add(Item.Create(MundaneArmory.ChainShirt));
             p.Inventory.Add(Item.Create(MundaneArmory.Scythe));
             p.Inventory.Add(Item.Create(MundaneArmory.Whip));
+            p.Inventory.Add(Item.Create(Potions.FalseLife));
+            p.Inventory.Add(Item.Create(Potions.LesserInvisibility, 4));
             foreach (var def in DummyThings.All)
                 p.Inventory.Add(Item.Create(def));
             
@@ -151,6 +202,9 @@ public static partial class ClassDefs
             p.AddAction(new MagicMapping());
             p.AddAction(new BlindSelf());
             p.AddAction(new GreaseAround());
+            p.AddAction(new PoisonSelf());
+            p.AddAction(new GrantProtection());
+            p.AddAction(new GrantTempHp());
             foreach (var blessing in Blessings.All)
                 blessing.ApplyMinor(p);
             g.DebugMode = true;

@@ -12,31 +12,57 @@ Console.CancelKeyPress += (o, e) =>
 };
 
 List<BranchTemplate> templates = [
-    new("dungeon", "Dungeon", (6, 9)) {
+    new("dungeon", "Dungeon", (18, 22)) {
         Levels = [
-            new("sanctuary", ["sanctuary_1"], FromBottom, 0),
-            // new("challenge", ["challenge_a", "challenge_b"], RelativeTo, -1, 1, "sanctuary"),
+            new("sanctuary", ["sanctuary_1"], FromBottom, 0, NoBranchEntrance: true),
             new("bigroom", ["bigroom_rect", "bigroom_oval"], FromTop, 3, 6, Required: false),
         ]
     },
-    new("crypt", "Crypt of the Everflame", (1, 1)) {
+    
+    // Quest (5 levels)
+    new("quest", "Quest", (5, 5)) {
         Parent = "dungeon",
-        EntranceDepth = (2, 5),
-        Levels = [
-            new("crypt_end", ["everflame_tomb"], FromBottom, 0),
-        ]
+        EntranceDepth = (8, 10),
+        Levels = []
     },
-    new("trunau", "Trunau Quest", (2, 2)) {
+    
+    // Easy meaty (7 levels)
+    new("meaty1", "Meaty 1", (7, 7)) {
         Parent = "dungeon",
-        EntranceDepth = (1, 1),
-        Levels = [
-            new("trunau_home", ["trunau_home"], FromTop, 1),
-            new("trunau_siege", ["trunau_siege"], FromTop, 2),
-            // new("trunau_tomb", ["trunau_tomb"], FromTop, 3),
-            // new("redlake_outer", ["redlake_outer"], FromTop, 4),
-            // new("redlake_inner", ["redlake_inner"], FromBottom, 0),
-        ]
-    }
+        EntranceDepth = (2, 4),
+        Levels = []
+    },
+    
+    // Hard meaty (7 levels)
+    new("meaty2", "Meaty 2", (7, 7)) {
+        Parent = "dungeon",
+        EntranceDepth = (11, 13),
+        Levels = []
+    },
+    
+    // Hard meaty (7 levels)
+    new("meaty3", "Meaty 3", (7, 7)) {
+        Parent = "dungeon",
+        EntranceDepth = (14, 16),
+        Levels = []
+    },
+    
+    // Mini branches (1 level each, underleveled challenge)
+    new("mini1", "Mini 1", (1, 1)) {
+        Parent = "dungeon",
+        EntranceDepth = (4, 16),
+        Levels = []
+    },
+    new("mini2", "Mini 2", (1, 1)) {
+        Parent = "dungeon",
+        EntranceDepth = (4, 16),
+        Levels = []
+    },
+    new("mini3", "Mini 3", (1, 1)) {
+        Parent = "dungeon",
+        EntranceDepth = (4, 16),
+        Levels = []
+    },
 ];
 
 if (args.Length > 0 && args[0] == "--test-dungeon")
@@ -97,30 +123,35 @@ while (true)
     ResetGameState();
     g.PlineLog = _plog;
 
-    byte[] seed = new byte[4];
-    Random.Shared.NextBytes(seed);
-
-    g.Seed = BitConverter.ToInt32(seed);
+    if (args.Length >= 2 && args[0] == "--seed" && int.TryParse(args[1], out var forcedSeed))
+        g.Seed = forcedSeed;
+    else
+    {
+        byte[] seed = new byte[4];
+        Random.Shared.NextBytes(seed);
+        g.Seed = BitConverter.ToInt32(seed);
+    }
 
     // g.DebugMode = true;
     // g.Seed = 12345;
 
+    Log.Write($"Game seed: {g.Seed}");
+    ItemDb.Reset(g.Seed);
     g.Branches = DungeonResolver.Resolve(templates, g.Seed);
     var dungeon = g.Branches["dungeon"];
 
     LevelId startId = new(dungeon, 1);
     Level startLevel = LevelGen.Generate(startId, g.Seed);
-    MonsterSpawner.SpawnInitialMonsters(startLevel);
 
     // DEBUG: spawn cats for testing
     // foreach (var cat in Cats.All)
     //     if (startLevel.FindLocation(p => startLevel.NoUnit(p) && !startLevel[p].IsStairs) is { } pos)
     //         startLevel.PlaceUnit(Monster.Spawn(cat), pos);
 
-    // DEBUG: spawn snakes for testing
-    foreach (var snake in Snakes.All)
+    // DEBUG: spawn orb weavers for testing
+    for (int i = 0; i < 3; i++)
         if (startLevel.FindLocation(p => startLevel.NoUnit(p) && !startLevel[p].IsStairs) is { } pos)
-            startLevel.PlaceUnit(Monster.Spawn(snake), pos);
+            startLevel.PlaceUnit(Monster.Spawn(Spiders.OrbWeaver), pos);
 
     g.Levels[startId] = startLevel;
 
@@ -136,7 +167,7 @@ while (true)
     u.HP.Current = u.HP.Max;
     Log.Write($"hp => {u.HP.Max}");
 
-    u.XP = 980;
+    // u.XP = 980;
     lvl.PlaceUnit(u, (lvl.BranchUp ?? lvl.StairsUp)!.Value);
 
     Draw.DrawCurrent();

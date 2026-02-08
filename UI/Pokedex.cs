@@ -122,22 +122,43 @@ public static class Pokedex
         menu.Add($"{m.RealName,-24} Creature CR {m.Def.BaseLevel} {m.CreatureTypeRendered}", LineStyle.Heading);
         menu.Add($"{m.Def.Size}");
         menu.Add("");
-        menu.Add($"AC {m.Def.AC}; HP {m.Def.HpPerLevel}");
+        menu.Add($"AC {m.GetAC()}; HP {m.Def.HpPerLevel}");
         var speed = m.QueryModifiers("speed_bonus");
         Log.Write($"speed: {speed}");
         menu.Add($"Movement: {SpeedDesc(m.LandMove)}");
         menu.Add("");
         
+        var grantedActions = m.LiveFacts
+            .Where(f => f.Brick is GrantAction)
+            .Select(f => ((GrantAction)f.Brick).Action)
+            .ToList();
+        
+        bool hasWeaponOrNatural = grantedActions.Any(a => a is AttackWithWeapon || (a is NaturalAttack n && n.Weapon != m.Def.Unarmed));
+
+        // attacks first
         foreach (var fact in m.LiveFacts.Where(f => f.Brick is GrantAction))
         {
             var grant = (GrantAction)fact.Brick;
             if (grant.Action is AttackWithWeapon)
-                menu.Add($"Melee weapon +{m.Def.AttackBonus}{Bonus(m.Def.DamageBonus, " damage")}");
+                menu.Add($"Melee weapon {SignedBonus(m.Def.AttackBonus)}{Bonus(m.Def.DamageBonus, " damage")}");
             else if (grant.Action is NaturalAttack nat)
-                menu.Add($"Melee {nat.Weapon.Name} +{m.Def.AttackBonus}, Damage {nat.Weapon.BaseDamage}{Bonus(m.Def.DamageBonus)} {nat.Weapon.DamageType.SubCat}");
-            else
+            {
+                if (nat.Weapon == m.Def.Unarmed && hasWeaponOrNatural) continue;
+                menu.Add($"Melee {nat.Weapon.Name} {SignedBonus(m.Def.AttackBonus)}, Damage {nat.Weapon.BaseDamage}{Bonus(m.Def.DamageBonus)} {nat.Weapon.DamageType.SubCat}");
+            }
+        }
+
+        // other actions
+        foreach (var fact in m.LiveFacts.Where(f => f.Brick is GrantAction))
+        {
+            var grant = (GrantAction)fact.Brick;
+            if (grant.Action is not AttackWithWeapon and not NaturalAttack)
                 menu.Add($"  {grant.Action.Name}");
         }
+
+        // passives
+        foreach (var fact in m.LiveFacts.Where(f => f.Brick is not GrantAction && f.Brick.PokedexDescription != null))
+            menu.Add($"  {fact.Brick.PokedexDescription}");
         
         menu.Display();
     }
@@ -153,7 +174,9 @@ public static class Pokedex
     };
 
     static string Bonus(int val, string suffix = "") =>
-        val == 0 ? "" : $"{val:+#;-#}{suffix}";
+        val == 0 ? "" : $" {val:+#;-#}{suffix}";
+
+    static string SignedBonus(int val) => $"{val:+#;-#;+0}";
 
     public static void ShowItemEntry(Item item)
     {

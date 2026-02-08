@@ -11,6 +11,8 @@ public enum ModifierCategory
     ItemPenalty,
     StatusBonus,
     StatusPenalty,
+    StatBonus,
+    StatPenalty,
 
     Override, // BE CAREFUL WITH THIS
 }
@@ -212,6 +214,12 @@ public class DamageRoll
     public DiceFormula Formula;
     public DamageType Type;
     public Modifiers Modifiers = new();
+    public HashSet<string> Tags = [];
+
+    public bool Has(string tag) => Tags.Contains(tag);
+    public bool HasAll(params string[] tags) => tags.All(Has);
+    public bool HasAny(params string[] tags) => tags.Any(Has);
+    public bool HasNone(params string[] tags) => !tags.Any(Has);
 
     public bool HalfOnSave;
     public bool DoubleOnFail;
@@ -227,20 +235,29 @@ public class DamageRoll
         set => _extraDice = Math.Max(value, _extraDice);
     }
 
-    int? _rolled;
+    private int _dr = 0;
+    public int DR => _dr;
+    public void ApplyDR(int amount) => _dr = Math.Max(_dr, amount);
 
-    public int Base => _rolled ??= Formula.Roll(_extraDice);
+    public int Protection;
+    public int ProtectionUsed { get; private set; }
+
+    private int? _rolled;
+    public int Rolled => _rolled ?? throw new InvalidOperationException("Roll not resolved");
+    public int Resolve(int rolled) { _rolled = rolled; return Total; }
 
     public int Total
     {
         get
         {
             if (Negated) return 0;
-            int raw = Math.Max(1, Base + Modifiers.Calculate());
-            if (Halved && Doubled) return raw; // cancel
-            if (Halved) return Math.Max(1, raw / 2);
-            if (Doubled) return raw * 2;
-            return raw;
+            int raw = Math.Max(1, Rolled + Modifiers.Calculate());
+            if (Halved && Doubled) { } // cancel
+            else if (Halved) raw = Math.Max(1, raw / 2);
+            else if (Doubled) raw *= 2;
+            ProtectionUsed = Math.Min(Protection, raw);
+            int afterProt = raw - ProtectionUsed;
+            return Math.Max(0, afterProt - _dr);
         }
     }
 

@@ -14,13 +14,6 @@ public class BlindBuff : LogicBrick
     _ => null,
   };
 
-  protected override void OnBeforeCheck(Fact fact, PHContext context)
-  {
-    if (context.Source != fact.Entity || context.Weapon == null) return;
-    if (context.Source.Has("blind_fight")) return;
-    context.Check!.Disadvantage++;
-  }
-
   protected override void OnStackRemoved(Fact fact)
   {
     if (fact.Entity is not IUnit { IsPlayer: true }) return;
@@ -61,6 +54,27 @@ public class SilencedBuff : LogicBrick
   };
 }
 
+public class ParalyzedBuff : LogicBrick
+{
+  public static readonly ParalyzedBuff Instance = new();
+  public override bool IsBuff => true;
+  public override string? BuffName => "Paralyzed";
+  public override StackMode StackMode => StackMode.Stack;
+
+  protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
+  {
+    "paralyzed" => true,
+    _ => null
+  };
+
+  protected override void OnStackRemoved(Fact fact)
+  {
+    if (fact.Entity is not IUnit { IsPlayer: true }) return;
+    if (fact.Stacks == 0)
+      g.pline("You can move again!");
+  }
+}
+
 public class NauseatedBuff : LogicBrick
 {
   public static readonly NauseatedBuff Instance = new();
@@ -84,9 +98,10 @@ public class AfflictionData
   public int AppliedAt;
 }
 
-public abstract class AfflictionBrick(int dc) : LogicBrick<AfflictionData>
+public abstract class AfflictionBrick(int dc, string? tag = null) : LogicBrick<AfflictionData>
 {
   public int DC => dc;
+  public string? Tag => tag;
 
   public override bool IsBuff => true;
   public override bool IsActive => true;
@@ -155,5 +170,6 @@ public abstract class AfflictionBrick(int dc) : LogicBrick<AfflictionData>
 
   protected virtual void OnCured(IUnit unit) => g.pline($"{unit:The} {VTense(unit, "feel")} better.");
 
-  protected override object? OnQuery(Fact fact, string key, string? arg) => DoQuery(Stage(fact), key, arg);
+  protected override object? OnQuery(Fact fact, string key, string? arg) =>
+      key == Tag ? fact : DoQuery(Stage(fact), key, arg);
 }

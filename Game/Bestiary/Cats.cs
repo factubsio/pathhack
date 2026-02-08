@@ -6,6 +6,7 @@ public static class Cats
     {
         id = "cheetah",
         Name = "cheetah",
+        Family = "cat",
         Glyph = new('f', ConsoleColor.Yellow),
         HpPerLevel = 5,
         AC = -1,
@@ -31,6 +32,7 @@ public static class Cats
     {
         id = "leopard",
         Name = "leopard",
+        Family = "cat",
         Glyph = new('f', ConsoleColor.Yellow),
         HpPerLevel = 6,
         AC = 0,
@@ -56,6 +58,7 @@ public static class Cats
     {
         id = "panther",
         Name = "panther",
+        Family = "cat",
         Glyph = new('f', ConsoleColor.DarkGray),
         HpPerLevel = 7,
         AC = 0,
@@ -80,11 +83,12 @@ public static class Cats
     {
         id = "lion",
         Name = "lion",
+        Family = "cat",
         Glyph = new('f', ConsoleColor.DarkYellow),
         HpPerLevel = 10,
         AC = 1,
         AttackBonus = 1,
-        DamageBonus = 3,
+        DamageBonus = 2,
         LandMove = ActionCosts.LandMove20,
         Unarmed = NaturalWeapons.Bite_1d8,
         Size = UnitSize.Large,
@@ -95,6 +99,7 @@ public static class Cats
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
+        GroupSize = GroupSize.Small,
         Components = [
             new GrantAction(new FullAttack("maul", NaturalWeapons.Bite_1d8, NaturalWeapons.Claw_1d6, NaturalWeapons.Claw_1d6)),
         ],
@@ -104,6 +109,7 @@ public static class Cats
     {
         id = "tiger",
         Name = "tiger",
+        Family = "cat",
         Glyph = new('f', ConsoleColor.Red),
         HpPerLevel = 10,
         AC = 1,
@@ -129,6 +135,7 @@ public static class Cats
     {
         id = "smilodon",
         Name = "smilodon",
+        Family = "cat",
         Glyph = new('f', ConsoleColor.Magenta),
         HpPerLevel = 12,
         AC = 2,
@@ -232,10 +239,11 @@ public class FullAttack : ActionBrick
     public override void Execute(IUnit unit, object? data, Target target)
     {
         var tgt = target.Unit!;
-        foreach (var weapon in _weapons)
+        for (int i = 0; i < _weapons.Length; i++)
         {
-            if (tgt.IsDead) break;
-            g.Attack(unit, tgt, weapon);
+            Item? weapon = _weapons[i];
+            if (tgt.IsDead) break; // rampage to others here!!!
+            g.Attack(unit, tgt, weapon, attackBonus: i > 0 ? -5 : 0);
         }
     }
 

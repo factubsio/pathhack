@@ -14,6 +14,7 @@ public class TKAttackBonus(int bonus) : LogicBrick
 public class DazeImmunity : LogicBrick
 {
     public static readonly DazeImmunity Instance = new();
+    public override string? PokedexDescription => "Immune to daze";
     public override bool IsActive => true;
     public override string? BuffName => "Daze Immunity";
 }
@@ -150,6 +151,8 @@ public static class Derro
         BaseLevel = 1,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
+        Family = "derro",
+        GroupSize = GroupSize.SmallMixed,
         Components = [
             new EquipSet(new Outfit(1, new OutfitItem(MundaneArmory.Dagger))),
             new GrantAction(AttackWithWeapon.Instance),
@@ -174,6 +177,7 @@ public static class Derro
         BaseLevel = 2,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
+        Family = "derro",
         Components = [
             new EquipSet(new Outfit(1, new OutfitItem(MundaneArmory.Club))),
             new GrantAction(AttackWithWeapon.Instance),
@@ -197,6 +201,7 @@ public static class Derro
         BaseLevel = 3,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
+        Family = "derro",
         Components = [
             new EquipSet(new Outfit(1, new OutfitItem(MundaneArmory.SpikedClub))),
             new GrantAction(AttackWithWeapon.Instance),
@@ -219,6 +224,7 @@ public static class Derro
         BaseLevel = 4,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
+        Family = "derro",
         Components = [
             new EquipSet(new Outfit(1, new OutfitItem(MundaneArmory.Quarterstaff))),
             new GrantAction(AttackWithWeapon.Instance),

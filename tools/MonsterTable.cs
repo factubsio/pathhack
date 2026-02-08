@@ -16,8 +16,8 @@ public static class MonsterTable
             .OrderBy(m => m.BaseLevel)
             .ThenBy(m => m.Name);
 
-        Console.WriteLine($"{"Name",-24} {"Lvl",3} {"HP/L",4} {"AC",3} {"AB",3} {"Dmg",3} {"Move",4} {"Size",-8} Actions");
-        Console.WriteLine(new string('-', 100));
+        Console.WriteLine($"{"Name",-24} {"Lvl",3} {"HP/L",4} {"AC",3} {"AB",3} {"Dmg",3} {"Move",4} {"Size",-8} {"Family",-10} {"Group",-6} Actions");
+        Console.WriteLine(new string('-', 120));
 
         foreach (var m in defs)
         {
@@ -26,7 +26,15 @@ public static class MonsterTable
                 .Select(ga => ga.Action.Name)
                 .ToList();
             string actStr = string.Join(", ", actions);
-            Console.WriteLine($"{m.Name,-24} {m.BaseLevel,3} {m.HpPerLevel,4} {m.AC.Combined,3} {m.AttackBonus,3} {m.DamageBonus,3} {m.LandMove.Value,4} {m.Size,-8} {actStr}");
+            string grp = m.GroupSize switch
+            {
+                GroupSize.Small => "S",
+                GroupSize.SmallMixed => "SM",
+                GroupSize.Large => "L",
+                GroupSize.LargeMixed => "LM",
+                _ => ""
+            };
+            Console.WriteLine($"{m.Name,-24} {m.BaseLevel,3} {m.HpPerLevel,4} {m.AC.Combined,3} {m.AttackBonus,3} {m.DamageBonus,3} {m.LandMove.Value,4} {m.Size,-8} {m.Family ?? "",-10} {grp,-6} {actStr}");
         }
     }
 }

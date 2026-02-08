@@ -6,6 +6,7 @@ public static class CryptLevels
     {
         id = "asar",
         Name = "Asar",
+        Family = "undead",
         Glyph = new('Z', ConsoleColor.Magenta),
         HpPerLevel = 10,
         AC = 2,

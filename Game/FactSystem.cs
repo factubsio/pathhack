@@ -26,8 +26,8 @@ public interface IEntity
     public IEnumerable<Fact> LiveFacts { get; }
     public IEnumerable<Fact> GetAllFacts(PHContext? ctx);
     public void CleanupMarkedFacts();
-    public Fact AddFact(LogicBrick brick, int? duration = null);
-    public void RemoveStack(LogicBrick brick);
+    public Fact AddFact(LogicBrick brick, int? duration = null, int count = 1);
+    public void RemoveStack(LogicBrick brick, int count = 1);
     public void DecrementActiveFact();
     public void ExpireFacts();
     object? Query(string key, string? arg = null, MergeStrategy merge = MergeStrategy.Replace);
@@ -81,7 +81,7 @@ public class Fact(IEntity entity, LogicBrick brick, object? data)
     }
 }
 
-public enum StackMode { Independent, Stack, Extend }
+public enum StackMode { Independent, Stack, ExtendDuration, ExtendStacks }
 
 [Flags]
 public enum FactDisplayMode
@@ -102,9 +102,10 @@ public abstract class LogicBrick
     public virtual string? BuffName => null;
     public virtual bool IsActive => false;
     public virtual StackMode StackMode => StackMode.Independent;
-    public virtual FactDisplayMode DisplayMode => 0;
+    public virtual FactDisplayMode DisplayMode => FactDisplayMode.Name;
     public virtual int MaxStacks => int.MaxValue;
     public virtual bool RequiresEquipped => false;
+    public virtual string? PokedexDescription => null;
 
     protected virtual object? OnQuery(Fact fact, string key, string? arg) => null;
 
@@ -423,6 +424,9 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
     }
     private readonly List<Fact> Facts = [];
 
+    public int FactCount => Facts.Count;
+    public Fact FactAt(int i) => Facts[i];
+
     public IEnumerable<Fact> LiveFacts => Facts.Where(x => !x.MarkedForRemoval);
 
     public virtual IEnumerable<Fact> GetAllFacts(PHContext? ctx) => LiveFacts;
@@ -447,15 +451,27 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
         return null;
     }
 
-    public Fact AddFact(LogicBrick brick, int? duration = null)
+    public Fact AddFact(LogicBrick brick, int? duration = null, int count = 1)
     {
         var existing = GetFact(brick, true);
         if (brick.StackMode == StackMode.Stack)
         {
             if (existing != null)
             {
-                existing.Stacks = Math.Min(existing.Brick.MaxStacks, existing.Stacks + 1);
+                existing.Stacks = Math.Min(existing.Brick.MaxStacks, existing.Stacks + count);
                 LogicBrick.FireOnStackAdded(existing.Brick, existing);
+                return existing;
+            }
+        }
+        if (brick.StackMode == StackMode.ExtendStacks)
+        {
+            if (existing != null)
+            {
+                if (count > existing.Stacks)
+                {
+                    existing.Stacks = Math.Min(existing.Brick.MaxStacks, count);
+                    LogicBrick.FireOnStackAdded(existing.Brick, existing);
+                }
                 return existing;
             }
         }
@@ -485,11 +501,11 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
         return existing;
     }
 
-    public void RemoveStack(LogicBrick brick)
+    public void RemoveStack(LogicBrick brick, int count = 1)
     {
         var fact = GetFact(brick, false);
         if (fact == null) return;
-        fact.Stacks--;
+        fact.Stacks -= count;
         LogicBrick.FireOnStackRemoved(fact.Brick, fact);
         if (fact.Stacks <= 0)
             fact.Remove();
@@ -556,8 +572,24 @@ public class Inventory(IUnit owner) : IEnumerable<Item>
     public IEnumerator<Item> GetEnumerator() => Items.GetEnumerator();
     System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
 
+    public int Count => Items.Count;
+    public Item this[int i] => Items[i];
+
     public void Add(Item item)
     {
+        // Try to merge with existing stack
+        foreach (var existing in Items)
+        {
+            if (existing.CanMerge(item))
+            {
+                existing.MergeFrom(item);
+
+                // A bit odd, cos `item` will get gc, but for pickup.
+                item.InvLet = existing.InvLet;
+                return;
+            }
+        }
+
         int idx = LetterToIndex(item.InvLet);
         if (idx >= 0 && (inUse & (1UL << idx)) == 0)
         {
@@ -583,7 +615,16 @@ public class Inventory(IUnit owner) : IEnumerable<Item>
 
     public bool Remove(Item item)
     {
-        if (!Items.Remove(item)) return false;
+        int i = Items.IndexOf(item);
+        if (i < 0) return false;
+        RemoveAt(i);
+        return true;
+    }
+
+    public void RemoveAt(int i)
+    {
+        var item = Items[i];
+        Items.RemoveAt(i);
         int idx = LetterToIndex(item.InvLet);
         if (idx >= 0) inUse &= ~(1UL << idx);
         
@@ -592,10 +633,17 @@ public class Inventory(IUnit owner) : IEnumerable<Item>
             owner.Unequip(slot);
         
         item.Holder = null;
-        return true;
     }
 
     public bool Contains(Item item) => Items.Contains(item);
+
+    public void Consume(Item item, int count = 1)
+    {
+        if (item.Count > count)
+            item.Count -= count;
+        else
+            Remove(item);
+    }
 
     static int LetterToIndex(char c) => c switch
     {
@@ -672,6 +720,8 @@ public interface IUnit : IEntity
 
     Trap? TrappedIn { get; set; }
     int EscapeAttempts { get; set; }
+    IUnit? GrabbedBy { get; set; }
+    IUnit? Grabbing { get; set; }
     bool IsDM { get; }
     int CasterLevel { get; }
 
@@ -687,6 +737,7 @@ public interface IUnit : IEntity
     bool Equip(Item item);
     bool Unequip(EquipSlot slot);
     Modifiers QueryModifiers(string key, string? arg = null);
+    List<Fact> QueryFacts(string key, string? arg = null);
 
     public bool IsAwareOf(Trap trap);
     public void ObserveTrap(Trap trap);
@@ -696,6 +747,12 @@ public interface IUnit : IEntity
     bool TryUseCharge(string name);
     void TickPools();
     ChargePool? GetPool(string name);
+
+    int TempHp { get; }
+    int LastDamagedOnTurn { get; set; }
+    void GrantTempHp(int amount);
+    int AbsorbTempHp(int damage);
+    void TickTempHp();
 }
 
 public class ChargePool(int max, int regenRate)
@@ -730,11 +787,14 @@ public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) :
 
     public override IEnumerable<Fact> GetAllFacts(PHContext? ctx)
     {
-        foreach (var f in LiveFacts) yield return f;
+        for (int i = 0; i < FactCount; i++)
+            if (!FactAt(i).MarkedForRemoval) yield return FactAt(i);
         foreach (var item in Inventory)
-            foreach (var f in item.LiveFacts) yield return f;
+            for (int i = 0; i < item.FactCount; i++)
+                if (!item.FactAt(i).MarkedForRemoval) yield return item.FactAt(i);
         if (ctx?.Weapon != null && !Inventory.Contains(ctx.Weapon))
-            foreach (var f in ctx.Weapon.LiveFacts) yield return f;
+            for (int i = 0; i < ctx.Weapon.FactCount; i++)
+                if (!ctx.Weapon.FactAt(i).MarkedForRemoval) yield return ctx.Weapon.FactAt(i);
     }
     IEnumerable<Fact> IUnit.Facts => LiveFacts;
     readonly Dictionary<string, ChargePool> Pools = [];
@@ -743,6 +803,8 @@ public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) :
 
     public Trap? TrappedIn { get; set; }
     public int EscapeAttempts { get; set; }
+    public IUnit? GrabbedBy { get; set; }
+    public IUnit? Grabbing { get; set; }
 
     public abstract bool IsAwareOf(Trap trap);
     public abstract void ObserveTrap(Trap trap);
@@ -751,8 +813,8 @@ public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) :
     {
         if (Pools.TryGetValue(name, out var existing))
         {
-            existing.Max = Math.Max(existing.Max, max);
-            existing.Current = Math.Max(existing.Current, max);
+            existing.Max += max;
+            existing.Current += max;
             existing.RegenRate = Math.Min(existing.RegenRate, regenRate);
         }
         else
@@ -771,6 +833,38 @@ public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) :
     }
     public void TickPools() { foreach (var p in Pools.Values) p.Tick(); }
     public ChargePool? GetPool(string name) => Pools.GetValueOrDefault(name);
+
+    int _tempHp;
+    public int TempHp => _tempHp;
+    public int LastDamagedOnTurn { get; set; } = -100;
+
+    public void GrantTempHp(int amount)
+    {
+        if (amount <= 0) return;
+        int cap = HP.Max / 2;
+        if (_tempHp <= 0)
+            _tempHp = Math.Min(amount, cap);
+        else
+        {
+            float efficiency = (float)amount / (amount + _tempHp);
+            _tempHp = Math.Min(_tempHp + (int)(amount * efficiency), cap);
+        }
+    }
+
+    public int AbsorbTempHp(int damage)
+    {
+        if (_tempHp <= 0 || damage <= 0) return damage;
+        int absorbed = Math.Min(_tempHp, damage);
+        _tempHp -= absorbed;
+        return damage - absorbed;
+    }
+
+    public void TickTempHp()
+    {
+        if (_tempHp <= 0 || g.CurrentRound - LastDamagedOnTurn > 5) return;
+        int decay = Math.Max(5, _tempHp / 3);
+        _tempHp = Math.Max(0, _tempHp - decay);
+    }
 
     public abstract int NaturalRegen { get; }
     public abstract int StrMod { get; }
@@ -813,6 +907,19 @@ public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) :
                 if (LogicBrick.FireOnQuery(fact.Brick, fact, key, arg) is Modifier m)
                     mods.AddModifier(m);
         return mods;
+    }
+
+    public List<Fact> QueryFacts(string key, string? arg = null)
+    {
+        List<Fact> facts = [];
+        foreach (var fact in LiveFacts)
+            if (LogicBrick.FireOnQuery(fact.Brick, fact, key, arg) is Fact f)
+                facts.Add(f);
+        foreach (var item in Inventory)
+            foreach (var fact in item.LiveFacts)
+                if (LogicBrick.FireOnQuery(fact.Brick, fact, key, arg) is Fact f)
+                    facts.Add(f);
+        return facts;
     }
 
     public abstract bool IsPlayer { get; }
@@ -911,4 +1018,3 @@ public class GrantPool(string name, int max, int regenRate) : LogicBrick
         (fact.Entity as IUnit)?.AddPool(name, max, regenRate);
     } 
 }
-

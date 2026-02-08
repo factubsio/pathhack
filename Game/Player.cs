@@ -53,6 +53,9 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
     private readonly Dictionary<string, ProficiencyLevel> Proficiencies = [];
     public int CharacterLevel = 0;
     public int XP = 0;
+    public int Nutrition = Hunger.Satiated - 1;
+    public int HippoCounter;
+    public Activity? CurrentActivity;
     public HashSet<string> TakenFeats = [];
     public Dictionary<LevelId, HashSet<string>> SeenFeatures = [];
 
@@ -110,11 +113,7 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
 
     public void SetProficiency(string skill, ProficiencyLevel level) => Proficiencies[skill] = level;
 
-    public int ProfBonus(string skill)
-    {
-        var prof = GetProficiency(skill);
-        return prof == ProficiencyLevel.Untrained ? 0 : CharacterLevel + (int)prof;
-    }
+    public int ProfBonus(string skill) => (int)GetProficiency(skill);
 
     public static int Mod(int stat) => (stat - 10) / 2;
 
@@ -164,12 +163,13 @@ internal class PlayerSkills : LogicBrick
   {
     return key switch
     {
-        "perception" => new Modifier(ModifierCategory.UntypedStackable, u.CharacterLevel + u.WisMod),
+        "perception" => new Modifier(ModifierCategory.StatBonus, u.WisMod),
+        "athletics" => new Modifier(ModifierCategory.StatBonus, u.StrMod),
 
         // Hmm, how do we let classes override this? Tbh attributes are kinda lame?
-        "reflex_save" => new Modifier(ModifierCategory.UntypedStackable, u.CharacterLevel + u.DexMod),
-        "fortitude_save" => new Modifier(ModifierCategory.UntypedStackable, u.CharacterLevel + u.ConMod),
-        "will_save" => new Modifier(ModifierCategory.UntypedStackable, u.CharacterLevel + u.WisMod),
+        "reflex_save" => new Modifier(ModifierCategory.StatBonus, u.DexMod),
+        "fortitude_save" => new Modifier(ModifierCategory.StatBonus, u.ConMod),
+        "will_save" => new Modifier(ModifierCategory.StatBonus, u.WisMod),
         _ => null,
     };
   }

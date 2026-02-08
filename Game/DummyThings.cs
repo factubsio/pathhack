@@ -40,6 +40,7 @@ public static class DummyThings
     {
         id = "dummy",
         Name = "training dummy",
+        Family = "object",
         Glyph = new('d', ConsoleColor.DarkYellow),
         AttackBonus = 0,
         HpPerLevel = 100,

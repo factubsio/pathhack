@@ -407,7 +407,7 @@ public static class Draw
                             if (items.Count > 0)
                             {
                                 var top = items[^1];
-                                Layers[0][x, y + MapRow] = Cell.From(top.Def.Glyph);
+                                Layers[0][x, y + MapRow] = Cell.From(top.Glyph);
                             }
                             else if (level.GetState(p)?.Feature is {} feature && feature.Id[0] != '_')
                             {
@@ -428,7 +428,7 @@ public static class Draw
                 {
                     if (mem.TopItem is { } item)
                     {
-                        Layers[0][x, y + MapRow] = Cell.From(item.Def.Glyph);
+                        Layers[0][x, y + MapRow] = Cell.From(item.Glyph);
                     }
                     else
                     {
@@ -625,7 +625,8 @@ public static class Draw
         int needed = Progression.XpForLevel(nextLvl) - Progression.XpForLevel(u.CharacterLevel);
         int progress = u.XP - Progression.XpForLevel(u.CharacterLevel);
         string xpStr = Progression.HasPendingLevelUp(u) ? $"XP:{progress}/{needed}*" : $"XP:{progress}/{needed} ";
-        Layers[0].Write(0, StatusRow + 1, $"HP:{u.HP.Current}/{u.HP.Max} AC:{u.GetAC()} CL:{u.CharacterLevel} {xpStr}".PadRight(ScreenWidth));
+        string hpStr = u.TempHp > 0 ? $"HP:{u.HP.Current}+{u.TempHp}/{u.HP.Max}" : $"HP:{u.HP.Current}/{u.HP.Max}";
+        Layers[0].Write(0, StatusRow + 1, $"{hpStr} AC:{u.GetAC()} CL:{u.CharacterLevel} {xpStr}".PadRight(ScreenWidth));
         DrawSpellPips();
     }
 

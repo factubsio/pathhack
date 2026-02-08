@@ -92,6 +92,7 @@ public record class Branch(string Id, string Name, int MaxDepth, ConsoleColor Co
 {
     public List<ResolvedLevel> ResolvedLevels { get; init; } = [];
     public int? EntranceDepthInParent { get; init; }
+    public HashSet<int> BlockedEntranceDepths { get; init; } = [];
 }
 
 public readonly record struct LevelId(Branch Branch, int Depth)
@@ -130,8 +131,9 @@ public record struct RoomStamp
     public RoomStamp(HashSet<Pos> tiles) { Tiles = tiles; }
 }
 
-public record class Room(List<Pos> Border, List<Pos> Interior, RoomType Type = RoomType.Ordinary)
+public record class Room(List<Pos> Border, List<Pos> Interior)
 {
+    public RoomType Type { get; set; } = RoomType.Ordinary;
     public RoomFlags Flags { get; set; }
     public bool Lit => (Flags & RoomFlags.Lit) != 0;
     public bool HasStairs => (Flags & RoomFlags.HasStairs) != 0;
@@ -153,9 +155,9 @@ public record class Room(List<Pos> Border, List<Pos> Interior, RoomType Type = R
                     if (!stamp.Tiles.Contains(p + d)) { edge = true; break; }
                 (edge ? border : interior).Add(p);
             }
-            return new(border, interior, type);
+            return new(border, interior) { Type = type };
         }
-        return new([..stamp.Bounds!.Value.Border()], [..stamp.Bounds!.Value.Interior()], type) { Bounds = stamp.Bounds };
+        return new([..stamp.Bounds!.Value.Border()], [..stamp.Bounds!.Value.Interior()]) { Type = type, Bounds = stamp.Bounds };
     }
 }
 
@@ -180,6 +182,7 @@ public class Level(LevelId id, int width, int height)
     public readonly Dictionary<Pos, Trap> Traps = [];
     public List<Room> Rooms { get; } = [];
     public List<Area> Areas { get; } = [];
+    public List<(Item Corpse, Pos Pos)> Corpses { get; } = [];
     public Pos? StairsUp { get; set; }
     public Pos? StairsDown { get; set; }
     public Pos? BranchUp { get; set; }
@@ -431,12 +434,19 @@ public class Level(LevelId id, int width, int height)
             }
         }
         state.Items.Add(item);
+        
+        if (item.CorpseOf != null)
+            Corpses.Add((item, p));
     }
 
     public bool RemoveItem(Item item, Pos p)
     {
         var items = GetState(p)?.Items;
-        return items?.Remove(item) ?? false;
+        if (items?.Remove(item) != true) return false;
+        
+        if (item.CorpseOf != null)
+            Corpses.RemoveAll(c => c.Corpse == item);
+        return true;
     }
 
     internal void PlaceDoor(Pos pos, DoorState state = DoorState.Closed)

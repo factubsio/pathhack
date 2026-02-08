@@ -21,6 +21,17 @@ public static class Grammar
     public static string Plural(this string s)
     {
         if (string.IsNullOrEmpty(s)) return s;
+        
+        // Handle "X of Y" patterns - pluralize first word
+        int ofIdx = s.IndexOf(" of ");
+        if (ofIdx > 0)
+            return PluralWord(s[..ofIdx]) + s[ofIdx..];
+        
+        return PluralWord(s);
+    }
+
+    static string PluralWord(string s)
+    {
         if (s.EndsWith('s') || s.EndsWith('x') || s.EndsWith("ch") || s.EndsWith("sh"))
             return s + "es";
         if (s.EndsWith('y') && s.Length > 1 && !Vowels.Contains(s[^2]))
@@ -40,4 +51,5 @@ public static class Grammar
     }
 
     public static string DoName(Item item) => item.DisplayName.An();
+    public static string DoNameOne(Item item) => item.SingleName.An();
 }

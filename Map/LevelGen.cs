@@ -185,8 +185,6 @@ public static class LevelGen
 
     static void GenSpecial(LevelGenContext ctx, SpecialLevel spec)
     {
-        ctx.NoRoomAssignment = true;
-        
         // Empty map = use room+corridor gen but still run hooks
         if (string.IsNullOrWhiteSpace(spec.Map))
         {
@@ -323,15 +321,16 @@ public static class LevelGen
         foreach (int i in eligible)
         {
             var room = level.Rooms[i];
-            var shuffled = RoomRules.Shuffled();
-            
+            RoomRule[] shuffled = [.. RoomRules];
+            _rng.Shuffle(shuffled);
+
             foreach (var rule in shuffled)
             {
                 int chance = rule.Chance(level, room);
                 if (chance <= 0) continue;
                 int roll = Rn2(100);
                 if (roll >= chance) { Log($"Room {i} {rule.Type}: roll {roll} >= {chance}, skip"); continue; }
-                level.Rooms[i] = room with { Type = rule.Type };
+                room.Type = rule.Type;
                 Log($"Room {i} {rule.Type}: roll {roll} < {chance}, assigned");
                 break;
             }
@@ -353,8 +352,68 @@ public static class LevelGen
                 case RoomType.GremlinPartyBig:
                     FillGremlinParty(ctx, room, small: false);
                     break;
+                default:
+                    FillOrdinaryRoom(ctx, room);
+                    break;
             }
         }
+    }
+
+    // NH rules from mklev.c for OROOM
+    static void FillOrdinaryRoom(LevelGenContext ctx, Room room)
+    {
+        var level = ctx.level;
+        
+        // Monster: 1/3 chance
+        if (Rn2(3) == 0)
+        {
+            var pos = ctx.FindLocationInRoom(room, p => level.NoUnit(p) && !level[p].IsStairs);
+            if (pos != null)
+            {
+                var def = MonsterSpawner.PickMonster(level.Depth, u.CharacterLevel);
+                if (def != null)
+                {
+                    var mon = Monster.Spawn(def);
+                    mon.IsAsleep = true;
+                    level.PlaceUnit(mon, pos.Value);
+                    Log($"mongen: placed {def.Name} at {pos.Value}");
+                }
+            }
+        }
+        
+        // Traps: x = 12 - depth/6, while rn2(x)==0 place trap
+        int trapChance = Math.Max(2, 12 - level.Depth / 6);
+        while (Rn2(trapChance) == 0)
+        {
+            var pos = ctx.FindLocationInRoom(room, p => level[p].IsPassable && !level.Traps.ContainsKey(p));
+            if (pos == null) break;
+            
+            Trap trap = Rn2(3) == 0 ? new WebTrap(level.Depth) : new PitTrap(level.Depth);
+            level.Traps[pos.Value] = trap;
+            Log($"trapgen: placed {trap.Type} at {pos.Value}");
+        }
+        
+        // Gold: 1/3 chance (TODO: implement gold)
+        
+        // Items: 1/3 chance for first, then 1/5 for each additional
+        if (Rn2(3) == 0)
+        {
+            PlaceRoomItem(ctx, room);
+            while (Rn2(5) == 0)
+                PlaceRoomItem(ctx, room);
+        }
+    }
+    
+    static void PlaceRoomItem(LevelGenContext ctx, Room room)
+    {
+        var pos = ctx.FindLocationInRoom(room, p => ctx.level[p].IsPassable && !ctx.level.HasFeature(p));
+        if (pos == null) return;
+        
+        var item = ItemGen.GenerateRandomItem(ctx.level.Depth);
+        if (item == null) return;
+        
+        ctx.level.PlaceItem(item, pos.Value);
+        Log($"objgen: placed {item.DisplayName} at {pos.Value}");
     }
 
     static void FillGoblinNest(LevelGenContext ctx, Room room)

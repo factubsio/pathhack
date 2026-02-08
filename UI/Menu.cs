@@ -103,11 +103,16 @@ public class Menu<T>
             var key = Input.NextKey();
             
             // paging
-            if (key.Key == ConsoleKey.RightArrow || key.KeyChar == '>' || key.Key == ConsoleKey.Spacebar)
+            if (key.Key == ConsoleKey.RightArrow || key.KeyChar == '>')
             {
                 if (pages > 1) page = (page + 1) % pages;
                 else break;
                 continue;
+            }
+            if (key.Key == ConsoleKey.Spacebar)
+            {
+                if (page < pages - 1) { page++; continue; }
+                else break; // last page: exit
             }
             if (key.Key == ConsoleKey.LeftArrow || key.KeyChar == '<' || key.KeyChar == '^'
                 || (key.Key == ConsoleKey.P && key.Modifiers == ConsoleModifiers.Control))

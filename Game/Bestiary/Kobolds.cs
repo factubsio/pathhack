@@ -6,6 +6,7 @@ public static class Kobolds
     {
         id = "kobold",
         Name = "kobold",
+        Family = "kobold",
         Glyph = new('k', ConsoleColor.DarkYellow),
         HpPerLevel = 6,
         AC = 0,
@@ -30,6 +31,7 @@ public static class Kobolds
     {
         id = "kobold_scout",
         Name = "kobold scout",
+        Family = "kobold",
         Glyph = new('k', ConsoleColor.Green),
         HpPerLevel = 6,
         AC = 1,
@@ -55,6 +57,7 @@ public static class Kobolds
     {
         id = "kobold_warrior",
         Name = "kobold warrior",
+        Family = "kobold",
         Glyph = new('k', ConsoleColor.Red),
         HpPerLevel = 6,
         AC = 1,

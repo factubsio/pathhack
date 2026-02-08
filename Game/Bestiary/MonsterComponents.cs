@@ -4,6 +4,8 @@ namespace Pathhack.Game.Bestiary;
 
 public class Ferocity : LogicBrick<DataFlag>
 {
+    public override string? PokedexDescription => "Ferocity (survives first lethal blow at 1 HP)";
+
     protected override void OnDamageTaken(Fact fact, PHContext ctx)
     {
         if (X(fact)) return; // already used
@@ -71,6 +73,7 @@ public static class NaturalWeapons
         DamageType = DamageTypes.Blunt,
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Unarmed,
+        Material = "flesh",
     };
 
     public static readonly WeaponDef Bite_1d3 = new()
@@ -81,6 +84,7 @@ public static class NaturalWeapons
         DamageType = DamageTypes.Piercing,
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
+        Material = "tooth",
     };
 
     public static readonly WeaponDef Bite_1d4 = new()
@@ -91,6 +95,7 @@ public static class NaturalWeapons
         DamageType = DamageTypes.Piercing,
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
+        Material = "tooth",
     };
 
     public static readonly WeaponDef Bite_1d6 = new()
@@ -101,6 +106,7 @@ public static class NaturalWeapons
         DamageType = DamageTypes.Piercing,
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
+        Material = "tooth",
     };
 
     public static readonly WeaponDef Bite_1d8 = new()
@@ -111,6 +117,7 @@ public static class NaturalWeapons
         DamageType = DamageTypes.Piercing,
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
+        Material = "tooth",
     };
 
     public static readonly WeaponDef Bite_2d6 = new()
@@ -121,6 +128,51 @@ public static class NaturalWeapons
         DamageType = DamageTypes.Piercing,
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
+        Material = "tooth",
+    };
+
+    public static readonly WeaponDef Bite_2d8 = new()
+    {
+        id = "bite_2d8",
+        Name = "jaws",
+        BaseDamage = d(2, 8),
+        DamageType = DamageTypes.Piercing,
+        Profiency = Proficiencies.Unarmed,
+        Category = WeaponCategory.Natural,
+        Material = "tooth",
+    };
+
+    public static readonly WeaponDef Bite_2d10 = new()
+    {
+        id = "bite_2d10",
+        Name = "jaws",
+        BaseDamage = d(2, 10),
+        DamageType = DamageTypes.Piercing,
+        Profiency = Proficiencies.Unarmed,
+        Category = WeaponCategory.Natural,
+        Material = "tooth",
+    };
+
+    public static readonly WeaponDef Stomp_1d8 = new()
+    {
+        id = "stomp_1d8",
+        Name = "stomp",
+        BaseDamage = d(8),
+        DamageType = DamageTypes.Blunt,
+        Profiency = Proficiencies.Unarmed,
+        Category = WeaponCategory.Natural,
+        Material = "keratin",
+    };
+
+    public static readonly WeaponDef Stomp_1d10 = new()
+    {
+        id = "stomp_1d10",
+        Name = "stomp",
+        BaseDamage = d(10),
+        DamageType = DamageTypes.Blunt,
+        Profiency = Proficiencies.Unarmed,
+        Category = WeaponCategory.Natural,
+        Material = "keratin",
     };
 
     public static readonly WeaponDef Claw_1d3 = new()
@@ -131,6 +183,7 @@ public static class NaturalWeapons
         DamageType = DamageTypes.Slashing,
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
+        Material = "keratin",
     };
 
     public static readonly WeaponDef Claw_1d4 = new()
@@ -141,6 +194,7 @@ public static class NaturalWeapons
         DamageType = DamageTypes.Slashing,
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
+        Material = "keratin",
     };
 
     public static readonly WeaponDef Claw_1d6 = new()
@@ -151,6 +205,7 @@ public static class NaturalWeapons
         DamageType = DamageTypes.Slashing,
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
+        Material = "keratin",
     };
 
     public static readonly WeaponDef Claw_1d8 = new()
@@ -161,6 +216,7 @@ public static class NaturalWeapons
         DamageType = DamageTypes.Slashing,
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
+        Material = "keratin",
     };
 
     public static readonly WeaponDef DogSlicer = new()

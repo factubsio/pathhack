@@ -55,6 +55,8 @@ public static class CreatureSubtypes
   public const string Giant = "giant";
 }
 
+public enum GroupSize { None, Small, SmallMixed, Large, LargeMixed }
+
 public abstract class MonsterBrain
 {
   public abstract bool DoTurn(Monster m);
@@ -87,12 +89,25 @@ public class MonsterDef : BaseDef
   public bool Peaceful = false;
   public bool Stationary = false;
   public int MaxDepth = 99;
-  public string? Family;
+  public required string Family;
   public Action<Monster>? OnChat;
   public required MoralAxis MoralAxis;
   public required EthicalAxis EthicalAxis;
   public string CreatureType = CreatureTypes.Humanoid;
   public HashSet<string> Subtypes = [];
+  public bool NoCorpse = false;
+  public GroupSize GroupSize = GroupSize.None;
+
+  public virtual int Nutrition => Size switch
+  {
+      UnitSize.Tiny => 50,
+      UnitSize.Small => 150,
+      UnitSize.Medium => 400,
+      UnitSize.Large => 700,
+      UnitSize.Huge => 1200,
+      UnitSize.Gargantuan => 2000,
+      _ => 200
+  };
 }
 
 public abstract class MonsterTemplate(string id)
@@ -116,6 +131,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
   public static readonly Monster DM = new(new()
   {
     Name = "DM",
+    Family = "dm",
     Glyph = Glyph.Null,
     HpPerLevel = 1,
     AC = 1,
@@ -159,19 +175,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
 
   bool WasRecentlyAt(Pos p) => _track.Any(x => x == p);
 
-  public bool CanSeeYou
-  {
-    get
-    {
-      // use player's LOS (symmetric) - if player could see us, we could see them
-      // also need player to be lit (or monster has special vision)
-      bool inLOS = lvl.HasLOS(Pos);
-      bool playerLit = lvl.IsLit(upos);
-
-      // TODO: infravision, see invisible, etc.
-      return inLOS && playerLit;
-    }
-  }
+  public bool CanSeeYou => CanSee(this, u);
 
   void UpdateApparentPos()
   {
@@ -206,6 +210,13 @@ public class Monster : Unit<MonsterDef>, IFormattable
       return;
     }
 
+    // adjacent stumble - 1/8 chance to notice adjacent player
+    if (Pos.ChebyshevDist(upos) <= 1 && g.Rn2(8) == 0)
+    {
+      ApparentPlayerPos = upos;
+      return;
+    }
+
     // can't see - chance to forget if at stale pos or random
     if (ApparentPlayerPos is { } last)
     {
@@ -228,10 +239,11 @@ public class Monster : Unit<MonsterDef>, IFormattable
 
   private int LevelDC => 12 + (Def.BaseLevel + TemplateBonusLevels + 1) / 2;
 
-  private const int ATTACK_BONUS_FUDGE = -5;
+  // see tools/dc.md, this gives us what seems to be a reasonable curve
+  private const int ATTACK_PENALTY_FUDGE = 5;
 
   public override ActionCost LandMove => Def.LandMove.Value - QueryModifiers("speed_bonus").Calculate();
-  public override int GetAttackBonus(WeaponDef weapon) => LevelDC - ATTACK_BONUS_FUDGE + Def.AttackBonus;
+  public override int GetAttackBonus(WeaponDef weapon) => LevelDC - ATTACK_PENALTY_FUDGE + Def.AttackBonus;
   public override int GetDamageBonus() => Def.DamageBonus + TemplateBonusLevels;
   public override int GetSpellDC() => LevelDC;
   protected override WeaponDef GetUnarmedDef() => Def.Unarmed;
@@ -256,6 +268,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
   public static Monster Spawn(MonsterDef def, MonsterTemplate? template = null)
   {
     Monster m = new(def, template?.GetComponents(def) ?? def.Components);
+    m.Peaceful = def.Peaceful;
     m.TemplateBonusLevels = template?.LevelBonus(def, m.EffectiveLevel) ?? 0;
     m.HP.Reset(Math.Max(1, def.HpPerLevel * m.EffectiveLevel - 1));
     template?.ModifySpawn(m);
@@ -278,7 +291,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
     if (Def.Brain?.DoTurn(this) == true) return true;
 
     // peaceful monsters don't attack
-    if (!Def.Peaceful)
+    if (!Peaceful)
     {
       // try any action that can execute
       Target playerTarget = new(u, upos);
@@ -297,7 +310,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
 
     if (Def.LandMove.Value <= 0 || Def.Stationary) return false;
 
-    if (!Def.Peaceful)
+    if (!Peaceful)
       UpdateApparentPos();
     Pos mp = Pos;
 
@@ -358,8 +371,14 @@ public class Monster : Unit<MonsterDef>, IFormattable
   public override int CasterLevel => Math.Clamp(Def.BaseLevel, 1, 20);
   public override int EffectiveLevel => Math.Clamp(Def.BaseLevel + TemplateBonusLevels, 1, 30);
 
-  public string CreatureTypeRendered => $"{OwnCreatureType ?? Def.CreatureType} [{string.Join(", ", OwnSubtypes ?? Def.Subtypes)}] {OwnEthicalAxis ?? Def.EthicalAxis}/{OwnMoralAxis ?? Def.MoralAxis}";
+  public string CreatureTypeRendered {
+    get {
+      var subtypes = OwnSubtypes ?? Def.Subtypes;
+      string sub = subtypes.Count > 0 ? $" [{string.Join(", ", subtypes)}]" : "";
+      return $"{OwnCreatureType ?? Def.CreatureType}{sub} {OwnEthicalAxis ?? Def.EthicalAxis}/{OwnMoralAxis ?? Def.MoralAxis}";
+    }
+  }
 
   public TrapType KnownTraps;
-
+  internal bool Peaceful;
 }

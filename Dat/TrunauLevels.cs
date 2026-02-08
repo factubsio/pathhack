@@ -53,6 +53,7 @@ public static class TrunauLevels
     static readonly MonsterDef Villager = new()
     {
         Name = "villager",
+        Family = "human",
         Glyph = new('@', ConsoleColor.White),
         HpPerLevel = 6,
         AC = 0,
@@ -79,6 +80,7 @@ public static class TrunauLevels
     static readonly MonsterDef QuestGiver = new()
     {
         Name = "Chief Defender Halgra",
+        Family = "human",
         Glyph = new('@', ConsoleColor.Yellow),
         HpPerLevel = 10,
         AC = 2,
@@ -213,6 +215,7 @@ She taps a worn parchment. "There's an ancient tomb beneath Trunau. Most folk ha
             {
                 id = "catapult",
                 Name = "catapult",
+                Family = "object",
                 Glyph = new('0', ConsoleColor.DarkYellow),
                 HpPerLevel = 12,
                 AC = -5,

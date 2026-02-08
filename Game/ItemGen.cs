@@ -1,18 +1,76 @@
 namespace Pathhack.Game;
 
+// TODO: Add MapDepth(branch, actualDepth) -> 1-20 to handle:
+//   - Branch difficulty offsets (crypt +2, easy branch -2)
+//   - Depth compression for long dungeons
+//   - Tables stay fixed 1-20, mapping handles the weirdness
+
 public static class ItemGen
 {
+    // Class probabilities (dNH style)
+    static readonly (int weight, Func<int, Item?> gen)[] ClassWeights = [
+        (16, GeneratePotion),
+        (16, GenerateScroll),
+        (10, GenerateWeapon),
+        (10, GenerateArmor),
+    ];
+    
+    static int TotalWeight => ClassWeights.Sum(x => x.weight);
+
+    public static Item? GenerateRandomItem(int depth)
+    {
+        int roll = g.Rn2(TotalWeight);
+        foreach (var (weight, gen) in ClassWeights)
+        {
+            roll -= weight;
+            if (roll < 0)
+                return gen(depth);
+        }
+        return null;
+    }
+
+    static Item? GeneratePotion(int depth)
+    {
+        if (Potions.All.Length == 0) return null;
+        var def = Potions.All[g.Rn2(Potions.All.Length)];
+        return Item.Create(def);
+    }
+
+    static Item? GenerateScroll(int depth)
+    {
+        if (Scrolls.All.Length == 0) return null;
+        var def = Scrolls.All[g.Rn2(Scrolls.All.Length)];
+        return Item.Create(def);
+    }
+
+    static Item? GenerateWeapon(int depth)
+    {
+        var def = PickWeaponDef(depth);
+        return GenerateItem(def, depth);
+    }
+
+    static Item? GenerateArmor(int depth)
+    {
+        var armors = new ArmorDef[] { MundaneArmory.LeatherArmor, MundaneArmory.ChainShirt };
+        var def = armors[g.Rn2(armors.Length)];
+        return GenerateItem(def, depth);
+    }
+
     public static Item GenerateItem(ItemDef def, int depth = 1, int? maxPotency = null, bool propertyRunes = true)
     {
         Item item = new(def);
+        List<string> genLog = [];
         
         if (def is WeaponDef)
         {
-            item.Potency = RollPotency(maxPotency);
-            RollFundamental(item, depth);
+            item.Potency = RollPotency(depth, genLog, maxPotency);
+            RollFundamental(item, depth, genLog);
             if (propertyRunes)
-                RollPropertyRunes(item, depth);
+                RollPropertyRunes(item, depth, genLog);
         }
+
+        if (genLog.Count > 0)
+            Log.Write($"objgen: d{depth}: {item.DisplayName} [{string.Join(", ", genLog)}]");
 
         LogicBrick.FireOnSpawn(item, PHContext.Create(null, Target.None));
         return item;
@@ -23,59 +81,52 @@ public static class ItemGen
         return MundaneArmory.AllWeapons.Pick();
     }
 
-    public static int RollPotency(int? force = 3)
+    public static int RollPotency(int depth, List<string>? genLog, int? force = null)
     {
         if (force.HasValue && force.Value < 0) return -force.Value;
-        int max = force ?? 3;
-        int roll = g.Rne(max + 1) - 1; // 0 to max, geometric
-        return Math.Min(roll, max);
+        if (force.HasValue) return g.Rne(force.Value + 1) - 1;
+        
+        int d = Math.Clamp(depth, 0, ItemGenTables.Potency.Length - 1);
+        int roll = g.Rn2(100);
+        int result = ItemGenTables.Potency[d][roll];
+        if (result > 0) genLog?.Add($"potency r{roll}={result}");
+        return result;
     }
 
-    private static void RollFundamental(Item item, int depth, int charLevel = 1)
+    private static void RollFundamental(Item item, int depth, List<string> genLog, int charLevel = 1)
     {
-        // 75% at depth 1, 25% at depth 30 (linear)
-        int blockerChance = Math.Max(25, 75 - (depth - 1) * 50 / 29);
+        int d = Math.Clamp(depth, 0, ItemGenTables.Fundamental.Length - 1);
         int roll = g.Rn2(100);
-
-        if (roll < blockerChance)
+        int quality = ItemGenTables.Fundamental[d][roll];
+        
+        if (quality == 0)
         {
             ApplyRune(item, Runes.NullFundamental, fundamental: true);
             return;
         }
         
-        if (roll < 50)
-            return; // empty
-        
-        // pick bonus vs striking
-        bool isStriking = g.Rn2(2) == 0;
-        int quality = RollQuality();
-        
-        RuneDef rune = isStriking
-            ? Runes.Striking(quality)
-            : Runes.Bonus(quality);
-        
-        ApplyRune(item, rune, fundamental: true);
+        genLog.Add($"striking r{roll}={quality}");
+        ApplyRune(item, Runes.Striking(quality), fundamental: true);
     }
 
-    private static void RollPropertyRunes(Item item, int depth)
+    private static void RollPropertyRunes(Item item, int depth, List<string> genLog)
     {
-        int fillChance = 25;
+        int d = Math.Clamp(depth, 0, ItemGenTables.Fill.Length - 1);
         HashSet<int> usedCategories = [];
         
-        while (item.HasEmptyPropertySlot && fillChance > 0)
+        for (int slot = 0; slot < item.Potency; slot++)
         {
-            if (g.Rn2(100) >= fillChance) break;
+            int fillRoll = g.Rn2(100);
+            if (ItemGenTables.Fill[d][fillRoll] == 0) continue;
             
             int category = g.Rn2(3); // fire, frost, shock for now
+            if (!usedCategories.Add(category)) continue;
             
-            // duplicate category penalizes and skips
-            if (!usedCategories.Add(category))
-            {
-                fillChance -= 2;
-                continue;
-            }
+            int qualRoll = g.Rn2(100);
+            int quality = ItemGenTables.Quality[d][qualRoll];
             
-            int quality = RollQuality();
+            string[] names = ["flaming", "frost", "shock"];
+            genLog.Add($"{names[category]} f{fillRoll} q{qualRoll}={quality}");
             
             RuneDef rune = category switch
             {
@@ -85,13 +136,13 @@ public static class ItemGen
             };
             
             ApplyRune(item, rune, fundamental: false);
-            fillChance -= 6;
         }
     }
 
-    private static int RollQuality()
+    private static int RollQuality(int depth)
     {
-        return g.Rne(4); // 1-4 geometric
+        int d = Math.Clamp(depth, 0, ItemGenTables.Quality.Length - 1);
+        return ItemGenTables.Quality[d][g.Rn2(100)];
     }
 
     public static void ApplyRune(Item item, RuneDef runeDef, bool fundamental)
@@ -104,16 +155,6 @@ public static class ItemGen
             item.Fundamental = rune;
         else
             item.PropertyRunes.Add(rune);
-    }
-
-    private static Item GenerateWeapon(int depth)
-    {
-        var def = PickWeaponDef(depth);
-        var item = GenerateItem(def);
-        item.Potency = RollPotency(depth);
-        RollFundamental(item, depth);
-        RollPropertyRunes(item, depth);
-        return item;
     }
 }
 

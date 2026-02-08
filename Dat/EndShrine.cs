@@ -14,6 +14,7 @@ public static class EndShrineLevels
   private static readonly MonsterDef ShrineAttendant = new()
   {
     Name = "Shrine Attendant",
+    Family = "construct",
     AttackBonus = 1,
     DamageBonus = 0,
     Glyph = new('7', ConsoleColor.White),
@@ -34,6 +35,7 @@ public static class EndShrineLevels
   private static readonly MonsterDef WrongShrineGuardian = new()
   {
     Name = "Shrine Guardian",
+    Family = "construct",
     AttackBonus = 40,
     DamageBonus = 10,
     Glyph = new('7', ConsoleColor.Magenta),

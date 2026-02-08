@@ -18,6 +18,7 @@ const categoryMap: Record<string, string[]> = {
   creatures: ["creatures_by_family", "creatures_by_trait", "creatures_by_level"],
   feats: ["feats_by_trait"],
   spells: ["spells_by_level", "spells_by_tradition"],
+  equipment: ["equipment_by_category", "equipment_by_level", "equipment_by_trait"],
 };
 
 const dirs = categoryMap[category];
@@ -28,6 +29,7 @@ if (!dirs) {
 }
 
 const matches = (name: string, query: string) => {
+  if (query === "*") return true;
   const n = name.toLowerCase();
   const q = query.toLowerCase().replace(/s$/, "");
   return n === q || n.startsWith(q + " ") || n.endsWith(" " + q) || n.includes(" " + q + " ") || n.startsWith(q);
@@ -39,8 +41,12 @@ if (verb === "index") {
     for (const entry of await readdir(base, { withFileTypes: true })) {
       if (!entry.isDirectory()) continue;
       if (!matches(entry.name, query)) continue;
-      const files = (await readdir(`${base}/${entry.name}`)).filter(f => f.endsWith(".txt"));
-      console.log(`${dir}/${entry.name}: ${files.map(f => f.replace(".txt", "")).join(", ")}`);
+      if (query === "*") {
+        console.log(entry.name);
+      } else {
+        const files = (await readdir(`${base}/${entry.name}`)).filter(f => f.endsWith(".txt"));
+        console.log(`${dir}/${entry.name}: ${files.map(f => f.replace(".txt", "")).join(", ")}`);
+      }
     }
   }
 } else if (verb === "find") {
