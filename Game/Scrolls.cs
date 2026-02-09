@@ -27,56 +27,53 @@ public static class Scrolls
 
     public static void DoEffect(ScrollDef def, IUnit user, Func<Item?> pickItemToIdentify)
     {
+        bool doIdentify = user.IsPlayer;
+
         switch (def)
         {
             case var _ when def == MagicMapping:
+                if (!user.IsPlayer) return;
+
                 g.DoMapLevel();
-                ItemDb.Instance.Identify(def);
                 break;
             case var _ when def == Identify:
-                ItemDb.Instance.Identify(def);
+                if (!user.IsPlayer) return;
+
+                def.SetKnown();
                 g.pline("This is an identify scroll.");
                 if (pickItemToIdentify() is { } toId)
                 {
-                    ItemDb.Instance.Identify(toId.Def);
+                    toId.Def.SetKnown();
                     g.pline($"{toId.InvLet} - {toId.DisplayName}.");
                 }
                 break;
+                
             case var _ when def == Teleportation:
-                DoRandomTeleport(user);
-                ItemDb.Instance.Identify(def);
+                var dest = lvl.FindLocation(p => lvl[p].IsPassable && lvl.NoUnit(p));
+                if (dest == null)
+                {
+                    g.YouObserveSelf(user, "You feel disoriented for a moment.", $"{user:The} seems to shudder in place.");
+                }
+                else
+                {
+                    g.YouObserveSelf(user, "You are suddenly somewhere else!", $"{user:The} disappears!");
+                    lvl.MoveUnit(user, dest.Value);
+                }
                 break;
             case var _ when def == Fire:
-                DoScrollFire(user);
-                ItemDb.Instance.Identify(def);
+                g.YouObserve(user, $"A pillar of fire erupts around {user:the}!");
+                foreach (var n in user.Pos.Neighbours(true))
+                {
+                    if (lvl.UnitAt(n) is { } victim)
+                    {
+                        using var ctx = PHContext.Create(user, Target.From(victim));
+                        ctx.Damage.Add(new DamageRoll { Formula = d(2, 6), Type = DamageTypes.Fire });
+                        DoDamage(ctx);
+                    }
+                }
                 break;
         }
-    }
 
-    static void DoRandomTeleport(IUnit unit)
-    {
-        var dest = lvl.FindLocation(p => lvl[p].IsPassable && lvl.NoUnit(p));
-        if (dest == null)
-        {
-            g.pline("You feel disoriented for a moment.");
-            return;
-        }
-        lvl.MoveUnit(unit, dest.Value);
-        g.pline("You are suddenly somewhere else!");
-    }
-
-    static void DoScrollFire(IUnit user)
-    {
-        g.pline("A pillar of fire erupts around you!");
-        foreach (var dir in Pos.AllDirs)
-        {
-            var target = user.Pos + dir;
-            if (lvl.UnitAt(target) is { } victim)
-            {
-                using var ctx = PHContext.Create(user, Target.From(victim));
-                ctx.Damage.Add(new DamageRoll { Formula = d(6, 6), Type = DamageTypes.Fire });
-                DoDamage(ctx);
-            }
-        }
+        if (doIdentify) def.SetKnown();
     }
 }

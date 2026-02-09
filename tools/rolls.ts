@@ -1,342 +1,141 @@
-// bun tools/rolls.ts
+// bun tools/rolls.ts [--read-cs] [--write-cs] [--sweep]
 // Simulate item generation roll distributions
+
+import Table from 'cli-table3';
+
+const readCs = process.argv.includes('--read-cs');
+const sweep = process.argv.includes('--sweep');
+
+interface SimResult {
+  depth: number;
+  mundanePct: number;
+  noPotencyPct: number;
+  potencyDist: { pct: number; p75: number }[];
+  qualityDist: [number, number, number, number];
+  empty: { pct: number; p75: number }[];
+}
+const writeCs = process.argv.includes('--write-cs');
 
 function rn2(n: number): number {
   return Math.floor(Math.random() * n);
 }
 
-function rne(n: number): number {
-  // Geometric distribution 1 to n, favors low
-  for (let i = 1; i < n; i++) {
-    if (rn2(2) === 0) return i;
-  }
-  return n;
+function rne(x: number): number {
+  // Geometric distribution, 1/x chance to continue, cap at 5
+  let result = 1;
+  while (result < 5 && rn2(x) === 0) result++;
+  return result;
 }
 
-// Current implementation (advantage-based)
-function rollPotencyAdvantage(depth: number): number {
-  const tier = Math.floor((depth + 3) / 5);
-  let roll = rne(5) - 1;
-  for (let i = 0; i < tier; i++) {
-    roll = Math.max(roll, rne(5) - 1);
-  }
-  return roll;
+// === CONFIG ===
+
+interface GenConfig {
+  potMundaneStart: number;
+  potMundaneSlope: number;
+  potMundaneFloor: number;
+  potRneStart: number;
+  potRneDivisor: number;
+  potRneFloor: number;
+  fillStart: number;
+  fillSlope: number;
+  fillFloor: number;
+  qualStart: number;
+  qualDivisor: number;
+  qualFloor: number;
 }
 
-// Proposed: base + continuous depth bonus
-function rollPotencyAdditive(depth: number): number {
-  const mundaneChance = Math.max(20, 90 - (depth - 1) * 3);
+const defaultConfig: GenConfig =
+{
+  "potMundaneStart": 87,
+  "potMundaneSlope": 2.9871723881091974,
+  "potMundaneFloor": 51,
+  "potRneStart": 4,
+  "potRneDivisor": 5,
+  "potRneFloor": 2,
+  "fillStart": 69,
+  "fillSlope": 1.568917336432067,
+  "fillFloor": 37,
+  "qualStart": 6,
+  "qualDivisor": 4,
+  "qualFloor": 3
+};
+
+// === ROLL FUNCTIONS (used for table generation) ===
+
+function rollPotencyContinuous(depth: number, cfg: GenConfig): number {
+  const mundaneChance = Math.max(cfg.potMundaneFloor, cfg.potMundaneStart - (depth - 1) * cfg.potMundaneSlope);
   if (rn2(100) < mundaneChance) return 0;
-  // Continuous: rne scales with depth, not tiers
-  const bonusMax = Math.max(1, Math.floor(depth / 5) + 1);
-  const bonus = rne(bonusMax) - 1;
-  return Math.min(rne(4) + bonus, 4);
+  const base = Math.max(cfg.potRneFloor, cfg.potRneStart - Math.floor(depth / cfg.potRneDivisor));
+  return Math.min(rne(base), 3);
 }
 
-// Proposed v2: fully continuous
-function rollPotencyContinuous(depth: number): number {
-  const mundaneChance = Math.max(20, 90 - (depth - 1) * 3);
-  if (rn2(100) < mundaneChance) return 0;
-  // Roll base 1-4, then chance to add 1 based on depth
-  let result = rne(4);
-  // Each 5 depth gives 50% chance to +1
-  for (let d = 5; d <= depth; d += 5) {
-    if (rn2(2) === 0) result++;
-  }
-  return Math.min(result, 3);
+function rollQuality(depth: number, cfg: GenConfig): number {
+  const base = Math.max(cfg.qualFloor, cfg.qualStart - Math.floor(depth / cfg.qualDivisor));
+  return Math.min(rne(base), 4);
 }
 
-// Simulate and count distribution
-function simulate(fn: (depth: number) => number, depth: number, trials = 10000): number[] {
-  const counts = [0, 0, 0, 0, 0]; // 0-4
-  for (let i = 0; i < trials; i++) {
-    const result = fn(depth);
-    counts[Math.min(result, 4)]++;
-  }
-  return counts.map(c => Math.round(c / trials * 100));
-}
-
-function printTable(name: string, fn: (depth: number) => number) {
-  console.log(`\n=== ${name} ===`);
-  console.log("Depth |  +0  |  +1  |  +2  |  +3  |  +4  |");
-  console.log("------|------|------|------|------|------|");
-  for (const depth of [1, 3, 5, 7, 10, 15, 20]) {
-    const pcts = simulate(fn, depth);
-    const row = pcts.map(p => `${p}%`.padStart(4)).join("  | ");
-    console.log(`  ${String(depth).padStart(2)}  | ${row}  |`);
-  }
-}
-
-printTable("ADVANTAGE (current)", rollPotencyAdvantage);
-printTable("ADDITIVE (tiered)", rollPotencyAdditive);
-printTable("CONTINUOUS (proposed)", rollPotencyContinuous);
-
-// Full item simulation
-interface ItemResult {
-  potency: number;
-  fundamental: 'null' | 'striking';
-  fundQuality: number;
-  propCount: number;
-  propQualities: number[];
-}
-
-function rollQuality(depth: number): number {
-  let result = rne(5) - 1;
-  for (let d = 5; d <= depth; d += 5) {
-    if (rn2(2) === 0) result++;
-  }
-  return Math.min(result, 4);
-}
-
-function rollFundamental(depth: number): { type: 'null' | 'striking', quality: number } {
+function rollFundamental(depth: number, cfg: GenConfig): { type: 'null' | 'striking', quality: number } {
   const nullChance = Math.max(20, 90 - (depth - 1) * 3);
   if (rn2(100) < nullChance) return { type: 'null', quality: 0 };
-  return { type: 'striking', quality: rollQuality(depth) };
+  return { type: 'striking', quality: rollQuality(depth, cfg) };
 }
-
-function rollPropertyRunes(depth: number, slots: number): number[] {
-  const qualities: number[] = [];
-  const fillChance = Math.min(90, 70 + depth); // 70% base, +1/depth, cap 90%
-  
-  // Roll each slot independently
-  for (let i = 0; i < slots; i++) {
-    if (rn2(100) < fillChance) {
-      qualities.push(rollQuality(depth));
-    }
-  }
-  return qualities;
-}
-
-function rollFullItem(depth: number): ItemResult {
-  const potency = rollPotencyContinuous(depth);
-  const fund = rollFundamental(depth);
-  const props = rollPropertyRunes(depth, potency);
-  return {
-    potency,
-    fundamental: fund.type,
-    fundQuality: fund.quality,
-    propCount: props.length,
-    propQualities: props,
-  };
-}
-
-function simulateItems(depth: number, trials = 10000) {
-  let mundane = 0;
-  let hasSlots = 0;
-  let hasProps = 0;
-  let hasFund = 0;
-  let totalProps = 0;
-  let fundQualitySum = 0;
-  let fundCount = 0;
-  let emptySlots = 0;
-  let totalSlots = 0;
-  const emptyDist = [0, 0, 0, 0, 0]; // 0, 1, 2, 3, 4 empty
-  
-  for (let i = 0; i < trials; i++) {
-    const item = rollFullItem(depth);
-    if (item.potency === 0 && item.fundamental === 'null') mundane++;
-    if (item.potency > 0) {
-      hasSlots++;
-      totalSlots += item.potency;
-      const empty = item.potency - item.propCount;
-      emptySlots += empty;
-      emptyDist[Math.min(empty, 4)]++;
-    }
-    if (item.fundamental !== 'null') {
-      hasFund++;
-      fundQualitySum += item.fundQuality;
-      fundCount++;
-    }
-    if (item.propCount > 0) hasProps++;
-    totalProps += item.propCount;
-  }
-  
-  return {
-    mundane: Math.round(mundane / trials * 100),
-    hasSlots: Math.round(hasSlots / trials * 100),
-    hasFund: Math.round(hasFund / trials * 100),
-    avgFundQ: fundCount > 0 ? (fundQualitySum / fundCount).toFixed(1) : "0.0",
-    hasProps: Math.round(hasProps / trials * 100),
-    avgSlots: hasSlots > 0 ? (totalSlots / hasSlots).toFixed(1) : "0.0",
-    avgEmpty: hasSlots > 0 ? (emptySlots / hasSlots).toFixed(1) : "0.0",
-    empty0: Math.round(emptyDist[0] / trials * 100),
-    empty1: Math.round(emptyDist[1] / trials * 100),
-    empty2: Math.round(emptyDist[2] / trials * 100),
-    empty3p: Math.round((emptyDist[3] + emptyDist[4]) / trials * 100),
-  };
-}
-
-console.log("\n=== FULL ITEM SIMULATION ===");
-console.log("Depth | Mundane | Slots | Striking | Props | Empty distribution (of all items)");
-console.log("      |         |       |          |       |  Full |  1emp |  2emp |  3+emp |");
-console.log("------|---------|-------|----------|-------|-------|-------|-------|--------|");
-for (const depth of [1, 3, 5, 7, 10, 15, 20]) {
-  const s = simulateItems(depth);
-  console.log(`  ${String(depth).padStart(2)}  |   ${String(s.mundane).padStart(3)}%  | ${String(s.hasSlots).padStart(4)}% |    ${String(s.hasFund).padStart(3)}%  | ${String(s.hasProps).padStart(4)}% | ${String(s.empty0).padStart(4)}% | ${String(s.empty1).padStart(4)}% | ${String(s.empty2).padStart(4)}% |  ${String(s.empty3p).padStart(4)}% |`);
-}
-
-
-// Simulate full dungeon run
-function simulateDungeon(dropsPerLevel: number, maxDepth: number, runs: number = 1000) {
-  let total3pEmpty = 0;
-  
-  for (let run = 0; run < runs; run++) {
-    let run3p = 0;
-    for (let depth = 1; depth <= maxDepth; depth++) {
-      for (let i = 0; i < dropsPerLevel; i++) {
-        const item = rollFullItem(depth);
-        const empty = item.potency - item.propCount;
-        if (empty >= 3) run3p++;
-      }
-    }
-    total3pEmpty += run3p;
-  }
-  
-  console.log(`\n=== DUNGEON SIMULATION (${runs} runs, ${dropsPerLevel} drops/level, ${maxDepth} levels) ===`);
-  console.log(`Average 3+ empty weapons per run: ${(total3pEmpty / runs).toFixed(2)}`);
-}
-
-simulateDungeon(100, 20, 1000);
 
 // === TABLE GENERATION ===
 
-function generatePotencyTable(maxDepth: number): number[][] {
-  const table: number[][] = [];
-  for (let depth = 0; depth <= maxDepth; depth++) {
-    const row: number[] = [];
-    const counts = [0, 0, 0, 0, 0];
-    const trials = 100000;
-    
-    for (let i = 0; i < trials; i++) {
-      counts[rollPotencyContinuous(Math.max(1, depth))]++;
-    }
-    
-    // Convert counts to cumulative d100 buckets
-    let bucket = 0;
-    for (let p = 0; p <= 4; p++) {
-      const pct = Math.round(counts[p] / trials * 100);
-      for (let j = 0; j < pct && bucket < 100; j++) {
-        row.push(p);
-        bucket++;
-      }
-    }
-    // Fill remaining with highest
-    while (row.length < 100) row.push(4);
-    
-    table.push(row);
-  }
-  return table;
+interface Tables {
+  Potency: number[][];
+  Fundamental: number[][];
+  Fill: number[][];
+  Quality: number[][];
 }
 
-function generateFundamentalTable(maxDepth: number): number[][] {
-  const table: number[][] = [];
-  for (let depth = 0; depth <= maxDepth; depth++) {
-    const row: number[] = [];
-    const counts: Record<number, number> = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0 };
-    const trials = 100000;
-    
-    for (let i = 0; i < trials; i++) {
-      const f = rollFundamental(Math.max(1, depth));
-      if (f.type === 'null') counts[0]++;
-      else counts[f.quality]++;
-    }
-    
-    let bucket = 0;
-    for (let q = 0; q <= 4; q++) {
-      const pct = Math.round(counts[q] / trials * 100);
-      for (let j = 0; j < pct && bucket < 100; j++) {
-        row.push(q);
-        bucket++;
-      }
-    }
-    while (row.length < 100) row.push(4);
-    
-    table.push(row);
-  }
-  return table;
-}
-
-function generateFillTable(maxDepth: number): number[][] {
-  const table: number[][] = [];
-  for (let depth = 0; depth <= maxDepth; depth++) {
-    const row: number[] = [];
-    const fillChance = Math.min(90, 70 + Math.max(1, depth));
-    
-    for (let i = 0; i < 100; i++) {
-      row.push(i < fillChance ? 1 : 0);
-    }
-    table.push(row);
-  }
-  return table;
-}
-
-function generateQualityTable(maxDepth: number): number[][] {
-  const table: number[][] = [];
-  for (let depth = 0; depth <= maxDepth; depth++) {
-    const row: number[] = [];
-    const counts = [0, 0, 0, 0, 0]; // 0 unused, 1-4 quality
-    const trials = 100000;
-    
-    for (let i = 0; i < trials; i++) {
-      counts[rollQuality(Math.max(1, depth))]++;
-    }
-    
-    let bucket = 0;
-    for (let q = 1; q <= 4; q++) {
-      const pct = Math.round(counts[q] / trials * 100);
-      for (let j = 0; j < pct && bucket < 100; j++) {
-        row.push(q);
-        bucket++;
-      }
-    }
-    while (row.length < 100) row.push(4);
-    
-    table.push(row);
-  }
-  return table;
-}
-
-function formatTable(name: string, table: number[][]): string {
-  const lines: string[] = [];
-  lines.push(`    public static readonly byte[][] ${name} = [`);
-  for (let d = 0; d < table.length; d++) {
-    lines.push(`        [${table[d].join(',')}], // depth ${d}`);
-  }
-  lines.push(`    ];`);
-  return lines.join('\n');
-}
-
-if (process.argv.includes('--generate')) {
-  const maxDepth = 20;
-  const lines: string[] = [];
+function generateTables(maxDepth: number, cfg: GenConfig = defaultConfig): Tables {
+  const trials = 100000;
   
-  lines.push('// AUTO-GENERATED - do not edit manually');
-  lines.push('// Regenerate with: bun tools/rolls.ts --generate');
-  lines.push('');
-  lines.push('namespace Pathhack.Game;');
-  lines.push('');
-  lines.push('public static class ItemGenTables');
-  lines.push('{');
-  lines.push(formatTable('Potency', generatePotencyTable(maxDepth)));
-  lines.push('');
-  lines.push(formatTable('Fundamental', generateFundamentalTable(maxDepth)));
-  lines.push('');
-  lines.push(formatTable('Fill', generateFillTable(maxDepth)));
-  lines.push('');
-  lines.push(formatTable('Quality', generateQualityTable(maxDepth)));
-  lines.push('}');
+  function genTable(rollFn: (depth: number) => number, minVal: number, maxVal: number): number[][] {
+    const table: number[][] = [];
+    for (let depth = 0; depth <= maxDepth; depth++) {
+      const counts: Record<number, number> = {};
+      for (let v = minVal; v <= maxVal; v++) counts[v] = 0;
+      
+      for (let i = 0; i < trials; i++) {
+        counts[rollFn(Math.max(1, depth))]++;
+      }
+      
+      const row: number[] = [];
+      let bucket = 0;
+      for (let v = minVal; v <= maxVal; v++) {
+        const pct = Math.round(counts[v] / trials * 100);
+        for (let j = 0; j < pct && bucket < 100; j++) {
+          row.push(v);
+          bucket++;
+        }
+      }
+      while (row.length < 100) row.push(maxVal);
+      table.push(row);
+    }
+    return table;
+  }
   
-  const output = lines.join('\n');
-  const scriptDir = import.meta.dir;
-  const projectRoot = require('path').resolve(scriptDir, '..');
-  const outPath = require('path').join(projectRoot, 'Game/ItemGenTables.cs');
-  require('fs').writeFileSync(outPath, output);
-  console.log(`Wrote ${outPath}`);
+  // Fill table - decreases with depth for more customization options late game
+  const Fill: number[][] = [];
+  for (let depth = 0; depth <= maxDepth; depth++) {
+    const fillChance = Math.max(cfg.fillFloor, cfg.fillStart - Math.floor(depth * cfg.fillSlope));
+    Fill.push(Array.from({ length: 100 }, (_, i) => i < fillChance ? 1 : 0));
+  }
+  
+  return {
+    Potency: genTable(d => rollPotencyContinuous(d, cfg), 0, 4),
+    Fundamental: genTable(d => {
+      const f = rollFundamental(d, cfg);
+      return f.type === 'null' ? 0 : f.quality;
+    }, 0, 4),
+    Fill,
+    Quality: genTable(d => rollQuality(d, cfg), 0, 4),
+  };
 }
 
-// === TABLE-BASED SIMULATION ===
-
-function parseTablesFromCS(): { Potency: number[][], Fundamental: number[][], Fill: number[][], Quality: number[][] } | null {
+function parseTablesFromCS(): Tables | null {
   const scriptDir = import.meta.dir;
   const projectRoot = require('path').resolve(scriptDir, '..');
   const filePath = require('path').join(projectRoot, 'Game/ItemGenTables.cs');
@@ -370,34 +169,63 @@ function parseTablesFromCS(): { Potency: number[][], Fundamental: number[][], Fi
   }
 }
 
-if (process.argv.includes('--simulate')) {
-  const tables = parseTablesFromCS();
-  if (!tables) {
-    console.error('Run --generate first');
-    process.exit(1);
+function writeTablesToCS(tables: Tables) {
+  function formatTable(name: string, table: number[][]): string {
+    const lines: string[] = [];
+    lines.push(`    public static readonly byte[][] ${name} = [`);
+    for (let d = 0; d < table.length; d++) {
+      lines.push(`        [${table[d].join(',')}], // depth ${d}`);
+    }
+    lines.push(`    ];`);
+    return lines.join('\n');
   }
   
+  const lines: string[] = [];
+  lines.push('// AUTO-GENERATED - do not edit manually');
+  lines.push('// Regenerate with: bun tools/rolls.ts --write-cs');
+  lines.push('');
+  lines.push('namespace Pathhack.Game;');
+  lines.push('');
+  lines.push('public static class ItemGenTables');
+  lines.push('{');
+  lines.push(formatTable('Potency', tables.Potency));
+  lines.push('');
+  lines.push(formatTable('Fundamental', tables.Fundamental));
+  lines.push('');
+  lines.push(formatTable('Fill', tables.Fill));
+  lines.push('');
+  lines.push(formatTable('Quality', tables.Quality));
+  lines.push('}');
+  
+  const output = lines.join('\n');
+  const scriptDir = import.meta.dir;
+  const projectRoot = require('path').resolve(scriptDir, '..');
+  const outPath = require('path').join(projectRoot, 'Game/ItemGenTables.cs');
+  require('fs').writeFileSync(outPath, output);
+  console.log(`Wrote ${outPath}`);
+}
+
+// === SIMULATION ===
+
+function runSimulation(tables: Tables): SimResult[] {
   function rollFromTable(table: number[][], depth: number): number {
     const d = Math.min(depth, table.length - 1);
     return table[d][rn2(100)];
   }
   
-  function rollItemFromTables(depth: number) {
+  function rollItem(depth: number) {
     const potency = rollFromTable(tables.Potency, depth);
     const fund = rollFromTable(tables.Fundamental, depth);
-    
     let propCount = 0;
+    const propQualities: number[] = [];
     for (let i = 0; i < potency; i++) {
-      if (rollFromTable(tables.Fill, depth) === 1) propCount++;
+      if (rollFromTable(tables.Fill, depth) === 1) {
+        propCount++;
+        propQualities.push(rollFromTable(tables.Quality, depth));
+      }
     }
-    
-    return { potency, fund, propCount };
+    return { potency, fund, propCount, propQualities };
   }
-  
-  console.log("\n=== SIMULATION FROM C# TABLES ===");
-  console.log("Depth | Mundane |   Potency 1/2/3   | Striking | Props | Empty distribution (% / P75 cumulative count)");
-  console.log("      |         |                   |          |       |    Full    |    1emp    |    2emp    |   3+emp    |");
-  console.log("------|---------|-------------------|----------|-------|------------|------------|------------|------------|");
   
   const dropsPerLevel = 10;
   const runs = 1000;
@@ -407,18 +235,28 @@ if (process.argv.includes('--simulate')) {
   const cumulative1emp: number[][] = [];
   const cumulative2emp: number[][] = [];
   const cumulative3pemp: number[][] = [];
+  const cumulativePot1: number[][] = [];
+  const cumulativePot2: number[][] = [];
+  const cumulativePot3: number[][] = [];
   
   for (let run = 0; run < runs; run++) {
     cumulativeFull[run] = [];
     cumulative1emp[run] = [];
     cumulative2emp[run] = [];
     cumulative3pemp[run] = [];
+    cumulativePot1[run] = [];
+    cumulativePot2[run] = [];
+    cumulativePot3[run] = [];
     let totalFull = 0, total1 = 0, total2 = 0, total3p = 0;
+    let totalPot1 = 0, totalPot2 = 0, totalPot3 = 0;
     
     for (let depth = 1; depth <= 20; depth++) {
       for (let i = 0; i < dropsPerLevel; i++) {
-        const item = rollItemFromTables(depth);
+        const item = rollItem(depth);
         if (item.potency > 0) {
+          if (item.potency === 1) totalPot1++;
+          else if (item.potency === 2) totalPot2++;
+          else if (item.potency === 3) totalPot3++;
           const empty = item.potency - item.propCount;
           if (empty === 0) totalFull++;
           else if (empty === 1) total1++;
@@ -430,6 +268,9 @@ if (process.argv.includes('--simulate')) {
       cumulative1emp[run][depth] = total1;
       cumulative2emp[run][depth] = total2;
       cumulative3pemp[run][depth] = total3p;
+      cumulativePot1[run][depth] = totalPot1;
+      cumulativePot2[run][depth] = totalPot2;
+      cumulativePot3[run][depth] = totalPot3;
     }
   }
   
@@ -438,33 +279,200 @@ if (process.argv.includes('--simulate')) {
     return vals[Math.floor(runs * 0.75)];
   };
   
+  const results: SimResult[] = [];
+  
   for (const depth of [1, 3, 5, 7, 10, 15, 20]) {
-    const trials = 10000;
-    let mundane = 0, hasSlots = 0, hasFund = 0, hasProps = 0;
+    const trials = 100000;
+    let mundane = 0, noPotency = 0;
     const emptyDist = [0, 0, 0, 0, 0];
-    const potencyDist = [0, 0, 0, 0]; // 0, 1, 2, 3
+    const potencyDist = [0, 0, 0, 0];
+    const qualityDist = [0, 0, 0, 0, 0];
     
     for (let i = 0; i < trials; i++) {
-      const item = rollItemFromTables(depth);
+      const item = rollItem(depth);
+      if (item.potency === 0) noPotency++;
       if (item.potency === 0 && item.fund === 0) mundane++;
       if (item.potency > 0) {
-        hasSlots++;
         potencyDist[item.potency]++;
         const empty = item.potency - item.propCount;
         emptyDist[Math.min(empty, 4)]++;
       }
-      if (item.fund > 0) hasFund++;
-      if (item.propCount > 0) hasProps++;
+      for (const q of item.propQualities) {
+        qualityDist[q]++;
+      }
     }
     
-    const pct = (n: number) => (n / trials * 100).toFixed(1).padStart(5);
-    const p75Full = p75(cumulativeFull, depth);
-    const p751emp = p75(cumulative1emp, depth);
-    const p752emp = p75(cumulative2emp, depth);
-    const p753pemp = p75(cumulative3pemp, depth);
+    const pct = (n: number, total = trials) => n / total * 100;
+    const totalQ = qualityDist[1] + qualityDist[2] + qualityDist[3] + qualityDist[4];
     
-    const col = (n: number, p: number) => `${pct(n)}%/${String(p).padStart(2)}`;
-    const pot = `${pct(potencyDist[1])}/${pct(potencyDist[2])}/${pct(potencyDist[3])}`;
-    console.log(`  ${String(depth).padStart(2)}  |  ${pct(mundane)}% | ${pot} |   ${pct(hasFund)}% | ${pct(hasProps)}% | ${col(emptyDist[0], p75Full)} | ${col(emptyDist[1], p751emp)} | ${col(emptyDist[2], p752emp)} | ${col(emptyDist[3] + emptyDist[4], p753pemp)} |`);
+    results.push({
+      depth,
+      mundanePct: pct(mundane),
+      noPotencyPct: pct(noPotency),
+      potencyDist: [
+        { pct: pct(potencyDist[1]), p75: p75(cumulativePot1, depth) },
+        { pct: pct(potencyDist[2]), p75: p75(cumulativePot2, depth) },
+        { pct: pct(potencyDist[3]), p75: p75(cumulativePot3, depth) },
+      ],
+      qualityDist: totalQ > 0 
+        ? [pct(qualityDist[1], totalQ), pct(qualityDist[2], totalQ), pct(qualityDist[3], totalQ), pct(qualityDist[4], totalQ)]
+        : [0, 0, 0, 0],
+      empty: [
+        { pct: pct(emptyDist[0]), p75: p75(cumulativeFull, depth) },
+        { pct: pct(emptyDist[1]), p75: p75(cumulative1emp, depth) },
+        { pct: pct(emptyDist[2]), p75: p75(cumulative2emp, depth) },
+        { pct: pct(emptyDist[3] + emptyDist[4]), p75: p75(cumulative3pemp, depth) },
+      ],
+    });
   }
+  
+  return results;
+}
+
+function displayResults(results: SimResult[]) {
+  const f = (n: number) => n >= 10 ? Math.round(n).toString() : n.toFixed(1);
+  const col = (e: { pct: number; p75: number }) => `${f(e.pct)}/${e.p75}`;
+  
+  const table = new Table();
+  table.push(
+    [{ content: 'Depth', rowSpan: 2 }, { content: 'Mundane', rowSpan: 2 }, { content: 'Pot=0', rowSpan: 2 }, { content: 'Potency', colSpan: 3 }, { content: 'Quality', colSpan: 4 }, { content: 'Full', rowSpan: 2 }, { content: '1emp', rowSpan: 2 }, { content: '2emp', rowSpan: 2 }, { content: '3+emp', rowSpan: 2 }],
+    ['1', '2', '3', '1', '2', '3', '4'],
+  );
+  
+  for (const r of results) {
+    table.push([
+      r.depth,
+      f(r.mundanePct),
+      f(r.noPotencyPct),
+      col(r.potencyDist[0]),
+      col(r.potencyDist[1]),
+      col(r.potencyDist[2]),
+      f(r.qualityDist[0]),
+      f(r.qualityDist[1]),
+      f(r.qualityDist[2]),
+      f(r.qualityDist[3]),
+      col(r.empty[0]),
+      col(r.empty[1]),
+      col(r.empty[2]),
+      col(r.empty[3]),
+    ]);
+  }
+  
+  console.log('\n=== ITEM GENERATION SIMULATION ===');
+  console.log(table.toString());
+}
+
+function randomConfig(): GenConfig {
+  const r = (min: number, max: number) => min + Math.random() * (max - min);
+  const ri = (min: number, max: number) => Math.floor(r(min, max + 1));
+  return {
+    potMundaneStart: ri(80, 95),
+    potMundaneSlope: r(0.5, 3),
+    potMundaneFloor: ri(30, 60),
+    potRneStart: ri(3, 5),
+    potRneDivisor: ri(4, 10),
+    potRneFloor: ri(2, 3),
+    fillStart: ri(60, 90),
+    fillSlope: r(0.5, 3),
+    fillFloor: ri(20, 60),
+    qualStart: ri(4, 7),
+    qualDivisor: ri(3, 8),
+    qualFloor: ri(2, 4),
+  };
+}
+
+function runSweep() {
+  const N = 100;
+  
+  // Targets at d20
+  const targets = {
+    emp3: 4,
+    mundane: 50,
+    qual34: 15, // Q3 + Q4 combined %
+    full: 30,
+  };
+  
+  const results: { cfg: GenConfig; d20: SimResult; score: number; breakdown: string }[] = [];
+  
+  for (let i = 0; i < N; i++) {
+    const cfg = randomConfig();
+    const tables = generateTables(20, cfg);
+    const sim = runSimulation(tables);
+    const d20 = sim.find(r => r.depth === 20)!;
+    
+    const emp3Err = Math.abs(d20.empty[3].p75 - targets.emp3);
+    const mundaneErr = Math.abs(d20.mundanePct - targets.mundane) / 10;
+    const qual34 = d20.qualityDist[2] + d20.qualityDist[3];
+    const qual34Err = Math.abs(qual34 - targets.qual34) / 20;
+    const fullErr = Math.abs(d20.empty[0].p75 - targets.full) / 5;
+    
+    const score = emp3Err + mundaneErr + qual34Err + fullErr;
+    const breakdown = `e3:${emp3Err.toFixed(1)} m:${mundaneErr.toFixed(1)} q:${qual34Err.toFixed(1)} f:${fullErr.toFixed(1)}`;
+    
+    results.push({ cfg, d20, score, breakdown });
+    process.stdout.write(`\r${i + 1}/${N}`);
+  }
+  console.log();
+  
+  results.sort((a, b) => a.score - b.score);
+  
+  const table = new Table({
+    head: ['Score', 'Full', '1emp', '2emp', '3+emp', 'Mundane', 'Q3+Q4', 'Breakdown'],
+  });
+  
+  for (const { cfg, d20, score, breakdown } of results.slice(0, 10)) {
+    const qual34 = d20.qualityDist[2] + d20.qualityDist[3];
+    table.push([
+      score.toFixed(1),
+      d20.empty[0].p75,
+      d20.empty[1].p75,
+      d20.empty[2].p75,
+      d20.empty[3].p75,
+      d20.mundanePct.toFixed(0),
+      qual34.toFixed(0),
+      breakdown,
+    ]);
+  }
+  
+  console.log('\n=== RANDOM SEARCH (targets: 3+emp=4, mundane=50%, Q3+Q4=15%, full=30) ===');
+  console.log(table.toString());
+  
+  console.log('\n=== TOP 4 FULL TABLES ===');
+  for (let i = 0; i < 4; i++) {
+    const { cfg } = results[i];
+    console.log(`\n--- Config ${i + 1}: fill:${cfg.fillStart}/${cfg.fillSlope.toFixed(1)}/${cfg.fillFloor} ---`);
+    const tables = generateTables(20, cfg);
+    displayResults(runSimulation(tables));
+  }
+  
+  console.log('\nBest config:');
+  console.log(JSON.stringify(results[0].cfg, null, 2));
+}
+
+// === MAIN ===
+
+if (sweep) {
+  runSweep();
+  process.exit(0);
+}
+
+let tables: Tables;
+
+if (readCs) {
+  console.log("Reading tables from C#...");
+  const parsed = parseTablesFromCS();
+  if (!parsed) {
+    console.error("Failed to read tables. Run without --read-cs first.");
+    process.exit(1);
+  }
+  tables = parsed;
+} else {
+  console.log("Generating tables...");
+  tables = generateTables(20);
+}
+
+displayResults(runSimulation(tables));
+
+if (writeCs) {
+  writeTablesToCS(tables);
 }

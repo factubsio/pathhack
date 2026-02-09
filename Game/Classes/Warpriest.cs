@@ -59,9 +59,9 @@ public class DivineFortitudeBrick : LogicBrick
     public static readonly DivineFortitudeBrick Instance = new();
     protected override void OnBeforeCheck(Fact fact, PHContext ctx)
     {
-        if (fact.Entity is not Player p) return;
+        if (!ctx.IsCheckingOwnerOf(fact)) return;
         if (ctx.Check == null || !ctx.Check.IsSave) return;
-        int bonus = p.EffectiveLevel < 10 ? 1 : 2;
+        int bonus = ctx.Target.Unit!.EffectiveLevel < 10 ? 1 : 2;
         ctx.Check!.Modifiers.Mod(ModifierCategory.StatusBonus, bonus, "divine fort");
     }
 }

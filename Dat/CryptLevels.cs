@@ -7,6 +7,7 @@ public static class CryptLevels
         id = "asar",
         Name = "Asar",
         Family = "undead",
+        CreatureType = CreatureTypes.Undead,
         Glyph = new('Z', ConsoleColor.Magenta),
         HpPerLevel = 10,
         AC = 2,
@@ -42,8 +43,9 @@ public static class CryptLevels
         {
             b.Stair(b['<'], TileType.BranchUp);
             b.Monster(Asar, b['B']);
-            foreach (var p in b.Marks('S'))
-                b.Monster(MiscMonsters.Skeleton, p);
+            // FIXME: put back in some skeleton tempalted monsters
+            // foreach (var p in b.Marks('S'))
+            //     b.Monster(MiscMonsters.Skeleton, p);
             b.Level.NoInitialSpawns = true;
         })
     {

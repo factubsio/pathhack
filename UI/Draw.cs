@@ -385,6 +385,29 @@ public static class Draw
             for (int x = 0; x < level.Width; x++)
             {
                 Pos p = new(x, y);
+                
+                // Check for monster with perception
+                if (level.UnitAt(p) is Monster m && !m.IsPlayer)
+                {
+                    switch (m.Perception)
+                    {
+                        case PlayerPerception.Visible:
+                            Layers[0][x, y + MapRow] = Cell.From(m.Glyph);
+                            continue;
+                        case PlayerPerception.Detected:
+                        case PlayerPerception.Warned:
+                            Layers[0][x, y + MapRow] = Cell.From(m.Glyph); // TODO: different color?
+                            continue;
+                        case PlayerPerception.Unease:
+                            int warnLevel = Math.Clamp(m.EffectiveLevel / 4, 1, 5);
+                            Layers[0][x, y + MapRow] = new((char)('0' + warnLevel), ConsoleColor.Magenta);
+                            continue;
+                        case PlayerPerception.Guess:
+                            Layers[0][x, y + MapRow] = new('?', ConsoleColor.DarkMagenta);
+                            continue;
+                    }
+                }
+
                 bool visible = level.IsVisible(p);
 
                 if (visible || p == upos)
@@ -436,9 +459,15 @@ public static class Draw
                 {
                     ConsoleColor col = ConsoleColor.DarkBlue;
                     if (mem.Tile.IsStructural) col = ConsoleColor.Gray;
-                    var cell = MemoryTileCell(level, p, mem, col);
-                    if (mem.Tile.IsStairs && mem.TopItem != null)
-                        cell = cell with { Style = CellStyle.Reverse };
+                    Cell cell;
+                    if (mem.TopItem is { } item && !mem.Tile.IsStairs)
+                        cell = new(item.Glyph.Value, col);
+                    else
+                    {
+                        cell = MemoryTileCell(level, p, mem, col);
+                        if (mem.Tile.IsStairs && mem.TopItem != null)
+                            cell = cell with { Style = CellStyle.Reverse };
+                    }
                     Layers[0][x, y + MapRow] = cell;
                 }
                 else
@@ -624,7 +653,7 @@ public static class Draw
 
     static void DrawStatus(Level level)
     {
-        Layers[0].Write(0, StatusRow, $"{level.Branch.Name}:{level.Depth} R:{g.CurrentRound} E:{u.Energy}".PadRight(ScreenWidth));
+        Layers[0].Write(0, StatusRow, $"{level.Branch.Name}:{level.EffectiveDepth} R:{g.CurrentRound} E:{u.Energy}".PadRight(ScreenWidth));
         int nextLvl = u.CharacterLevel + 1;
         int needed = Progression.XpForLevel(nextLvl) - Progression.XpForLevel(u.CharacterLevel);
         int progress = u.XP - Progression.XpForLevel(u.CharacterLevel);

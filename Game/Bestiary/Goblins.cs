@@ -28,8 +28,8 @@ public class FireBreath(int radius, Dice damage, int dc, string pool = "fire_bre
             if (victim.IsNullOrDead() || victim == unit) continue;
 
             using var ctx = PHContext.Create(unit, Target.From(victim));
-            
-            CreateAndDoCheck(ctx, "reflex_save", dc, "fire");
+
+            CheckReflex(ctx, dc, "fire");
 
             var dmg = new DamageRoll { Formula = damage, Type = DamageTypes.Fire, HalfOnSave = true };
             ctx.Damage = [dmg];
@@ -106,6 +106,7 @@ public static class Goblins
         MinDepth = 1,
         MaxDepth = 3,
         Family = "goblin",
+        CreatureType = CreatureTypes.Humanoid,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
         GrowsInto = () => Basic!,
@@ -132,6 +133,7 @@ public static class Goblins
         MinDepth = 1,
         MaxDepth = 4,
         Family = "goblin",
+        CreatureType = CreatureTypes.Humanoid,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
         Components = [
@@ -156,6 +158,7 @@ public static class Goblins
         MinDepth = 1,
         MaxDepth = 4,
         Family = "goblin",
+        CreatureType = CreatureTypes.Humanoid,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
         Components = [
@@ -182,6 +185,7 @@ public static class Goblins
         MinDepth = 1,
         MaxDepth = 4,
         Family = "goblin",
+        CreatureType = CreatureTypes.Humanoid,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
         Components = [
@@ -208,6 +212,7 @@ public static class Goblins
         MinDepth = 2,
         MaxDepth = 5,
         Family = "goblin",
+        CreatureType = CreatureTypes.Humanoid,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
         Components = [
@@ -233,6 +238,7 @@ public static class Goblins
         MinDepth = 1,
         MaxDepth = 3,
         Family = "goblin",
+        CreatureType = CreatureTypes.Humanoid,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
         Components = [

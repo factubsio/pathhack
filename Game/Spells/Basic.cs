@@ -94,7 +94,7 @@ public static class BasicLevel1Spells
           if (victim.IsNullOrDead() || victim == c) continue;
 
           using var ctx = PHContext.Create(c, Target.From(victim));
-          CreateAndDoCheck(ctx, "reflex_save", dc, "fire");
+          CheckReflex(ctx, dc, "fire");
 
           var dmg = new DamageRoll { Formula = d(2, 6), Type = DamageTypes.Fire, HalfOnSave = true };
           ctx.Damage = [dmg];

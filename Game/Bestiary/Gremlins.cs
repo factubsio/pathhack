@@ -63,7 +63,7 @@ public class JinkinCurse : LogicBrick
 
     protected override void OnBeforeCheck(Fact fact, PHContext context)
     {
-        if (context.Source == fact.Entity)
+        if (context.IsCheckingOwnerOf(fact))
         {
             context.Check!.Disadvantage++;
             fact.Remove();
@@ -113,6 +113,7 @@ public static class Gremlins
         id = "mitflit",
         Name = "mitflit",
         Family = "gremlin",
+        CreatureType = CreatureTypes.Fey,
         Glyph = new('m', ConsoleColor.Blue),
         HpPerLevel = 5,
         AC = -1,
@@ -142,6 +143,7 @@ public static class Gremlins
         id = "pugwampi",
         Name = "pugwampi",
         Family = "gremlin",
+        CreatureType = CreatureTypes.Fey,
         Glyph = new('m', ConsoleColor.Yellow),
         HpPerLevel = 6,
         AC = 0,
@@ -165,6 +167,7 @@ public static class Gremlins
         id = "jinkin",
         Name = "jinkin",
         Family = "gremlin",
+        CreatureType = CreatureTypes.Fey,
         Glyph = new('m', ConsoleColor.Magenta),
         HpPerLevel = 6,
         AC = 1,
@@ -187,6 +190,7 @@ public static class Gremlins
         id = "nuglub",
         Name = "nuglub",
         Family = "gremlin",
+        CreatureType = CreatureTypes.Fey,
         Glyph = new('m', ConsoleColor.Red),
         HpPerLevel = 7,
         AC = 1,
@@ -209,6 +213,7 @@ public static class Gremlins
         id = "grimple",
         Name = "grimple",
         Family = "gremlin",
+        CreatureType = CreatureTypes.Fey,
         Glyph = new('m', ConsoleColor.DarkGreen),
         HpPerLevel = 5,
         AC = 0,
@@ -232,6 +237,7 @@ public static class Gremlins
         id = "drunk_jinkin",
         Name = "very drunk jinkin",
         Family = "gremlin",
+        CreatureType = CreatureTypes.Fey,
         Glyph = new('m', ConsoleColor.DarkMagenta),
         HpPerLevel = 6,
         AC = -2,
@@ -277,7 +283,7 @@ public class VeryDrunkJinkinBrain : MonsterBrain
                 using var ctx = PHContext.Create(m, Target.From(tgt));
 
                 // dodge the acid bullet
-                if (CreateAndDoCheck(ctx, "reflex_save", 10, "acid"))
+                if (CheckReflex(ctx, 10, "acid"))
                 {
                     g.YouObserve(m, $"{m:The} throws up but misses {tgt:the}.");
                     return true;
@@ -295,7 +301,7 @@ public class VeryDrunkJinkinBrain : MonsterBrain
                 DoDamage(ctx);
 
                 // yucky yucky
-                if (CreateAndDoCheck(ctx, "fortitude_save", 14, "nauseated")) return true;
+                if (CheckFort(ctx, 14, "nauseated")) return true;
                 g.YouObserve(tgt, $"{tgt:The} can barely hold {tgt:own} own lunch down.");
                 tgt.AddFact(NauseatedBuff.Instance.Timed(), duration: 4);
             }

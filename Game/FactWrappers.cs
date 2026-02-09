@@ -1,10 +1,10 @@
 namespace Pathhack.Game;
 
-internal static class WrapperHelper<T>
+internal static class WrapperHelper<T, B> where B : class
 {
-  private static readonly Dictionary<LogicBrick, T> cache = [];
+  private static readonly Dictionary<B, T> cache = [];
 
-  public static T For(LogicBrick brick, Func<LogicBrick, T> factory)
+  public static T For(B brick, Func<B, T> factory)
   {
     if (!cache.TryGetValue(brick, out var timed))
     {
@@ -15,9 +15,24 @@ internal static class WrapperHelper<T>
   }
 }
 
+public class GrantWhenEquipped(ActionBrick action) : LogicBrick
+{
+  public static GrantWhenEquipped For(ActionBrick brick) => WrapperHelper<GrantWhenEquipped, ActionBrick>.For(brick, a => new(a));
+
+  protected override void OnEquip(Fact fact, PHContext ctx)
+  {
+    if (ctx.Source == null) return;
+    ctx.Source.AddAction(action);
+    if (action is CooldownAction && ctx.Source != null)
+      CooldownAction.SetCooldownMax(ctx.Source, ctx.Source.ActionData[action]);
+  }
+
+  protected override void OnUnequip(Fact fact, PHContext ctx) => ctx.Source?.RemoveAction(action);
+}
+
 public class ApplyWhenEquipped(LogicBrick brick) : LogicBrick
 {
-  public static ApplyWhenEquipped For(LogicBrick brick) => WrapperHelper<ApplyWhenEquipped>.For(brick, brick => new(brick));
+  public static ApplyWhenEquipped For(LogicBrick brick) => WrapperHelper<ApplyWhenEquipped, LogicBrick>.For(brick, brick => new(brick));
 
   protected override void OnEquip(Fact fact, PHContext ctx) => ctx.Source?.AddFact(brick);
 
@@ -43,7 +58,7 @@ public class ApplyAfflictionOnHit(AfflictionBrick affliction) : LogicBrick
 
 public class TimedFact(LogicBrick brick) : LogicBrick
 {
-  public static TimedFact For(LogicBrick brick) => WrapperHelper<TimedFact>.For(brick, brick => new(brick));
+  public static TimedFact For(LogicBrick brick) => WrapperHelper<TimedFact, LogicBrick>.For(brick, brick => new(brick));
 
   protected override void OnFactAdded(Fact fact) => fact.Entity.AddFact(brick);
 
@@ -54,5 +69,6 @@ public static class LogicBrickExts
 {
   public static TimedFact Timed(this LogicBrick brick) => TimedFact.For(brick);
   public static ApplyWhenEquipped WhenEquipped(this LogicBrick brick) => ApplyWhenEquipped.For(brick);
-  public static ApplyAfflictionOnHit OnHit(this AfflictionBrick a) => WrapperHelper<ApplyAfflictionOnHit>.For(a, b => new((AfflictionBrick)b));
+  public static GrantWhenEquipped WhenEquipped(this ActionBrick action) => GrantWhenEquipped.For(action);
+  public static ApplyAfflictionOnHit OnHit(this AfflictionBrick a) => WrapperHelper<ApplyAfflictionOnHit, LogicBrick>.For(a, b => new((AfflictionBrick)b));
 }

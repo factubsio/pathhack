@@ -167,9 +167,9 @@ internal class PlayerSkills : LogicBrick
         "athletics" => new Modifier(ModifierCategory.StatBonus, u.StrMod),
 
         // Hmm, how do we let classes override this? Tbh attributes are kinda lame?
-        "reflex_save" => new Modifier(ModifierCategory.StatBonus, u.DexMod),
-        "fortitude_save" => new Modifier(ModifierCategory.StatBonus, u.ConMod),
-        "will_save" => new Modifier(ModifierCategory.StatBonus, u.WisMod),
+        Check.Reflex => new Modifier(ModifierCategory.StatBonus, u.DexMod),
+        Check.Fort => new Modifier(ModifierCategory.StatBonus, u.ConMod),
+        Check.Will => new Modifier(ModifierCategory.StatBonus, u.WisMod),
         _ => null,
     };
   }

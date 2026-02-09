@@ -1,8 +1,8 @@
 namespace Pathhack.Game;
 
-public enum AppearanceCategory { Potion, Scroll, Amulet, Boots, Gloves, Cloak }
+public enum AppearanceCategory { Potion, Scroll, Amulet, Boots, Gloves, Cloak, Ring }
 
-public record Appearance(string Name, ConsoleColor Color);
+public record Appearance(string Name, ConsoleColor Color, string? Material = null);
 
 public class ItemDb
 {
@@ -55,6 +55,16 @@ public class ItemDb
             new("opera cloak", ConsoleColor.Red),
             new("ornate cloak", ConsoleColor.Magenta),
             new("faded cloak", ConsoleColor.Gray),
+        ],
+        [AppearanceCategory.Ring] = [
+            new("iron ring", ConsoleColor.DarkGray, "iron"),
+            new("silver ring", ConsoleColor.White, "silver"),
+            new("gold ring", ConsoleColor.Yellow, "gold"),
+            new("copper ring", ConsoleColor.DarkYellow, "copper"),
+            new("jade ring", ConsoleColor.Green, "jade"),
+            new("ruby ring", ConsoleColor.Red, "ruby"),
+            new("sapphire ring", ConsoleColor.Blue, "sapphire"),
+            new("opal ring", ConsoleColor.Cyan, "opal"),
         ],
     };
 
@@ -116,6 +126,7 @@ public class ItemDef : BaseDef
     public string Material = Materials.Iron;
     public bool Stackable;
     public bool IsUnique = false;
+    public string? PokedexDescription;
 
     // ID system - set for magical consumables/accessories
     public AppearanceCategory? AppearanceCategory;
@@ -191,6 +202,13 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
 
     public bool IsUnique => IsNamedUnique || Def.IsUnique;
     
+    string? _material;
+    public string Material
+    {
+        get => _material ?? ItemDb.Instance.GetAppearance(Def)?.Material ?? Def.Material;
+        set => _material = value;
+    }
+    
     // runes (weapons only for now)
     public int Potency;
     public Rune? Fundamental;
@@ -210,9 +228,14 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
     public int RemainingNutrition => BaseNutrition - Eaten;
     public bool IsFood => Def is ConsumableDef || CorpseOf != null;
 
-    public Glyph Glyph => CorpseOf != null
-        ? new(ItemClasses.Food, CorpseOf.Glyph.Color)
-        : Def.Glyph;
+    public Appearance? Appearance => ItemDb.Instance.GetAppearance(Def);
+
+    public Glyph Glyph => this switch
+    {
+        { CorpseOf: { } c } => new(ItemClasses.Food, c.Glyph.Color),
+        { Appearance: { } app } => Def.Glyph with { Color = app.Color },
+        _ => Def.Glyph
+    };
 
     public string DisplayName => GetDisplayName(Count);
     public string SingleName => GetDisplayName(1);
@@ -224,7 +247,7 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
             return $"{CorpseOf.Name} corpse";
 
         // Unidentified items show appearance or called name
-        if (!ItemDb.Instance.IsIdentified(Def) && ItemDb.Instance.GetAppearance(Def) is { } app)
+        if (!Def.IsKnown() && ItemDb.Instance.GetAppearance(Def) is { } app)
         {
             var called = ItemDb.Instance.GetCalledName(Def);
             var appName = count > 1 ? app.Name.Plural() : app.Name;

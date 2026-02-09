@@ -107,6 +107,13 @@ public class SimpleDR(int amount, string bypass) : LogicBrick
     };
   }
 
+  protected override void OnBeforeDamageIncomingRoll(Fact fact, PHContext ctx)
+  {
+    ctx.Damage.ApplyDRUnless(amount, bypass, true);
+  }
+
+  public override string? PokedexDescription => $"DR {amount}/{bypass}";
+
   public static readonly SimpleDRRamp Slashing = new("slashing");
   public static readonly SimpleDRRamp Blunt = new("blunt");
   public static readonly SimpleDRRamp Piercing = new("piercing");
@@ -119,13 +126,6 @@ public class SimpleDR(int amount, string bypass) : LogicBrick
   public static readonly SimpleDRRamp Evil = new("evil");
   public static readonly SimpleDRRamp Chaotic = new("chaotic");
   public static readonly SimpleDRRamp Neutral = new("neutral");
-
-  protected override void OnBeforeDamageIncomingRoll(Fact fact, PHContext ctx)
-  {
-    ctx.Damage.ApplyDRUnless(amount, bypass);
-  }
-
-  public override string? PokedexDescription => $"DR {amount}/{bypass}";
 }
 
 public class ComplexDR(int amount, string[]? or = null, string[]? and = null) : LogicBrick
@@ -153,10 +153,10 @@ public class ComplexDR(int amount, string[]? or = null, string[]? and = null) : 
 }
 public static class DRHelper
 {
-  public static void ApplyDRUnless(this List<DamageRoll> rolls, int amount, string bypass)
+  public static void ApplyDRUnless(this List<DamageRoll> rolls, int amount, string bypass, bool physicalOnly)
   {
     foreach (var roll in rolls)
-      if (!roll.Has(bypass)) roll.ApplyDR(amount);
+      if ((!physicalOnly || roll.Type.Category == "physical") && !roll.Has(bypass)) roll.ApplyDR(amount);
   }
 }
 

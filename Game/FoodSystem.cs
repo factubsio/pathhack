@@ -312,10 +312,10 @@ public class Activity
 
     static void SpawnHippos()
     {
-        int count = Math.Max(1, g.Rne(6) - 2);
+        int count = g.Rne(2);
         int effectiveLevel = (lvl.Id.Depth + u.CharacterLevel) / 2;
         int maxTier = Math.Min(effectiveLevel / 3, u.HippoCounter);
-        int tier = Math.Clamp(g.Rne(maxTier + 1), 1, Hippos.All.Length) - 1;
+        int tier = Math.Min(g.Rne(3), maxTier + 1) - 1;
         var def = Hippos.All[tier];
 
         // THERE CAN BE ONLY ONE (could check for TheHungriest but this might be nicer?)

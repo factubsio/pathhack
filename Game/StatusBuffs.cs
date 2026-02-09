@@ -84,7 +84,7 @@ public class NauseatedBuff : LogicBrick
 
   protected override void OnBeforeCheck(Fact fact, PHContext context)
   {
-    if (context.Source == fact.Entity)
+    if (context.IsCheckingOwnerOf(fact))
     {
       context.Check!.Disadvantage++;
       fact.Entity.RemoveStack(Instance);

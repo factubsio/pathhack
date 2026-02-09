@@ -40,8 +40,15 @@ public sealed class PHContext : IDisposable
     public Modifiers HealModifiers = new();
     public int HealedAmount;
     public string? DeathReason;
+    public bool SilentCheck;
+    public bool SilentDamage;
+    public int TotalDamageDealt;
+    public int HpBefore;
+    public int HpAfter;
 
     public PHContext Root => Parent?.Root ?? this;
+
+    public bool IsCheckingOwnerOf(Fact fact) => fact.Entity == Target.Unit;
 
     public static PHContext? Current { get; private set; }
 
@@ -192,6 +199,9 @@ public enum Degree
 public class Check
 {
     public int Roll;
+    public int Roll1;
+    public int? Roll2;
+    public int BaseRoll;
     public int DC;
     public Modifiers Modifiers = new();
     public string Tag = "_";
@@ -206,7 +216,13 @@ public class Check
 
     public bool Result => ForcedResult ?? (Roll >= DC);
 
-    public bool IsSave => Key == "reflex_save" || Key == "fortitude_save" || Key == "will_save";
+    public bool IsSave => Key == Fort || Key == Reflex || Key == Will;
+
+    public string RollStr => Roll2 == null ? $"{Roll1}" : $"${Roll1},{Roll2},{(Advantage > Disadvantage ? "hi": "lo")}]";
+
+    public const string Fort = "fortitude_save";
+    public const string Reflex = "reflex_save";
+    public const string Will = "will_save";
 }
 
 public class DamageRoll
@@ -379,6 +395,7 @@ public static class ActionCosts
     public static readonly ActionCost StandardLandMove = 12;
     public static readonly ActionCost LandMove25 = 15;
     internal static readonly ActionCost LandMove20 = 18;
+    internal static readonly ActionCost LandMove15 = 21;
     internal static readonly ActionCost LandMove10 = 24;
 }
 
@@ -394,6 +411,7 @@ public static class DamageTypes
     public static readonly DamageType Shock = new("elem", "shock");
     public static readonly DamageType Acid = new("elem", "acid");
     public static readonly DamageType Magic = new("magic", "_");
+    public static readonly DamageType Force = new("force", "_");
 
     public static readonly DamageType Holy = new("spirit", "good");
     public static readonly DamageType Unholy = new("spirit", "evil");

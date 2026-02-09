@@ -232,8 +232,9 @@ public enum TargetingType { None, Direction, Unit, Pos }
 
 public enum ToggleState { NotAToggle, Off, On }
 
-public abstract class ActionBrick(string name, TargetingType targeting = TargetingType.None)
+public abstract class ActionBrick(string name, TargetingType targeting = TargetingType.None, int maxRange = -1)
 {
+    public int MaxRange => maxRange;
     public string Name => name;
     public TargetingType Targeting => targeting;
     public virtual string? PokedexDescription => null;
@@ -252,7 +253,7 @@ public abstract class ActionBrick(string name, TargetingType targeting = Targeti
     }
 }
 
-public abstract class CooldownAction(string name, TargetingType target, Func<IUnit, int> cooldown) : ActionBrick(name, target)
+public abstract class CooldownAction(string name, TargetingType target, Func<IUnit, int> cooldown, int maxRange = -1) : ActionBrick(name, target, maxRange)
 {
     public class CooldownTracker(Func<IUnit, int> cd)
     {
@@ -279,6 +280,12 @@ public abstract class CooldownAction(string name, TargetingType target, Func<IUn
     {
         ((CooldownTracker)data!).OnActivate(unit);
         Execute(unit, target);
+    }
+
+    public static void SetCooldownMax(IUnit unit, object? data)
+    {
+        ((CooldownTracker)data!).OnActivate(unit);
+
     }
 
     protected abstract void Execute(IUnit unit, Target target);
@@ -309,8 +316,13 @@ public abstract class SimpleToggleAction<T>(string name, T fact) : ActionBrick(n
 
 public static class ActionHelpers
 {
-    public static bool IsAdjacent(IUnit unit, Target target) =>
+    public static bool IsAdjacent(this IUnit unit, Target target) =>
         target.Unit != null && unit.Pos.ChebyshevDist(target.Unit.Pos) == 1;
+    public static bool IsAdjacent(this IUnit unit, Target target, out string whyNot)
+    {
+        whyNot = "not adjacent";
+        return target.Unit != null && unit.Pos.ChebyshevDist(target.Unit.Pos) == 1;
+    }
 }
 
 public static class LogicHelpers
@@ -373,11 +385,7 @@ public class NaturalAttack(WeaponDef weapon) : ActionBrick("attack_with_nat")
     public override string? PokedexDescription => weapon.BaseDamage.ToString();
     readonly Item _item = new(weapon);
 
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
-    {
-        whyNot = "no target in range";
-        return ActionHelpers.IsAdjacent(unit, target);
-    }
+    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot) => unit.IsAdjacent(target, out whyNot);
 
     public override void Execute(IUnit unit, object? data, Target target) =>
         g.Attack(unit, target.Unit!, _item);
@@ -393,7 +401,8 @@ public class GrantProficiency(string skill, ProficiencyLevel level, bool require
 public static class EntityExts
 {
     public static bool IsEquipped(this Fact fact) => fact.Entity is Item item && item.Holder?.Equipped.ContainsValue(item) == true;
-
+    public static bool IsKnown(this ItemDef def) => ItemDb.Instance.IsIdentified(def);
+    public static void SetKnown(this ItemDef def) => ItemDb.Instance.Identify(def);
 }
 
 
@@ -721,6 +730,7 @@ public interface IUnit : IEntity
     List<ActionBrick> Actions { get; }
     Dictionary<ActionBrick, object?> ActionData { get; }
     void AddAction(ActionBrick action);
+    void RemoveAction(ActionBrick action);
     void AddSpell(SpellBrickBase spell);
     IEnumerable<Fact> Facts { get; }
     ActionCost LandMove { get; }
@@ -744,7 +754,7 @@ public interface IUnit : IEntity
     int GetDamageBonus();
     int GetSpellDC();
     Item GetWieldedItem();
-    bool Equip(Item item);
+    EquipSlot? Equip(Item item);
     bool Unequip(EquipSlot slot);
     Modifiers QueryModifiers(string key, string? arg = null);
     List<Fact> QueryFacts(string key, string? arg = null);
@@ -900,6 +910,12 @@ public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) :
         ActionData[action] = action.CreateData();
     }
 
+    public void RemoveAction(ActionBrick action)
+    {
+        Actions.Remove(action);
+        ActionData.Remove(action);
+    }
+
     public abstract ActionCost LandMove { get; }
     public override bool Has(string key) => Query<bool>(key, null, MergeStrategy.Or, false);
 
@@ -965,35 +981,51 @@ public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) :
         return _unarmedItem ??= new(GetUnarmedDef());
     }
 
-    public bool Equip(Item item)
+    public EquipSlot? Equip(Item item)
     {
         if (!Inventory.Contains(item))
             throw new InvalidOperationException("Item not in inventory");
         if (Equipped.ContainsValue(item))
-            return false;
+            return null;
 
         EquipSlot mainSlot = new(item.Def.DefaultEquipSlot, "_");
         EquipSlot offSlot = new(item.Def.DefaultEquipSlot, "off");
+        EquipSlot resultSlot;
 
-        int hands = item.Def is WeaponDef w ? w.Hands : 1;
-        if (hands == 2)
+        // Rings use left/right
+        if (item.Def.DefaultEquipSlot == ItemSlots.Ring)
         {
-            if (Equipped.ContainsKey(mainSlot) || Equipped.ContainsKey(offSlot))
-                return false;
-            Equipped[mainSlot] = item;
-            Equipped[offSlot] = item;
+            EquipSlot left = new(ItemSlots.Ring, "left");
+            EquipSlot right = new(ItemSlots.Ring, "right");
+            EquipSlot slot = !Equipped.ContainsKey(left) ? left : !Equipped.ContainsKey(right) ? right : default;
+            if (slot == default) return null;
+            Equipped[slot] = item;
+            resultSlot = slot;
         }
         else
         {
-            if (Equipped.ContainsKey(mainSlot))
-                return false;
-            Equipped[mainSlot] = item;
+            int hands = item.Def is WeaponDef w ? w.Hands : 1;
+            if (hands == 2)
+            {
+                if (Equipped.ContainsKey(mainSlot) || Equipped.ContainsKey(offSlot))
+                    return null;
+                Equipped[mainSlot] = item;
+                Equipped[offSlot] = item;
+                resultSlot = mainSlot;
+            }
+            else
+            {
+                if (Equipped.ContainsKey(mainSlot))
+                    return null;
+                Equipped[mainSlot] = item;
+                resultSlot = mainSlot;
+            }
         }
 
         using var ctx = PHContext.Create(this, Target.None);
         LogicBrick.FireOnEquip(item, ctx);
         Log.Write("equip: {0}", item.Def.Name);
-        return true;
+        return resultSlot;
     }
 
     public bool Unequip(EquipSlot slot)
@@ -1020,7 +1052,8 @@ public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) :
 public class GrantAction(ActionBrick action) : LogicBrick
 {
     public ActionBrick Action => action;
-  protected override void OnFactAdded(Fact fact) => (fact.Entity as IUnit)?.AddAction(action);
+    protected override void OnFactAdded(Fact fact) => (fact.Entity as IUnit)?.AddAction(action);
+    protected override void OnFactRemoved(Fact fact) => (fact.Entity as IUnit)?.RemoveAction(action);
 }
 
 public class GrantSpell(SpellBrickBase spell) : LogicBrick

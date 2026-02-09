@@ -47,7 +47,7 @@ public class GreaseArea(string name, IUnit? source, int dc, int duration) : Area
 
         using var ctx = PHContext.Create(source, Target.From(unit));
         var slips = VTense(unit, "slip");
-        if (!CreateAndDoCheck(ctx, "reflex_save", dc, "difficult_terrain"))
+        if (!CheckReflex(ctx, dc, "difficult_terrain"))
         {
             g.pline($"{unit:The} {slips} on some {name} and {VTense(unit, "fall")}!");
             unit.AddFact(ProneBuff.Instance.Timed(), 1);
@@ -179,13 +179,13 @@ public static partial class ClassDefs
             p.Inventory.Add(bonusSword);
             
             p.Inventory.Add(Item.Create(MundaneArmory.Longsword));
-            p.Inventory.Add(Item.Create(MundaneArmory.Dagger));
             p.Inventory.Add(Item.Create(MundaneArmory.LeatherArmor));
-            p.Inventory.Add(Item.Create(MundaneArmory.ChainShirt));
-            p.Inventory.Add(Item.Create(MundaneArmory.Scythe));
-            p.Inventory.Add(Item.Create(MundaneArmory.Whip));
+            p.Inventory.Add(Item.Create(MagicAccessories.RingOfTheRam));
+            MagicAccessories.RingOfTheRam.SetKnown();
             p.Inventory.Add(Item.Create(Potions.FalseLife));
             p.Inventory.Add(Item.Create(Potions.LesserInvisibility, 4));
+            p.Inventory.Add(Item.Create(Scrolls.Identify, 10));
+            Scrolls.Identify.SetKnown();
             foreach (var def in DummyThings.All)
                 p.Inventory.Add(Item.Create(def));
             

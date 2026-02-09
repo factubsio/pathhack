@@ -13,6 +13,7 @@ public static class ItemGen
         (16, GenerateScroll),
         (10, GenerateWeapon),
         (10, GenerateArmor),
+        (3, GenerateRing),
     ];
     
     static int TotalWeight => ClassWeights.Sum(x => x.weight);
@@ -55,6 +56,13 @@ public static class ItemGen
         return GenerateItem(def, depth);
     }
 
+    static Item? GenerateRing(int depth)
+    {
+        if (MagicAccessories.AllRings.Length == 0) return null;
+        var def = MagicAccessories.AllRings[g.Rn2(MagicAccessories.AllRings.Length)];
+        return Item.Create(def);
+    }
+
     public static Item GenerateItem(ItemDef def, int depth = 1, int? maxPotency = null, bool propertyRunes = true)
     {
         Item item = new(def);
@@ -87,20 +95,12 @@ public static class ItemGen
     public static int RollPotency(int depth, List<string>? genLog, int? force = null)
     {
         if (force.HasValue && force.Value < 0) return -force.Value;
-        if (force.HasValue) return g.Rne(force.Value + 1) - 1;
+        if (force.HasValue) return g.Rn2(force.Value + 1);
         
         int d = Math.Clamp(depth, 0, ItemGenTables.Potency.Length - 1);
         int roll = g.Rn2(100);
-        int result = ConfirmResult(ItemGenTables.Potency[d][roll], depth);
+        int result = ItemGenTables.Potency[d][roll];
         if (result > 0) genLog?.Add($"potency r{roll}={result}");
-        return result;
-    }
-
-    static int ConfirmResult(int result, int depth)
-    {
-        int expected = depth / 5;
-        while (result > expected && g.Rn2(100) >= (100 - (result - expected) * 10))
-            result--;
         return result;
     }
 
@@ -153,7 +153,7 @@ public static class ItemGen
     private static int RollQuality(int depth)
     {
         int d = Math.Clamp(depth, 0, ItemGenTables.Quality.Length - 1);
-        return ConfirmResult(ItemGenTables.Quality[d][g.Rn2(100)], depth);
+        return ItemGenTables.Quality[d][g.Rn2(100)];
     }
 
     public static void ApplyRune(Item item, RuneDef runeDef, bool fundamental)

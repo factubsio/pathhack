@@ -116,13 +116,16 @@ public class GameState
     public static Level lvl => g.CurrentLevel!;
     public StreamWriter? PlineLog;
 
-    public record struct Awareness(bool CanTarget, bool Disadvantage, bool Visual);
+    public record struct Awareness(bool CanTarget, bool Disadvantage, PlayerPerception Perception)
+    {
+        public bool Visual => Perception == PlayerPerception.Visible;
+    }
 
     public static Awareness GetAwareness(IUnit viewer, IUnit target)
     {
         // monster<->monster always full awareness (for now)
         if (!viewer.IsPlayer && !target.IsPlayer)
-            return new(true, false, true);
+            return new(true, false, PlayerPerception.Visible);
 
         int tremor = viewer.Query<int>("tremorsense", null, MergeStrategy.Max, 0);
         bool hasTremor = tremor > 0 && viewer.Pos.ChebyshevDist(target.Pos) <= tremor;
@@ -135,6 +138,32 @@ public class GameState
         bool hasLOS = viewer.IsPlayer ? lvl.HasLOS(target.Pos) : lvl.HasLOS(viewer.Pos);
 
         bool visual = !blind && !targetInvis && !targetInDark && hasLOS;
+        
+        // Determine perception level: visual > tremor > specific warning > generic warning
+        PlayerPerception perception;
+        if (visual)
+            perception = PlayerPerception.Visible;
+        else if (hasTremor)
+            perception = PlayerPerception.Detected;
+        else
+        {
+            // specific detection (detect_undead, detect_beast, etc.)
+            perception = PlayerPerception.None;
+            if (target is Monster m)
+            {
+                int detectRange = viewer.Query<int>("detect_creature", m.CreatureTypeKey, MergeStrategy.Max, 0);
+                if (detectRange > 0 && viewer.Pos.ChebyshevDist(target.Pos) <= detectRange)
+                    perception = PlayerPerception.Warned;
+            }
+            
+            if (perception == PlayerPerception.None)
+            {
+                int warningRange = viewer.Query<int>("warning", null, MergeStrategy.Max, 0);
+                if (warningRange > 0 && viewer.Pos.ChebyshevDist(target.Pos) <= warningRange)
+                    perception = PlayerPerception.Unease;
+            }
+        }
+
         bool canTarget = visual || hasTremor;
         bool disadvantage = canTarget && !visual && !hasTremor;
 
@@ -142,7 +171,7 @@ public class GameState
         if (disadvantage && blind && viewer.Has("blind_fight"))
             disadvantage = false;
 
-        return new(canTarget, disadvantage, visual);
+        return new(canTarget, disadvantage, perception);
     }
 
     public static bool CanSee(IUnit viewer, IUnit target) => GetAwareness(viewer, target).Visual;
@@ -222,6 +251,27 @@ public class GameState
         return total;
     }
 
+    public static string FormatMods(Modifiers mods)
+    {
+        var parts = mods.Stackable.Concat(mods.Unstackable.Values)
+            .Where(m => m.Value != 0)
+            .Select(m =>
+            {
+                string code = m.Why?.Length >= 2 ? m.Why[..2] : "??";
+                string sign = m.Value > 0 ? "+" : "";
+                return $"{sign}{m.Value}{code}";
+            });
+        return string.Join(" ", parts);
+    }
+
+    public static string FormatDamage(PHContext ctx)
+    {
+        var parts = ctx.Damage
+            .Where(d => !d.Negated)
+            .Select(d => $"{d.Formula}={d.Rolled} {d.Type.SubCat}");
+        return string.Join(" ", parts);
+    }
+
     public static bool DoCheck(PHContext ctx, string label)
     {
         var check = ctx.Check!;
@@ -239,18 +289,27 @@ public class GameState
                      : hasDis ? Math.Min(roll1, roll2)
                      : roll1;
 
+        check.BaseRoll = baseRoll;
+        check.Roll1 = roll1;
+        check.Roll2 = (hasAdv || hasDis) ? roll2 : null;
+
         check.Roll = baseRoll + check.Modifiers.Calculate();
 
-        var parts = check.Modifiers.Stackable.Concat(check.Modifiers.Unstackable.Values)
-            .Where(m => m.Value != 0)
-            .Select(m => m.Value > 0 ? $"+{m.Value} ({m.Label})" : $"{m.Value} ({m.Label})");
-        string modStr = string.Join(" ", parts);
-        string advStr = hasAdv ? " (adv)" : hasDis ? " (dis)" : "";
-        string tag = ctx.Source == u ? "pcheck" : "mcheck";
-        Log.Write($"{tag}: {label} d20={baseRoll}{advStr} {modStr}= {check.Roll} vs DC {check.DC}");
+        if (!ctx.SilentCheck)
+        {
+            string pm = ctx.Target.Unit?.IsPlayer == true ? "P" : "M";
+            string result = check.Result ? "✓" : "✗";
+            string modStr = FormatMods(check.Modifiers);
+            string advStr = hasAdv ? " adv" : hasDis ? " dis" : "";
+            Log.Write($"{pm} {result} {check.Roll} ({check.RollStr}) vs {check.DC}: {label} {modStr}");
+        }
 
         return check.Result;
     }
+
+    public static bool CheckFort(PHContext ctx, int dc, string label) => CreateAndDoCheck(ctx, Check.Fort, dc, label);
+    public static bool CheckReflex(PHContext ctx, int dc, string label) => CreateAndDoCheck(ctx, Check.Reflex, dc, label);
+    public static bool CheckWill(PHContext ctx, int dc, string label) => CreateAndDoCheck(ctx, Check.Will, dc, label);
 
     public static bool CreateAndDoCheck(PHContext ctx, string modifierKey, int dc, string label)
     {
@@ -258,6 +317,7 @@ public class GameState
         Check check = new() { DC = dc, Tag = label, Key = modifierKey };
         ctx.Check = check;
 
+        Log.Write($"check from:{ctx.Source} to:{ctx.Target}");
         check.Modifiers.AddAll(target.QueryModifiers(modifierKey));
 
         bool didSave = DoCheck(ctx, label);
@@ -272,9 +332,31 @@ public class GameState
         Draw.DrawMessage(msg);
         PlineLog?.WriteLine($"[{CurrentRound}] {msg}");
     }
+    internal void plineu(IUnit user, string msg)
+    {
+        if (user.IsPlayer) pline(msg);
+    }
+
     public void pline(string fmt, params object[] args) => pline(string.Format(fmt, args));
 
-    public void YouObserve(IUnit source, string? ifSee, string? sound = null, int hearRadius = 6)
+    public void YouObserveSelf(IUnit source, string ifSelf, string? ifSee, string? sound = null, int hearRadius = 6)
+    {
+        if (source.IsPlayer)
+        {
+            pline(ifSelf);
+            return;
+        }
+
+        bool canSee = lvl.IsVisible(source.Pos);
+        bool canHear = sound != null && upos.ChebyshevDist(source.Pos) <= hearRadius;
+
+        if (canSee && ifSee != null)
+            pline(ifSee, source);
+        else if (canHear)
+            pline("You hear {0}.", sound!);
+    }
+
+    public bool YouObserve(IUnit source, string? ifSee, string? sound = null, int hearRadius = 6)
     {
         bool canSee = lvl.IsVisible(source.Pos);
         bool canHear = sound != null && upos.ChebyshevDist(source.Pos) <= hearRadius;
@@ -283,6 +365,8 @@ public class GameState
             pline(ifSee, source);
         else if (canHear)
             pline("You hear {0}.", sound!);
+        
+        return canSee;
     }
 
     public void YouObserve(Pos pos, string? ifSee, string? sound = null, int hearRadius = 6)
@@ -547,10 +631,11 @@ public class GameState
     public void Attack(IUnit attacker, IUnit defender, Item with, bool thrown = false, int attackBonus = 0)
     {
         var weapon = with.Def as WeaponDef;
-        Target target = new(defender, defender.Pos);
-        using var ctx = PHContext.Create(attacker, target);
+        using var ctx = PHContext.Create(defender, Target.From(attacker));
         ctx.Weapon = with;
         ctx.Melee = !thrown;
+        ctx.SilentCheck = true;
+        ctx.SilentDamage = true;
 
         string verb = thrown
             ? "throws"
@@ -583,13 +668,23 @@ public class GameState
         if (!defAwareness.CanTarget)
             check.Advantage++;  // unseen attacker
 
+        // The to hit roll looks backwards, but it is check where the attacker
+        // is trying to beat the defender's AC roll, so the attacker *is* the target
+        // Now we swap the source and target for the damage roll
+        ctx.Source = defender;
+        ctx.Target = Target.From(attacker);
         bool hit = DoCheck(ctx, $"{attacker} attacks {defender}");
+        ctx.Source = attacker;
+        ctx.Target = Target.From(defender);
+        // But restore afterwards ^ otherwise everything else looks the wrong way round
 
         LogicBrick.FireOnAfterAttackRoll(attacker, ctx);
         LogicBrick.FireOnAfterDefendRoll(defender, ctx);
 
+
         if (hit)
         {
+
             DamageRoll dmg = new()
             {
                 Formula = weapon?.BaseDamage ?? d(2),
@@ -629,12 +724,22 @@ public class GameState
                     pline($"{attacker:The} hits {defender:the}.");
             }
             DoDamage(ctx);
+
+            // Combined attack log
+            string tag = attacker.IsPlayer ? "P ✓" : "M ✓";
+            string modStr = FormatMods(check.Modifiers);
+            string dmgStr = FormatDamage(ctx);
+            Log.Write($"{tag} {check.Roll} ({check.BaseRoll}) vs {check.DC}: {attacker} → {defender} {modStr} | {dmgStr} ({ctx.HpBefore}→{ctx.HpAfter})");
         }
         else
         {
-            Log.Write("  miss");
             defender.MissesTaken++;
-            Log.Write($"entity: {defender.Id}: miss");
+            
+            // Combined miss log
+            string tag = attacker == u ? "P ✗" : "M ✗";
+            string modStr = FormatMods(check.Modifiers);
+            Log.Write($"{tag} {check.Roll} ({check.BaseRoll}) vs {check.DC}: {attacker} → {defender} {modStr}");
+            
             if (thrown)
             {
                 if (defender.IsPlayer)
@@ -680,27 +785,37 @@ public class GameState
             int rolled = DoRoll(dmg.Formula, dmg.Modifiers, $"  {dmg} damage");
             damage += dmg.Resolve(rolled);
 
-            var tags = dmg.Tags.Count > 0 ? string.Join(",", dmg.Tags) : "none";
-            Log.Write($"    tags=[{tags}] dr={dmg.DR} prot={dmg.Protection} used={dmg.ProtectionUsed}");
+            if (!ctx.SilentDamage)
+            {
+                var tags = dmg.Tags.Count > 0 ? string.Join(",", dmg.Tags) : "none";
+                Log.Write($"    tags=[{tags}] dr={dmg.DR} prot={dmg.Protection} used={dmg.ProtectionUsed}");
+            }
         }
         
         // this can happen if all damage instances were negated
         if (damage == 0) return;
 
-        Log.Write($"  {target:The} takes {damage} total damage");
+        ctx.HpBefore = target.HP.Current;
         target.LastDamagedOnTurn = g.CurrentRound;
         target.HitsTaken++;
         target.DamageTaken += damage;
-        Log.Write($"entity: {target.Id}: hit {damage} dmg");
         
         damage = target.AbsorbTempHp(damage);
         if (damage == 0)
         {
-            Log.Write($"  temp HP absorbed all damage");
+            if (!ctx.SilentDamage) Log.Write($"  temp HP absorbed all damage");
             return;
         }
         
         target.HP -= damage;
+        ctx.TotalDamageDealt = damage;
+        ctx.HpAfter = target.HP.Current;
+
+        if (!ctx.SilentDamage)
+        {
+            Log.Write($"  {target:The} takes {damage} total damage");
+            Log.Write($"entity: {target.Id}: hit {damage} dmg hp: {ctx.HpBefore} -> {ctx.HpAfter}");
+        }
 
         if (target is Monster mon && mon.IsAsleep && g.Rn2(100) != 0) mon.IsAsleep = false;
 
@@ -812,11 +927,11 @@ public class GameState
         Log.Write("pickup: {0}", item.Def.Name);
     }
 
-    const int XpMultiplier = 3;
+    const double XpMultiplier = 2.4;
 
     public void GainExp(int amount, string? source = null)
     {
-        amount *= XpMultiplier;
+        amount = (int)(amount * XpMultiplier);
         u.XP += amount;
         Log.Write($"exp: +{amount} (total {u.XP}) XL={u.CharacterLevel} DL={lvl.Id.Depth} src={source ?? "?"}");
     }
@@ -851,8 +966,9 @@ public class GameState
         return StruggleResult.Failed;
     }
 
-    public void DoEquip(IUnit unit, Item? item, EquipSlot? slotOverride = null)
+    public EquipSlot? DoEquip(IUnit unit, Item? item, EquipSlot? slotOverride = null)
     {
+        EquipSlot? result = null;
         if (item == null)
         {
             // bare hands
@@ -862,9 +978,10 @@ public class GameState
         {
             EquipSlot slot = slotOverride ?? new(item.Def.DefaultEquipSlot, "_");
             unit.Unequip(slot);
-            unit.Equip(item);
+            result = unit.Equip(item);
         }
         unit.Energy -= ActionCosts.OneAction.Value;
+        return result;
     }
 
     public void DoUnequip(IUnit unit, Item item)
@@ -910,4 +1027,5 @@ public class GameState
         }
         Log.Write($"Portal: after level={u.Level} pos={upos}");
     }
+
 }

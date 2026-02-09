@@ -10,7 +10,7 @@ public class WebImmunity : LogicBrick
 
     protected override void OnBeforeCheck(Fact fact, PHContext context)
     {
-        if (context.Check?.Tag == "web" && context.Target.Unit == fact.Entity)
+        if (context.Check?.Tag == "web" && context.IsCheckingOwnerOf(fact))
             context.Check.ForceSuccess();
     }
 }
@@ -74,7 +74,7 @@ public class WebSpit(int cooldown = 120) : CooldownAction("spit web", TargetingT
             
             int dc = unit.GetSpellDC() - 2;
             using var ctx = PHContext.Create(unit, Target.From(hit));
-            if (CreateAndDoCheck(ctx, "reflex_save", dc, "web"))
+            if (CheckReflex(ctx, dc, "web"))
             {
                 g.YouObserve(hit, $"{hit:The} {VTense(hit, "dodge")} the web!");
                 continue;
@@ -135,7 +135,7 @@ public class SpiderVenom(int dc) : AfflictionBrick(dc, "poison")
 
     protected override object? DoQuery(int stage, string key, string? arg) => key switch
     {
-        "reflex_save" => new Modifier(ModifierCategory.StatusPenalty, -(stage + 1) / 2, "spider venom"),
+        Check.Reflex => new Modifier(ModifierCategory.StatusPenalty, -(stage + 1) / 2, "spider venom"),
         "speed_bonus" when stage >= 3 => new Modifier(ModifierCategory.StatusPenalty, -2 * ((stage - 1) / 2), "spider venom"),
         _ => null
     };

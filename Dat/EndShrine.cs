@@ -15,6 +15,7 @@ public static class EndShrineLevels
   {
     Name = "Shrine Attendant",
     Family = "construct",
+    CreatureType = CreatureTypes.Construct,
     AttackBonus = 1,
     DamageBonus = 0,
     Glyph = new('7', ConsoleColor.White),
@@ -36,6 +37,7 @@ public static class EndShrineLevels
   {
     Name = "Shrine Guardian",
     Family = "construct",
+    CreatureType = CreatureTypes.Construct,
     AttackBonus = 40,
     DamageBonus = 10,
     Glyph = new('7', ConsoleColor.Magenta),

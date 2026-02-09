@@ -93,11 +93,16 @@ public class MonsterDef : BaseDef
   public Action<Monster>? OnChat;
   public required MoralAxis MoralAxis;
   public required EthicalAxis EthicalAxis;
-  public string CreatureType = CreatureTypes.Humanoid;
+  public required string CreatureType = CreatureTypes.Humanoid;
   public HashSet<string> Subtypes = [];
   public bool NoCorpse = false;
   public GroupSize GroupSize = GroupSize.None;
   public Func<MonsterDef>? GrowsInto;
+
+  string? _creatureTypeKey;
+  public string CreatureTypeKey => _creatureTypeKey ??= Subtypes.Count == 0
+      ? CreatureType
+      : $"{CreatureType}/{string.Join('.', Subtypes)}";
 
   public virtual int Nutrition => Size switch
   {
@@ -121,18 +126,24 @@ public abstract class MonsterTemplate(string id)
 
   public static readonly List<MonsterTemplate> All = [
     new ZombieTemplate(),
+    new SkeletonTemplate(),
   ];
 
 }
+
+public enum PlayerPerception { None, Guess, Unease, Warned, Detected, Visible }
 
 public class Monster : Unit<MonsterDef>, IFormattable
 {
   private Monster(MonsterDef def, IEnumerable<LogicBrick> components) : base(def, components) { }
 
+  public PlayerPerception Perception;
+
   public static readonly Monster DM = new(new()
   {
     Name = "DM",
     Family = "dm",
+    CreatureType = "bubble",
     Glyph = Glyph.Null,
     HpPerLevel = 1,
     AC = 1,
@@ -158,6 +169,9 @@ public class Monster : Unit<MonsterDef>, IFormattable
   public override EthicalAxis EthicalAxis => Query("ethical_axis", null, MergeStrategy.Replace, OwnEthicalAxis ?? Def.EthicalAxis);
   public override bool IsCreature(string? type = null, string? subtype = null) =>
     (type == null || (OwnCreatureType ?? Def.CreatureType) == type) && (subtype == null || (OwnSubtypes ?? Def.Subtypes).Contains(subtype));
+
+  string? _creatureTypeKey;
+  public string CreatureTypeKey => _creatureTypeKey ?? Def.CreatureTypeKey;
 
   // where monster thinks player is
   public Pos? ApparentPlayerPos { get; private set; }
@@ -276,6 +290,10 @@ public class Monster : Unit<MonsterDef>, IFormattable
     m.TemplateBonusLevels = (template?.LevelBonus(def, m.EffectiveLevel) ?? 0) + depthBonus;
     m.HP.Reset((int)(Math.Max(1, def.HpPerLevel * m.EffectiveLevel - 1) * HpMultiplier));
     template?.ModifySpawn(m);
+    if (m.OwnCreatureType != null || m.OwnSubtypes != null)
+      m._creatureTypeKey = (m.OwnSubtypes ?? def.Subtypes) is { Count: > 0 } subs
+          ? $"{m.OwnCreatureType ?? def.CreatureType}/{string.Join('.', subs)}"
+          : m.OwnCreatureType ?? def.CreatureType;
     using var ctx = PHContext.Create(m, Target.None);
     LogicBrick.FireOnSpawn(m, ctx);
     if (g.DebugMode)

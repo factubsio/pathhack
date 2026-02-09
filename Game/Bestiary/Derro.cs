@@ -62,7 +62,7 @@ public class DazeAction(int range, int dc, string pool) : ActionBrick("Daze")
         u.AddFact(DazeImmunity.Instance, 4);
 
         using var ctx = PHContext.Create(unit, Target.From(u));
-        if (CreateAndDoCheck(ctx, "will_save", dc, "daze"))
+        if (CheckWill(ctx, dc, "daze"))
         {
             g.pline($"{msg}, but {tgt:the} resists.");
             return;
@@ -152,6 +152,7 @@ public static class Derro
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
         Family = "derro",
+        CreatureType = CreatureTypes.Humanoid,
         GroupSize = GroupSize.SmallMixed,
         Components = [
             new EquipSet(new Outfit(1, new OutfitItem(MundaneArmory.Dagger))),
@@ -178,6 +179,7 @@ public static class Derro
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
         Family = "derro",
+        CreatureType = CreatureTypes.Humanoid,
         Components = [
             new EquipSet(new Outfit(1, new OutfitItem(MundaneArmory.Club))),
             new GrantAction(AttackWithWeapon.Instance),
@@ -202,6 +204,7 @@ public static class Derro
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
         Family = "derro",
+        CreatureType = CreatureTypes.Humanoid,
         Components = [
             new EquipSet(new Outfit(1, new OutfitItem(MundaneArmory.SpikedClub))),
             new GrantAction(AttackWithWeapon.Instance),
@@ -225,6 +228,7 @@ public static class Derro
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
         Family = "derro",
+        CreatureType = CreatureTypes.Humanoid,
         Components = [
             new EquipSet(new Outfit(1, new OutfitItem(MundaneArmory.Quarterstaff))),
             new GrantAction(AttackWithWeapon.Instance),

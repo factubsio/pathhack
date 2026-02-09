@@ -10,7 +10,7 @@ public static class Cats
         Glyph = new('f', ConsoleColor.Yellow),
         HpPerLevel = 5,
         AC = -1,
-        AttackBonus = 1,
+        AttackBonus = -1,
         DamageBonus = 0,
         LandMove = 6,
         Unarmed = NaturalWeapons.Bite_1d4,
@@ -37,7 +37,7 @@ public static class Cats
         HpPerLevel = 6,
         AC = 0,
         AttackBonus = 0,
-        DamageBonus = 0,
+        DamageBonus = -1,
         LandMove = ActionCosts.StandardLandMove,
         Unarmed = NaturalWeapons.Bite_1d6,
         Size = UnitSize.Medium,
@@ -50,7 +50,7 @@ public static class Cats
         CreatureType = CreatureTypes.Beast,
         Components = [
             new GrantAction(Pounce.Instance),
-            new GrantAction(new FullAttack("maul", NaturalWeapons.Bite_1d6, NaturalWeapons.Claw_1d2, NaturalWeapons.Claw_1d2)),
+            new GrantAction(new FullAttack("maul", NaturalWeapons.Bite_1d4, NaturalWeapons.Claw_1d2, NaturalWeapons.Claw_1d2)),
         ],
     };
 
@@ -63,7 +63,7 @@ public static class Cats
         HpPerLevel = 7,
         AC = -1,
         AttackBonus = 0,
-        DamageBonus = 2,
+        DamageBonus = 0,
         LandMove = ActionCosts.LandMove25,
         Unarmed = NaturalWeapons.Bite_1d6,
         Size = UnitSize.Medium,
@@ -101,7 +101,7 @@ public static class Cats
         CreatureType = CreatureTypes.Beast,
         GroupSize = GroupSize.Small,
         Components = [
-            new GrantAction(new FullAttack("maul", NaturalWeapons.Bite_1d8, NaturalWeapons.Claw_1d3, NaturalWeapons.Claw_1d3)),
+            new GrantAction(new FullAttack("maul", NaturalWeapons.Bite_1d8, NaturalWeapons.Claw_1d2, NaturalWeapons.Claw_1d2)),
         ],
     };
 
@@ -113,8 +113,8 @@ public static class Cats
         Glyph = new('f', ConsoleColor.Red),
         HpPerLevel = 10,
         AC = 1,
-        AttackBonus = 0,
-        DamageBonus = 2,
+        AttackBonus = 1,
+        DamageBonus = 0,
         LandMove = ActionCosts.StandardLandMove,
         Unarmed = NaturalWeapons.Bite_1d8,
         Size = UnitSize.Large,
@@ -140,7 +140,7 @@ public static class Cats
         HpPerLevel = 12,
         AC = 1,
         AttackBonus = 1,
-        DamageBonus = 2,
+        DamageBonus = 1,
         LandMove = ActionCosts.StandardLandMove,
         Unarmed = NaturalWeapons.Bite_2d6,
         Size = UnitSize.Large,
@@ -160,32 +160,22 @@ public static class Cats
     public static readonly MonsterDef[] All = [Cheetah, Leopard, Panther, Lion, Tiger, Smilodon];
 }
 
-public class QuickBite : ActionBrick
+public class QuickBite() : ActionBrick("quick_bite")
 {
     public static readonly QuickBite Instance = new();
     static readonly Item Weapon = Item.Create(NaturalWeapons.Bite_1d4);
-    QuickBite() : base("quick_bite") { }
 
     public override ActionCost GetCost(IUnit unit, object? data, Target target) => new(6);
 
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
-    {
-        whyNot = "not adjacent";
-        return ActionHelpers.IsAdjacent(unit, target);
-    }
+    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot) => unit.IsAdjacent(target, out whyNot);
 
-    public override void Execute(IUnit unit, object? data, Target target)
-    {
-        g.Attack(unit, target.Unit!, Weapon);
-    }
+    public override void Execute(IUnit unit, object? data, Target target) => g.Attack(unit, target.Unit!, Weapon);
 }
 
-public class Pounce : ActionBrick
+public class Pounce() : ActionBrick("pounce", TargetingType.Unit) 
 {
     public static readonly Pounce Instance = new();
     const int Range = 2;
-
-    Pounce() : base("pounce", TargetingType.Unit) { }
 
     public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
     {
@@ -225,16 +215,9 @@ public class Pounce : ActionBrick
     }
 }
 
-public class FullAttack : ActionBrick
+public class FullAttack(string name, params WeaponDef[] attacks) : ActionBrick($"full:{name}:{string.Join(",", attacks.Select(a => a.id ?? a.Name))}")
 {
-    readonly Item[] _weapons;
-    readonly string[] _attackIds;
-
-    public FullAttack(string name, params WeaponDef[] attacks) : base($"full:{name}:{string.Join(",", attacks.Select(a => a.id ?? a.Name))}")
-    {
-        _weapons = [.. attacks.Select(Item.Create)];
-        _attackIds = [.. attacks.Select(a => a.id ?? a.Name)];
-    }
+    readonly Item[] _weapons = [.. attacks.Select(Item.Create)];
 
     public override void Execute(IUnit unit, object? data, Target target)
     {
@@ -247,9 +230,5 @@ public class FullAttack : ActionBrick
         }
     }
 
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
-    {
-        whyNot = "not adjacent";
-        return ActionHelpers.IsAdjacent(unit, target);
-    }
+    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot) => unit.IsAdjacent(target, out whyNot);
 }

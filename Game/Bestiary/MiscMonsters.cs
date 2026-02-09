@@ -25,6 +25,7 @@ public static class MiscMonsters
         id = "rat",
         Name = "rat",
         Family = "rat",
+        CreatureType = CreatureTypes.Beast,
         Glyph = new('r', ConsoleColor.DarkGray),
         HpPerLevel = 4,
         AC = -2,
@@ -41,30 +42,6 @@ public static class MiscMonsters
         EthicalAxis = EthicalAxis.Neutral,
         Components = [
             new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d3)),
-        ],
-    };
-
-    public static readonly MonsterDef Skeleton = new()
-    {
-        id = "skeleton",
-        Name = "skeleton",
-        Family = "skeleton",
-        Glyph = new('Z', ConsoleColor.White),
-        HpPerLevel = 8,
-        AC = 0,
-        AttackBonus = 1,
-        DamageBonus = 0,
-        LandMove = ActionCosts.LandMove20,
-        Unarmed = NaturalWeapons.Claw_1d4,
-        Size = UnitSize.Medium,
-        BaseLevel = 1,
-        SpawnWeight = 2,
-        MinDepth = 2,
-        MaxDepth = 4,
-        MoralAxis = MoralAxis.Evil,
-        EthicalAxis = EthicalAxis.Neutral,
-        Components = [
-            new GrantAction(new NaturalAttack(NaturalWeapons.Claw_1d4)),
         ],
     };
 
@@ -93,5 +70,5 @@ public static class MiscMonsters
         ],
     };
 
-    public static readonly MonsterDef[] All = [Rat, Skeleton, ThornBush];
+    public static readonly MonsterDef[] All = [Rat, ThornBush];
 }

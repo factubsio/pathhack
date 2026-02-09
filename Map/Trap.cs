@@ -41,18 +41,19 @@ public class PitTrap(int depth) : Trap(TrapType.Pit, depth, 0, 0, 4)
 
         if (unit.IsAwareOf(this) && g.Rn2(3) == 0)
         {
-            g.pline($"{unit:The} {VTense(unit, "avoid")} a pit.");
+            if (g.YouObserve(unit, $"{unit:The} {VTense(unit, "avoid")} a pit."))
+                u.ObserveTrap(this);
             return false;
         }
 
-        g.pline($"{unit:The} {VTense(unit, "fall")} into a {Name}!");
+        g.YouObserve(unit, $"{unit:The} {VTense(unit, "fall")} into a {Name}!");
         using var ctx = PHContext.Create(Monster.DM, Target.From(unit));
         ctx.Damage.Add(new DamageRoll { Formula = d(1, 6), Type = DamageTypes.Blunt, HalfOnSave = true });
         if (IsSpiked)
         {
             ctx.Damage.Add(new DamageRoll { Formula = d(1, 6), Type = DamageTypes.Piercing });
         }
-        CreateAndDoCheck(ctx, "reflex_save", 15, "trap");
+        CheckReflex(ctx, 15, "trap");
         DoDamage(ctx);
         unit.TrappedIn = this;
         unit.EscapeAttempts = 0;
@@ -77,7 +78,8 @@ public class WebTrap(int depth) : Trap(TrapType.Web, depth, -2, 0, 4)
 
         if (unit.IsAwareOf(this) && g.Rn2(3) == 0)
         {
-            g.YouObserve(unit, $"{unit:The} {VTense(unit, "avoid")} a web.");
+            if (g.YouObserve(unit, $"{unit:The} {VTense(unit, "avoid")} a web."))
+                u.ObserveTrap(this);
             return false;
         }
 

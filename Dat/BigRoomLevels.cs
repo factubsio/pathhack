@@ -5,7 +5,7 @@ public static class BigRoomLevels
     static void SpawnMonsters(LevelBuilder b)
     {
         for (int i = 0; i < 20; i++)
-            MonsterSpawner.SpawnAndPlace(b.Level, $"bigroom DL={b.Level.Depth}", null, true);
+            MonsterSpawner.SpawnAndPlace(b.Level, $"bigroom DL={b.Level.EffectiveDepth}", null, true);
     }
 
     public static readonly SpecialLevel Rectangle = new("bigroom_rect", """

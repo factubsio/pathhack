@@ -35,7 +35,7 @@ public class EvasionBrick : LogicBrick
         if (context.Check == null) return;
 
         // if the check failed, or this wasn't even a reflex save, don't do anything
-        if (context.Check.Result == false || context.Check.Key != "reflex_save") return;
+        if (context.Check.Result == false || context.Check.Key != Check.Reflex) return;
 
         foreach (var dmg in context.Damage)
         {
@@ -52,20 +52,23 @@ public class TrapSense : LogicBrick
 
     protected override void OnBeforeCheck(Fact fact, PHContext context)
     {
-        if (context.Check!.Tag == "trap")
+        if (context.IsCheckingOwnerOf(fact) && context.Check!.Tag == "trap")
             context.Check.Modifiers.AddModifier(new(ModifierCategory.CircumstanceBonus, 4, "Trap Sense"));
     }
 }
 
-public class FeatherStep : LogicBrick
+public class FeatherStepBuff : LogicBrick
 {
+    public static readonly FeatherStepBuff Instance = new();
+    public override StackMode StackMode => StackMode.Stack;
+
     protected override object? OnQuery(Fact fact, string key, string? arg) =>
       key == "ignore_difficult_terrain" ? true : null;
 }
 public class Toughness : LogicBrick
 {
     protected override object? OnQuery(Fact fact, string key, string? arg) =>
-      key == "max_hp" ? new Modifier(ModifierCategory.UntypedStackable, fact.Entity.EffectiveLevel * 6, "Toughness") : null;
+      key == "max_hp" ? new Modifier(ModifierCategory.UntypedStackable, fact.Entity.EffectiveLevel * 3, "Toughness") : null;
 }
 public class FleetBrick : LogicBrick
 {
@@ -164,7 +167,7 @@ public static class GeneralFeats
         Description = "You ignore the effects of difficult terrain.",
         Type = FeatType.General,
         Level = 1,
-        Components = [new FeatherStep()],
+        Components = [FeatherStepBuff.Instance],
     };
 
     public static readonly FeatDef TrapSense = new()

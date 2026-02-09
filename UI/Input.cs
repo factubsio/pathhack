@@ -1,3 +1,5 @@
+using Microsoft.VisualBasic;
+
 namespace Pathhack.UI;
 
 public enum ArgKind { None, Dir, Int, String }
@@ -358,7 +360,44 @@ public static partial class Input
             if (dir == null) return;
             target = new Target(null, dir.Value);
         }
-        // TODO: handle TargetingType.Unit, TargetingType.Pos
+        else if (ability.Targeting == TargetingType.Unit)
+        {
+            g.pline("Target what?");
+            Draw.DrawCurrent();
+            List<IUnit> candidates = [..lvl.LiveUnits
+                .OfType<Monster>()
+                .Where(m => m.Pos.ChebyshevDist(upos) < ability.MaxRange && m.Perception >= PlayerPerception.Detected)
+                .OrderBy(m => m.Pos.ChebyshevDist(upos))
+            ];
+            Menu<IUnit> m = new();
+            let = 'a';
+            foreach (var candidate in candidates.Take(6))
+                m.Add(let++, $"{candidate:An} [{candidate.Pos.RelativeTo(upos)}]", candidate);
+            
+            m.Add('x', "Pick manually", u);
+
+            var tgt_ = m.Display(MenuMode.PickOne);
+            if (tgt_.Count == 0) return;
+            var tgt = tgt_[0];
+
+            if (tgt.IsPlayer)
+            {
+                // TODO(manual targetting like farlook or travel)
+                g.pline("unimplemented");
+                return;
+            }
+
+            Log.Write($"target unit {tgt} at {tgt.Pos}");
+
+            target = Target.From(tgt);
+            if (!ability.CanExecute(u, abilityData, target, out whyNot))
+            {
+                g.pline($"Cannot target there ({whyNot}).");
+                return;
+            }
+        }
+
+        // TODO: handle TargetingType.Pos
         
         ability.Execute(u, abilityData, target);
         u.Energy -= ability.GetCost(u, abilityData, target).Value;
@@ -673,7 +712,7 @@ public static partial class Input
             if (CreateAndDoCheck(ctx, "perception", trap.DetectDC, "trap"))
             {
                 g.pline("You find a trap.");
-                trap.PlayerSeen = true;
+                u.ObserveTrap(trap);
             }
         }
 

@@ -164,6 +164,14 @@ public static class FovCalculator
                 }
             }
         }
+
+        // Compute monster perception
+        foreach (var unit in level.LiveUnits)
+        {
+            if (unit is not Monster m) continue;
+            m.Perception = GetAwareness(u, m).Perception;
+        }
+
         Perf.Stop("FovCompute");
     }
 

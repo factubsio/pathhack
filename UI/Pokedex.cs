@@ -1,8 +1,3 @@
-using System.Runtime.InteropServices.Marshalling;
-using Pathhack.Core;
-using Pathhack.Game;
-using Pathhack.Map;
-
 namespace Pathhack.UI;
 
 public static class Pokedex
@@ -32,7 +27,7 @@ public static class Pokedex
             if (key.KeyChar is '.' or ',' or ';' or ':')
             {
                 var unit = lvl.UnitAt(cursor);
-                if (unit is Monster m)
+                if (unit is Monster m && m.Perception >= PlayerPerception.Warned)
                     ShowMonsterEntry(m);
                 break;
             }
@@ -81,16 +76,37 @@ public static class Pokedex
         }
     }
 
+    static readonly string[] WarningDescs = [
+        "unknown creature causing you worry",
+        "unknown creature causing you concern", 
+        "unknown creature causing you anxiety",
+        "unknown creature causing you disquiet",
+        "unknown creature causing you alarm",
+        "unknown creature causing you dread",
+    ];
+
     static string DescribeAt(Pos p)
     {
-        if (!lvl.IsVisible(p) && !lvl.WasSeen(p)) return "unexplored";
-        
         var unit = lvl.UnitAt(p);
-        if (unit != null)
+        if (unit is Monster m && !m.IsPlayer)
         {
-            if (unit.IsPlayer) return "yourself";
-            return $"{unit.Glyph.Value}  {unit}";
+            switch (m.Perception)
+            {
+                case PlayerPerception.Visible:
+                case PlayerPerception.Detected:
+                case PlayerPerception.Warned:
+                    return $"{m.Glyph.Value}  {m}";
+                case PlayerPerception.Unease:
+                    int warnLevel = Math.Clamp(m.EffectiveLevel / 4, 0, 5);
+                    return $"{warnLevel}  {WarningDescs[warnLevel]}";
+                case PlayerPerception.Guess:
+                    return "?  something was here";
+            }
         }
+        
+        if (unit != null && unit.IsPlayer) return "yourself";
+
+        if (!lvl.IsVisible(p) && !lvl.WasSeen(p)) return "unexplored";
 
         var items = lvl.ItemsAt(p);
         if (items.Count > 0)
@@ -222,7 +238,25 @@ public static class Pokedex
         }
 
         menu.Add("");
-        menu.Add($"Weighs {def.Weight}. Made of {def.Material}.");
+        menu.Add($"Weighs {def.Weight}. Made of {item.Material}.");
+
+        // Description: only show when identified
+        if (def.IsKnown())
+        {
+            if (def.PokedexDescription != null)
+            {
+                menu.Add("");
+                menu.Add(def.PokedexDescription);
+            }
+            else
+            {
+                foreach (var brick in def.Components.Where(b => b.PokedexDescription != null))
+                {
+                    menu.Add("");
+                    menu.Add(brick.PokedexDescription!);
+                }
+            }
+        }
 
         menu.Display();
     }

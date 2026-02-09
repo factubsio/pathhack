@@ -36,17 +36,17 @@ public static class Potions
             case var _ when def == Healing:
                 g.DoHeal(user, user, d(8) + 4);
                 g.pline("You feel better.");
-                ItemDb.Instance.Identify(def);
+                def.SetKnown();
                 break;
             case var _ when def == Speed:
                 user.AddFact(SpeedBuff.Instance.Timed(), 20 + g.Rn2(20));
                 g.pline("You speed up!");
-                ItemDb.Instance.Identify(def);
+                def.SetKnown();
                 break;
             case var _ when def == Paralysis:
                 user.AddFact(ParalyzedBuff.Instance.Timed(), 5 + g.Rn2(10));
                 g.pline("You freeze in place!");
-                ItemDb.Instance.Identify(def);
+                def.SetKnown();
                 break;
             case var _ when def == Antivenom:
                 var poisons = user.QueryFacts("poison");
@@ -54,7 +54,7 @@ public static class Potions
                 {
                     poisons[0].Remove();
                     g.pline(poisons.Count > 1 ? "The venom subsides." : "Your blood clears.");
-                    ItemDb.Instance.Identify(def);
+                    def.SetKnown();
                 }
                 else
                     g.pline("You feel briefly nauseous.");
@@ -62,7 +62,7 @@ public static class Potions
             case var _ when def == Omen:
                 user.AddFact(OmenBuff.Instance, 3);
                 g.pline("You glimpse possible futures.");
-                ItemDb.Instance.Identify(def);
+                def.SetKnown();
                 break;
             case var _ when def == Panacea:
                 var allPoisons = user.QueryFacts("poison");
@@ -70,7 +70,7 @@ public static class Potions
                 {
                     foreach (var p in allPoisons) p.Remove();
                     g.pline("Your blood clears completely.");
-                    ItemDb.Instance.Identify(def);
+                    def.SetKnown();
                 }
                 else
                     g.pline("You feel momentarily pure.");
@@ -79,12 +79,12 @@ public static class Potions
                 int amount = d(user.EffectiveLevel, 2, 5).Roll();
                 user.GrantTempHp(amount);
                 g.pline("You feel temporarily invigorated.");
-                ItemDb.Instance.Identify(def);
+                def.SetKnown();
                 break;
             case var _ when def == LesserInvisibility:
                 user.AddFact(LesserInvisibilityBuff.Instance.Timed(), 20 + g.Rn2(20));
                 g.pline("You fade from view.");
-                ItemDb.Instance.Identify(def);
+                def.SetKnown();
                 break;
         }
     }
@@ -114,7 +114,7 @@ public class OmenBuff : LogicBrick
 
     protected override void OnBeforeCheck(Fact fact, PHContext ctx)
     {
-        if (ctx.Source != fact.Entity) return;
+        if (!ctx.IsCheckingOwnerOf(fact)) return;
         if (ctx.Check is not { IsSave: true }) return;
 
         ctx.Check.Advantage++;

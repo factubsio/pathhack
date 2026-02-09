@@ -7,10 +7,10 @@ public static class RngExtensions
     public static int Rn2(this Random r, int n) => n <= 0 ? 0 : r.Next(n);
     public static int Rn1(this Random r, int x, int y) => y + r.Rn2(x);
     public static int RnRange(this Random r, int min, int max) => min + r.Rn2(max - min + 1);
-    public static int Rne(this Random r, int n)
+    public static int Rne(this Random r, int x)
     {
         int result = 1;
-        while (result < n && r.Rn2(2) == 0) result++;
+        while (result < 5 && r.Rn2(x) == 0) result++;
         return result;
     }
     public static Pos RandomInterior(this Random r, Rect rect) => new(r.RnRange(rect.X + 1, rect.X + rect.W - 2), r.RnRange(rect.Y + 1, rect.Y + rect.H - 2));

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Data.SqlTypes;
 
 namespace Pathhack.Core;
 
@@ -80,9 +81,27 @@ public readonly record struct Pos(int X, int Y) : IFormattable
         yield return new(X - 1, Y + 1);
         yield return new(X - 1, Y - 1);
     }
-    internal IEnumerable<Pos> Neighbours()
+    internal IEnumerable<Pos> Neighbours(bool andSelf = false)
     {
         foreach (var d in AllDirs) yield return this + d;
+        if (andSelf) yield return this;
+    }
+
+    internal string RelativeTo(Pos p)
+    {
+        Pos dir = (this - p).Signed;
+        return (dir.X, dir.Y) switch
+        {
+            (0, -1) => "N",
+            (1, -1) => "NE",
+            (1, 0) => "E",
+            (1, 1) => "SE",
+            (0, 1) => "S",
+            (-1, 1) => "SW",
+            (-1, 0) => "W",
+            (-1, -1) => "NW",
+            _ => "here",
+        };
     }
 }
 

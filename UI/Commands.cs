@@ -86,8 +86,9 @@ public static partial class Input
             }
             char let = useInvLet ? item.InvLet : autoLet++;
             string name = item.DisplayName;
-            if (unit?.Equipped.ContainsValue(item) == true)
-                name += item.Def is ArmorDef ? " (being worn)" : " (weapon in hand)";
+            var equippedKv = unit?.Equipped.FirstOrDefault(kv => kv.Value == item);
+            if (equippedKv is { Key: var slot } && slot != default)
+                name += " " + EquipDescription(item, slot);
             if (item == u.Quiver)
                 name += " (quivered)";
             menu.Add(let, name, item, item.Def.Class);
@@ -239,8 +240,11 @@ public static partial class Input
         var picked = menu.Display(MenuMode.PickOne);
         if (picked.Count == 0) return;
         var armor = picked[0];
-        g.DoEquip(u, armor);
-        g.pline("{0} - {1} (being worn).", armor.InvLet, armor.Def.Name);
+        var slot = g.DoEquip(u, armor);
+        if (slot == null)
+            g.pline("You are already wearing body armor.");
+        else
+            g.pline("{0} - {1} {2}.", armor.InvLet, armor.DisplayName, EquipDescription(armor, slot));
     }
 
     static void PutOnAccessory()
@@ -257,9 +261,24 @@ public static partial class Input
         var picked = menu.Display(MenuMode.PickOne);
         if (picked.Count == 0) return;
         var item = picked[0];
-        g.DoEquip(u, item);
-        g.pline("{0} - {1} (being worn).", item.InvLet, item.DisplayName);
+        var slot = g.DoEquip(u, item);
+        if (slot == null)
+        {
+            g.pline(item.Def.DefaultEquipSlot == ItemSlots.Ring
+                ? "You have no free ring fingers."
+                : "You are already wearing an amulet.");
+        }
+        else
+            g.pline("{0} - {1} {2}.", item.InvLet, item.DisplayName, EquipDescription(item, slot));
     }
+
+    static string EquipDescription(Item item, EquipSlot? slot) => slot?.Type switch
+    {
+        ItemSlots.Ring => $"(worn on {slot.Value.Slot} hand)",
+        ItemSlots.Hand when item.Def is WeaponDef { Hands: 2 } => "(weapon in hands)",
+        ItemSlots.Hand => "(weapon in hand)",
+        _ => "(being worn)",
+    };
 
     static void TakeOff()
     {
@@ -444,7 +463,7 @@ public static partial class Input
     static Item? PickItemToIdentify()
     {
         var unidentified = u.Inventory
-            .Where(i => i.Def.AppearanceCategory != null && !ItemDb.Instance.IsIdentified(i.Def))
+            .Where(i => i.Def.AppearanceCategory != null && !i.Def.IsKnown())
             .ToList();
         if (unidentified.Count == 0)
         {
@@ -500,9 +519,8 @@ public static partial class Input
             AppearanceCategory.Scroll => Scrolls.All.Cast<ItemDef>(),
             _ => []
         };
-        foreach (var def in all)
-            if (ItemDb.Instance.IsIdentified(def))
-                result.Add(def);
+        foreach (var def in all.Where(d => d.IsKnown()))
+            result.Add(def);
         return result;
     }
 

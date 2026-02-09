@@ -18,7 +18,7 @@ public static class MonsterSpawner
         
         if (pos == null) return;
         
-        SpawnAndPlace(level, $"runtime DL={level.Depth}", null, true, pos);
+        SpawnAndPlace(level, $"runtime DL={level.Id}", null, true, pos);
     }
 
     public static void CatchUpSpawns(Level level, long turnDelta)

@@ -287,7 +287,7 @@ public class LuckBlessingPassive : LogicBrick<LuckBlessingData>
 
     protected override void OnBeforeCheck(Fact fact, PHContext context)
     {
-        if (context.Source != fact.Entity) return;
+        if (!context.IsCheckingOwnerOf(fact)) return;
         var data = X(fact);
         if (g.CurrentRound < data.NextAvailable) return;
 

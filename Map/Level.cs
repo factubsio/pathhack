@@ -230,6 +230,10 @@ public class Level(LevelId id, int width, int height)
             var items = ItemsAt(p);
             top = items.Count > 0 ? items[^1] : null;
         }
+        else
+        {
+            top = _memory[p.Y * Width + p.X]?.TopItem;
+        }
         _memory[p.Y * Width + p.X] = new TileMemory(this[p], GetState(p)?.Door ?? DoorState.Closed, top);
     }
 
@@ -356,7 +360,7 @@ public class Level(LevelId id, int width, int height)
 
     public bool IsDoor(Pos p) => this[p].Type == TileType.Door;
 
-    public bool CanMoveTo(Pos from, Pos to, IUnit? who = null)
+    public bool CanMoveTo(Pos from, Pos to, IUnit? who = null, bool forced = false)
     {
         Tile t = this[to];
         if (IsDoor(to) && IsDoorClosed(to)) return false;

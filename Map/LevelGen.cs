@@ -370,7 +370,7 @@ public static class LevelGen
             var pos = ctx.FindLocationInRoom(room, p => level.NoUnit(p) && !level[p].IsStairs);
             if (pos != null)
             {
-                var def = MonsterSpawner.PickMonster(level.Depth, u?.CharacterLevel ?? 1);
+                var def = MonsterSpawner.PickMonster(level.EffectiveDepth, u?.CharacterLevel ?? 1);
                 if (def != null)
                 {
                     var mon = MonsterSpawner.SpawnAndPlace(level, "OROOM", null, true, pos, true);
@@ -379,13 +379,13 @@ public static class LevelGen
         }
         
         // Traps: x = 12 - depth/6, while rn2(x)==0 place trap
-        int trapChance = Math.Max(2, 12 - level.Depth / 6);
+        int trapChance = Math.Max(2, 12 - level.EffectiveDepth / 6);
         while (Rn2(trapChance) == 0)
         {
             var pos = ctx.FindLocationInRoom(room, p => level[p].IsPassable && !level[p].IsStairs && !level.Traps.ContainsKey(p));
             if (pos == null) break;
             
-            Trap trap = Rn2(3) == 0 ? new WebTrap(level.Depth) : new PitTrap(level.Depth);
+            Trap trap = Rn2(3) == 0 ? new WebTrap(level.EffectiveDepth) : new PitTrap(level.EffectiveDepth);
             level.Traps[pos.Value] = trap;
             Log($"trapgen: placed {trap.Type} at {pos.Value}");
         }
@@ -406,7 +406,7 @@ public static class LevelGen
         var pos = ctx.FindLocationInRoom(room, p => ctx.level[p].IsPassable && !ctx.level.HasFeature(p));
         if (pos == null) return;
         
-        var item = ItemGen.GenerateRandomItem(ctx.level.Depth);
+        var item = ItemGen.GenerateRandomItem(ctx.level.EffectiveDepth);
         if (item == null) return;
         
         ctx.level.PlaceItem(item, pos.Value);
@@ -421,7 +421,7 @@ public static class LevelGen
         Pos center = new(cx, cy);
         
         // Scale goblin count by depth: 3 at D1, up to 8 at D6+
-        int count = Math.Min(3 + ctx.level.Depth, 8);
+        int count = Math.Min(3 + ctx.level.EffectiveDepth, 8);
         
         MonsterDef[] pool = [Goblins.Warrior, Goblins.Warrior, Goblins.Warrior, Goblins.Warrior,
                              Goblins.Chef, Goblins.WarChanter, Goblins.Pyro, Goblins.Warrior];
@@ -471,7 +471,7 @@ public static class LevelGen
         foreach (var stamp in ctx.Stamps)
         {
             Room room = Room.FromStamp(stamp);
-            if (Rn2(ctx.level.Depth + 5) < 5)
+            if (Rn2(ctx.level.EffectiveDepth + 5) < 5)
                 room.Flags |= RoomFlags.Lit;
             ctx.level.Rooms.Add(room);
             RenderRoom(ctx.level, room);
