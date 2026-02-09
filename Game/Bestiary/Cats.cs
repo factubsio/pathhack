@@ -169,7 +169,7 @@ public class QuickBite() : ActionBrick("quick_bite")
 
     public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot) => unit.IsAdjacent(target, out whyNot);
 
-    public override void Execute(IUnit unit, object? data, Target target) => g.Attack(unit, target.Unit!, Weapon);
+    public override void Execute(IUnit unit, object? data, Target target) => DoWeaponAttack(unit, target.Unit!, Weapon);
 }
 
 public class Pounce() : ActionBrick("pounce", TargetingType.Unit) 
@@ -211,7 +211,7 @@ public class Pounce() : ActionBrick("pounce", TargetingType.Unit)
         if (fullAttack != null)
             fullAttack.Execute(unit, null, target);
         else
-            g.Attack(unit, tgt, unit.GetWieldedItem());
+            DoWeaponAttack(unit, tgt, unit.GetWieldedItem());
     }
 }
 
@@ -226,7 +226,7 @@ public class FullAttack(string name, params WeaponDef[] attacks) : ActionBrick($
         {
             Item? weapon = _weapons[i];
             if (tgt.IsDead) break; // rampage to others here!!!
-            g.Attack(unit, tgt, weapon, attackBonus: i > 0 ? -5 : 0);
+            DoWeaponAttack(unit, tgt, weapon, attackBonus: i > 0 ? -5 : 0);
         }
     }
 

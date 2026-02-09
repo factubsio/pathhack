@@ -182,7 +182,7 @@ public class Level(LevelId id, int width, int height)
     public IEnumerable<IUnit> LiveUnits => Units.Where(u => !u.IsDead);
     public readonly Dictionary<Pos, Trap> Traps = [];
     public List<Room> Rooms { get; } = [];
-    public List<Area> Areas { get; } = [];
+    private List<Area> Areas { get; } = [];
     public List<(Item Corpse, Pos Pos)> Corpses { get; } = [];
     public Pos? StairsUp { get; set; }
     public Pos? StairsDown { get; set; }
@@ -192,6 +192,8 @@ public class Level(LevelId id, int width, int height)
     public LevelId? BranchDownTarget { get; set; }
     
     public long LastExitTurn { get; set; }
+    public IReadOnlyList<Area> AllAreas => Areas;
+
     public bool NoInitialSpawns;
     public bool Outdoors;
     public string? FirstIntro;
@@ -297,37 +299,37 @@ public class Level(LevelId id, int width, int height)
         GetOrCreateState(p).Unit = Unit;
     }
 
-    public void MoveUnit(IUnit Unit, Pos to, bool free = false)
+    public void MoveUnit(IUnit unit, Pos to, bool free = false)
     {
-        if (Unit.TrappedIn is {} trappedIn)
+        if (unit.TrappedIn is {} trappedIn)
         {
-            if (trappedIn.TryEscape(Unit))
-                Unit.TrappedIn = null;
+            if (trappedIn.TryEscape(unit))
+                unit.TrappedIn = null;
 
-            Unit.EscapeAttempts++;
+            unit.EscapeAttempts++;
             return;
         }
 
-        var from = Unit.Pos;
-        if (UnitAt(from) == Unit)
+        var from = unit.Pos;
+        if (UnitAt(from) == unit)
             GetOrCreateState(from).Unit = null;
-        Unit.Pos = to;
-        GetOrCreateState(to).Unit = Unit;
+        unit.Pos = to;
+        GetOrCreateState(to).Unit = unit;
 
-        if (!free) Unit.Energy -= Unit.LandMove.Value;
+        if (!free) unit.Energy -= unit.LandMove.Value;
 
         foreach (var area in Areas)
         {
-            if (Unit.Has("ignore_difficult_terrain") && area.IsDifficultTerrain) continue;
+            if (unit.Has("ignore_difficult_terrain") && area.IsDifficultTerrain) continue;
             bool wasIn = area.Contains(from);
             bool nowIn = area.Contains(to);
-            if (wasIn && !nowIn) area.HandleExit(Unit);
-            if (!wasIn && nowIn) area.HandleEnter(Unit);
+            if (nowIn) area.HandleMove(unit);
+            else if (wasIn) area.HandleExit(unit);
         }
 
         if (Traps.TryGetValue(to, out var trap))
         {
-            if (trap.Trigger(Unit, null))
+            if (trap.Trigger(unit, null))
             {
                 using var bitset = TileBitset.GetPooled();
                 FovCalculator.ScanShadowcast(lvl, bitset, to, 80, false);
@@ -532,6 +534,18 @@ public class Level(LevelId id, int width, int height)
 
     internal void ReapDead() => Units.RemoveAll(x => x.IsDead);
     internal void SortUnitsByInitiative() => Units.Sort((a, b) => b.Initiative.CompareTo(a.Initiative));
+
+    internal void CreateArea(Area area)
+    {
+        Areas.Add(area);
+        foreach (var m in area.Tiles.Select(UnitAt))
+        {
+            if (m == null) continue;
+            area.HandleMove(m);
+        }
+    }
+
+    internal void CleanupAreas() => Areas.RemoveAll(x => g.CurrentRound >= x.ExpiresAt);
 }
 
 

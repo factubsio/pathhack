@@ -79,7 +79,7 @@ public class FilthFever : LogicBrick
     public override bool IsBuff => true;
     public override bool IsActive => true;
 
-    protected override void OnRoundStart(Fact fact, PHContext ctx)
+    protected override void OnRoundStart(Fact fact)
     {
         // TODO: periodic Con damage or HP drain
     }
@@ -314,7 +314,7 @@ public class VeryDrunkJinkinBrain : MonsterBrain
             {
                 // GET OUT OF MY WAY
                 if (g.Rn2(2) == 0)
-                    g.Attack(m, tgt, m.GetWieldedItem());
+                    DoWeaponAttack(m, tgt, m.GetWieldedItem());
             }
             else if (lvl.CanMoveTo(m.Pos, to, m))
             {

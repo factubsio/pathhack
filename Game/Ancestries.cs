@@ -12,6 +12,7 @@ public class AncestryDef : BaseDef, ISelectable
     public AbilityStat[] Flaws = [];
     public IEnumerable<FeatDef> Feats = [];
     public int DarkVisionRadius = 2;
+    public string? WhyNot => null;
 
     public IEnumerable<string> Details
     {

@@ -76,7 +76,7 @@ public class WarChantBuff : LogicBrick
     {
         if (context.Source != fact.Entity) return;
         if (context.Weapon == null) return;
-        context.Check!.Modifiers.Mod(ModifierCategory.CircumstanceBonus, 2, "war chant");
+        context.Check!.Modifiers.Mod(ModifierCategory.CircumstanceBonus, 1, "war chant");
     }
 
     protected override void OnBeforeDamageRoll(Fact fact, PHContext context)
@@ -189,7 +189,7 @@ public static class Goblins
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
         Components = [
-            new GrantPool("war_chant", 1, 10),
+            new GrantPool("war_chant", 1, 30),
             new GrantAction(new WarChant()),
             new GrantAction(AttackWithWeapon.Instance),
         ],

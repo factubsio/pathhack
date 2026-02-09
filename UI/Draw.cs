@@ -177,8 +177,16 @@ public static class Draw
         Blit();
     }
 
-    public static void AnimateProjectile(Pos from, Pos to, Glyph glyph, int delayMs = 100)
+    public static void AnimateProjectile(Pos from, Pos to, Glyph glyph, int delayMs = -1, int total = 150)
     {
+        if (delayMs < 0)
+        {
+            int frames = to.ChebyshevDist(from);
+            if (frames <= 0) return;
+
+            delayMs = total / frames;
+        }
+
         int dx = Math.Sign(to.X - from.X);
         int dy = Math.Sign(to.Y - from.Y);
         Pos p = from + new Pos(dx, dy);
@@ -376,7 +384,7 @@ public static class Draw
     public static void DrawLevel(Level level)
     {
         Area?[,] areaMap = new Area?[level.Width, level.Height];
-        foreach (var area in level.Areas.OrderBy(a => a.ZOrder))
+        foreach (var area in level.AllAreas.OrderBy(a => a.ZOrder))
             foreach (var p in area.Tiles)
                 areaMap[p.X, p.Y] = area;
 
@@ -665,29 +673,34 @@ public static class Draw
 
     static void DrawSpellPips()
     {
-        // const int maxSlots = 5;
         const int width = 6;
-        StringBuilder sb = new();
         for (int lvl = 1; lvl <= 9; lvl++)
         {
             var pool = u.GetPool($"spell_l{lvl}");
             if (pool == null) continue;
 
             int left = 36 + width * (lvl - 1);
-
             Layers[0].Write(left, StatusRow, $"l{lvl}");
-            sb.Clear();
 
+            int available = pool.EffectiveMax;
             for (int i = 0; i < pool.Max; i++)
             {
-                if (i < pool.Current)
-                    sb.Append('●');
+                ConsoleColor fg = ConsoleColor.Gray;
+                char ch;
+                if (i >= available)
+                {
+                    ch = '○';
+                    fg = ConsoleColor.Red;
+                }
+                else if (i < pool.Current)
+                    ch = '●';
                 else if (i == pool.Current && pool.Ticks >= pool.RegenRate / 2)
-                    sb.Append('◐');
+                    ch = '◐';
                 else
-                    sb.Append('○');
+                    ch = '○';
+
+                Layers[0].Write(left + 3 + i, StatusRow + 1, ch.ToString(), fg);
             }
-            Layers[0].Write(left, StatusRow + 1, sb.ToString());
         }
     }
 

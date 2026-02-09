@@ -85,7 +85,7 @@ public class Constrict(DiceFormula damage) : LogicBrick
     public override string? PokedexDescription => $"Constrict {damage}";
     public override bool IsActive => true;
     
-    protected override void OnRoundStart(Fact fact, PHContext ctx)
+    protected override void OnRoundStart(Fact fact)
     {
         var unit = fact.Entity as IUnit;
         if (unit?.Grabbing is not { } victim) return;

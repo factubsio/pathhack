@@ -143,7 +143,7 @@ public abstract class AfflictionBrick(int dc, string? tag = null) : LogicBrick<A
       DoPeriodicEffect((IUnit)fact.Entity, stage);
   }
 
-  protected override void OnRoundStart(Fact fact, PHContext ctx)
+  protected override void OnRoundStart(Fact fact)
   {
     var data = X(fact);
     if (g.CurrentRound < data.NextTick) return;

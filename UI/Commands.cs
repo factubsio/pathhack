@@ -120,7 +120,7 @@ public static partial class Input
         BuildItemList(menu, u.Inventory);
         var picked = menu.Display(MenuMode.PickOne);
         if (picked.Count == 0) return;
-        g.DoDrop(u, picked[0]);
+        DoDrop(u, picked[0]);
         g.pline($"You drop {picked[0].InvLet} - {picked[0]}.");
         u.Energy -= ActionCosts.OneAction.Value;
     }
@@ -134,7 +134,7 @@ public static partial class Input
         var toDrop = menu.Display(MenuMode.PickAny);
         if (toDrop.Count == 0) return;
         foreach (var item in toDrop)
-            g.DoDrop(u, item);
+            DoDrop(u, item);
         g.pline("You drop {0} item{1}.", toDrop.Count, toDrop.Count == 1 ? "" : "s");
         u.Energy -= ActionCosts.OneAction.Value;
     }
@@ -173,7 +173,7 @@ public static partial class Input
             u.Inventory.Remove(toThrow);
             u.Quiver = null;
         }
-        g.DoThrow(u, toThrow, dir);
+    DoThrow(u, toThrow, dir);
         u.Energy -= ActionCosts.OneAction.Value;
     }
 

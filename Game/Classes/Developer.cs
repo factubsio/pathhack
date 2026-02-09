@@ -35,38 +35,6 @@ public class BlindSelf() : ActionBrick("Blind Self")
     }
 }
 
-public class GreaseArea(string name, IUnit? source, int dc, int duration) : Area(duration)
-{
-    public override string Name => name;
-    public override Glyph Glyph => new('~', ConsoleColor.DarkYellow);
-    public override bool IsDifficultTerrain => true;
-
-    protected override void OnEnter(IUnit unit)
-    {
-        if (unit.HasFact(ProneBuff.Instance)) return;
-
-        using var ctx = PHContext.Create(source, Target.From(unit));
-        var slips = VTense(unit, "slip");
-        if (!CheckReflex(ctx, dc, "difficult_terrain"))
-        {
-            g.pline($"{unit:The} {slips} on some {name} and {VTense(unit, "fall")}!");
-            unit.AddFact(ProneBuff.Instance.Timed(), 1);
-        }
-        else
-        {
-            g.pline($"{unit:The} {slips} on some {name} but {VTense(unit, "keep")} {unit:own} balance.");
-        }
-    }
-
-    protected override void OnTick()
-    {
-        foreach (var unit in Occupants)
-        {
-            if (unit.HasFact(ProneBuff.Instance)) unit.Energy -= unit.LandMove.Value;
-        }
-    }
-}
-
 public class GreaseAround() : ActionBrick("grease test")
 {
     public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
@@ -78,7 +46,7 @@ public class GreaseAround() : ActionBrick("grease test")
     public override void Execute(IUnit unit, object? data, Target target)
     {
         var area = new GreaseArea("Grease", unit, 14, 6) { Tiles = [..unit.Pos.Neighbours().Where(p => !lvl[p].IsStructural)] };
-        lvl.Areas.Add(area);
+        lvl.CreateArea(area);
     }
 }
 
@@ -210,6 +178,7 @@ public static partial class ClassDefs
             g.DebugMode = true;
             Log.EnabledTags.Add("cone");
             Log.EnabledTags.Add("sun");
+            
         },
     };
 }

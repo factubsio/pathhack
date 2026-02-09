@@ -211,6 +211,10 @@ public static partial class ClassDefs
         BasicLevel1Spells.CureLightWounds,
         BasicLevel1Spells.BurningHands,
         BasicLevel1Spells.MagicMissile,
+        BasicLevel1Spells.Light,
+        BasicLevel1Spells.Shield,
+        BasicLevel1Spells.Grease,
+        BasicLevel1Spells.AcidArrow,
     ];
 
     public static ClassDef Warpriest => new()
@@ -236,6 +240,7 @@ public static partial class ClassDefs
                     new GrantProficiency(Proficiencies.Unarmed, ProficiencyLevel.Trained),
                     new GrantProficiency(Proficiencies.LightArmor, ProficiencyLevel.Trained),
                     new GrantProficiency(Proficiencies.MediumArmor, ProficiencyLevel.Trained),
+                    new GrantProficiency("spell_attack", ProficiencyLevel.Trained),
                     new SacredWeapon(),
                     new GrantPool("spell_l1", 2, 20),
                 ],
@@ -245,7 +250,12 @@ public static partial class ClassDefs
                 ],
             },
             null, // 2
-            null, // 3
+            new()// 3
+            {
+                Selections = [
+                    new() { Label = "Choose a spell", Options = WarpriestList.Select(b => b.ToFeat()) },
+                ],
+            }, 
             null, // 4
             new() // 5
             {
@@ -253,6 +263,9 @@ public static partial class ClassDefs
                     new GrantPool("spell_l2", 1, 40),
                     new GrantPool(Fervor.Resource, 1, 60),
                     new GrantAction(new Fervor.EnhanceWeaponAction()),
+                ],
+                Selections = [
+                    new() { Label = "Choose a spell", Options = WarpriestList.Select(b => b.ToFeat()) },
                 ],
             },
             null, // 6

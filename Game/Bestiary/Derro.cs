@@ -25,7 +25,7 @@ public class DazedBuff : LogicBrick
     public override bool IsActive => true;
     public override string? BuffName => "Dazed";
 
-    protected override void OnRoundStart(Fact fact, PHContext ctx)
+    protected override void OnRoundStart(Fact fact)
     {
         if (fact.Entity is not IUnit unit) return;
         unit.Energy = 0;
@@ -129,7 +129,7 @@ public class TelekineticProjectile(int range, Dice damage, string pool) : Action
         var item = Item.Create(TKProjectile);
 
         g.pline($"{unit:The} hurls a telekinetic bolt!");
-        var landed = g.DoThrow(unit, item, dir, from);
+        var landed = DoThrow(unit, item, dir, from);
         lvl.RemoveItem(item, landed);
     }
 }

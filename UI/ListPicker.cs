@@ -6,10 +6,14 @@ public interface ISelectable
     string? Subtitle => null;
     string Description { get; }
     IEnumerable<string> Details => [];
+    public string? WhyNot { get; }
     string[] Tags => [];
 }
 
-public record class SimpleSelectable(string Name, string Description) : ISelectable;
+public record class SimpleSelectable(string Name, string Description) : ISelectable
+{
+    public string? WhyNot => null;
+}
 
 public static class ListPicker
 {
@@ -37,7 +41,8 @@ public static class ListPicker
                     index = (index + 1) % items.Count;
                     break;
                 case ConsoleKey.Enter:
-                    return items[index];
+                    if (items[index].WhyNot == null) return items[index];
+                    break;
                 case ConsoleKey.Escape:
                     return null;
             }
@@ -64,10 +69,9 @@ public static class ListPicker
                     index = (index + 1) % items.Count;
                     break;
                 case ConsoleKey.RightArrow or ConsoleKey.L or ConsoleKey.LeftArrow or ConsoleKey.H:
-                    if (selected.Contains(index))
-                        selected.Remove(index);
-                    else if (selected.Count < count)
-                        selected.Add(index);
+                    if (!selected.Remove(index))
+                        if (selected.Count < count)
+                            selected.Add(index);
                     break;
                 case ConsoleKey.Enter when selected.Count == count:
                     return selected.Select(i => items[i]).ToList();
@@ -87,13 +91,21 @@ public static class ListPicker
         {
             var style = i == cursor ? CellStyle.Reverse : CellStyle.None;
             string prefix = selected != null ? (selected.Contains(i) ? "[+] " : "[ ] ") : "";
-            layer.Write(2, 3 + i, prefix + items[i].Name, ConsoleColor.White, ConsoleColor.Black, style);
+            ConsoleColor fg = ConsoleColor.White;
+            if (items[i].WhyNot != null)
+                fg = ConsoleColor.DarkYellow;
+            layer.Write(2, 3 + i, prefix + items[i].Name, fg, ConsoleColor.Black, style);
         }
 
         // feels weird when it is mega wide, but has to be at least map wide?
         int paddedWidth = Math.Clamp(Draw.ScreenWidth - 10, Draw.MapWidth, 120);
 
         var current = items[cursor];
+        var no = current.WhyNot;
+        if (no != null)
+        {
+            layer.Write(DetailX, 2, no, ConsoleColor.Red);
+        }
         layer.Write(DetailX, 3, current.Name, ConsoleColor.Yellow);
         if (current.Tags.Length > 0)
         {

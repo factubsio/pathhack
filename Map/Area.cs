@@ -13,10 +13,12 @@ public abstract class Area(int duration)
 
     public bool Contains(Pos p) => Tiles.Contains(p);
 
-    public void HandleEnter(IUnit unit)
+    public void HandleMove(IUnit unit)
     {
         if (Occupants.Add(unit))
             OnEnter(unit);
+        else
+            OnMove(unit);
     }
 
     public void HandleExit(IUnit unit)
@@ -26,6 +28,7 @@ public abstract class Area(int duration)
     }
 
     protected virtual void OnEnter(IUnit unit) { }
+    protected virtual void OnMove(IUnit unit) { }
     protected virtual void OnExit(IUnit unit, bool areaFaded) { }
     protected virtual void OnTick() { }
 

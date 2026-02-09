@@ -88,6 +88,7 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
         p.BaseAttributes = cls.StartingStats;
 
         p.AddFact(new PlayerSkills());
+        p.AddAction(DismissAction.Instance);
 
         // Apply ancestry boosts
         foreach (var boost in ancestry.Boosts)
@@ -130,6 +131,7 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
     }
 
     public override int GetAttackBonus(WeaponDef weapon) => StrMod + ProfBonus(weapon.Profiency);
+    public override int GetSpellAttackBonus(SpellBrickBase brick) => DexMod + ProfBonus("spell_attack");
 
     public override int GetDamageBonus() => StrMod;
 
@@ -152,7 +154,7 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
         u.HP.Current = Math.Clamp(u.HP.Current, 1, u.HP.Max);
     }
 
-    public override bool IsDM => false;
+  public override bool IsDM => false;
     public override int CasterLevel => CharacterLevel;
     public override int EffectiveLevel => CharacterLevel;
 }

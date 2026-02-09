@@ -13,6 +13,8 @@ public class DeityDef : ISelectable
     public string[] Tags => Aspects;
     public string Subtitle => $"[fg={AlignmentToColor}]{Alignment}[/fg]";
 
+    public string? WhyNot => null;
+
     private string AlignmentToColor => 
         Alignment[1] switch
         {

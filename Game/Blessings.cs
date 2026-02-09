@@ -14,9 +14,7 @@ public class BlessingDef
         Name = $"{Name} Blessing",
         Description = Description,
         Type = FeatType.Class,
-        Prereq = p => p.Deity?.Aspects.Contains(Name) == true
-            ? Availability.Now
-            : Availability.Never,
+        CheckWhyNot = () => u.Deity?.Aspects.Contains(Name) == true ? null : "",
         Components = [new GrantBlessingBrick(this)]
     };
 }

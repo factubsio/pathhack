@@ -170,6 +170,8 @@ while (true)
     // u.XP = 980;
     lvl.PlaceUnit(u, (lvl.BranchUp ?? lvl.StairsUp)!.Value);
 
+    // TEST: lock one L1 slot
+
     Draw.DrawCurrent();
 
     GameLoop.Run();

@@ -13,7 +13,7 @@ public class EverflameComponent : LogicBrick<EverflameData>
 {
     public override bool IsActive => true;
 
-    protected override void OnRoundStart(Fact fact, PHContext context)
+    protected override void OnRoundStart(Fact fact)
     {
         var data = X(fact);
 

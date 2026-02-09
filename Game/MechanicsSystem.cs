@@ -30,7 +30,7 @@ public sealed class PHContext : IDisposable
     public required PHContext? Parent;
     public required IUnit? Source;
     public required Target Target;
-    public SpellBrick? Spell;
+    public SpellBrickBase? Spell;
     public ActionBrick? Action;
     public Item? Weapon;
     public bool Melee = false;
@@ -64,6 +64,8 @@ public sealed class PHContext : IDisposable
         Current = n;
         return n;
     }
+
+    internal static PHContext Dupe() => Create(Current!.Source, Current!.Target);
 }
 
 public static class Proficiencies

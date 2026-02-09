@@ -92,7 +92,7 @@ public class RecklessAttackBuff : LogicBrick<DataFlag>
     public static readonly RecklessAttackBuff Instance = new();
     public override StackMode StackMode => StackMode.Stack;
 
-    protected override void OnRoundEnd(Fact fact, PHContext context) => X(fact).On = false;
+    protected override void OnRoundEnd(Fact fact) => X(fact).On = false;
 
     protected override void OnBeforeAttackRoll(Fact fact, PHContext context)
     {
@@ -207,8 +207,7 @@ public static class GeneralFeats
         Description = "You can choose to take a –1 penalty on all melee attack rolls to gain a +2 bonus on all melee damage rolls. When your character reaches level 5, and every 5 levels thereafter, the penalty increases by –1 and the bonus to damage increases by +2. The bonus damage does not apply to touch attacks or effects that do not deal hit point damage.",
         Type = FeatType.General,
         Level = 1,
-        Prereq = p => p.TakenFeats.Contains("reck_attack") ? Availability.Never : Availability.Now,
-        NotAvailableBecause = p => p.TakenFeats.Contains("reck_attack") ? "Cannot have 'Reckless Attack'" : null,
+        CheckWhyNot = () => u.TakenFeats.Contains("reck_attack") ? "Cannot have 'Reckless Attack'" : null,
         Components = [new GrantAction(new PowerAttackToggle())],
     };
     public static readonly FeatDef RecklessAttack = new()
@@ -217,8 +216,7 @@ public static class GeneralFeats
         Name = "Reckless Attack",
         Description = "You can choose to take a –1 penalty on AC to gain a +2 bonus on all melee attack rolls. When your character reaches level 5, and every 5 levels thereafter, the penalty increases by –1 and the bonus to damage increases by +2.",
         Type = FeatType.General,
-        Prereq = p => p.TakenFeats.Contains("power_attack") ? Availability.Never : Availability.Now,
-        NotAvailableBecause = p => p.TakenFeats.Contains("reck_attack") ? "Cannot have 'Power Attack'" : null,
+        CheckWhyNot = () => u.TakenFeats.Contains("power_attack") ? "Cannot have 'Power Attack'" : null,
         Level = 1,
         Components = [new GrantAction(new RecklessAttackToggle())],
     };

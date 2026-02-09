@@ -53,9 +53,7 @@ public class WebSpit(int cooldown = 120) : CooldownAction("spit web", TargetingT
 
         void Animate()
         {
-            int frames = last.ChebyshevDist(animStart);
-            if (frames > 0)
-                Draw.AnimateProjectile(animStart, last, new Glyph('*', ConsoleColor.White), 150 / frames);
+            Draw.AnimateProjectile(animStart, last, new Glyph('*', ConsoleColor.White));
             animStart = last;
         }
 
@@ -329,7 +327,7 @@ public static class Spiders
         HpPerLevel = 10,
         AC = 1,
         AttackBonus = 0,
-        DamageBonus = 2,
+        DamageBonus = 1,
         LandMove = ActionCosts.StandardLandMove,
         Unarmed = NaturalWeapons.Bite_2d6,
         Size = UnitSize.Huge,
@@ -343,7 +341,7 @@ public static class Spiders
         Components = [
             WebImmunity.Instance,
             new GrantAction(new NaturalAttack(NaturalWeapons.Bite_2d6)),
-            SpiderVenom.DC14.OnHit(),
+            SpiderVenom.DC13.OnHit(),
         ],
     };
 
@@ -354,7 +352,7 @@ public static class Spiders
         Glyph = new('S', ConsoleColor.DarkYellow),
         HpPerLevel = 12,
         AC = 1,
-        AttackBonus = 1,
+        AttackBonus = 0,
         DamageBonus = 0,
         LandMove = ActionCosts.StandardLandMove,
         Unarmed = NaturalWeapons.Bite_2d6,
@@ -369,7 +367,7 @@ public static class Spiders
         Components = [
             WebImmunity.Instance,
             new GrantAction(new NaturalAttack(NaturalWeapons.Bite_2d6)),
-            SpiderVenom.DC15.OnHit(),
+            SpiderVenom.DC14.OnHit(),
         ],
     };
 

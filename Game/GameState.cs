@@ -400,10 +400,10 @@ public class GameState
         // OnRoundStart for active entities and all units
         Perf.Start();
         foreach (var entity in ActiveEntities)
-            LogicBrick.FireOnRoundStart(entity, PHContext.Create(null, Target.None));
+            LogicBrick.FireOnRoundStart(entity);
         foreach (var unit in lvl.LiveUnits)
         {
-            LogicBrick.FireOnRoundStart(unit, PHContext.Create(unit, Target.None));
+            LogicBrick.FireOnRoundStart(unit);
         }
         Perf.Stop("OnRoundStart");
 
@@ -460,19 +460,20 @@ public class GameState
         foreach (var unit in lvl.LiveUnits)
         {
             unit.ExpireFacts();
-            LogicBrick.FireOnRoundEnd(unit, PHContext.Create(unit, Target.None));
+            LogicBrick.FireOnRoundEnd(unit);
             unit.TickPools();
             unit.TickTempHp();
         }
         foreach (var entity in ActiveEntities)
         {
             entity.ExpireFacts();
-            LogicBrick.FireOnRoundEnd(entity, PHContext.Create(null, Target.None));
+            LogicBrick.FireOnRoundEnd(entity);
         }
-        foreach (var area in lvl.Areas)
+
+        foreach (var area in lvl.AllAreas)
             area.Tick();
-        lvl.Areas.RemoveAll(x => g.CurrentRound >= x.ExpiresAt);
-        
+        lvl.CleanupAreas();
+
         // tick corpses on floor
         for (int i = lvl.Corpses.Count - 1; i >= 0; i--)
         {
@@ -628,30 +629,26 @@ public class GameState
         pline("A map coalesces in your mind.");
     }
 
-    public void Attack(IUnit attacker, IUnit defender, Item with, bool thrown = false, int attackBonus = 0)
+    public static bool DoAttackRoll(PHContext ctx, int attackBonus = 0)
     {
-        var weapon = with.Def as WeaponDef;
-        using var ctx = PHContext.Create(defender, Target.From(attacker));
-        ctx.Weapon = with;
-        ctx.Melee = !thrown;
-        ctx.SilentCheck = true;
-        ctx.SilentDamage = true;
-
-        string verb = thrown
-            ? "throws"
-            : weapon?.MeleeVerb ?? "attacks with";
+        IUnit attacker = ctx.Source!;
+        IUnit defender = ctx.Target.Unit!;
 
         Check check = new() { DC = defender.GetAC(), Tag = "attack" };
         ctx.Check = check;
 
-        if (weapon != null)
+        if (ctx.Weapon?.Def is WeaponDef weapon)
         {
-            bool improvised = thrown && weapon.Launcher == null;
+            bool improvised = !ctx.Melee && weapon.Launcher == null;
             if (improvised)
                 check.Modifiers.Untyped(-2, "improvised");
             else
                 check.Modifiers.Untyped(attacker.GetAttackBonus(weapon), "atk");
-            check.Modifiers.Mod(ModifierCategory.ItemBonus, with.Potency, "potency");
+            check.Modifiers.Mod(ModifierCategory.ItemBonus, ctx.Weapon!.Potency, "potency");
+        }
+        else if (ctx.Spell != null)
+        {
+            check.Modifiers.Untyped(attacker.GetSpellAttackBonus(ctx.Spell), "atk");
         }
 
         if (attackBonus != 0)
@@ -681,10 +678,27 @@ public class GameState
         LogicBrick.FireOnAfterAttackRoll(attacker, ctx);
         LogicBrick.FireOnAfterDefendRoll(defender, ctx);
 
+        return hit;
+    }
+
+    public static bool DoWeaponAttack(IUnit attacker, IUnit defender, Item with, bool thrown = false, int attackBonus = 0)
+    {
+        var weapon = with.Def as WeaponDef;
+        using var ctx = PHContext.Create(attacker, Target.From(defender));
+        ctx.Weapon = with;
+        ctx.Melee = !thrown;
+        ctx.SilentCheck = true;
+        ctx.SilentDamage = true;
+
+        var hit = DoAttackRoll(ctx, attackBonus);
+        var check = ctx.Check!;
+
+        string verb = thrown
+            ? "throws"
+            : weapon?.MeleeVerb ?? "attacks with";
 
         if (hit)
         {
-
             DamageRoll dmg = new()
             {
                 Formula = weapon?.BaseDamage ?? d(2),
@@ -701,27 +715,27 @@ public class GameState
             if (thrown)
             {
                 if (defender.IsPlayer)
-                    pline($"{with:The} hits you!");
+                    g.pline($"{with:The} hits you!");
                 else
-                    pline($"{with:The} hits {defender:the}.");
+                    g.pline($"{with:The} hits {defender:the}.");
             }
             else if (attacker.IsPlayer)
             {
-                pline($"You hit the {defender}.");
+                g.pline($"You hit the {defender}.");
             }
             else if (defender.IsPlayer)
             {
                 if (weapon?.Category == WeaponCategory.Item)
-                    pline($"{attacker:The} {verb} its {with}!  {attacker:The} hits!");
+                    g.pline($"{attacker:The} {verb} its {with}!  {attacker:The} hits!");
                 else
-                    pline($"{attacker:The} hits!");
+                    g.pline($"{attacker:The} hits!");
             }
             else
             {
                 if (weapon?.Category == WeaponCategory.Item)
-                    pline($"{attacker:The} {verb} its {with}! {attacker:The} hits {defender:the}.");
+                    g.pline($"{attacker:The} {verb} its {with}! {attacker:The} hits {defender:the}.");
                 else
-                    pline($"{attacker:The} hits {defender:the}.");
+                    g.pline($"{attacker:The} hits {defender:the}.");
             }
             DoDamage(ctx);
 
@@ -743,27 +757,28 @@ public class GameState
             if (thrown)
             {
                 if (defender.IsPlayer)
-                    pline($"{with:The} misses you.");
+                    g.pline($"{with:The} misses you.");
                 else
-                    pline($"{with:The} misses {defender:the}.");
+                    g.pline($"{with:The} misses {defender:the}.");
             }
             else if (attacker.IsPlayer)
-                pline($"You miss the {defender}.");
+                g.pline($"You miss the {defender}.");
             else if (defender.IsPlayer)
             {
                 if (weapon?.Category == WeaponCategory.Item)
-                    pline($"{attacker:The} {verb} its {with}!  {attacker:The} misses.");
+                    g.pline($"{attacker:The} {verb} its {with}!  {attacker:The} misses.");
                 else
-                    pline($"{attacker:The} misses.");
+                    g.pline($"{attacker:The} misses.");
             }
             else
             {
                 if (weapon?.Category == WeaponCategory.Item)
-                    pline($"{attacker:The} {verb} its {with}!  {attacker:The} misses {defender:the}.");
+                    g.pline($"{attacker:The} {verb} its {with}!  {attacker:The} misses {defender:the}.");
                 else
-                    pline($"{attacker:The} misses {defender:the}.");
+                    g.pline($"{attacker:The} misses {defender:the}.");
             }
         }
+        return hit;
     }
 
     public static void DoDamage(PHContext ctx)
@@ -855,7 +870,7 @@ public class GameState
 
                 // drop inventory
                 foreach (var item in target.Inventory.ToList())
-                    g.DoDrop(target, item);
+                    DoDrop(target, item);
 
                 // drop corpse
                 if (target is Monster m2 && !m2.Def.NoCorpse && CorpseChance(m2.Def))
@@ -883,7 +898,7 @@ public class GameState
         }
     }
 
-    public void DoDrop(IUnit unit, Item item)
+    public static void DoDrop(IUnit unit, Item item)
     {
         unit.Inventory.Remove(item);
         if (unit is Player p && p.Quiver == item)
@@ -892,7 +907,7 @@ public class GameState
         Log.Write("drop: {0}", item.Def.Name);
     }
 
-    public Pos DoThrow(IUnit thrower, Item item, Pos dir, Pos? from = null)
+    public static Pos DoThrow(IUnit thrower, Item item, Pos dir, Pos? from = null)
     {
         Pos pos = from ?? thrower.Pos;
         Pos last = pos;
@@ -906,15 +921,9 @@ public class GameState
             hit = lvl.UnitAt(pos);
             if (hit != null) break;
         }
-        int total = 150;
-        int frames = last.ChebyshevDist(from ?? thrower.Pos);
-        if (frames > 0)
-        {
-            int perFrame = total / frames;
-            Draw.AnimateProjectile(from ?? thrower.Pos, last, item.Glyph, perFrame);
-        }
+        Draw.AnimateProjectile(from ?? thrower.Pos, last, item.Glyph);
         if (hit != null)
-            Attack(thrower, hit, item, thrown: true);
+            DoWeaponAttack(thrower, hit, item, thrown: true);
         lvl.PlaceItem(item, last);
         return last;
     }
@@ -962,7 +971,7 @@ public class GameState
         }
         
         pline($"{unit:The} {VTense(unit, "struggle")} against {grabber:the}!");
-        Attack(unit, grabber, unit is Player p ? p.GetWieldedItem() : ((Monster)unit).GetWieldedItem());
+        DoWeaponAttack(unit, grabber, unit is Player p ? p.GetWieldedItem() : ((Monster)unit).GetWieldedItem());
         return StruggleResult.Failed;
     }
 

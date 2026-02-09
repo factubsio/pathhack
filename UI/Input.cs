@@ -44,6 +44,7 @@ public static partial class Input
         ["chat"] = new("chat", "Talk to adjacent creature", ArgType.Dir, Chat),
         ["help"] = new("help", "Show help", ArgType.None, _ => ShowHelp()),
         ["name"] = new("name", "Name an item type", ArgType.None, _ => CallItem()),
+        ["dismiss"] = new("dismiss", "Dismiss a maintained buff", ArgType.None, _ => DismissAction.DoDismiss(u)),
         ["exp"] = new("exp", "", ArgType.None, _ => DebugExp(), Hidden: true),
     };
 
@@ -73,7 +74,7 @@ public static partial class Input
     };
 
     static readonly List<SpecialCommand> _specialCommands = [
-        new(ConsoleKey.G, ConsoleModifiers.Control, "Use ability", ShowAbilities),
+        new(ConsoleKey.F, ConsoleModifiers.Control, "Use ability", ShowAbilities),
         new(ConsoleKey.O, ConsoleModifiers.Control, "Branch overview", ShowBranchOverview),
         new(ConsoleKey.X, ConsoleModifiers.Control, "Character info", ShowCharacterInfo),
         new(ConsoleKey.P, ConsoleModifiers.Control, "Message history", ShowMessageHistory),
@@ -102,13 +103,19 @@ public static partial class Input
 
         // Class-specific selections
         var classEntry = u.Class?.Progression.ElementAtOrDefault(newLevel - 1);
+
+        if (classEntry != null)
+            foreach (var brick in classEntry.Grants)
+                u.AddFact(brick);
+
         if (classEntry?.Selections != null)
         {
             foreach (var sel in classEntry.Selections)
             {
                 var options = sel.Options
                     .Where(f => !u.TakenFeats.Contains(f.id))
-                    .Where(f => (f.Prereq?.Invoke(u) ?? Availability.Now).State != AvailabilityState.Never)
+                    .Where(f => f.WhyNot != "")
+                    .OrderBy(f => f.WhyNot)
                     .ToList();
                 if (options.Count > 0)
                     stages.Add(new FeatStage(sel.Label, options, sel.Count));
@@ -133,7 +140,8 @@ public static partial class Input
                 var available = pool
                     .Where(f => f.Level <= newLevel)
                     .Where(f => !u.TakenFeats.Contains(f.id))
-                    .Where(f => (f.Prereq?.Invoke(u) ?? Availability.Now).State != AvailabilityState.Never)
+                    .Where(f => f.WhyNot != "")
+                    .OrderBy(f => f.WhyNot)
                     .ToList();
                 if (available.Count > 0)
                     stages.Add(new FeatStage(label, available, 1));
@@ -151,17 +159,14 @@ public static partial class Input
             bool? result = stages[step].Run();
             if (result == null)
             {
-                if (step == 0) return; // cancel
-                step--;
+                // HOW DO WE CANCEL: because we need pre-reqs
+                // Can we UNDO grants? snapshot stuff? seems so hard?
+                if (step > 0)
+                    step--;
             }
             else
                 step++;
         }
-
-        if (classEntry != null)
-            foreach (var brick in classEntry.Grants)
-                u.AddFact(brick);
-
         foreach (var stage in stages)
             stage.Apply();
 
@@ -286,11 +291,15 @@ public static partial class Input
         }
         var picked = menu.Display(MenuMode.PickOne);
         if (picked.Count == 0) return;
-        var ability = picked[0];
-        var abilityData = u.ActionData.GetValueOrDefault(ability);
         Log.Write($"zapping spell: {picked[0]}, {picked[0].Targeting}");
+        ResolveTargetAndExecute(picked[0]);
+    }
+
+    static void ResolveTargetAndExecute(ActionBrick ability)
+    {
+        var data = u.ActionData.GetValueOrDefault(ability);
         
-        if (!ability.CanExecute(u, abilityData, Target.None, out whyNot))
+        if (!ability.CanExecute(u, data, Target.None, out var whyNot))
         {
             g.pline($"That ability is not ready ({whyNot}).");
             return;
@@ -305,12 +314,70 @@ public static partial class Input
             if (dir == null) return;
             target = new Target(null, dir.Value);
         }
-        Log.Write($"  target: {target}");
-        // TODO: handle TargetingType.Unit, TargetingType.Pos
-        
-        ability.Execute(u, abilityData, target);
-        u.Energy -= ability.GetCost(u, abilityData, target).Value;
+        else if (ability.Targeting == TargetingType.Unit)
+        {
+            g.pline("Target what?");
+            Draw.DrawCurrent();
+            List<IUnit> candidates = [..lvl.LiveUnits
+                .OfType<Monster>()
+                .Where(m => m.Pos.ChebyshevDist(upos) < ability.MaxRange && m.Perception >= PlayerPerception.Detected)
+                .OrderBy(m => m.Pos.ChebyshevDist(upos))
+            ];
+            Menu<IUnit> m = new();
+            char let = 'a';
+            foreach (var candidate in candidates.Take(6))
+                m.Add(let++, $"{candidate:An} [{candidate.Pos.RelativeTo(upos)}]", candidate);
+            
+            m.Add('x', "Pick manually", u);
 
+            var tgt_ = m.Display(MenuMode.PickOne);
+            if (tgt_.Count == 0) return;
+            var tgt = tgt_[0];
+
+            if (tgt.IsPlayer)
+            {
+                g.pline("Pick a target.");
+                var pos = PickPosition();
+                if (pos == null) return;
+                if (pos.Value.ChebyshevDist(upos) > ability.MaxRange)
+                {
+                    g.pline("Too far.");
+                    return;
+                }
+                var unit = lvl.UnitAt(pos.Value) as Monster;
+                if (unit == null || unit.Perception < PlayerPerception.Detected)
+                {
+                    g.pline("You can't target that.");
+                    return;
+                }
+                tgt = unit;
+            }
+
+            Log.Write($"target unit {tgt} at {tgt.Pos}");
+
+            target = Target.From(tgt);
+            if (!ability.CanExecute(u, data, target, out whyNot))
+            {
+                g.pline($"Cannot target there ({whyNot}).");
+                return;
+            }
+        }
+        else if (ability.Targeting == TargetingType.Pos)
+        {
+            g.pline("Target where?");
+            Draw.DrawCurrent();
+            var pos = PickPosition();
+            if (pos == null) return;
+            if (pos.Value.ChebyshevDist(upos) > ability.MaxRange)
+            {
+                g.pline("Too far.");
+                return;
+            }
+            target = new Target(null, pos.Value);
+        }
+        
+        ability.Execute(u, data, target);
+        u.Energy -= ability.GetCost(u, data, target).Value;
     }
 
 
@@ -342,65 +409,7 @@ public static partial class Input
         }
         var picked = menu.Display(MenuMode.PickOne);
         if (picked.Count == 0) return;
-        var ability = picked[0];
-        var abilityData = u.ActionData.GetValueOrDefault(ability);
-        
-        if (!ability.CanExecute(u, abilityData, Target.None, out whyNot))
-        {
-            g.pline($"That ability is not ready ({whyNot}).");
-            return;
-        }
-
-        Target target = Target.None;
-        if (ability.Targeting == TargetingType.Direction)
-        {
-            g.pline("In what direction?");
-            Draw.DrawCurrent();
-            var dir = GetDirection(NextKey().Key);
-            if (dir == null) return;
-            target = new Target(null, dir.Value);
-        }
-        else if (ability.Targeting == TargetingType.Unit)
-        {
-            g.pline("Target what?");
-            Draw.DrawCurrent();
-            List<IUnit> candidates = [..lvl.LiveUnits
-                .OfType<Monster>()
-                .Where(m => m.Pos.ChebyshevDist(upos) < ability.MaxRange && m.Perception >= PlayerPerception.Detected)
-                .OrderBy(m => m.Pos.ChebyshevDist(upos))
-            ];
-            Menu<IUnit> m = new();
-            let = 'a';
-            foreach (var candidate in candidates.Take(6))
-                m.Add(let++, $"{candidate:An} [{candidate.Pos.RelativeTo(upos)}]", candidate);
-            
-            m.Add('x', "Pick manually", u);
-
-            var tgt_ = m.Display(MenuMode.PickOne);
-            if (tgt_.Count == 0) return;
-            var tgt = tgt_[0];
-
-            if (tgt.IsPlayer)
-            {
-                // TODO(manual targetting like farlook or travel)
-                g.pline("unimplemented");
-                return;
-            }
-
-            Log.Write($"target unit {tgt} at {tgt.Pos}");
-
-            target = Target.From(tgt);
-            if (!ability.CanExecute(u, abilityData, target, out whyNot))
-            {
-                g.pline($"Cannot target there ({whyNot}).");
-                return;
-            }
-        }
-
-        // TODO: handle TargetingType.Pos
-        
-        ability.Execute(u, abilityData, target);
-        u.Energy -= ability.GetCost(u, abilityData, target).Value;
+        ResolveTargetAndExecute(picked[0]);
     }
 
     static void ShowBranchOverview()
@@ -595,33 +604,35 @@ public static partial class Input
     static void DoTravel()
     {
         g.pline("Where do you want to travel to?");
-        Pos cursor = upos;
+        var cursor = PickPosition();
+        if (cursor == null || cursor == upos) return;
+        
+        var path = Pathfinding.FindPath(lvl, upos, cursor.Value);
+        if (path == null || path.Count == 0)
+        {
+            g.pline("You can't find a path there.");
+            return;
+        }
+        Log.Verbose("movement", $"Travel: from={upos} to={cursor} path=[{string.Join(",", PathToPositions(upos, path))}]");
+        Movement.StartTravel(path);
+    }
+
+    static Pos? PickPosition(Pos? start = null, Action<Pos>? onMove = null, bool allowGlyphJump = true)
+    {
+        Pos cursor = start ?? upos;
         char lastGlyph = '\0';
         int glyphIndex = 0;
         
         while (true)
         {
+            onMove?.Invoke(cursor);
             Draw.DrawCurrent(cursor);
             var key = NextKey();
             
-            if (key.Key == ConsoleKey.Escape)
-            {
-                return;
-            }
+            if (key.Key == ConsoleKey.Escape) return null;
             
             if (key.Key == ConsoleKey.Enter || key.KeyChar == '.')
-            {
-                if (cursor == upos) return;
-                var path = Pathfinding.FindPath(lvl, upos, cursor);
-                if (path == null || path.Count == 0)
-                {
-                    g.pline("You can't find a path there.");
-                    return;
-                }
-                Log.Verbose("movement", $"Travel: from={upos} to={cursor} path=[{string.Join(",", PathToPositions(upos, path))}]");
-                Movement.StartTravel(path);
-                return;
-            }
+                return cursor;
             
             if (GetDirection(key.Key) is { } dir)
             {
@@ -630,7 +641,7 @@ public static partial class Input
                 if (lvl.InBounds(next)) cursor = next;
                 lastGlyph = '\0';
             }
-            else if (key.KeyChar is '<' or '>' or '+' or '#')
+            else if (allowGlyphJump && key.KeyChar is '<' or '>' or '+' or '#')
             {
                 var matches = FindGlyphPositions(key.KeyChar);
                 if (matches.Count > 0)
@@ -918,7 +929,7 @@ public static partial class Input
                 {
                     if (next == grabber.Pos)
                     {
-                        g.Attack(u, grabber, u.GetWieldedItem());
+                        DoWeaponAttack(u, grabber, u.GetWieldedItem());
                     }
                     else
                     {
@@ -936,7 +947,7 @@ public static partial class Input
                 var tgt = lvl.UnitAt(next);
                 if (tgt != null && (tgt is not Monster m || !m.Peaceful))
                 {
-                    g.Attack(u, tgt, u.GetWieldedItem());
+                    DoWeaponAttack(u, tgt, u.GetWieldedItem());
                     u.Energy -= ActionCosts.OneAction.Value;
                 }
                 else if (tgt != null)

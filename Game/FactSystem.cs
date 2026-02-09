@@ -115,8 +115,8 @@ public abstract class LogicBrick
     protected virtual void OnStackAdded(Fact fact) { }
     protected virtual void OnStackRemoved(Fact fact) { }
 
-    protected virtual void OnRoundStart(Fact fact, PHContext context) { }
-    protected virtual void OnRoundEnd(Fact fact, PHContext context) { }
+    protected virtual void OnRoundStart(Fact fact) { }
+    protected virtual void OnRoundEnd(Fact fact) { }
 
     protected virtual void OnTurnStart(Fact fact, PHContext context) { }
     protected virtual void OnTurnEnd(Fact fact, PHContext context) { }
@@ -154,8 +154,8 @@ public abstract class LogicBrick
     public static void FireOnFactRemoved(LogicBrick b, Fact f) { GlobalHook?.OnFactRemoved(f); b.OnFactRemoved(f); }
     public static void FireOnStackAdded(LogicBrick b, Fact f) { GlobalHook?.OnStackAdded(f); b.OnStackAdded(f); }
     public static void FireOnStackRemoved(LogicBrick b, Fact f) { GlobalHook?.OnStackRemoved(f); b.OnStackRemoved(f); }
-    public static void FireOnRoundStart(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnRoundStart(f, c); b.OnRoundStart(f, c); }
-    public static void FireOnRoundEnd(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnRoundEnd(f, c); b.OnRoundEnd(f, c); }
+    public static void FireOnRoundStart(LogicBrick b, Fact f) { if (Skip(b, f)) return; GlobalHook?.OnRoundStart(f); b.OnRoundStart(f); }
+    public static void FireOnRoundEnd(LogicBrick b, Fact f) { if (Skip(b, f)) return; GlobalHook?.OnRoundEnd(f); b.OnRoundEnd(f); }
     public static void FireOnTurnStart(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnTurnStart(f, c); b.OnTurnStart(f, c); }
     public static void FireOnTurnEnd(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnTurnEnd(f, c); b.OnTurnEnd(f, c); }
     public static void FireOnBeforeDamageRoll(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnBeforeDamageRoll(f, c); b.OnBeforeDamageRoll(f, c); }
@@ -177,8 +177,8 @@ public abstract class LogicBrick
     public static void FireOnBeforeSpellCast(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnBeforeSpellCast(f, c); b.OnBeforeSpellCast(f, c); }
 
     // IEntity overloads - fire on all facts via GetAllFacts (null-safe)
-    public static void FireOnRoundStart(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnRoundStart(f.Brick, f, c); }
-    public static void FireOnRoundEnd(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnRoundEnd(f.Brick, f, c); }
+    public static void FireOnRoundStart(IEntity? e) { if (e == null) return; foreach (var f in e.GetAllFacts(null)) FireOnRoundStart(f.Brick, f); }
+    public static void FireOnRoundEnd(IEntity? e) { if (e == null) return; foreach (var f in e.GetAllFacts(null)) FireOnRoundEnd(f.Brick, f); }
     public static void FireOnBeforeCheck(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnBeforeCheck(f.Brick, f, c); }
     public static void FireOnBeforeDamageRoll(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnBeforeDamageRoll(f.Brick, f, c); }
     public static void FireOnBeforeDamageIncomingRoll(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnBeforeDamageIncomingRoll(f.Brick, f, c); }
@@ -370,11 +370,11 @@ public class AttackWithWeapon() : ActionBrick("attack_with_weapon")
                 toThrow = weapon;
                 unit.Inventory.Remove(weapon);
             }
-            g.DoThrow(unit, toThrow, dir);
+      DoThrow(unit, toThrow, dir);
         }
         else
         {
-            g.Attack(unit, target.Unit, unit.GetWieldedItem());
+            DoWeaponAttack(unit, target.Unit, unit.GetWieldedItem());
         }
     }
 }
@@ -388,7 +388,7 @@ public class NaturalAttack(WeaponDef weapon) : ActionBrick("attack_with_nat")
     public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot) => unit.IsAdjacent(target, out whyNot);
 
     public override void Execute(IUnit unit, object? data, Target target) =>
-        g.Attack(unit, target.Unit!, _item);
+        DoWeaponAttack(unit, target.Unit!, _item);
 }
 
 public class GrantProficiency(string skill, ProficiencyLevel level, bool requiresEquipped = false) : LogicBrick
@@ -751,6 +751,7 @@ public interface IUnit : IEntity
 
     int GetAC();
     int GetAttackBonus(WeaponDef weapon);
+    int GetSpellAttackBonus(SpellBrickBase spell);
     int GetDamageBonus();
     int GetSpellDC();
     Item GetWieldedItem();
@@ -786,10 +787,16 @@ public class ChargePool(int max, int regenRate)
     public int Max = max;
     public int RegenRate = regenRate;
     public int Ticks;
+    public int Locked { get; private set; }
+
+    public int EffectiveMax => Max - Locked;
+
+    public void Lock() { Locked++; Current = Math.Min(Current, EffectiveMax); }
+    public void Unlock() => Locked = Math.Max(0, Locked - 1);
 
     public void Tick()
     {
-        if (Current < Max && ++Ticks >= RegenRate)
+        if (Current < EffectiveMax && ++Ticks >= RegenRate)
         {
             Current++;
             Ticks = 0;
@@ -829,6 +836,8 @@ public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) :
     readonly Dictionary<string, ChargePool> Pools = [];
     public abstract bool IsDM { get; }
     public abstract int CasterLevel { get; }
+
+    public bool HasPool(string pool) => Pools.ContainsKey(pool);
 
     public Trap? TrappedIn { get; set; }
     public int EscapeAttempts { get; set; }
@@ -970,6 +979,7 @@ public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) :
 
     public abstract int GetAC();
     public abstract int GetAttackBonus(WeaponDef weapon);
+    public abstract int GetSpellAttackBonus(SpellBrickBase spell);
     public abstract int GetDamageBonus();
     public abstract int GetSpellDC();
     protected abstract WeaponDef GetUnarmedDef();

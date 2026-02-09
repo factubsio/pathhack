@@ -134,11 +134,8 @@ public class Activity
 
     public static void SpillVomit(IUnit? unit, Pos pos)
     {
-        var area = new GreaseArea("vomit", unit, 12, 8)
-        {
-            Tiles = [pos]
-        };
-        lvl.Areas.Add(area);
+        var area = new GreaseArea("vomit", unit, 12, 8) { Tiles = [pos] };
+        lvl.CreateArea(area);
     }
 
     bool TickEat()

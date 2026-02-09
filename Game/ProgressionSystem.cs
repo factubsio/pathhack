@@ -4,21 +4,15 @@ namespace Pathhack.Game;
 
 public enum AvailabilityState { Now, Later, Never }
 
-public readonly record struct Availability(AvailabilityState State, string Reason = "")
-{
-    public static readonly Availability Now = new(AvailabilityState.Now);
-    public static readonly Availability Never = new(AvailabilityState.Never);
-    public static Availability Later(string reason) => new(AvailabilityState.Later, reason);
-}
-
 public class FeatDef : BaseDef, ISelectable
 {
     public required string Name { get; init; }
     public required string Description { get; init; }
     public FeatType Type;
     public int Level = 1;
-    public Func<Player, Availability>? Prereq;
-    public Func<Player, string?>? NotAvailableBecause;
+    public Func<string?>? CheckWhyNot;
+
+    public string? WhyNot => CheckWhyNot?.Invoke();
 }
 
 public class FeatSelection
@@ -50,6 +44,7 @@ public class ClassDef : BaseDef, ISelectable
     public LevelEntry?[] Progression = [];
     public IEnumerable<FeatDef> ClassFeats = [];
     public Action<Player>? GrantStartingEquipment;
+    public string? WhyNot => null;
 }
 
 public enum FeatType { Class, General, Ancestry, AttributeBoost }

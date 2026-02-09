@@ -23,6 +23,19 @@ public readonly record struct Pos(int X, int Y) : IFormattable
 
     public bool IsDiagonal => X != 0 && Y != 0;
 
+    public char Char => (X, Y) switch
+    {
+        (0, -1) => '↑',
+        (1, -1) => '↗',
+        (1, 0) => '→',
+        (1, 1) => '↘',
+        (0, 1) => '↓',
+        (-1, 1) => '↙',
+        (-1, 0) => '←',
+        (-1, -1) => '↖',
+        _ => ' ',
+    };
+
     // For each direction, the 5 "forward" neighbors to check when running (excludes behind + behind-diagonals)
     public static readonly Dictionary<Pos, Pos[]> ForwardNeighbours = new()
     {
@@ -67,15 +80,17 @@ public readonly record struct Pos(int X, int Y) : IFormattable
         return dx == 0 || dy == 0 || Math.Abs(dx) == Math.Abs(dy);
     }
 
-    internal IEnumerable<Pos> CardinalNeighbours()
+    internal IEnumerable<Pos> CardinalNeighbours(bool andSelf = false)
     {
+        if (andSelf) yield return this;
         yield return new(X, Y - 1);
         yield return new(X + 1, Y);
         yield return new(X, Y + 1);
         yield return new(X - 1, Y);
     }
-    internal IEnumerable<Pos> DiagonalNeighbours()
+    internal IEnumerable<Pos> DiagonalNeighbours(bool andSelf = false)
     {
+        if (andSelf) yield return this;
         yield return new(X + 1, Y - 1);
         yield return new(X + 1, Y + 1);
         yield return new(X - 1, Y + 1);
