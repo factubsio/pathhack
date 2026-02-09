@@ -440,7 +440,6 @@ public static class Draw
                     if (mem.Tile.IsStairs && mem.TopItem != null)
                         cell = cell with { Style = CellStyle.Reverse };
                     Layers[0][x, y + MapRow] = cell;
-                    }
                 }
                 else
                 {

@@ -420,12 +420,15 @@ public static class LevelGen
         int cy = (int)room.Interior.Average(p => p.Y);
         Pos center = new(cx, cy);
         
-        // Place 8 goblins in circle around center
+        // Scale goblin count by depth: 3 at D1, up to 8 at D6+
+        int count = Math.Min(3 + ctx.level.Depth, 8);
+        
         MonsterDef[] pool = [Goblins.Warrior, Goblins.Warrior, Goblins.Warrior, Goblins.Warrior,
                              Goblins.Chef, Goblins.WarChanter, Goblins.Pyro, Goblins.Warrior];
         
         foreach (var dir in Pos.AllDirs)
         {
+            if (count-- <= 0) break;
             Pos p = center + dir;
             if (!room.Interior.Contains(p)) continue;
             if (ctx.level.UnitAt(p) != null) continue;
