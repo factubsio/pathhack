@@ -108,6 +108,7 @@ public static class Goblins
         Family = "goblin",
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
+        GrowsInto = () => Basic!,
         Components = [
             new Equip(NaturalWeapons.DogSlicer),
             new GrantAction(AttackWithWeapon.Instance),

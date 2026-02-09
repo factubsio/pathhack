@@ -166,6 +166,7 @@ public class Level(LevelId id, int width, int height)
     public LevelId Id => id;
     public Branch Branch => id.Branch;
     public int Depth => id.Depth;
+    public int EffectiveDepth => Depth + (Branch.EntranceDepthInParent ?? 0);
     public int Width => width;
     public int Height => height;
     readonly Tile[] _tiles = new Tile[width * height];

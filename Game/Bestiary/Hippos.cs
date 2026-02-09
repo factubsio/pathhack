@@ -34,6 +34,7 @@ public static class Hippos
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
+        GrowsInto = () => HungryHippo!,
     };
 
     public static readonly MonsterDef HungryHippo = new()
@@ -56,6 +57,7 @@ public static class Hippos
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
+        GrowsInto = () => HungryHungryHippo!,
     };
 
     public static readonly MonsterDef HungryHungryHippo = new()
@@ -78,6 +80,7 @@ public static class Hippos
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
+        GrowsInto = () => HungrierHippo!,
     };
 
     public static readonly MonsterDef HungrierHippo = new()

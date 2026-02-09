@@ -81,7 +81,7 @@ public class WebTrap(int depth) : Trap(TrapType.Web, depth, -2, 0, 4)
             return false;
         }
 
-        g.YouObserve(unit, $"{0:The} {VTense(unit, "get")} caught in a web!");
+        g.YouObserve(unit, $"{unit:The} {VTense(unit, "get")} caught in a web!");
         unit.TrappedIn = this;
         unit.EscapeAttempts = 0;
         return true;

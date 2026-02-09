@@ -21,6 +21,7 @@ public static class Kobolds
         MaxDepth = 3,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Lawful,
+        GrowsInto = () => Scout!,
         Components = [
             EquipSet.OneOf(MundaneArmory.Dagger, MundaneArmory.Spear),
             new GrantAction(AttackWithWeapon.Instance),
@@ -46,6 +47,7 @@ public static class Kobolds
         MaxDepth = 4,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Lawful,
+        GrowsInto = () => Warrior!,
         Components = [
             new Equip(MundaneArmory.Dagger),
             EquipSet.Roll(MundaneArmory.LeatherArmor, 50),

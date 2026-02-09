@@ -23,8 +23,8 @@ public static class Cats
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
         Components = [
+            new GrantAction(new FullAttack("maul", NaturalWeapons.Bite_1d4, NaturalWeapons.Claw_1d2, NaturalWeapons.Claw_1d2)),
             new GrantAction(QuickBite.Instance),
-            new GrantAction(new FullAttack("maul", NaturalWeapons.Bite_1d4, NaturalWeapons.Claw_1d3, NaturalWeapons.Claw_1d3)),
         ],
     };
 
@@ -36,8 +36,8 @@ public static class Cats
         Glyph = new('f', ConsoleColor.Yellow),
         HpPerLevel = 6,
         AC = 0,
-        AttackBonus = 1,
-        DamageBonus = 1,
+        AttackBonus = 0,
+        DamageBonus = 0,
         LandMove = ActionCosts.StandardLandMove,
         Unarmed = NaturalWeapons.Bite_1d6,
         Size = UnitSize.Medium,
@@ -50,7 +50,7 @@ public static class Cats
         CreatureType = CreatureTypes.Beast,
         Components = [
             new GrantAction(Pounce.Instance),
-            new GrantAction(new FullAttack("maul", NaturalWeapons.Bite_1d6, NaturalWeapons.Claw_1d4, NaturalWeapons.Claw_1d4)),
+            new GrantAction(new FullAttack("maul", NaturalWeapons.Bite_1d6, NaturalWeapons.Claw_1d2, NaturalWeapons.Claw_1d2)),
         ],
     };
 
@@ -61,10 +61,10 @@ public static class Cats
         Family = "cat",
         Glyph = new('f', ConsoleColor.DarkGray),
         HpPerLevel = 7,
-        AC = 0,
-        AttackBonus = 2,
+        AC = -1,
+        AttackBonus = 0,
         DamageBonus = 2,
-        LandMove = ActionCosts.StandardLandMove,
+        LandMove = ActionCosts.LandMove25,
         Unarmed = NaturalWeapons.Bite_1d6,
         Size = UnitSize.Medium,
         BaseLevel = 3,
@@ -75,7 +75,7 @@ public static class Cats
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
         Components = [
-            new GrantAction(new FullAttack("maul", NaturalWeapons.Bite_1d6, NaturalWeapons.Claw_1d4, NaturalWeapons.Claw_1d4)),
+            new GrantAction(new FullAttack("maul", NaturalWeapons.Bite_1d6, NaturalWeapons.Claw_1d2, NaturalWeapons.Claw_1d2)),
         ],
     };
 
@@ -87,8 +87,8 @@ public static class Cats
         Glyph = new('f', ConsoleColor.DarkYellow),
         HpPerLevel = 10,
         AC = 1,
-        AttackBonus = 1,
-        DamageBonus = 2,
+        AttackBonus = 0,
+        DamageBonus = 0,
         LandMove = ActionCosts.LandMove20,
         Unarmed = NaturalWeapons.Bite_1d8,
         Size = UnitSize.Large,
@@ -101,7 +101,7 @@ public static class Cats
         CreatureType = CreatureTypes.Beast,
         GroupSize = GroupSize.Small,
         Components = [
-            new GrantAction(new FullAttack("maul", NaturalWeapons.Bite_1d8, NaturalWeapons.Claw_1d6, NaturalWeapons.Claw_1d6)),
+            new GrantAction(new FullAttack("maul", NaturalWeapons.Bite_1d8, NaturalWeapons.Claw_1d3, NaturalWeapons.Claw_1d3)),
         ],
     };
 
@@ -113,8 +113,8 @@ public static class Cats
         Glyph = new('f', ConsoleColor.Red),
         HpPerLevel = 10,
         AC = 1,
-        AttackBonus = 2,
-        DamageBonus = 4,
+        AttackBonus = 0,
+        DamageBonus = 2,
         LandMove = ActionCosts.StandardLandMove,
         Unarmed = NaturalWeapons.Bite_1d8,
         Size = UnitSize.Large,
@@ -127,7 +127,7 @@ public static class Cats
         CreatureType = CreatureTypes.Beast,
         Components = [
             new GrantAction(Pounce.Instance),
-            new GrantAction(new FullAttack("maul", NaturalWeapons.Bite_1d8, NaturalWeapons.Claw_1d6, NaturalWeapons.Claw_1d6)),
+            new GrantAction(new FullAttack("maul", NaturalWeapons.Bite_1d8, NaturalWeapons.Claw_1d3, NaturalWeapons.Claw_1d3)),
         ],
     };
 
@@ -138,9 +138,9 @@ public static class Cats
         Family = "cat",
         Glyph = new('f', ConsoleColor.Magenta),
         HpPerLevel = 12,
-        AC = 2,
-        AttackBonus = 3,
-        DamageBonus = 5,
+        AC = 1,
+        AttackBonus = 1,
+        DamageBonus = 2,
         LandMove = ActionCosts.StandardLandMove,
         Unarmed = NaturalWeapons.Bite_2d6,
         Size = UnitSize.Large,
@@ -153,7 +153,7 @@ public static class Cats
         CreatureType = CreatureTypes.Beast,
         Components = [
             new GrantAction(Pounce.Instance),
-            new GrantAction(new FullAttack("maul", NaturalWeapons.Bite_2d6, NaturalWeapons.Claw_1d8, NaturalWeapons.Claw_1d8)),
+            new GrantAction(new FullAttack("maul", NaturalWeapons.Bite_2d6, NaturalWeapons.Claw_1d4, NaturalWeapons.Claw_1d4)),
         ],
     };
 

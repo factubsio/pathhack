@@ -33,7 +33,7 @@ public class CurseWeaponInRange(int range) : ActionBrick("Curse Weapon")
         if (!unit.TryUseCharge(Resource)) return;
         var weapon = u.GetWieldedItem();
         weapon.AddFact(WeaponCurse.Instance, duration: CurseDuration);
-        g.YouObserve(unit, $"{unit:The} curses your {weapon}!", "something curses your {weapon}!", 100);
+        g.YouObserve(unit, $"{unit:The} curses your {weapon}!", $"something curse your {weapon}!", 100);
     }
 }
 

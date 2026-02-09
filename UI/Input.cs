@@ -165,6 +165,7 @@ public static partial class Input
 
         u.CharacterLevel = newLevel;
         Log.Write("exp: level up to {0} (xp={1})", newLevel, u.XP);
+        Log.Write($"exp: combat {u.HitsTaken} hits, {u.MissesTaken} misses, {u.DamageTaken} dmg taken");
 
         // Apply hp gains (after level set!)
         int hpGain = u.Class!.HpPerLevel;
@@ -287,6 +288,12 @@ public static partial class Input
         var abilityData = u.ActionData.GetValueOrDefault(ability);
         Log.Write($"zapping spell: {picked[0]}, {picked[0].Targeting}");
         
+        if (!ability.CanExecute(u, abilityData, Target.None, out whyNot))
+        {
+            g.pline($"That ability is not ready ({whyNot}).");
+            return;
+        }
+
         Target target = Target.None;
         if (ability.Targeting == TargetingType.Direction)
         {
@@ -299,11 +306,6 @@ public static partial class Input
         Log.Write($"  target: {target}");
         // TODO: handle TargetingType.Unit, TargetingType.Pos
         
-        if (!ability.CanExecute(u, abilityData, target, out whyNot))
-        {
-            g.pline($"That ability is not ready ({whyNot}).");
-            return;
-        }
         ability.Execute(u, abilityData, target);
         u.Energy -= ability.GetCost(u, abilityData, target).Value;
 
@@ -341,6 +343,12 @@ public static partial class Input
         var ability = picked[0];
         var abilityData = u.ActionData.GetValueOrDefault(ability);
         
+        if (!ability.CanExecute(u, abilityData, Target.None, out whyNot))
+        {
+            g.pline($"That ability is not ready ({whyNot}).");
+            return;
+        }
+
         Target target = Target.None;
         if (ability.Targeting == TargetingType.Direction)
         {
@@ -352,11 +360,6 @@ public static partial class Input
         }
         // TODO: handle TargetingType.Unit, TargetingType.Pos
         
-        if (!ability.CanExecute(u, abilityData, target, out whyNot))
-        {
-            g.pline($"That ability is not ready ({whyNot}).");
-            return;
-        }
         ability.Execute(u, abilityData, target);
         u.Energy -= ability.GetCost(u, abilityData, target).Value;
     }

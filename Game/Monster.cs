@@ -97,6 +97,7 @@ public class MonsterDef : BaseDef
   public HashSet<string> Subtypes = [];
   public bool NoCorpse = false;
   public GroupSize GroupSize = GroupSize.None;
+  public Func<MonsterDef>? GrowsInto;
 
   public virtual int Nutrition => Size switch
   {
@@ -244,7 +245,8 @@ public class Monster : Unit<MonsterDef>, IFormattable
 
   public override ActionCost LandMove => Def.LandMove.Value - QueryModifiers("speed_bonus").Calculate();
   public override int GetAttackBonus(WeaponDef weapon) => LevelDC - ATTACK_PENALTY_FUDGE + Def.AttackBonus;
-  public override int GetDamageBonus() => Def.DamageBonus + TemplateBonusLevels;
+  const int DamageFudge = 2;
+  public override int GetDamageBonus() => Def.DamageBonus + TemplateBonusLevels + DamageFudge;
   public override int GetSpellDC() => LevelDC;
   protected override WeaponDef GetUnarmedDef() => Def.Unarmed;
   public override Glyph Glyph => OwnGlyph ?? Def.Glyph;
@@ -265,18 +267,20 @@ public class Monster : Unit<MonsterDef>, IFormattable
   };
 
   public string? TemplatedName;
-  public static Monster Spawn(MonsterDef def, string reason, MonsterTemplate? template = null)
+  const double HpMultiplier = 1.5;
+
+  public static Monster Spawn(MonsterDef def, string reason, MonsterTemplate? template = null, int depthBonus = 0)
   {
     Monster m = new(def, template?.GetComponents(def) ?? def.Components);
     m.Peaceful = def.Peaceful;
-    m.TemplateBonusLevels = template?.LevelBonus(def, m.EffectiveLevel) ?? 0;
-    m.HP.Reset(Math.Max(1, def.HpPerLevel * m.EffectiveLevel - 1));
+    m.TemplateBonusLevels = (template?.LevelBonus(def, m.EffectiveLevel) ?? 0) + depthBonus;
+    m.HP.Reset((int)(Math.Max(1, def.HpPerLevel * m.EffectiveLevel - 1) * HpMultiplier));
     template?.ModifySpawn(m);
     using var ctx = PHContext.Create(m, Target.None);
     LogicBrick.FireOnSpawn(m, ctx);
     if (g.DebugMode)
       m.HP.Current = m.HP.Current / 4;
-    Log.Write($"mongen: {def.Name} ({reason})");
+    Log.Write($"entity: {m.Id}: spawn {def.Name} L{m.EffectiveLevel} ({reason})");
     return m;
   }
 

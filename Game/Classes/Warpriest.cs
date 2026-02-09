@@ -14,19 +14,18 @@ public static class Fervor
         {
             if (!unit.TryUseCharge(Resource)) return;
 
-            Menu menu = new();
-            menu.Add($"Enhannce weapon:", LineStyle.Heading);
+            Menu<string> menu = new();
+            menu.Add("Enhance weapon:", LineStyle.Heading);
 
-            menu.Add("Flaming");
-            menu.Add("Freeze");
-            menu.Add("Shock");
+            menu.Add('a', "Flaming", "Flaming");
+            menu.Add('b', "Freeze", "Freeze");
+            menu.Add('c', "Shock", "Shock");
 
             if (u.MoralAxis == MoralAxis.Evil)
-                menu.Add("Unholy");
+                menu.Add('d', "Unholy", "Unholy");
             else
-                menu.Add("Holy");
+                menu.Add('d', "Holy", "Holy");
 
-            
             var picks = menu.Display(MenuMode.PickOne);
             if (picks.Count == 0) return;
 
@@ -89,7 +88,7 @@ public class SacredArmorBrick : LogicBrick
 
         if (armor == null) return null; // query prc sacred fist = unarmed?
 
-        if ((armor.Def as ArmorDef)?.Proficiency != Proficiencies.MediumArmor) return null;
+        if ((armor.Def as ArmorDef)?.Proficiency is not (Proficiencies.LightArmor or Proficiencies.MediumArmor)) return null;
         int bonus = u.EffectiveLevel < 10 ? 1 : 2;
         return new Modifier(ModifierCategory.StatusBonus, bonus, "sacred armor");
     }

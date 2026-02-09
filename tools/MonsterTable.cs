@@ -1,11 +1,10 @@
 // dotnet run -- --monsters
 
 using System.Reflection;
-using Pathhack.Game;
 
 public static class MonsterTable
 {
-    public static void Print()
+    public static void Print(string? family)
     {
         var defs = Assembly.GetExecutingAssembly()
             .GetTypes()
@@ -13,6 +12,7 @@ public static class MonsterTable
             .SelectMany(t => t.GetFields(BindingFlags.Public | BindingFlags.Static))
             .Where(f => f.FieldType == typeof(MonsterDef))
             .Select(f => (MonsterDef)f.GetValue(null)!)
+            .Where(m => family == null || m.Family.Contains(family, StringComparison.InvariantCultureIgnoreCase))
             .OrderBy(m => m.BaseLevel)
             .ThenBy(m => m.Name);
 
@@ -23,9 +23,13 @@ public static class MonsterTable
         {
             var actions = m.Components
                 .OfType<GrantAction>()
-                .Select(ga => ga.Action.Name)
+                .Select(ga => ga.Action.PokedexDescription ?? ga.Action.Name)
                 .ToList();
-            string actStr = string.Join(", ", actions);
+            var passives = m.Components
+                .Where(c => c is not GrantAction && c.PokedexDescription != null)
+                .Select(c => c.PokedexDescription!)
+                .ToList();
+            string actStr = string.Join(", ", actions.Concat(passives));
             string grp = m.GroupSize switch
             {
                 GroupSize.Small => "S",

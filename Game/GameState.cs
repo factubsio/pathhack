@@ -246,7 +246,8 @@ public class GameState
             .Select(m => m.Value > 0 ? $"+{m.Value} ({m.Label})" : $"{m.Value} ({m.Label})");
         string modStr = string.Join(" ", parts);
         string advStr = hasAdv ? " (adv)" : hasDis ? " (dis)" : "";
-        Log.Write("{0}: d20={1}{2} {3}= {4} vs DC {5}", label, baseRoll, advStr, modStr, check.Roll, check.DC);
+        string tag = ctx.Source == u ? "pcheck" : "mcheck";
+        Log.Write($"{tag}: {label} d20={baseRoll}{advStr} {modStr}= {check.Roll} vs DC {check.DC}");
 
         return check.Result;
     }
@@ -539,7 +540,7 @@ public class GameState
     {
         for (int y = 0; y < lvl.Height; y++)
         for (int x = 0; x < lvl.Width; x++)
-            lvl.UpdateMemory(new(x, y));
+            lvl.UpdateMemory(new(x, y), includeItems: false);
         pline("A map coalesces in your mind.");
     }
 
@@ -632,6 +633,8 @@ public class GameState
         else
         {
             Log.Write("  miss");
+            defender.MissesTaken++;
+            Log.Write($"entity: {defender.Id}: miss");
             if (thrown)
             {
                 if (defender.IsPlayer)
@@ -686,6 +689,9 @@ public class GameState
 
         Log.Write($"  {target:The} takes {damage} total damage");
         target.LastDamagedOnTurn = g.CurrentRound;
+        target.HitsTaken++;
+        target.DamageTaken += damage;
+        Log.Write($"entity: {target.Id}: hit {damage} dmg");
         
         damage = target.AbsorbTempHp(damage);
         if (damage == 0)
@@ -729,6 +735,8 @@ public class GameState
 
                 using (var death = PHContext.Create(source, Target.From(target)))
                     LogicBrick.FireOnDeath(target, death);
+
+                Log.Write($"entity: {target.Id}: death ({target.HitsTaken} hits, {target.MissesTaken} misses, {target.DamageTaken} dmg)");
 
                 // drop inventory
                 foreach (var item in target.Inventory.ToList())
@@ -804,7 +812,7 @@ public class GameState
         Log.Write("pickup: {0}", item.Def.Name);
     }
 
-    const int XpMultiplier = 2;
+    const int XpMultiplier = 3;
 
     public void GainExp(int amount, string? source = null)
     {

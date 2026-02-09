@@ -237,12 +237,11 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
         if (count > 1)
             parts.Add($"{count}");
         
-        // Only show potency for weapons
+        // Show potency for weapons (always) and armor (when > 0)
         if (Def is WeaponDef)
-        {
-            int bonus = EffectiveBonus;
-            parts.Add($"{bonus:+#;-#;+0}");
-        }
+            parts.Add($"+{Potency}");
+        else if (Def is ArmorDef && Potency > 0)
+            parts.Add($"+{Potency}");
 
         if (Fundamental != null && !Fundamental.Def.IsNull)
             parts.Add($"{Fundamental.Def.DisplayName}/{Fundamental.Def.Quality}");

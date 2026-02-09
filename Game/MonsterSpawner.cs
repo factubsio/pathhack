@@ -35,10 +35,22 @@ public static class MonsterSpawner
         }
     }
 
-    public static bool SpawnAndPlace(Level level, string reason, MonsterDef? def, bool allowTemplate, Pos? pos = null)
+    public static bool SpawnAndPlace(Level level, string reason, MonsterDef? def, bool allowTemplate, Pos? pos = null, bool asleep = false)
     {
-        def ??= PickMonster(level.Depth, u?.CharacterLevel ?? 1);
+        int depth = level.EffectiveDepth;
+        int playerLevel = u?.CharacterLevel ?? 1;
+        
+        def ??= PickMonster(depth, playerLevel);
         if (def == null) return false;
+
+        // Grow up if effective level reaches grown form's base level
+        int bonusLevels = CalcBonusLevels(def.BaseLevel, depth, playerLevel);
+        int effectiveLevel = def.BaseLevel + bonusLevels;
+        if (def.GrowsInto?.Invoke() is { } grown && effectiveLevel > grown.BaseLevel)
+        {
+            def = grown;
+            bonusLevels = effectiveLevel - grown.BaseLevel;
+        }
 
         pos ??= level.FindLocation(p => level.NoUnit(p) && !level[p].IsStairs);
         if (pos == null) return false;
@@ -51,14 +63,15 @@ public static class MonsterSpawner
             template = MonsterTemplate.All.Shuffled().FirstOrDefault(x => x.CanApplyTo(def));
         }
 
-        var mon = Monster.Spawn(def, reason, template);
+        var mon = Monster.Spawn(def, reason, template, bonusLevels);
+        mon.IsAsleep = asleep;
         level.PlaceUnit(mon, pos.Value);
 
-        TrySpawnGroup(level, def, pos.Value);
+        TrySpawnGroup(level, def, template, pos.Value, asleep);
         return true;
     }
 
-    public static void TrySpawnGroup(Level level, MonsterDef leader, Pos origin)
+    public static void TrySpawnGroup(Level level, MonsterDef leader, MonsterTemplate? template, Pos origin, bool asleep)
     {
         if (leader.GroupSize == GroupSize.None) return;
 
@@ -96,7 +109,8 @@ public static class MonsterSpawner
             if (adj == null) break;
 
             var def = familyCandidates != null ? familyCandidates[g.Rn2(familyCandidates.Count)] : leader;
-            var mon = Monster.Spawn(def, "group");
+            var mon = Monster.Spawn(def, "group", template);
+            mon.IsAsleep = asleep;
             level.PlaceUnit(mon, adj.Value);
         }
     }
@@ -111,13 +125,21 @@ public static class MonsterSpawner
 
     public static MonsterDef? PickMonster(int depth, int playerLevel)
     {
+        int minLevel = depth / 6;
         int maxLevel = (depth + playerLevel) / 2;
 
         var candidates = AllMonsters.All
-            .Where(m => depth >= m.MinDepth && m.BaseLevel <= maxLevel)
+            .Where(m => depth >= m.MinDepth && m.BaseLevel >= minLevel && m.BaseLevel <= maxLevel)
             .ToList();
 
         return PickWeighted(candidates);
+    }
+
+    public static int CalcBonusLevels(int baseLevel, int depth, int playerLevel)
+    {
+        int depthBonus = Math.Max(0, depth - baseLevel) / 5;
+        int playerBonus = Math.Max(0, playerLevel - baseLevel) / 4;
+        return depthBonus + playerBonus;
     }
 
     public static MonsterDef? PickWeighted(IReadOnlyList<MonsterDef> candidates)

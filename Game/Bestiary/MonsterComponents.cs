@@ -175,6 +175,17 @@ public static class NaturalWeapons
         Material = "keratin",
     };
 
+    public static readonly WeaponDef Claw_1d2 = new()
+    {
+        id = "claw_1d2",
+        Name = "claw",
+        BaseDamage = d(2),
+        DamageType = DamageTypes.Slashing,
+        Profiency = Proficiencies.Unarmed,
+        Category = WeaponCategory.Natural,
+        Material = "keratin",
+    };
+
     public static readonly WeaponDef Claw_1d3 = new()
     {
         id = "claw_1d3",

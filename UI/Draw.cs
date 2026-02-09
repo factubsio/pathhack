@@ -401,6 +401,14 @@ public static class Draw
                         {
                             Layers[0][x, y + MapRow] = Cell.From(area.Glyph);
                         }
+                        else if (level[p].IsStairs)
+                        {
+                            var items = level.ItemsAt(p);
+                            var cell = TileCell(level, p);
+                            if (items.Count > 0)
+                                cell = cell with { Style = CellStyle.Reverse };
+                            Layers[0][x, y + MapRow] = cell;
+                        }
                         else
                         {
                             var items = level.ItemsAt(p);
@@ -426,15 +434,12 @@ public static class Draw
                 }
                 else if (level.WasSeen(p) && level.GetMemory(p) is { } mem)
                 {
-                    if (mem.TopItem is { } item)
-                    {
-                        Layers[0][x, y + MapRow] = Cell.From(item.Glyph);
-                    }
-                    else
-                    {
-                        ConsoleColor col = ConsoleColor.DarkBlue;
-                        if (mem.Tile.IsStructural) col = ConsoleColor.Gray;
-                        Layers[0][x, y + MapRow] = MemoryTileCell(level, p, mem, col);
+                    ConsoleColor col = ConsoleColor.DarkBlue;
+                    if (mem.Tile.IsStructural) col = ConsoleColor.Gray;
+                    var cell = MemoryTileCell(level, p, mem, col);
+                    if (mem.Tile.IsStairs && mem.TopItem != null)
+                        cell = cell with { Style = CellStyle.Reverse };
+                    Layers[0][x, y + MapRow] = cell;
                     }
                 }
                 else

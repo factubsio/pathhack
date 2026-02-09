@@ -2,6 +2,12 @@ namespace Pathhack.Dat;
 
 public static class BigRoomLevels
 {
+    static void SpawnMonsters(LevelBuilder b)
+    {
+        for (int i = 0; i < 20; i++)
+            MonsterSpawner.SpawnAndPlace(b.Level, $"bigroom DL={b.Level.Depth}", null, true);
+    }
+
     public static readonly SpecialLevel Rectangle = new("bigroom_rect", """
         1111111111111111111111111111111111111111111111111111111111111111111111111111
         1..........................................................................1
@@ -21,7 +27,7 @@ public static class BigRoomLevels
         1..........................................................................1
         1..........................................................................1
         1111111111111111111111111111111111111111111111111111111111111111111111111111
-        """) { Name = "Big Room" };
+        """, PostRender: SpawnMonsters) { Name = "Big Room" };
 
     public static readonly SpecialLevel Oval = new("bigroom_oval", """
                          11111111111111111111111111                         
@@ -41,6 +47,5 @@ public static class BigRoomLevels
                 1111111111........................1111111111                
                          11111111111111111111111111      
 """,
-    PostRender: b => {
-    }) { IrregularRooms = [1], Name = "Big Room" };
+    PostRender: SpawnMonsters) { IrregularRooms = [1], Name = "Big Room" };
 }

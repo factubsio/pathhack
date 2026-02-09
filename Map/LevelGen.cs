@@ -373,10 +373,7 @@ public static class LevelGen
                 var def = MonsterSpawner.PickMonster(level.Depth, u?.CharacterLevel ?? 1);
                 if (def != null)
                 {
-                    var mon = Monster.Spawn(def, "OROOM");
-                    mon.IsAsleep = true;
-                    level.PlaceUnit(mon, pos.Value);
-                    Log($"mongen: placed {def.Name} at {pos.Value}");
+                    var mon = MonsterSpawner.SpawnAndPlace(level, "OROOM", null, true, pos, true);
                 }
             }
         }
@@ -385,7 +382,7 @@ public static class LevelGen
         int trapChance = Math.Max(2, 12 - level.Depth / 6);
         while (Rn2(trapChance) == 0)
         {
-            var pos = ctx.FindLocationInRoom(room, p => level[p].IsPassable && !level.Traps.ContainsKey(p));
+            var pos = ctx.FindLocationInRoom(room, p => level[p].IsPassable && !level[p].IsStairs && !level.Traps.ContainsKey(p));
             if (pos == null) break;
             
             Trap trap = Rn2(3) == 0 ? new WebTrap(level.Depth) : new PitTrap(level.Depth);
@@ -434,21 +431,16 @@ public static class LevelGen
             if (ctx.level.UnitAt(p) != null) continue;
             
             var def = pool.Pick();
-            var m = Monster.Spawn(def, "goblin nest");
-            m.IsAsleep = true;
-            ctx.level.PlaceUnit(m, p);
+            MonsterSpawner.SpawnAndPlace(ctx.level, "goblin nest", def, false, p, true);
         }
     }
 
     static void FillGremlinParty(LevelGenContext ctx, Room room, bool small)
     {
-        Monster Place(MonsterDef def)
+        void Place(MonsterDef def)
         {
-            var m = Monster.Spawn(def, "gremlin party");
-            m.IsAsleep = true;
             if (ctx.level.FindLocationInRoom(room, ctx.level.NoUnit) is { } pos)
-                ctx.level.PlaceUnit(m, pos);
-            return m;
+                MonsterSpawner.SpawnAndPlace(ctx.level, "gremlin party", def, false, pos, true);
         }
 
         int total = small ? RnRange(2, 5) : RnRange(5, 12);

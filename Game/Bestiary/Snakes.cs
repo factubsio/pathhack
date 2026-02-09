@@ -119,6 +119,7 @@ public static class Snakes
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
+        GrowsInto = () => GiantViper!,
         Components = [
             new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d4)),
             SnakeVenomLesser.DC10.OnHit(),
@@ -196,6 +197,7 @@ public static class Snakes
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
+        GrowsInto = () => CrownPrinceCobra!,
         Components = [
             new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d6)),
             SnakeVenomGreater.DC13.OnHit(),
@@ -221,6 +223,7 @@ public static class Snakes
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
+        GrowsInto = () => KingCobra!,
         Components = [
             new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d8)),
             SnakeVenomGreater.DC14.OnHit(),
@@ -271,6 +274,7 @@ public static class Snakes
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
+        GrowsInto = () => EmperorCobra!,
         Components = [
             new GrantAction(new NaturalAttack(NaturalWeapons.Bite_2d6)),
             SnakeVenomGreater.DC15.OnHit(),

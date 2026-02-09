@@ -84,30 +84,30 @@ public static class MediumCaster
 
 public static class Progression
 {
-    // XP table, 1-indexed (index 0 unused)
-    // Early levels similar, mid/late compressed
+    // XP table matched to NH kill counts with linear XP formula
+    // Assumes avg mob level ≈ player level, 60*L XP per kill
     static readonly int[] XpTable = [
         0,      // 0 (unused)
         0,      // 1
-        500,    // 2
-        1200,   // 3
-        2000,   // 4
-        3000,   // 5
-        4000,   // 6
-        5200,   // 7
-        6500,   // 8
-        8000,   // 9
-        9500,   // 10
-        11500,  // 11
-        13500,  // 12
-        16000,  // 13
-        18500,  // 14
-        21500,  // 15
-        24500,  // 16
-        28000,  // 17
-        32000,  // 18
-        36000,  // 19
-        40000,  // 20
+        300,    // 2
+        600,    // 3
+        1000,   // 4
+        1500,   // 5
+        2200,   // 6
+        3000,   // 7
+        6000,   // 8  (~20 kills)
+        9000,   // 9  (~28 kills)
+        12000,  // 10 (~35 kills)
+        16000,  // 11
+        20000,  // 12
+        25000,  // 13
+        30000,  // 14
+        36000,  // 15
+        42000,  // 16
+        50000,  // 17
+        58000,  // 18
+        68000,  // 19
+        80000,  // 20
     ];
 
     public const int MaxLevel = 20;

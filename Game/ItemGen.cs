@@ -91,8 +91,16 @@ public static class ItemGen
         
         int d = Math.Clamp(depth, 0, ItemGenTables.Potency.Length - 1);
         int roll = g.Rn2(100);
-        int result = ItemGenTables.Potency[d][roll];
+        int result = ConfirmResult(ItemGenTables.Potency[d][roll], depth);
         if (result > 0) genLog?.Add($"potency r{roll}={result}");
+        return result;
+    }
+
+    static int ConfirmResult(int result, int depth)
+    {
+        int expected = depth / 5;
+        while (result > expected && g.Rn2(100) >= (100 - (result - expected) * 10))
+            result--;
         return result;
     }
 
@@ -145,7 +153,7 @@ public static class ItemGen
     private static int RollQuality(int depth)
     {
         int d = Math.Clamp(depth, 0, ItemGenTables.Quality.Length - 1);
-        return ItemGenTables.Quality[d][g.Rn2(100)];
+        return ConfirmResult(ItemGenTables.Quality[d][g.Rn2(100)], depth);
     }
 
     public static void ApplyRune(Item item, RuneDef runeDef, bool fundamental)

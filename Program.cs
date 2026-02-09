@@ -15,7 +15,7 @@ List<BranchTemplate> templates = [
     new("dungeon", "Dungeon", (18, 22)) {
         Levels = [
             new("sanctuary", ["sanctuary_1"], FromBottom, 0, NoBranchEntrance: true),
-            new("bigroom", ["bigroom_rect", "bigroom_oval"], FromTop, 3, 6, Required: false),
+            new("bigroom", ["bigroom_rect", "bigroom_oval"], FromTop, 12, 4, Required: false),
         ]
     },
     
@@ -88,7 +88,7 @@ if (args.Length > 0 && args[0] == "--test-dungeon")
 
 if (args.Length > 0 && args[0] == "--monsters")
 {
-    MonsterTable.Print();
+    MonsterTable.Print(args.Length > 1 ? args[1] : null);
     return;
 }
 
@@ -140,8 +140,18 @@ while (true)
     g.Branches = DungeonResolver.Resolve(templates, g.Seed);
     var dungeon = g.Branches["dungeon"];
 
+    u = Create(creation.Class!, creation.Deity!, creation.Ancestry!);
+    u.Initiative = int.MaxValue;
+    Input.DoLevelUp(); // Level 1
+
+    u.RecalculateMaxHp();
+    u.HP.Current = u.HP.Max;
+    Log.Write($"hp => {u.HP.Max}");
+
+
     LevelId startId = new(dungeon, 1);
     Level startLevel = LevelGen.Generate(startId, g.Seed);
+
 
     // DEBUG: spawn cats for testing
     // foreach (var cat in Cats.All)
@@ -154,18 +164,8 @@ while (true)
     //         startLevel.PlaceUnit(Monster.Spawn(Spiders.OrbWeaver), pos);
 
     g.Levels[startId] = startLevel;
-
-    u = Create(creation.Class!, creation.Deity!, creation.Ancestry!);
-    u.Level = startId;
-    u.Initiative = int.MaxValue;
-
-    Input.DoLevelUp(); // Level 1
-
     g.CurrentLevel = startLevel;
-
-    u.RecalculateMaxHp();
-    u.HP.Current = u.HP.Max;
-    Log.Write($"hp => {u.HP.Max}");
+    u.Level = startId;
 
     // u.XP = 980;
     lvl.PlaceUnit(u, (lvl.BranchUp ?? lvl.StairsUp)!.Value);

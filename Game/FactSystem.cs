@@ -23,6 +23,7 @@ public record struct Glyph(char Value, ConsoleColor Color = ConsoleColor.White, 
 
 public interface IEntity
 {
+    public uint Id { get; }
     public IEnumerable<Fact> LiveFacts { get; }
     public IEnumerable<Fact> GetAllFacts(PHContext? ctx);
     public void CleanupMarkedFacts();
@@ -235,6 +236,7 @@ public abstract class ActionBrick(string name, TargetingType targeting = Targeti
 {
     public string Name => name;
     public TargetingType Targeting => targeting;
+    public virtual string? PokedexDescription => null;
 
     public virtual ToggleState IsToggleOn(object? data) => ToggleState.NotAToggle;
 
@@ -368,6 +370,7 @@ public class AttackWithWeapon() : ActionBrick("attack_with_weapon")
 public class NaturalAttack(WeaponDef weapon) : ActionBrick("attack_with_nat")
 {
     public WeaponDef Weapon => weapon;
+    public override string? PokedexDescription => weapon.BaseDamage.ToString();
     readonly Item _item = new(weapon);
 
     public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
@@ -417,6 +420,9 @@ public class BaseDef
 
 public class Entity<DefT> : IEntity where DefT : BaseDef
 {
+    static uint _nextId;
+    private readonly uint _id = _nextId++;
+    public uint Id => _id;
     public readonly DefT Def;
     public int ActiveFactCount;
     
@@ -757,6 +763,11 @@ public interface IUnit : IEntity
     void GrantTempHp(int amount);
     int AbsorbTempHp(int damage);
     void TickTempHp();
+
+    // for stat tracking
+    public int HitsTaken { get; set; }
+    public int MissesTaken { get; set; }
+    public int DamageTaken { get; set; }
 }
 
 public class ChargePool(int max, int regenRate)
@@ -781,6 +792,10 @@ public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) :
     public abstract MoralAxis MoralAxis { get; }
     public abstract EthicalAxis EthicalAxis { get; }
     public abstract bool IsCreature(string? type = null, string? subtype = null);
+
+    public int HitsTaken { get; set; }
+    public int MissesTaken { get; set; }
+    public int DamageTaken { get; set; }
 
     public Dictionary<EquipSlot, Item> Equipped { get; } = [];
     Inventory? _inventory;
