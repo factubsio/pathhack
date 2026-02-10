@@ -1,5 +1,3 @@
-using System.Transactions;
-
 namespace Pathhack.Game;
 
 public class PlayerDef : BaseDef { }
@@ -46,7 +44,15 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
 
     public LevelId Level { get; set; }
     public int DarkVisionRadius => Math.Clamp(Ancestry.DarkVisionRadius + QueryModifiers("light_radius").Calculate(), 0, 100);
-    public override ActionCost LandMove => ActionCosts.StandardLandMove.Value - QueryModifiers("speed_bonus").Calculate();
+    public override ActionCost LandMove
+    {
+        get
+        {
+            int cost = ActionCosts.StandardLandMove.Value - QueryModifiers("speed_bonus").Calculate();
+            double mult = Query<double>("speed_mult", null, MergeStrategy.Replace, 1.0);
+            return (int)(cost / mult);
+        }
+    }
 
     public ValueStatBlock<int> BaseAttributes;
     public readonly int BaseLandSpeed = ActionCosts.StandardLandMove.Value;
@@ -210,25 +216,25 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
         u.HP.Current = Math.Clamp(u.HP.Current, 1, u.HP.Max);
     }
 
-  public override bool IsDM => false;
+    public override bool IsDM => false;
     public override int CasterLevel => CharacterLevel;
     public override int EffectiveLevel => CharacterLevel;
 }
 
 internal class PlayerSkills : LogicBrick
 {
-  protected override object? OnQuery(Fact fact, string key, string? arg)
-  {
-    return key switch
+    protected override object? OnQuery(Fact fact, string key, string? arg)
     {
-        "perception" => new Modifier(ModifierCategory.StatBonus, u.WisMod),
-        "athletics" => new Modifier(ModifierCategory.StatBonus, u.StrMod),
+        return key switch
+        {
+            "perception" => new Modifier(ModifierCategory.StatBonus, u.WisMod),
+            "athletics" => new Modifier(ModifierCategory.StatBonus, u.StrMod),
 
-        // Hmm, how do we let classes override this? Tbh attributes are kinda lame?
-        Check.Reflex => new Modifier(ModifierCategory.StatBonus, u.DexMod),
-        Check.Fort => new Modifier(ModifierCategory.StatBonus, u.ConMod),
-        Check.Will => new Modifier(ModifierCategory.StatBonus, u.WisMod),
-        _ => null,
-    };
-  }
+            // Hmm, how do we let classes override this? Tbh attributes are kinda lame?
+            Check.Reflex => new Modifier(ModifierCategory.StatBonus, u.DexMod),
+            Check.Fort => new Modifier(ModifierCategory.StatBonus, u.ConMod),
+            Check.Will => new Modifier(ModifierCategory.StatBonus, u.WisMod),
+            _ => null,
+        };
+    }
 }

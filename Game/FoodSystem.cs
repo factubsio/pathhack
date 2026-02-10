@@ -1,5 +1,3 @@
-using Pathhack.Game.Classes;
-
 namespace Pathhack.Game;
 
 public enum HungerState { Satiated, Normal, Hungry, Weak, Fainting }

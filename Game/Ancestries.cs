@@ -1,5 +1,3 @@
-using Pathhack.UI;
-
 namespace Pathhack.Game;
 
 public class AncestryDef : BaseDef, ISelectable

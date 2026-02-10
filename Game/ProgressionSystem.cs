@@ -1,5 +1,3 @@
-using Pathhack.UI;
-
 namespace Pathhack.Game;
 
 public enum AvailabilityState { Now, Later, Never }

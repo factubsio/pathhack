@@ -156,7 +156,7 @@ public static class DRHelper
   public static void ApplyDRUnless(this List<DamageRoll> rolls, int amount, string bypass, bool physicalOnly)
   {
     foreach (var roll in rolls)
-      if ((!physicalOnly || roll.Type.Category == "physical") && !roll.Has(bypass)) roll.ApplyDR(amount);
+      if ((!physicalOnly || roll.Type.Category == "phys") && !roll.Has(bypass)) roll.ApplyDR(amount);
   }
 }
 

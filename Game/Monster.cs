@@ -1,5 +1,3 @@
-using System.Net.NetworkInformation;
-
 namespace Pathhack.Game;
 
 public enum MoralAxis { Evil = -1, Neutral = 0, Good = 1 }
@@ -258,7 +256,15 @@ public class Monster : Unit<MonsterDef>, IFormattable
   // see tools/dc.md, this gives us what seems to be a reasonable curve
   private const int ATTACK_PENALTY_FUDGE = 5;
 
-  public override ActionCost LandMove => Def.LandMove.Value - QueryModifiers("speed_bonus").Calculate();
+  public override ActionCost LandMove
+  {
+      get
+      {
+          int cost = Def.LandMove.Value - QueryModifiers("speed_bonus").Calculate();
+          double mult = Query<double>("speed_mult", null, MergeStrategy.Replace, 1.0);
+          return (int)(cost / mult);
+      }
+  }
   public override int GetAttackBonus(WeaponDef weapon) => LevelDC - ATTACK_PENALTY_FUDGE + Def.AttackBonus;
   public override int GetSpellAttackBonus(SpellBrickBase brick) => LevelDC - ATTACK_PENALTY_FUDGE + Def.AttackBonus;
   const int DamageFudge = 2;

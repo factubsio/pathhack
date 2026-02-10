@@ -803,7 +803,7 @@ public class GameState
             if (dmg.HalfOnSave && ctx.Check?.Result == true) dmg.Halve();
             if (dmg.DoubleOnFail && ctx.Check?.Result == false) dmg.Double();
 
-            int rolled = DoRoll(dmg.Formula, dmg.Modifiers, $"  {dmg} damage");
+            int rolled = DoRoll(dmg.Formula.WithExtra(dmg.ExtraDice), dmg.Modifiers, $"  {dmg} damage");
             damage += dmg.Resolve(rolled);
 
             if (!ctx.SilentDamage)

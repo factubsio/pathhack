@@ -1,6 +1,3 @@
-using Pathhack.Core;
-using Pathhack.Game;
-
 namespace Pathhack.Map;
 
 public static class FovCalculator

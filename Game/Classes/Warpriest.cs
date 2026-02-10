@@ -1,5 +1,3 @@
-using System.IO.Pipes;
-
 namespace Pathhack.Game.Classes;
 
 public static class Fervor

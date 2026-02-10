@@ -1,6 +1,3 @@
-using System.Reflection.Metadata;
-using System.Runtime.CompilerServices;
-
 namespace Pathhack.Game.Bestiary;
 
 // --- Gremlin Components ---

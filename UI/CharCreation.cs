@@ -1,4 +1,3 @@
-using Pathhack.Game;
 using Pathhack.Game.Classes;
 
 namespace Pathhack.UI;

@@ -1,5 +1,3 @@
-using System.Runtime.Serialization.Formatters;
-
 namespace Pathhack.Game;
 
 public abstract class SpellBrickBase(string name, int level, string description, TargetingType targeting, bool maintained = false, int maxRange = -1) : ActionBrick(name, targeting, maxRange)

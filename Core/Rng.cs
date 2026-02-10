@@ -80,6 +80,8 @@ public record struct Dice(int D, int F, int Flat = 0)
     }
 
     public static Dice operator+(Dice d, int bonus) => new(d.D, d.F, d.Flat + bonus);
+
+    internal readonly Dice WithExtra(int extraDice) => new(D * (1 + extraDice), F, Flat);
 }
 
 public record struct DiceFormula(Dice[] Dice)
@@ -127,5 +129,14 @@ public record struct DiceFormula(Dice[] Dice)
             return new([new(1, DieSteps[idx + 1], die.Flat)]);
         // d12 -> 2d6
         return new([new(2, 6, die.Flat)]);
+    }
+
+    internal readonly DiceFormula WithExtra(int extraDice)
+    {
+        if (Dice.Length == 1)
+            return Dice[0].WithExtra(extraDice);
+        else
+            return new([Dice[0].WithExtra(extraDice), ..Dice[1..]]);
+        
     }
 }

@@ -1,6 +1,3 @@
-using System.Security.Cryptography.X509Certificates;
-using Microsoft.VisualBasic;
-
 namespace Pathhack.UI;
 
 public enum ArgKind { None, Dir, Int, String }

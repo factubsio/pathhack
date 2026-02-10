@@ -1,6 +1,5 @@
 namespace Pathhack.Test;
 
-using Pathhack.Game;
 using Pathhack.UI;
 using static Pathhack.Game.GameState;
 

@@ -1,7 +1,11 @@
+// SPLIT: move to UnitSystem.cs:
+//   GrantProficiency, EntityExts, ArmorBrick  (~lines 393-421)
+//   Inventory, Hitpoints, UnitExts            (~lines 582-716)
+//   IUnit, ChargePool                         (~lines 718-804)
+//   Unit<T>                                   (~lines 806-1062)
+//   GrantAction, GrantSpell, GrantPool        (~lines 1064-1084)
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices.Marshalling;
 
 namespace Pathhack.Game;
 
@@ -1064,6 +1068,7 @@ public class GrantAction(ActionBrick action) : LogicBrick
 {
     public ActionBrick Action => action;
     protected override void OnFactAdded(Fact fact) => (fact.Entity as IUnit)?.AddAction(action);
+    // TODO: if action is a toggle and currently on, clean up the inner buff fact
     protected override void OnFactRemoved(Fact fact) => (fact.Entity as IUnit)?.RemoveAction(action);
 }
 

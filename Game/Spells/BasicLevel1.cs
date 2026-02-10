@@ -1,5 +1,3 @@
-using System.ComponentModel;
-
 namespace Pathhack.Game.Spells;
 
 public static class BasicLevel1Spells

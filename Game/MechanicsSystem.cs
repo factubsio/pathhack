@@ -1,5 +1,3 @@
-using System.Runtime.InteropServices;
-
 namespace Pathhack.Game;
 
 public enum ModifierCategory
@@ -220,7 +218,7 @@ public class Check
 
     public bool IsSave => Key == Fort || Key == Reflex || Key == Will;
 
-    public string RollStr => Roll2 == null ? $"{Roll1}" : $"${Roll1},{Roll2},{(Advantage > Disadvantage ? "hi": "lo")}]";
+    public string RollStr => Roll2 == null ? $"{Roll1}" : $"[{Roll1},{Roll2},{(Advantage > Disadvantage ? "hi": "lo")}]";
 
     public const string Fort = "fortitude_save";
     public const string Reflex = "reflex_save";

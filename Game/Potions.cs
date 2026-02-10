@@ -65,11 +65,14 @@ public static class Potions
                 def.SetKnown();
                 break;
             case var _ when def == Panacea:
-                var allPoisons = user.QueryFacts("poison");
-                if (allPoisons.Count > 0)
+                bool cured = false;
+                foreach (var a in user.GetAllFacts(null))
                 {
-                    foreach (var p in allPoisons) p.Remove();
-                    g.pline("Your blood clears completely.");
+                    if (a.Brick is AfflictionBrick) { a.Remove(); cured = true; }
+                }
+                if (cured)
+                {
+                    g.pline("Your body is purified.");
                     def.SetKnown();
                 }
                 else
