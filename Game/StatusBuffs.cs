@@ -125,7 +125,7 @@ public abstract class AfflictionBrick(int dc, string? tag = null) : LogicBrick<A
   protected abstract void DoPeriodicEffect(IUnit unit, int stage);
   protected abstract object? DoQuery(int stage, string key, string? arg);
 
-  private static int Stage(Fact fact) => fact.Stacks - 1;
+  protected static int Stage(Fact fact) => fact.Stacks - 1;
 
   protected override void OnFactAdded(Fact fact)
   {

@@ -579,6 +579,9 @@ public static partial class Input
     {
         var items = lvl.ItemsAt(upos);
         if (items.Count == 0) return;
+        if (u.Can("can_see"))
+            foreach (var item in items)
+                item.Knowledge |= ItemKnowledge.Seen;
         List<Item> toPickup;
         if (items.Count == 1)
         {
@@ -707,6 +710,9 @@ public static partial class Input
         }
 
         var items = lvl.ItemsAt(upos);
+        if (u.Can("can_see"))
+            foreach (var item in items)
+                item.Knowledge |= ItemKnowledge.Seen;
         if (items.Count == 0) {}
         else if (items.Count == 1)
             g.pline($"You see here {items[0]:an}.");

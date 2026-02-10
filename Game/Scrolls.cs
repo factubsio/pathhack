@@ -44,6 +44,7 @@ public static class Scrolls
                 if (pickItemToIdentify() is { } toId)
                 {
                     toId.Def.SetKnown();
+                    toId.Knowledge |= ItemKnowledge.Props | ItemKnowledge.BUC;
                     g.pline($"{toId.InvLet} - {toId.DisplayName}.");
                 }
                 break;

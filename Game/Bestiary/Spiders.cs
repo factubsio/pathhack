@@ -176,6 +176,7 @@ public static class Spiders
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
         Family = "spider",
+        StartingRot = Foods.RotSpoiled,
         GroupSize = GroupSize.SmallMixed,
         Components = [
             WebImmunity.Instance,
@@ -204,6 +205,7 @@ public static class Spiders
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
         Family = "spider",
+        StartingRot = Foods.RotSpoiled,
         Components = [
             WebImmunity.Instance,
             new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d3)),
@@ -231,6 +233,7 @@ public static class Spiders
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
         Family = "spider",
+        StartingRot = Foods.RotSpoiled,
         Components = [
             WebImmunity.Instance,
             new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d4)),
@@ -258,6 +261,7 @@ public static class Spiders
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
         Family = "spider",
+        StartingRot = Foods.RotSpoiled,
         Components = [
             WebImmunity.Instance,
             new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d6)),
@@ -284,6 +288,7 @@ public static class Spiders
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
         Family = "spider",
+        StartingRot = Foods.RotSpoiled,
         Components = [
             WebImmunity.Instance,
             new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d6)),
@@ -311,6 +316,7 @@ public static class Spiders
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
         Family = "spider",
+        StartingRot = Foods.RotSpoiled,
         Components = [
             WebImmunity.Instance,
             new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d8)),
@@ -338,6 +344,7 @@ public static class Spiders
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
         Family = "spider",
+        StartingRot = Foods.RotSpoiled,
         Components = [
             WebImmunity.Instance,
             new GrantAction(new NaturalAttack(NaturalWeapons.Bite_2d6)),
@@ -364,6 +371,7 @@ public static class Spiders
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
         Family = "spider",
+        StartingRot = Foods.RotSpoiled,
         Components = [
             WebImmunity.Instance,
             new GrantAction(new NaturalAttack(NaturalWeapons.Bite_2d6)),
@@ -390,6 +398,7 @@ public static class Spiders
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
         Family = "spider",
+        StartingRot = Foods.RotSpoiled,
         Components = [
             WebImmunity.Instance,
             new GrantAction(new NaturalAttack(NaturalWeapons.Bite_2d10)),

@@ -1,5 +1,8 @@
 namespace Pathhack.Game;
 
+[Flags]
+public enum ItemKnowledge { None = 0, Seen = 1, Props = 2, BUC = 4 }
+
 public enum AppearanceCategory { Potion, Scroll, Amulet, Boots, Gloves, Cloak, Ring }
 
 public record Appearance(string Name, ConsoleColor Color, string? Material = null);
@@ -133,6 +136,7 @@ public class ItemDef : BaseDef
     public int AppearanceIndex = -1;
 
     public char Class => Glyph.Value;
+    public virtual ItemKnowledge RelevantKnowledge => ItemKnowledge.Seen;
 }
 
 public enum RuneSlot { Fundamental, Property }
@@ -169,6 +173,7 @@ public class WeaponDef : ItemDef
     public string? Launcher; // "hand" for thrown weapons
     public string? MeleeVerb; // "thrusts", "swings", etc.
     public WeaponCategory Category = WeaponCategory.Item;
+    public override ItemKnowledge RelevantKnowledge => ItemKnowledge.Seen | ItemKnowledge.Props | ItemKnowledge.BUC;
 
     public WeaponDef()
     {
@@ -184,6 +189,7 @@ public class ArmorDef : ItemDef
     public int DexCap = 99;
     public int CheckPenalty = 0;
     public int SpeedPenalty = 0;
+    public override ItemKnowledge RelevantKnowledge => ItemKnowledge.Seen | ItemKnowledge.Props | ItemKnowledge.BUC;
 
     public ArmorDef()
     {
@@ -197,6 +203,7 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
     public char InvLet;
     public IUnit? Holder;
     public int Count = 1;
+    public ItemKnowledge Knowledge;
 
     public bool IsNamedUnique = false;
 
@@ -246,37 +253,60 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
         if (CorpseOf != null)
             return $"{CorpseOf.Name} corpse";
 
-        // Unidentified items show appearance or called name
-        if (!Def.IsKnown() && ItemDb.Instance.GetAppearance(Def) is { } app)
+        var seen = Knowledge.HasFlag(ItemKnowledge.Seen);
+        var propsKnown = Knowledge.HasFlag(ItemKnowledge.Props);
+
+        // Items with appearances (potions, scrolls, rings, etc.)
+        if (ItemDb.Instance.GetAppearance(Def) is { } app)
         {
-            var called = ItemDb.Instance.GetCalledName(Def);
-            var appName = count > 1 ? app.Name.Plural() : app.Name;
-            var name = called != null ? $"{appName} called {called}" : appName;
-            return count > 1 ? $"{count} {name}" : name;
+            // Not seen - class name only
+            if (!seen)
+            {
+                var className = Def.Class switch
+                {
+                    ItemClasses.Potion => "potion",
+                    ItemClasses.Scroll => "scroll",
+                    ItemClasses.Ring => "ring",
+                    ItemClasses.Amulet => "amulet",
+                    _ => "item"
+                };
+                return count > 1 ? $"{count} {className.Plural()}" : className;
+            }
+
+            // Seen but def not known - appearance + called
+            if (!Def.IsKnown())
+            {
+                var called = ItemDb.Instance.GetCalledName(Def);
+                var appName = count > 1 ? app.Name.Plural() : app.Name;
+                var name = called != null ? $"{appName} called {called}" : appName;
+                return count > 1 ? $"{count} {name}" : name;
+            }
         }
 
+        // Def known (or no appearance) - show base name, maybe props
         var parts = new List<string>();
         
         if (count > 1)
             parts.Add($"{count}");
         
-        // Show potency for weapons (always) and armor (when > 0)
-        if (Def is WeaponDef)
-            parts.Add($"+{Potency}");
-        else if (Def is ArmorDef && Potency > 0)
-            parts.Add($"+{Potency}");
+        if (propsKnown)
+        {
+            // Show potency for weapons (always) and armor (when > 0)
+            if (Def is WeaponDef)
+                parts.Add($"+{Potency}");
+            else if (Def is ArmorDef && Potency > 0)
+                parts.Add($"+{Potency}");
 
-        if (Fundamental != null && !Fundamental.Def.IsNull)
-            parts.Add($"{Fundamental.Def.DisplayName}/{Fundamental.Def.Quality}");
-        
-        // property runes: "flaming/4 shock/4"
-        var props = PropertyRunes
-            .Where(r => !r.Def.IsNull)
-            .Select(r => {
-                return r.Def.DisplayName;
-            });
-        if (props.Any())
-            parts.Add(string.Join(" ", props));
+            if (Fundamental != null && !Fundamental.Def.IsNull)
+                parts.Add($"{Fundamental.Def.DisplayName}/{Fundamental.Def.Quality}");
+            
+            // property runes: "flaming shock"
+            var props = PropertyRunes
+                .Where(r => !r.Def.IsNull)
+                .Select(r => r.Def.DisplayName);
+            if (props.Any())
+                parts.Add(string.Join(" ", props));
+        }
         
         parts.Add(count > 1 ? Def.Name.Plural() : Def.Name);
         return string.Join(" ", parts);
@@ -291,6 +321,12 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
     }
 
     public static Item Create(ItemDef def, int count = 1) => new(def) { Count = count };
+
+    public void Identify()
+    {
+        Knowledge = ItemKnowledge.Seen | ItemKnowledge.Props | ItemKnowledge.BUC;
+        Def.SetKnown();
+    }
 
     public Item Split(int count)
     {
@@ -311,6 +347,8 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
     {
         if (!Def.Stackable) return false;
         if (other.Def != Def) return false;
+        var mask = Def.RelevantKnowledge;
+        if ((other.Knowledge & mask) != (Knowledge & mask)) return false;
         if (other.Potency != Potency) return false;
         if (other.Fundamental != Fundamental) return false;
         if (!PropertyRunes.SequenceEqual(other.PropertyRunes)) return false;

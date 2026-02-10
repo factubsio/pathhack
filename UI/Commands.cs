@@ -462,8 +462,9 @@ public static partial class Input
 
     static Item? PickItemToIdentify()
     {
+        const ItemKnowledge full = ItemKnowledge.Seen | ItemKnowledge.Props | ItemKnowledge.BUC;
         var unidentified = u.Inventory
-            .Where(i => i.Def.AppearanceCategory != null && !i.Def.IsKnown())
+            .Where(i => !i.Def.IsKnown() || (i.Knowledge & full) != full)
             .ToList();
         if (unidentified.Count == 0)
         {

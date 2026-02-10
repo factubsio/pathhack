@@ -594,7 +594,7 @@ public class Inventory(IUnit owner) : IEnumerable<Item>
     public int Count => Items.Count;
     public Item this[int i] => Items[i];
 
-    public void Add(Item item)
+    public Item Add(Item item)
     {
         // Try to merge with existing stack
         foreach (var existing in Items)
@@ -605,7 +605,7 @@ public class Inventory(IUnit owner) : IEnumerable<Item>
 
                 // A bit odd, cos `item` will get gc, but for pickup.
                 item.InvLet = existing.InvLet;
-                return;
+                return existing;
             }
         }
 
@@ -615,7 +615,7 @@ public class Inventory(IUnit owner) : IEnumerable<Item>
             inUse |= 1UL << idx;
             item.Holder = owner;
             Items.Add(item);
-            return;
+            return item;
         }
 
         for (int i = (_lastInvNr + 1) % 52; ; i = (i + 1) % 52)
@@ -627,7 +627,7 @@ public class Inventory(IUnit owner) : IEnumerable<Item>
                 _lastInvNr = i;
                 item.Holder = owner;
                 Items.Add(item);
-                return;
+                return item;
             }
         }
     }

@@ -138,6 +138,26 @@ public class Activity
         lvl.CreateArea(area);
     }
 
+    public static void DoVomit(IUnit unit, string self, string? see = null, string? hear = null)
+    {
+        g.YouObserveSelf(unit, self, see, hear);
+        
+        bool vomited = false;
+        // 1 in 3 to try to vomit on a neighbour
+        if (g.Rn2(3) == 0)
+        {
+            foreach (var pos in unit.Pos.Neighbours().Where(p => lvl.InBounds(p) && lvl[p].IsPassable))
+            {
+                if (g.Rn2(5) > 0) continue;
+                SpillVomit(unit, pos);
+                vomited = true;
+            }
+        }
+        // Oops, you made a mess!
+        if (!vomited)
+            SpillVomit(unit, unit.Pos);
+    }
+
     bool TickEat()
     {
         if (Target == null) return false;
@@ -178,29 +198,11 @@ public class Activity
                 g.Done("choked on food");
                 return false;
             }
-            else
+        else
             {
-                g.pline("You stuff yourself and then vomit voluminously.");
                 u.Nutrition = Math.Max(0, u.Nutrition - 1000);
-
-                bool vomited = false;;
-
-                // 1 in 3 to try to vomit on a neighbour
-                if (g.Rn2(3) == 0)
-                {
-                    foreach (var pos in upos.Neighbours().Where(p => lvl.InBounds(p) && lvl[p].IsPassable))
-                    {
-                        if (g.Rn2(5) > 0) continue;
-                        SpillVomit(u, pos);
-                        vomited = true;
-                    }
-                }
-
-                // Oops, you made a mess!
-                if (!vomited)
-                {
-                    SpillVomit(u, upos);
-                }
+                DoVomit(u, "You stuff yourself and then vomit voluminously.",
+                    $"{u:The} stuffs {u:own} face and vomits!", "You hear someone retching.");
             }
         }
         
@@ -244,6 +246,23 @@ public class Activity
         if (Done)
         {
             g.pline($"You finish cooking {Grammar.DoNameOne(Target)}.");
+            
+            // Food poisoning from rotten corpses
+            if (Foods.IsTainted(Target))
+            {
+                u.AddFact(FoodPoisoning.Instance, count: 2);
+                g.pline("Your tummy starts rumbling.");
+            }
+            else if (Foods.IsSpoiled(Target))
+            {
+                using var ctx = PHContext.Create(Monster.DM, Pathhack.Game.Target.From(u));
+                if (!CheckFort(ctx, 11, "food poisoning"))
+                {
+                    u.AddFact(FoodPoisoning.Instance, count: 1);
+                    g.pline("You are not sure that was a great idea.");
+                }
+            }
+            
             int nutrition = Target.CorpseOf!.Nutrition / 4;
             u.Nutrition = Math.Min(Hunger.Max, u.Nutrition + nutrition);
             lvl.RemoveItem(Target, upos);
@@ -404,6 +423,7 @@ public class Activity
     {
         Type = "cook_quick",
         StoredNutrition = corpse.CorpseOf!.Nutrition / 10
+        // TODO: remember rot timer for food poisoning check
     };
     
     public static Activity CookCareful(Item corpse) => new()
@@ -455,7 +475,12 @@ public static class Foods
         Stackable = false
     };
 
-    public const int RotTime = 20;
+    public const int RotTime = 200;
+    public const int RotSpoiled = 50;
+    public const int RotTainted = 150;
+
+    public static bool IsSpoiled(Item item) => item.RotTimer >= RotSpoiled;
+    public static bool IsTainted(Item item) => item.RotTimer >= RotTainted;
 
     /// <summary>Tick corpse rot. Returns true if rotted away.</summary>
     public static bool TickCorpse(Item item, IUnit? holder, Pos? floorPos)
@@ -472,5 +497,60 @@ public static class Foods
             g.pline($"Your {item.CorpseOf.Name} corpse rots away!");
 
         return true;
+    }
+}
+
+
+public class FoodPoisoning() : AfflictionBrick(11, "fortitude")
+{
+    public static readonly FoodPoisoning Instance = new();
+
+    public override string AfflictionName => "Food Poisoning";
+    public override int MaxStage => 5;
+    public override DiceFormula TickInterval => d(30, 10);
+
+    protected override void DoPeriodicEffect(IUnit unit, int stage)
+    {
+        var msg = stage switch
+        {
+            1 => "Your tummy starts rumbling.",
+            2 => "You feel nauseous.",
+            3 => "Your guts are churning.",
+            4 => "You feel violently ill.",
+            5 => "You can barely stand from the cramps.",
+            _ => null
+        };
+        if (msg != null && unit.IsPlayer)
+            g.pline(msg);
+    }
+
+    protected override object? DoQuery(int stage, string key, string? arg) => key switch
+    {
+        "str" => new Modifier(ModifierCategory.StatusPenalty, -((stage + 1) / 2), "food poisoning"),
+        "con" when stage >= 2 => new Modifier(ModifierCategory.StatusPenalty, -(stage / 2), "food poisoning"),
+        _ => null
+    };
+
+    protected override void OnCured(IUnit unit)
+    {
+        if (unit.IsPlayer)
+            g.pline("Your tummy finally feels better!");
+    }
+
+    protected override void OnRoundEnd(Fact fact)
+    {
+        if (fact.Entity is not IUnit unit) return;
+        var stage = Stage(fact);
+        if (stage < 3) return;
+
+        int chance = stage >= 5 ? 20 : 50;
+        if (g.Rn2(chance) != 0) return;
+
+        if (fact.Entity is Player p)
+            p.Nutrition = Math.Max(0, p.Nutrition - 100);
+        Activity.DoVomit((fact.Entity as IUnit)!,
+            "You vomit!",
+            $"{unit:The} {VTense(unit, "vomit")}!",
+            "You hear retching.");
     }
 }

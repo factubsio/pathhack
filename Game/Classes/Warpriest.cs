@@ -292,25 +292,27 @@ public static partial class ClassDefs
             if (weaponDef != null)
             {
                 var weapon = ItemGen.GenerateItem(weaponDef, depth: 1, maxPotency: 1, propertyRunes: false);
-                p.Inventory.Add(weapon);
+                p.Inventory.Add(weapon).Identify();
                 p.Equip(weapon);
                 p.AddFact(new GrantProficiency(p.Deity.FavoredWeapon, ProficiencyLevel.Trained));
             }
             var armor = Item.Create(MundaneArmory.LeatherArmor);
-            p.Inventory.Add(armor);
+            p.Inventory.Add(armor).Identify();
             p.Equip(armor);
             
             // Starting potions
-            p.Inventory.Add(Item.Create(Potions.Healing, 2));
-            p.Inventory.Add(Item.Create(Potions.Speed));
-            p.Inventory.Add(Item.Create(Potions.Paralysis, 2));
+            p.Inventory.Add(Item.Create(Potions.Healing, 2)).Identify();
+            p.Inventory.Add(Item.Create(Potions.Speed)).Identify();
+            p.Inventory.Add(Item.Create(Potions.Paralysis, 2)).Identify();
             
             // Starting scrolls
-            p.Inventory.Add(Item.Create(Scrolls.MagicMapping));
-            p.Inventory.Add(Item.Create(Scrolls.Identify, 2));
+            p.Inventory.Add(Item.Create(Scrolls.MagicMapping)).Identify();
+            p.Inventory.Add(Item.Create(Scrolls.Identify, 2)).Identify();
 
-            p.Inventory.Add(Item.Create(Foods.Ration, 2));
-            p.Inventory.Add(Item.Create(Foods.Apple, 2));
+            p.Inventory.Add(Item.Create(Foods.Ration, 2)).Identify();
+            p.Inventory.Add(Item.Create(Foods.Apple, 2)).Identify();
+
+            p.AddAction(new BlindSelf());
         },
     };
 

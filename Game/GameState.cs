@@ -877,6 +877,10 @@ public class GameState
                 {
                     var corpse = Item.Create(Foods.Corpse);
                     corpse.CorpseOf = m2.Def;
+                    if (m2.IsCreature(CreatureTypes.Undead))
+                        corpse.RotTimer = Foods.RotTainted;
+                    else
+                        corpse.RotTimer = m2.Def.StartingRot;
                     lvl.PlaceItem(corpse, target.Pos);
                 }
 
