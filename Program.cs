@@ -65,16 +65,39 @@ List<BranchTemplate> templates = [
     },
 ];
 
+bool ConsumeFlag(ref string[] args, string flag)
+{
+    if (!args.Contains(flag)) return false;
+    args = args.Where(a => a != flag).ToArray();
+    return true;
+}
+
+LevelGen.ForceRiver = ConsumeFlag(ref args, "--river");
+LevelGen.ForceMiniVault = ConsumeFlag(ref args, "--mivault");
+
+int testDepth = 1;
+int depthIdx = Array.FindIndex(args, a => a == "--depth");
+if (depthIdx >= 0 && depthIdx + 1 < args.Length && int.TryParse(args[depthIdx + 1], out var depthArg))
+{
+    testDepth = depthArg;
+    args = args.Where((_, i) => i != depthIdx && i != depthIdx + 1).ToArray();
+}
+
 if (args.Length > 0 && args[0] == "--test-dungeon")
 {
-    Console.WriteLine("Testing dungeon generation...");
-    for (int i = 0; ; i++)
+    int startSeed = 0;
+    if (args.Length > 1 && int.TryParse(args[1], out var s)) startSeed = s;
+    
+    LevelGen.TestMode = true;
+    LevelGen.QuietLog = true;
+    Console.WriteLine($"Testing dungeon generation from seed {startSeed}...");
+    for (int i = startSeed; ; i++)
     {
         try
         {
             g.Branches = DungeonResolver.Resolve(templates, i, log: false);
             var dungeon = g.Branches["dungeon"];
-            LevelGen.Generate(new LevelId(dungeon, 1), i);
+            LevelGen.Generate(new LevelId(dungeon, testDepth), i);
             if (i % 100 == 0) Console.Write($"\r{i} seeds OK");
         }
         catch (Exception ex)
@@ -83,6 +106,35 @@ if (args.Length > 0 && args[0] == "--test-dungeon")
             break;
         }
     }
+    return;
+}
+
+if (args.Length > 1 && (args[0] == "--gen-dungeon" || args[0] == "--debug-dungeon") && int.TryParse(args[1], out var genSeed))
+{
+    LevelGen.TestMode = true;
+    LevelGen.QuietLog = args[0] == "--gen-dungeon";
+    g.Branches = DungeonResolver.Resolve(templates, genSeed, log: false);
+    var dungeon = g.Branches["dungeon"];
+    LevelGen.Generate(new LevelId(dungeon, testDepth), genSeed);
+    Console.WriteLine($"Generated seed {genSeed}, see levelgen_dungeon_1.log");
+    return;
+}
+
+if (args.Length > 2 && args[0] == "--gen-dungeons" && int.TryParse(args[1], out var startGen) && int.TryParse(args[2], out var endGen))
+{
+    LevelGen.TestMode = true;
+    LevelGen.QuietLog = true;
+    using var shared = new StreamWriter("levelgen_all.log") { AutoFlush = true };
+    LevelGen.SharedLog = shared;
+    for (int i = startGen; i < endGen; i++)
+    {
+        shared.WriteLine($"=== Seed {i} ===");
+        g.Branches = DungeonResolver.Resolve(templates, i, log: false);
+        var dungeon = g.Branches["dungeon"];
+        LevelGen.Generate(new LevelId(dungeon, testDepth), i);
+    }
+    LevelGen.SharedLog = null;
+    Console.WriteLine($"Generated seeds {startGen}-{endGen - 1}, see levelgen_all.log");
     return;
 }
 

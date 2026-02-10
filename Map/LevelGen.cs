@@ -7,8 +7,15 @@ public static class LevelGen
 {
     static Random _rng = new();
     static StreamWriter? _log;
+    
+    public static bool QuietLog = false; // only log major stages, not every corridor step
+    public static bool TestMode = false; // skip population, return after structure gen
+    public static StreamWriter? SharedLog; // for --gen-dungeons, receives final renders
+    public static bool ForceRiver = false; // always generate river
+    public static bool ForceMiniVault = false; // always generate mini vault
 
     static void Log(string msg) => _log?.WriteLine(msg);
+    static void LogVerbose(string msg) { if (!QuietLog) _log?.WriteLine(msg); }
 
     public static int Rn2(int n) => _rng.Rn2(n);
     public static int Rn1(int x, int y) => _rng.Rn1(x, y);
@@ -81,6 +88,14 @@ public static class LevelGen
                 Log("GenRoomsAndCorridors done");
             }
 
+            if (TestMode)
+            {
+                Log("TestMode: returning after structure gen");
+                LogLevel(ctx.level, toShared: true);
+                ctx.level.UnderConstruction = false;
+                return ctx.level;
+            }
+
             Log("Resolving commands...");
             foreach (var cmd in resolved.Commands)
             {
@@ -127,17 +142,31 @@ public static class LevelGen
     static SpecialLevel? FindSpecialLevel(string id) => 
         SpecialLevels.GetValueOrDefault(id);
 
-    static void LogLevel(Level level)
+    static void LogLevelVerbose(Level level) { if (!QuietLog) LogLevel(level); }
+
+    const string xChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    static string PosStr(int x, int y) => $"{xChars[x % xChars.Length]}{y}";
+    static string PosStr(Pos p) => PosStr(p.X, p.Y);
+    static string RectStr(Rect r) => $"{PosStr(r.X, r.Y)} size {r.W}x{r.H}";
+
+    static void LogLevel(Level level, bool toShared = false)
     {
         const string xChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        Log("");
+        
+        void Out(string s)
+        {
+            _log?.WriteLine(s);
+            if (toShared) SharedLog?.WriteLine(s);
+        }
+        
+        Out("");
         // X axis header
         char[] xAxis = new char[level.Width + 2];
         xAxis[0] = ' ';
         xAxis[1] = ' ';
         for (int x = 0; x < level.Width; x++)
             xAxis[x + 2] = (x % 5 == 0) ? xChars[x % xChars.Length] : ' ';
-        Log(new string(xAxis));
+        Out(new string(xAxis));
 
         // Build room type overlay
         Dictionary<Pos, char> roomLabels = [];
@@ -176,10 +205,12 @@ public static class LevelGen
                         TileType.Door => '+',
                         TileType.StairsUp => '<',
                         TileType.StairsDown => '>',
+                        TileType.Pool => '~',
+                        TileType.Water => '~',
                         _ => '?',
                     };
             }
-            Log(new string(row));
+            Out(new string(row));
         }
     }
 
@@ -206,8 +237,7 @@ public static class LevelGen
         // // Render rooms to tiles
         RenderRooms(ctx);
 
-        // // Merge adjacent rooms (after render so we can modify tiles)
-        MergeAdjacentRooms(ctx);
+        // Note: room merging now happens during PlaceRoom
         
         // Re-place doors (RenderRooms may have overwritten them)
         foreach (var p in marks.GetValueOrDefault('+', []))
@@ -232,29 +262,245 @@ public static class LevelGen
         while (triesRemaining > 0 && ctx.Stamps.Count < targetRooms)
             triesRemaining -= TryPlaceRoom(ctx, triesRemaining);
 
-        Log($"Placed {ctx.Stamps.Count} rooms");
+        Log($"Placed {ctx.Stamps.Count} rooms (target was {targetRooms})");
 
         // Render rooms to tiles
         Log("RenderRooms...");
         RenderRooms(ctx);
 
-        // Merge adjacent rooms (after render so we can modify tiles)
-        Log("MergeAdjacentRooms...");
-        MergeAdjacentRooms(ctx);
+        // Note: room merging now happens during PlaceRoom, not here
 
         // Connect rooms with corridors
         Log("MakeCorridors...");
         MakeCorridors(ctx);
         Log("MakeCorridors done");
 
-        if (!populate) return;
+        // Rivers (depth 4+, 1/4 chance)
+        if (ForceRiver || (ctx.level.EffectiveDepth > 3 && Rn2(4) == 0))
+        {
+            Log("MakeRiver...");
+            MakeRiver(ctx);
+            RemoveOrphanWalls(ctx.level);
+            ctx.level.Outdoors = Rn2(20) > ctx.level.EffectiveDepth;
+        }
+
+        if (ForceMiniVault || (ctx.level.EffectiveDepth >= 3 && Rn2(8) == 0))
+        {
+            Log("TryMiniVault...");
+            TryMiniVault(ctx);
+        }
+
+        if (TestMode || !populate) return;
+    }
+    
+    static void MakeRiver(LevelGenContext ctx)
+    {
+        var level = ctx.level;
+        bool horizontal = Rn2(4) == 0;
+        
+        if (horizontal)
+        {
+            int center = RnRange(6, level.Height - 6);
+            int width = RnRange(4, 7);
+            for (int x = 1; x < level.Width - 1; x++)
+            {
+                for (int y = center - width / 2; y <= center + width / 2; y++)
+                {
+                    bool edge = (y == center - width / 2 || y == center + width / 2);
+                    Liquify(level, x, y, edge);
+                }
+                // Drift
+                if (Rn2(3) == 0) center += Rn2(3) - 1;
+                if (Rn2(3) == 0) width = Math.Clamp(width + Rn2(3) - 1, 4, 7);
+                center = Math.Clamp(center, 4, level.Height - 5);
+            }
+        }
+        else
+        {
+            int center = RnRange(7, level.Width - 7);
+            int width = RnRange(5, 8);
+            for (int y = 0; y < level.Height; y++)
+            {
+                for (int x = center - width / 2; x <= center + width / 2; x++)
+                {
+                    bool edge = (x == center - width / 2 || x == center + width / 2);
+                    Liquify(level, x, y, edge);
+                }
+                // Drift
+                if (Rn2(3) == 0) center += Rn2(3) - 1;
+                if (Rn2(3) == 0) width = Math.Clamp(width + Rn2(3) - 1, 5, 8);
+                center = Math.Clamp(center, 5, level.Width - 6);
+            }
+        }
+    }
+    
+    static void RemoveOrphanWalls(Level level)
+    {
+        for (int y = 1; y < level.Height - 1; y++)
+            for (int x = 1; x < level.Width - 1; x++)
+            {
+                var p = new Pos(x, y);
+                if (level[p].Type != TileType.Wall) continue;
+                if (!p.CardinalNeighbours().Any(n => level[n].Type is TileType.Wall or TileType.Door))
+                    level.Set(p, TileType.Water);
+            }
+    }
+    
+    static void Liquify(Level level, int x, int y, bool edge)
+    {
+        if (x <= 0 || x >= level.Width - 1 || y <= 0 || y >= level.Height - 1) return;
+        
+        var pos = new Pos(x, y);
+        var tile = level[pos];
+        
+        // TODO: Don't liquify shop tiles
+        
+        // Rock or non-edge wall -> Water
+        if (tile.Type == TileType.Rock || (tile.Type == TileType.Wall && !edge && Rn2(3) != 0))
+        {
+            level.Set(pos, TileType.Water);
+        }
+        // Corridor/door -> Floor (preserves walkability)
+        else if (tile.Type == TileType.Corridor || tile.Type == TileType.Door)
+        {
+            level.Set(pos, TileType.Floor);
+        }
     }
 
-    public static void PlaceRoom(LevelGenContext ctx, Rect bounds)
+    static void TryMiniVault(LevelGenContext ctx)
     {
+        var level = ctx.level;
+        for (int tries = 0; tries < 50; tries++)
+        {
+            int x = Rn2(level.Width - 6) + 1;
+            int y = Rn2(level.Height - 6) + 1;
+            
+            bool ok = true;
+            for (int i = 0; i < 6 && ok; i++)
+                for (int j = 0; j < 6 && ok; j++)
+                    if (level[new Pos(x + i, y + j)].Type != TileType.Rock)
+                        ok = false;
+            
+            if (!ok) continue;
+            
+            // Outer ring = water
+            for (int i = 0; i < 6; i++)
+                for (int j = 0; j < 6; j++)
+                    level.Set(new Pos(x + i, y + j), TileType.Water);
+            
+            // Inner 2x2 = floor with walls
+            for (int i = 1; i < 5; i++)
+                for (int j = 1; j < 5; j++)
+                    level.Set(new Pos(x + i, y + j), TileType.Wall);
+            
+            for (int i = 2; i < 4; i++)
+                for (int j = 2; j < 4; j++)
+                    level.Set(new Pos(x + i, y + j), TileType.Floor);
+            
+            Log($"MiniVault placed at {x},{y}");
+            
+            // TODO: chests, guard monster
+            return;
+        }
+        Log("MiniVault failed to find spot");
+    }
+
+    public static bool PlaceRoom(LevelGenContext ctx, Rect bounds)
+    {
+        Log($"PlaceRoom trying {RectStr(bounds)}");
+        
+        // Find all touching stamps
+        List<int> touching = [];
+        HashSet<Pos> newBorder = [..bounds.Border()];
+        
+        for (int i = 0; i < ctx.Stamps.Count; i++)
+        {
+            var stamp = ctx.Stamps[i];
+            IEnumerable<Pos> existingBorder = stamp.Bounds?.Border() ?? stamp.Tiles ?? [];
+            
+            bool touches = existingBorder.Any(p => 
+                Pos.CardinalDirs.Any(dir => newBorder.Contains(p + dir)));
+            
+            if (touches)
+            {
+                Log($"  touches stamp {i}");
+                touching.Add(i);
+            }
+        }
+        
+        if (touching.Count > 1)
+        {
+            Log($"  Rejected - touches {touching.Count} stamps");
+            return false;
+        }
+        
+        if (touching.Count == 1)
+        {
+            int i = touching[0];
+            if (TryMergeStamps(ctx, i, bounds, out var merged))
+            {
+                ctx.Stamps.RemoveAt(i);
+                ctx.Stamps.Add(new(merged));
+                ctx.MarkOccupied(bounds);
+                Log($"  Merged into stamp {i}, now {merged.Count} tiles");
+                return true;
+            }
+            Log($"  Rejected - touches stamp {i} but can't merge");
+            return false;
+        }
+        
         ctx.Stamps.Add(new(bounds));
         ctx.MarkOccupied(bounds);
-        Log($"Placed room {ctx.Stamps.Count - 1} at {bounds.X},{bounds.Y} size {bounds.W}x{bounds.H}");
+        Log($"  Placed as room {ctx.Stamps.Count - 1}");
+        return true;
+    }
+    
+    static bool TryMergeStamps(LevelGenContext ctx, int existingIdx, Rect newBounds, out HashSet<Pos> merged)
+    {
+        merged = [];
+        var existing = ctx.Stamps[existingIdx];
+        
+        Rect? existingBounds = existing.Bounds;
+        if (existingBounds == null && existing.Tiles != null)
+        {
+            int minX = existing.Tiles.Min(p => p.X);
+            int minY = existing.Tiles.Min(p => p.Y);
+            int maxX = existing.Tiles.Max(p => p.X);
+            int maxY = existing.Tiles.Max(p => p.Y);
+            existingBounds = new Rect(minX, minY, maxX - minX + 1, maxY - minY + 1);
+        }
+        if (existingBounds == null) return false;
+        
+        var a = existingBounds.Value;
+        var b = newBounds;
+        
+        bool xAdj = a.X + a.W == b.X || b.X + b.W == a.X;
+        bool yAdj = a.Y + a.H == b.Y || b.Y + b.H == a.Y;
+        
+        int overlapMin, overlapMax;
+        
+        if (xAdj && !yAdj)
+        {
+            overlapMin = Math.Max(a.Y + 1, b.Y + 1);
+            overlapMax = Math.Min(a.Y + a.H - 2, b.Y + b.H - 2);
+            if (overlapMax < overlapMin) return false;
+        }
+        else if (yAdj && !xAdj)
+        {
+            overlapMin = Math.Max(a.X + 1, b.X + 1);
+            overlapMax = Math.Min(a.X + a.W - 2, b.X + b.W - 2);
+            if (overlapMax < overlapMin) return false;
+        }
+        else return false;
+        
+        if (existing.Tiles != null)
+            foreach (var p in existing.Tiles) merged.Add(p);
+        else
+            foreach (var p in a.All()) merged.Add(p);
+        
+        foreach (var p in b.All()) merged.Add(p);
+        
+        return true;
     }
 
     public static void PlaceIrregularRoom(LevelGenContext ctx, HashSet<Pos> tiles)
@@ -277,11 +523,8 @@ public static class LevelGen
             int ry = RnRange(1, ctx.level.Height - rh - 1);
             Rect bounds = new(rx, ry, rw, rh);
 
-            if (CanPlace(ctx.occupied, bounds))
-            {
-                PlaceRoom(ctx, bounds);
+            if (CanPlace(ctx.occupied, bounds) && PlaceRoom(ctx, bounds))
                 break;
-            }
         }
 
         return i;
@@ -471,7 +714,8 @@ public static class LevelGen
         foreach (var stamp in ctx.Stamps)
         {
             Room room = Room.FromStamp(stamp);
-            if (Rn2(ctx.level.EffectiveDepth + 5) < 5)
+            // dNH formula: rnd(1+depth) < 11 && rn2(77)
+            if (Rn1(1, ctx.level.EffectiveDepth + 1) < 11 && Rn2(77) != 0)
                 room.Flags |= RoomFlags.Lit;
             ctx.level.Rooms.Add(room);
             RenderRoom(ctx.level, room);
@@ -492,71 +736,64 @@ public static class LevelGen
         }
     }
 
-    static void MergeAdjacentRooms(LevelGenContext ctx)
+    static int RoomLeftX(Room room) => room.Bounds?.X ?? room.Border.Min(p => p.X);
+
+    // Find a border tile suitable for a door (has diggable/corridor neighbor, not a corner)
+    static List<(Pos pos, Pos outDir)> GetDoorCandidates(Level level, Room room)
     {
-        var level = ctx.level;
-        for (int i = 0; i < level.Rooms.Count - 1; i++)
+        List<(Pos, Pos)> candidates = [];
+        foreach (var p in room.Border)
         {
-            if (level.Rooms[i].Bounds is not { } a) continue;
-            for (int j = i + 1; j < level.Rooms.Count; j++)
+            // Skip corners - tiles with 2+ non-room neighbors
+            int wallNeighbors = 0;
+            foreach (var d in Pos.CardinalDirs)
+                if (!room.Interior.Contains(p + d) && !room.Border.Contains(p + d))
+                    wallNeighbors++;
+            if (wallNeighbors >= 2) continue;
+            
+            foreach (var dir in Pos.CardinalDirs)
             {
-                if (level.Rooms[j].Bounds is not { } b) continue;
-
-                // Check if walls are adjacent (sharing a wall)
-                bool xAdj = a.X + a.W == b.X || b.X + b.W == a.X;
-                bool yAdj = a.Y + a.H == b.Y || b.Y + b.H == a.Y;
-
-                if (xAdj && !yAdj)
-                {
-                    // Vertical adjacency - check Y overlap
-                    int minY = Math.Max(a.Y + 1, b.Y + 1);
-                    int maxY = Math.Min(a.Y + a.H - 2, b.Y + b.H - 2);
-                    if (maxY >= minY)
-                    {
-                        int wallX = a.X + a.W == b.X ? a.X + a.W - 1 : b.X + b.W - 1;
-                        for (int y = minY; y <= maxY; y++)
-                        {
-                            level.Set(new(wallX, y), TileType.Floor);
-                            level.Set(new(wallX + 1, y), TileType.Floor);
-                            level.Rooms[i].Border.Remove(new(wallX, y));
-                            level.Rooms[i].Border.Remove(new(wallX + 1, y));
-                            level.Rooms[j].Border.Remove(new(wallX, y));
-                            level.Rooms[j].Border.Remove(new(wallX + 1, y));
-                        }
-                        level.Rooms[i].Flags |= RoomFlags.Merged;
-                        level.Rooms[j].Flags |= RoomFlags.Merged;
-                    }
-                }
-                else if (yAdj && !xAdj)
-                {
-                    // Horizontal adjacency - check X overlap
-                    int minX = Math.Max(a.X + 1, b.X + 1);
-                    int maxX = Math.Min(a.X + a.W - 2, b.X + b.W - 2);
-                    if (maxX >= minX)
-                    {
-                        int wallY = a.Y + a.H == b.Y ? a.Y + a.H - 1 : b.Y + b.H - 1;
-                        for (int x = minX; x <= maxX; x++)
-                        {
-                            level.Set(new(x, wallY), TileType.Floor);
-                            level.Set(new(x, wallY + 1), TileType.Floor);
-                            level.Rooms[i].Border.Remove(new(x, wallY));
-                            level.Rooms[i].Border.Remove(new(x, wallY + 1));
-                            level.Rooms[j].Border.Remove(new(x, wallY));
-                            level.Rooms[j].Border.Remove(new(x, wallY + 1));
-                        }
-                        level.Rooms[i].Flags |= RoomFlags.Merged;
-                        level.Rooms[j].Flags |= RoomFlags.Merged;
-                    }
-                }
+                var neighbor = p + dir;
+                var tile = level[neighbor];
+                if (tile.IsDiggable || tile.Type == TileType.Corridor)
+                    candidates.Add((p, dir));
             }
         }
+        return candidates;
+    }
+
+    // Pick door positions for connecting two rooms - random but biased toward facing direction
+    static (Pos doorA, Pos doorB, Pos dir)? PickDoorPair(Level level, Room roomA, Room roomB)
+    {
+        var candA = GetDoorCandidates(level, roomA);
+        var candB = GetDoorCandidates(level, roomB);
+        if (candA.Count == 0 || candB.Count == 0) return null;
+
+        // Compute rough direction from A to B using any interior point
+        Pos centerA = roomA.Interior.Count > 0 ? roomA.Interior[0] : roomA.Border[0];
+        Pos centerB = roomB.Interior.Count > 0 ? roomB.Interior[0] : roomB.Border[0];
+        int towardX = Math.Sign(centerB.X - centerA.X);
+        int towardY = Math.Sign(centerB.Y - centerA.Y);
+
+        // Filter candidates facing roughly the right direction
+        var goodA = candA.Where(c => c.outDir.X == towardX || c.outDir.Y == towardY).ToList();
+        var goodB = candB.Where(c => c.outDir.X == -towardX || c.outDir.Y == -towardY).ToList();
+
+        // Fall back to all candidates if no good ones
+        if (goodA.Count == 0) goodA = candA;
+        if (goodB.Count == 0) goodB = candB;
+
+        var (doorA, dirA) = goodA[Rn2(goodA.Count)];
+        var (doorB, _) = goodB[Rn2(goodB.Count)];
+
+        return (doorA, doorB, dirA);
     }
 
     public static void MakeCorridors(LevelGenContext ctx)
     {
         List<Room> connectable = [.. ctx.level.Rooms
-            .Where(r => (r.Flags & RoomFlags.NoConnect) == 0 && r.Bounds != null)
-            .OrderBy(r => r.Bounds!.Value.X)];
+            .Where(r => (r.Flags & RoomFlags.NoConnect) == 0)
+            .OrderBy(RoomLeftX)];
 
         if (connectable.Count < 2) return;
 
@@ -566,29 +803,9 @@ public static class LevelGen
         int Find(int x) => group[x] == x ? x : group[x] = Find(group[x]);
         void Union(int a, int b) => group[Find(a)] = Find(b);
 
-        // Pre-union merged adjacent rooms - they're already connected
-        for (int i = 0; i < connectable.Count; i++)
-        {
-            if ((connectable[i].Flags & RoomFlags.Merged) == 0) continue;
-            var a = connectable[i].Bounds!.Value;
-            for (int j = i + 1; j < connectable.Count; j++)
-            {
-                if ((connectable[j].Flags & RoomFlags.Merged) == 0) continue;
-                var b = connectable[j].Bounds!.Value;
-                // Check if adjacent
-                bool xAdj = a.X + a.W == b.X || b.X + b.W == a.X;
-                bool yAdj = a.Y + a.H == b.Y || b.Y + b.H == a.Y;
-                bool xOverlap = a.X < b.X + b.W && b.X < a.X + a.W;
-                bool yOverlap = a.Y < b.Y + b.H && b.Y < a.Y + a.H;
-                if ((xAdj && yOverlap) || (yAdj && xOverlap))
-                {
-                    Log($"Pre-union merged rooms {i} and {j}");
-                    Union(i, j);
-                }
-            }
-        }
+        // Note: merged rooms are now single Room objects, no pre-union needed
 
-        Log($"MakeCorridors: {connectable.Count} rooms");
+        LogVerbose($"MakeCorridors: {connectable.Count} rooms");
 
         // Connect each room to next neighbor
         for (int i = 0; i < connectable.Count - 1; i++)
@@ -619,7 +836,7 @@ public static class LevelGen
                 {
                     if (Find(i) != Find(j))
                     {
-                        Log($"Room {i} and {j} not connected, joining");
+                        LogVerbose($"Room {i} and {j} not connected, joining");
                         if (TryDigCorridor(ctx, connectable[i], connectable[j]))
                             Union(i, j);
                         any = true;
@@ -648,11 +865,6 @@ public static class LevelGen
                 if (b >= a) b += 2;
                 var pair = a < b ? (a, b) : (b, a);
                 if (connected.Contains(pair)) continue;
-                // Skip merged rooms 7/8 of time
-                if ((connectable[a].Flags & RoomFlags.Merged) != 0 && Rn2(8) != 0)
-                    continue;
-                if ((connectable[b].Flags & RoomFlags.Merged) != 0 && Rn2(8) != 0)
-                    continue;
                 if (TryDigCorridor(ctx, connectable[a], connectable[b], nxcor: true))
                     connected.Add(pair);
             }
@@ -662,99 +874,37 @@ public static class LevelGen
     static bool TryDigCorridor(LevelGenContext ctx, Room roomA, Room roomB, bool nxcor = false)
     {
         var level = ctx.level;
-        Rect a = roomA.Bounds!.Value;
-        Rect b = roomB.Bounds!.Value;
-
-        int dx, dy;
-        Pos doorA, doorB;
-
-        if (b.X > a.X + a.W - 1)
+        
+        var pair = PickDoorPair(level, roomA, roomB);
+        if (pair == null)
         {
-            // B is to the right of A
-            dx = 1; dy = 0;
-            int minY = Math.Max(a.Y + 1, b.Y + 1);
-            int maxY = Math.Min(a.Y + a.H - 2, b.Y + b.H - 2);
-            if (maxY >= minY)
-            {
-                int doorY = RnRange(minY, maxY);
-                doorA = new(a.X + a.W - 1, doorY);
-                doorB = new(b.X, doorY);
-            }
-            else
-            {
-                // No Y overlap - pick doors on facing walls at different Y
-                doorA = new(a.X + a.W - 1, RnRange(a.Y + 1, a.Y + a.H - 2));
-                doorB = new(b.X, RnRange(b.Y + 1, b.Y + b.H - 2));
-            }
-        }
-        else if (b.X + b.W - 1 < a.X)
-        {
-            // B is to the left of A
-            dx = -1; dy = 0;
-            int minY = Math.Max(a.Y + 1, b.Y + 1);
-            int maxY = Math.Min(a.Y + a.H - 2, b.Y + b.H - 2);
-            if (maxY >= minY)
-            {
-                int doorY = RnRange(minY, maxY);
-                doorA = new(a.X, doorY);
-                doorB = new(b.X + b.W - 1, doorY);
-            }
-            else
-            {
-                doorA = new(a.X, RnRange(a.Y + 1, a.Y + a.H - 2));
-                doorB = new(b.X + b.W - 1, RnRange(b.Y + 1, b.Y + b.H - 2));
-            }
-        }
-        else if (b.Y > a.Y + a.H - 1)
-        {
-            // B is below A
-            dx = 0; dy = 1;
-            int minX = Math.Max(a.X + 1, b.X + 1);
-            int maxX = Math.Min(a.X + a.W - 2, b.X + b.W - 2);
-            if (maxX >= minX)
-            {
-                int doorX = RnRange(minX, maxX);
-                doorA = new(doorX, a.Y + a.H - 1);
-                doorB = new(doorX, b.Y);
-            }
-            else
-            {
-                doorA = new(RnRange(a.X + 1, a.X + a.W - 2), a.Y + a.H - 1);
-                doorB = new(RnRange(b.X + 1, b.X + b.W - 2), b.Y);
-            }
-        }
-        else if (b.Y + b.H - 1 < a.Y)
-        {
-            // B is above A
-            dx = 0; dy = -1;
-            int minX = Math.Max(a.X + 1, b.X + 1);
-            int maxX = Math.Min(a.X + a.W - 2, b.X + b.W - 2);
-            if (maxX >= minX)
-            {
-                int doorX = RnRange(minX, maxX);
-                doorA = new(doorX, a.Y);
-                doorB = new(doorX, b.Y + b.H - 1);
-            }
-            else
-            {
-                doorA = new(RnRange(a.X + 1, a.X + a.W - 2), a.Y);
-                doorB = new(RnRange(b.X + 1, b.X + b.W - 2), b.Y + b.H - 1);
-            }
-        }
-        else
-        {
-            // Rooms overlap - shouldn't happen
-            Log($"  Rooms overlap, skipping");
+            LogVerbose($"  No door candidates found");
             return false;
         }
+        
+        var (doorA, doorB, outDir) = pair.Value;
+        int dx = outDir.X, dy = outDir.Y;
+        
+        // If outDir is zero (shouldn't happen), compute from positions
+        if (dx == 0 && dy == 0)
+        {
+            dx = Math.Sign(doorB.X - doorA.X);
+            dy = Math.Sign(doorB.Y - doorA.Y);
+            if (dx == 0 && dy == 0) dy = 1;
+        }
 
-        Log($"TryDigCorridor room {a.X},{a.Y} to {b.X},{b.Y} doors {doorA.X},{doorA.Y} -> {doorB.X},{doorB.Y}");
+        LogVerbose($"TryDigCorridor doors {doorA.X},{doorA.Y} -> {doorB.X},{doorB.Y} dir {dx},{dy}");
 
         // Dig from just outside doorA to just outside doorB
         Pos org = new(doorA.X + dx, doorA.Y + dy);
         Pos dest = new(doorB.X - dx, doorB.Y - dy);
+        
+        // If dest is inside a room, adjust
+        if (!level[dest].IsDiggable && level[dest].Type != TileType.Corridor)
+            dest = doorB;
 
         List<Pos> dug = [];
+        bool placedDoorA = false;
         int x = org.X, y = org.Y;
         int maxSteps = 500;
 
@@ -763,7 +913,7 @@ public static class LevelGen
             // Randomly abandon non-essential corridors (creates dead ends)
             if (nxcor && Rn2(35) == 0)
             {
-                Log($"  Randomly abandoned nxcor after {dug.Count} tiles");
+                LogVerbose($"  Randomly abandoned nxcor after {dug.Count} tiles");
                 return false; // leave the partial corridor as a dead end
             }
 
@@ -772,16 +922,19 @@ public static class LevelGen
             {
                 level.Set(new(x, y), TileType.Corridor);
                 dug.Add(new(x, y));
-                Pos dp = new(x, y);
-                // Super fine grained logging for tunnel digging
-                // Log($"  Dug {dp:c}");
-                // LogLevel(level);
+                
+                // Place doorA after first successful dig
+                if (!placedDoorA)
+                {
+                    if (level[doorA].Type != TileType.Door && CanPlaceDoor(level, doorA))
+                        level.PlaceDoor(doorA, RollDoorState());
+                    placedDoorA = true;
+                }
             }
             else if (!t.IsPassable)
             {
-                Log($"  Failed at {x},{y} tile={t.Type}, undoing {dug.Count} tiles");
-                foreach (Pos p in dug)
-                    level.Set(p, TileType.Rock);
+                LogVerbose($"  Failed at {x},{y} tile={t.Type}, undoing {dug.Count} tiles");
+                UndoCorridorOrCupboard(level, dug, placedDoorA, doorA);
                 return false;
             }
 
@@ -834,33 +987,26 @@ public static class LevelGen
             }
 
             // Dead end - undo
-            Log($"  Dead end at {x},{y}, undoing {dug.Count} tiles");
-            foreach (Pos p in dug)
-                level.Set(p, TileType.Rock);
+            LogVerbose($"  Dead end at {x},{y}, undoing {dug.Count} tiles");
+            UndoCorridorOrCupboard(level, dug, placedDoorA, doorA);
             return false;
         }
 
         // Exceeded max steps - probably oscillating
         if (maxSteps <= 0)
         {
-            Log($"  Exceeded max steps, undoing {dug.Count} tiles");
-            foreach (Pos p in dug)
-                level.Set(p, TileType.Rock);
+            LogVerbose($"  Exceeded max steps, undoing {dug.Count} tiles");
+            UndoCorridorOrCupboard(level, dug, placedDoorA, doorA);
             return false;
         }
 
-        // Place doors if not adjacent to existing doors along wall (reuse existing door is ok)
-        if (level[doorA].Type != TileType.Door && CanPlaceDoor(level, doorA))
-        {
-            level.PlaceDoor(doorA, RollDoorState());
-        }
+        // Place end door on success
         if (level[doorB].Type != TileType.Door && CanPlaceDoor(level, doorB))
-        {
             level.PlaceDoor(doorB, RollDoorState());
-        }
 
-        Log($"  Success, dug {dug.Count} tiles");
-        LogLevel(level);
+        LogVerbose($"  Success, dug {dug.Count} tiles");
+        LogVerbose("");
+        LogLevelVerbose(level);
         return true;
     }
 
@@ -872,6 +1018,24 @@ public static class LevelGen
                 return false;
         }
         return true;
+    }
+
+    static void UndoCorridorOrCupboard(Level level, List<Pos> dug, bool placedDoorA, Pos doorA)
+    {
+        // 50% chance to leave a cupboard (door + 1 tile) if we dug anything and placed a door
+        if (placedDoorA && dug.Count > 0 && Rn2(2) == 0)
+        {
+            // Keep first tile, undo the rest
+            for (int i = 1; i < dug.Count; i++)
+                level.Set(dug[i], TileType.Rock);
+            return;
+        }
+        
+        // Full undo
+        foreach (Pos p in dug)
+            level.Set(p, TileType.Rock);
+        if (placedDoorA && level[doorA].Type == TileType.Door)
+            level.Set(doorA, TileType.Wall);
     }
 
     static bool CanDig(Level level, int x, int y)

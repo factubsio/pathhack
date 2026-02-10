@@ -13,6 +13,8 @@ public enum TileType : ushort
     BranchUp,
     BranchDown,
     Grass,
+    Pool,
+    Water,
 }
 
 // TileType, TileFlags, and TileInfo.DefaultFlags must be kept in sync
@@ -40,6 +42,8 @@ public static class TileInfo
         TileType.BranchUp => TileFlags.Passable | TileFlags.Structural,
         TileType.BranchDown => TileFlags.Passable | TileFlags.Structural,
         TileType.Grass => TileFlags.Passable,
+        TileType.Pool => TileFlags.Passable,
+        TileType.Water => TileFlags.None,
         _ => TileFlags.None,
     };
 }
@@ -151,7 +155,8 @@ public record class Room(List<Pos> Border, List<Pos> Interior)
             foreach (var p in stamp.Tiles)
             {
                 bool edge = false;
-                foreach (var d in Pos.CardinalDirs)
+                // Check all 8 directions - interior corners need walls too
+                foreach (var d in Pos.AllDirs)
                     if (!stamp.Tiles.Contains(p + d)) { edge = true; break; }
                 (edge ? border : interior).Add(p);
             }

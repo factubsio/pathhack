@@ -135,7 +135,10 @@ public static class FovCalculator
             for (int x = 0; x < level.Width; x++)
             {
                 Pos p = new(x, y);
-                if (level[p].Type == TileType.Grass)
+                var type = level[p].Type;
+
+                // Should this be water too? do we want a better way of tracking tiles that are actually "outdoors"?
+                if (type == TileType.Grass)
                     level.SetLit(p);
             }
         }

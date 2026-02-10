@@ -513,6 +513,8 @@ public static class Draw
         TileType.StairsUp => ConsoleColor.Gray,
         TileType.StairsDown => ConsoleColor.Gray,
         TileType.Grass => ConsoleColor.Green,
+        TileType.Pool => ConsoleColor.Blue,
+        TileType.Water => ConsoleColor.Blue,
         _ => ConsoleColor.Gray,
     };
 
@@ -523,24 +525,26 @@ public static class Draw
             fg = level.BranchUpTarget?.Branch.Color ?? ConsoleColor.Cyan;
         else if (t == TileType.BranchDown)
             fg = level.BranchDownTarget?.Branch.Color ?? ConsoleColor.Cyan;
-        bool dec = t == TileType.Wall || t == TileType.Floor || (t == TileType.Door && door != DoorState.Closed);
+        bool dec = t == TileType.Wall || t == TileType.Floor || t == TileType.Grass || (t == TileType.Door && door != DoorState.Closed);
         char ch = t switch
         {
-            TileType.Floor => '~',
+            TileType.Floor => '~',          //dec
             TileType.Wall => WallChar(level, p),
             TileType.Rock => ' ',
             TileType.Corridor => '#',
             TileType.Door => door switch
             {
-                DoorState.Broken => '~',
-                DoorState.Open => 'a',
+                DoorState.Broken => '~',    //dec
+                DoorState.Open => 'a',      //dec
                 _ => '+',
             },
             TileType.StairsUp => '<',
             TileType.StairsDown => '>',
             TileType.BranchUp => '<',
             TileType.BranchDown => '>',
-            TileType.Grass => ',',
+            TileType.Grass => '~',          //dec
+            TileType.Pool => '~',
+            TileType.Water => '≈',
             _ => '?',
         };
         return new(ch, fg, Dec: dec);
