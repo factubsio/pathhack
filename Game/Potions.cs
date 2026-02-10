@@ -12,14 +12,14 @@ public class PotionDef : ItemDef
 
 public static class Potions
 {
-    public static readonly PotionDef Healing = new() { Name = "potion of healing" };
-    public static readonly PotionDef Speed = new() { Name = "potion of speed" };
-    public static readonly PotionDef Paralysis = new() { Name = "potion of paralysis" };
-    public static readonly PotionDef Antivenom = new() { Name = "potion of antivenom" };
-    public static readonly PotionDef Omen = new() { Name = "bottled omen" };
-    public static readonly PotionDef Panacea = new() { Name = "panacea" };
-    public static readonly PotionDef FalseLife = new() { Name = "potion of false life" };
-    public static readonly PotionDef LesserInvisibility = new() { Name = "potion of lesser invisibility" };
+    public static readonly PotionDef Healing = new() { Name = "potion of healing", Price = 40 };
+    public static readonly PotionDef Speed = new() { Name = "potion of speed", Price = 120 };
+    public static readonly PotionDef Paralysis = new() { Name = "potion of paralysis", Price = 120 };
+    public static readonly PotionDef Antivenom = new() { Name = "potion of antivenom", Price = 40 };
+    public static readonly PotionDef Omen = new() { Name = "bottled omen", Price = 120 };
+    public static readonly PotionDef Panacea = new() { Name = "panacea", Price = 500};
+    public static readonly PotionDef FalseLife = new() { Name = "potion of false life", Price = 40 };
+    public static readonly PotionDef LesserInvisibility = new() { Name = "potion of lesser invisibility", Price = 120 };
 
     public static readonly PotionDef[] All = [Healing, Speed, Paralysis, Antivenom, Omen, Panacea, FalseLife, LesserInvisibility];
 

@@ -11,6 +11,7 @@ public static class OrcishArmory
         WeaponType = WeaponTypes.OrcKnuckleDagger,
         DamageType = DamageTypes.Piercing,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkGray),
+        Price = 10,
     };
 
     public static readonly WeaponDef Necksplitter = new()
@@ -22,6 +23,7 @@ public static class OrcishArmory
         WeaponType = WeaponTypes.OrcNecksplitter,
         DamageType = DamageTypes.Slashing,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkGray),
+        Price = 30,
     };
 
     public static readonly ArmorDef ChainMail = new()
@@ -34,5 +36,6 @@ public static class OrcishArmory
         CheckPenalty = -2,
         Glyph = new(ItemClasses.Armor, ConsoleColor.DarkGray),
         Components = [new ArmorBrick(2, 1)],
+        Price = 50,
     };
 }

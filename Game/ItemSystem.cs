@@ -134,6 +134,7 @@ public class ItemDef : BaseDef
     // ID system - set for magical consumables/accessories
     public AppearanceCategory? AppearanceCategory;
     public int AppearanceIndex = -1;
+    public required int Price;
 
     public char Class => Glyph.Value;
     public virtual ItemKnowledge RelevantKnowledge => ItemKnowledge.Seen;
@@ -225,6 +226,10 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
     public int EmptyPropertySlots => Potency - PropertyRunes.Count;
     public bool HasEmptyPropertySlot => PropertyRunes.Count < Potency;
 
+    public int UnitPrice;
+    public bool Unpaid;
+    public bool Stolen;
+
     // food/corpse state
     public int Eaten;
     public MonsterDef? CorpseOf;
@@ -244,10 +249,22 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
         _ => Def.Glyph
     };
 
-    public string DisplayName => GetDisplayName(Count);
-    public string SingleName => GetDisplayName(1);
+    public string DisplayName => CostOf(GetDisplayName(Count));
+    public string SingleName => CostOf(GetDisplayName(1));
 
-    string GetDisplayName(int count)
+    private string CostOf(string displayName)
+    {
+        if (Stolen)
+            return $"{displayName} (stolen)";
+        else if (UnitPrice == 0)
+            return displayName;
+        else if (Unpaid)
+            return $"{displayName} (unpaid, {Price.Crests()})";
+        else
+            return $"{displayName} ({Price.Crests()})";
+    }
+
+    private string GetDisplayName(int count)
     {
         // Corpses use monster name
         if (CorpseOf != null)
@@ -312,13 +329,7 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
         return string.Join(" ", parts);
     }
 
-    public int EffectiveBonus
-    {
-        get
-        {
-            return Potency;
-        }
-    }
+    public int Price => UnitPrice * Count;
 
     public static Item Create(ItemDef def, int count = 1) => new(def) { Count = count };
 
@@ -337,6 +348,9 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
             Count = count,
             Potency = Potency,
             Fundamental = Fundamental,
+            Stolen = Stolen,
+            Unpaid = Unpaid,
+            UnitPrice = UnitPrice,
         };
         other.PropertyRunes.AddRange(PropertyRunes);
         other.ShareFactsFrom(this);
@@ -347,6 +361,9 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
     {
         if (!Def.Stackable) return false;
         if (other.Def != Def) return false;
+        if (other.Stolen != Stolen) return false;
+        if (other.Unpaid != Unpaid) return false;
+        if (other.UnitPrice != UnitPrice) return false;
         var mask = Def.RelevantKnowledge;
         if ((other.Knowledge & mask) != (Knowledge & mask)) return false;
         if (other.Potency != Potency) return false;
@@ -382,6 +399,8 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
     {
         "the" => DisplayName.The(),
         "The" => DisplayName.The().Capitalize(),
+        "the,noprice" => GetDisplayName(Count).The(),
+        "The,noprice" => GetDisplayName(Count).The().Capitalize(),
         "an" when IsUnique => Count > 1 ? DisplayName : DisplayName.The(),
         "An" when IsUnique => Count > 1 ? DisplayName : DisplayName.The().Capitalize(),
         "an" => Count > 1 ? DisplayName : DisplayName.An(),
@@ -428,4 +447,16 @@ public static class ItemClasses
     public const char Gem = '*';
 
     public const string Order = "$\")[%?+!/=(*."; // coin, amulet, weapon, armor, food, scroll, spellbook, potion, ring, wand, tool, gem, rock
+}
+
+public static class MiscItems
+{
+    public static readonly ItemDef SilverCrest = new()
+    {
+        Name = "silver crest",
+        Glyph = new(ItemClasses.Gold, ConsoleColor.White, null, GlyphFlags.Bold),
+        Stackable = true,
+        Weight = 0,
+        Price = 1,
+    };
 }

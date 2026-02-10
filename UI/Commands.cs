@@ -2,6 +2,90 @@ namespace Pathhack.UI;
 
 public static partial class Input
 {
+    static char? _sellResponse;
+
+    static char? Ynaq(string prompt)
+    {
+        g.pline($"{prompt} [ynaq]");
+        while (true)
+        {
+            var key = NextKey();
+            if (key.KeyChar is 'y' or 'Y') return 'y';
+            if (key.KeyChar is 'n' or 'N') return 'n';
+            if (key.KeyChar is 'a' or 'A') return 'a';
+            if (key.KeyChar is 'q' or 'Q') return 'q';
+            if (key.Key == ConsoleKey.Escape) return 'q';
+        }
+    }
+
+    static void PayShopkeeper()
+    {
+        var room = lvl.RoomAt(upos);
+        if (room?.Type != RoomType.Shop || room.Resident == null)
+        {
+            g.pline("There is no shopkeeper here.");
+            return;
+        }
+        var shop = room.Resident.FindFact(ShopkeeperBrick.Instance)?.As<ShopState>();
+        if (shop == null) return;
+
+        if (shop.Bill <= 0)
+        {
+            g.pline($"You do not owe {room.Resident:the} anything.");
+            return;
+        }
+        if (u.Gold <= 0)
+        {
+            g.pline("You have no money.");
+            return;
+        }
+
+        var unpaid = shop.UnpaidItems();
+        bool itemize = unpaid.Count > 1 ? YesNo("Itemized billing?") : true;
+
+        if (itemize)
+        {
+            foreach (var item in unpaid)
+            {
+                if (u.Gold <= 0) { g.pline("You have no money left."); break; }
+                if (!YesNo($"{item:The,noprice} for {item.Price.Crests()}. Pay?")) continue;
+                if (u.Gold < item.Price)
+                {
+                    g.pline($"You don't have enough to pay for {item:the,noprice}.");
+                    continue;
+                }
+                int price = item.Price;
+                u.Gold -= price;
+                shop.Pay(price);
+                item.Unpaid = false;
+                item.UnitPrice = 0;
+                shop.Stock[item].Unpaid = false;
+                g.pline($"You bought {item:the} for {price.Crests()}.");
+            }
+        }
+        else
+        {
+            if (u.Gold < shop.Bill)
+            {
+                g.pline($"You don't have enough to pay the bill of {shop.Bill.Crests()}.");
+                return;
+            }
+            int toPay = shop.Bill;
+            u.Gold -= toPay;
+            shop.Pay(toPay);
+            foreach (var item in unpaid)
+            {
+                item.Unpaid = false;
+                item.UnitPrice = 0;
+                shop.Stock[item].Unpaid = false;
+            }
+            g.pline($"You pay {toPay.Crests()}.");
+        }
+
+        if (shop.Bill <= 0)
+            g.pline($"{room.Resident:The} says: \"Thank you for shopping!\"");
+    }
+
     static void OpenDoor(CommandArg arg)
     {
         if (arg is not DirArg(var d)) return;
@@ -74,11 +158,18 @@ public static partial class Input
         var sorted = items
             .OrderBy(i => ItemClasses.Order.IndexOf(i.Def.Class))
             .ThenBy(i => i.InvLet);
+        
 
         char? lastClass = null;
         char autoLet = 'a';
+        var canSee = unit?.Can("can_see") == true && unit.IsPlayer;
         foreach (var item in sorted)
         {
+            if (!item.Knowledge.HasFlag(ItemKnowledge.Seen) && canSee)
+            {
+                item.Knowledge |= ItemKnowledge.Seen;
+            }
+
             if (item.Def.Class != lastClass)
             {
                 lastClass = item.Def.Class;
@@ -120,8 +211,10 @@ public static partial class Input
         BuildItemList(menu, u.Inventory);
         var picked = menu.Display(MenuMode.PickOne);
         if (picked.Count == 0) return;
-        DoDrop(u, picked[0]);
+        _sellResponse = null;
         g.pline($"You drop {picked[0].InvLet} - {picked[0]}.");
+        DoDrop(u, picked[0]);
+        TrySellToShop(picked[0]);
         u.Energy -= ActionCosts.OneAction.Value;
     }
 
@@ -133,10 +226,41 @@ public static partial class Input
         BuildItemList(menu, u.Inventory);
         var toDrop = menu.Display(MenuMode.PickAny);
         if (toDrop.Count == 0) return;
-        foreach (var item in toDrop)
-            DoDrop(u, item);
+        _sellResponse = null;
         g.pline("You drop {0} item{1}.", toDrop.Count, toDrop.Count == 1 ? "" : "s");
+        foreach (var item in toDrop)
+        {
+            DoDrop(u, item);
+            TrySellToShop(item);
+        }
         u.Energy -= ActionCosts.OneAction.Value;
+    }
+
+    static void TrySellToShop(Item item)
+    {
+        var room = lvl.RoomAt(upos);
+        if (room?.Type != RoomType.Shop || room.Resident == null) return;
+        var shop = room.Resident.FindFact(ShopkeeperBrick.Instance)?.As<ShopState>();
+        if (shop == null) return;
+        if (shop.Stock.ContainsKey(item)) return; // already shop item (returned unpaid)
+
+        int offer = shop.SellOffer(item);
+        if (offer <= 0)
+        {
+            g.pline($"{room.Resident:The} seems uninterested.");
+            return;
+        }
+
+        char response = _sellResponse ?? Ynaq($"{room.Resident:The} offers {offer.Crests()} for {item:the,noprice}. Sell?") ?? 'q';
+        if (response == 'a') _sellResponse = 'y';
+        if (response == 'q') _sellResponse = 'n';
+
+        if (response is 'y' or 'a')
+        {
+            u.Gold += offer;
+            shop.CompleteSale(item);
+            g.pline($"You sell {item:the,noprice} for {offer.Crests()}.");
+        }
     }
 
     static void InvokeItem()

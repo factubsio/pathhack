@@ -89,6 +89,7 @@ public class TelekineticProjectile(int range, Dice damage, string pool) : Action
         DamageType = DamageTypes.Blunt,
         Glyph = new('*', ConsoleColor.Cyan),
         Launcher = "tk",
+        Price = -1,
     };
     public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
     {

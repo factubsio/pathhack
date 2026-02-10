@@ -1,3 +1,4 @@
+using System.Security.Cryptography.X509Certificates;
 using Microsoft.VisualBasic;
 
 namespace Pathhack.UI;
@@ -71,6 +72,7 @@ public static partial class Input
         ['\\'] = new("discoveries", "Show discoveries", ArgType.None, _ => ShowDiscoveries()),
         ['C'] = new("call", "Name an item type", ArgType.None, _ => CallItem()),
         ['?'] = new("help", "Show help", ArgType.None, _ => ShowHelp()),
+        ['p'] = new("pay", "Pay shopkeeper", ArgType.None, _ => PayShopkeeper()),
     };
 
     static readonly List<SpecialCommand> _specialCommands = [
@@ -596,11 +598,16 @@ public static partial class Input
             if (toPickup.Count == 0) return;
         }
         foreach (var item in toPickup)
-            g.DoPickup(u, item);
-        if (toPickup.Count == 1)
-            g.pline($"{toPickup[0].InvLet} - {toPickup[0]}.");
-        else
-            g.pline("You pick up {0} items.", toPickup.Count);
+        {
+            int price = g.DoPickup(u, item);
+            if (price > 0)
+            {
+                g.pline($"The list price of {item:the,noprice} is {price.Crests()}.");
+                item.UnitPrice = price;
+            }
+            g.pline($"{item.InvLet} - {item}.");
+        }
+
         u.Energy -= ActionCosts.OneAction.Value;
     }
 
@@ -690,52 +697,6 @@ public static partial class Input
     {
         Pos p = start;
         foreach (var d in dirs) yield return p += d;
-    }
-
-    static void LookHere()
-    {
-        // Room entry message (first time only)
-        var room = lvl.RoomAt(upos);
-        if (room != null && !room.Entered)
-        {
-            room.Entered = true;
-            var msg = room.Type switch
-            {
-                RoomType.GoblinNest => "You find a goblin prayer circle.",
-                RoomType.GremlinParty => "You stumble across the aftermath of a gremlin party.",
-                RoomType.GremlinPartyBig => "You enter the chaos of a gremlin bender.",
-                _ => null
-            };
-            if (msg != null) g.pline(msg);
-        }
-
-        var items = lvl.ItemsAt(upos);
-        if (u.Can("can_see"))
-            foreach (var item in items)
-                item.Knowledge |= ItemKnowledge.Seen;
-        if (items.Count == 0) {}
-        else if (items.Count == 1)
-            g.pline($"You see here {items[0]:an}.");
-        else if (items.Count >= 5)
-            g.pline("There are {0} items here.", items.Count >= 10 ? "many" : "several");
-        else
-            g.pline("There are {0} items here.", items.Count);
-
-        foreach (var n in upos.Neighbours())
-        {
-            if (!lvl.Traps.TryGetValue(n, out var trap) || trap.PlayerSeen) continue;
-
-            using var ctx = PHContext.Create(Monster.DM, Target.From(u));
-            if (CreateAndDoCheck(ctx, "perception", trap.DetectDC, "trap"))
-            {
-                g.pline("You find a trap.");
-                u.ObserveTrap(trap);
-            }
-        }
-
-        var cellMsg = lvl.GetState(upos)?.Message;
-        if (cellMsg != null)
-            g.pline(cellMsg);
     }
 
     static CommandArg GetArg(ArgType type) => type.Kind switch
@@ -943,7 +904,6 @@ public static partial class Input
                         if (g.DoStruggle(u, dc) == StruggleResult.Escaped)
                         {
                             lvl.MoveUnit(u, next);
-                            LookHere();
                         }
                     }
                     u.Energy -= ActionCosts.OneAction.Value;
@@ -964,7 +924,6 @@ public static partial class Input
                 else if (lvl.CanMoveTo(upos, next, u) || g.DebugMode)
                 {
                     lvl.MoveUnit(u, next);
-                    LookHere();
                 }
                 else if (lvl.IsDoorClosed(next))
                 {

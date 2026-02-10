@@ -61,5 +61,6 @@ public static class QuestItems
         Glyph = new('*', ConsoleColor.Yellow),
         Weight = 1,
         Components = [new EverflameComponent()],
+        Price = 0,
     };
 }

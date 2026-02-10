@@ -2,8 +2,8 @@ namespace Pathhack.Game;
 
 public static class DummyThings
 {
-    public static readonly ItemDef FireWand = new() { id = "fire_wand", Name = "wand of fire", Glyph = new(ItemClasses.Wand, ConsoleColor.Red) };
-    public static readonly ItemDef ColdWand = new() { id = "cold_wand", Name = "wand of cold", Glyph = new(ItemClasses.Wand, ConsoleColor.Blue) };
+    public static readonly ItemDef FireWand = new() { id = "fire_wand", Name = "wand of fire", Glyph = new(ItemClasses.Wand, ConsoleColor.Red), Price = 100, };
+    public static readonly ItemDef ColdWand = new() { id = "cold_wand", Name = "wand of cold", Glyph = new(ItemClasses.Wand, ConsoleColor.Blue), Price = 100, };
 
     public static readonly ItemDef Blindfold = new()
     {
@@ -12,18 +12,7 @@ public static class DummyThings
         Glyph = new(ItemClasses.Amulet, ConsoleColor.DarkGray),
         DefaultEquipSlot = ItemSlots.Face,
         Components = [ApplyWhenEquipped.For(BlindBuff.Instance)],
-    };
-
-    public static readonly WeaponDef Dart = new()
-    {
-        id = "dart",
-        Name = "dart",
-        BaseDamage = d(4),
-        Profiency = Proficiencies.Thrown,
-        WeaponType = WeaponTypes.Dart,
-        DamageType = DamageTypes.Piercing,
-        Range = 4,
-        Stackable = true,
+        Price = 2,
     };
 
     public static readonly ItemDef[] All = [FireWand, ColdWand, Blindfold];

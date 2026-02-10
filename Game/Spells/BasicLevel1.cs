@@ -113,7 +113,7 @@ public static class BasicLevel1Spells
 
             if (DoAttackRoll(ctx, 0))
             {
-              g.YouObserve(unit, $"It hits {unit:the}!", "It hit something!");
+              g.YouObserve(unit, $"It hits {unit:the}!", "it hit something!");
               DoDamage(ctx);
 
               if (unit.IsDead) return;

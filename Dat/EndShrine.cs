@@ -9,6 +9,7 @@ public static class EndShrineLevels
     BaseDamage = d(6, 6),
     DamageType = DamageTypes.Magic,
     Profiency = "_exotic",
+    Price = 10000,
   };
 
   private static readonly MonsterDef ShrineAttendant = new()

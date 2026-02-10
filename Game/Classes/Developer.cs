@@ -126,6 +126,8 @@ public static partial class ClassDefs
                     new GrantProficiency(Proficiencies.LightArmor, ProficiencyLevel.Legendary),
                     new GrantProficiency(Proficiencies.MediumArmor, ProficiencyLevel.Legendary),
                     new GrantProficiency(Proficiencies.HeavyArmor, ProficiencyLevel.Legendary),
+                    new GrantPool("spell_l1", 5, 1),
+                    new GrantPool("spell_l2", 5, 1),
                 ],
             },
         ],
@@ -133,6 +135,8 @@ public static partial class ClassDefs
         {
             var sword = ItemGen.GenerateItem(MundaneArmory.Longsword, 100, -3);
             p.Inventory.Add(sword);
+
+            p.AddSpell(BasicLevel1Spells.AcidArrow);
             
             // Test striking rune
             var strikingSword = Item.Create(MundaneArmory.Longsword);
@@ -145,27 +149,20 @@ public static partial class ClassDefs
             bonusSword.Potency = 1;
             ItemGen.ApplyRune(bonusSword, Runes.Bonus(1), fundamental: true);
             p.Inventory.Add(bonusSword);
+
+            p.Gold = 2000;
             
             p.Inventory.Add(Item.Create(MundaneArmory.Longsword));
             p.Inventory.Add(Item.Create(MundaneArmory.LeatherArmor));
             p.Inventory.Add(Item.Create(MagicAccessories.RingOfTheRam));
             MagicAccessories.RingOfTheRam.SetKnown();
-            p.Inventory.Add(Item.Create(Potions.FalseLife));
-            p.Inventory.Add(Item.Create(Potions.LesserInvisibility, 4));
-            p.Inventory.Add(Item.Create(Scrolls.Identify, 10));
+            p.Inventory.Add(Item.Create(Potions.FalseLife, 4)).Identify();
+            p.Inventory.Add(Item.Create(Potions.LesserInvisibility, 4)).Identify();
+            p.Inventory.Add(Item.Create(Scrolls.Identify, 10)).Identify();
+            p.Inventory.Add(Item.Create(Scrolls.Teleportation, 4)).Identify();
             Scrolls.Identify.SetKnown();
             foreach (var def in DummyThings.All)
                 p.Inventory.Add(Item.Create(def));
-            
-            var darts = Item.Create(DummyThings.Dart);
-            darts.Count = 10;
-            p.Inventory.Add(darts);
-            p.Quiver = darts;
-            
-            var darts2 = Item.Create(DummyThings.Dart);
-            darts2.Count = 5;
-            darts2.Potency = 1;
-            p.Inventory.Add(darts2);
             
             p.AddAction(new MagicMapping());
             p.AddAction(new BlindSelf());

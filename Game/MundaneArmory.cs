@@ -11,6 +11,7 @@ public static class MundaneArmory
         WeaponType = WeaponTypes.Dagger,
         DamageType = DamageTypes.Piercing,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
+        Price = 2,
     };
 
     public static readonly WeaponDef Shortsword = new()
@@ -22,6 +23,7 @@ public static class MundaneArmory
         WeaponType = WeaponTypes.Shortsword,
         DamageType = DamageTypes.Slashing,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
+        Price = 9,
     };
 
     public static readonly WeaponDef Longsword = new()
@@ -33,6 +35,7 @@ public static class MundaneArmory
         WeaponType = WeaponTypes.Longsword,
         DamageType = DamageTypes.Slashing,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
+        Price = 10,
     };
 
     public static readonly WeaponDef Scimitar = new()
@@ -44,6 +47,7 @@ public static class MundaneArmory
         WeaponType = WeaponTypes.Scimitar,
         DamageType = DamageTypes.Slashing,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
+        Price = 10,
     };
 
     public static readonly WeaponDef Rapier = new()
@@ -55,6 +59,7 @@ public static class MundaneArmory
         WeaponType = WeaponTypes.Rapier,
         DamageType = DamageTypes.Piercing,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
+        Price = 20,
     };
 
     public static readonly WeaponDef Falchion = new()
@@ -67,6 +72,7 @@ public static class MundaneArmory
         DamageType = DamageTypes.Slashing,
         Hands = 2,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
+        Price = 30,
     };
 
     public static readonly WeaponDef Club = new()
@@ -78,6 +84,7 @@ public static class MundaneArmory
         WeaponType = WeaponTypes.Club,
         DamageType = DamageTypes.Blunt,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
+        Price = 1,
     };
 
     public static readonly WeaponDef SpikedClub = new()
@@ -89,6 +96,7 @@ public static class MundaneArmory
         WeaponType = WeaponTypes.Club,
         DamageType = DamageTypes.Blunt,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
+        Price = 2,
     };
 
     public static readonly WeaponDef Greatclub = new()
@@ -101,6 +109,7 @@ public static class MundaneArmory
         DamageType = DamageTypes.Blunt,
         Hands = 2,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
+        Price = 10,
     };
 
     public static readonly WeaponDef Mace = new()
@@ -112,6 +121,7 @@ public static class MundaneArmory
         WeaponType = WeaponTypes.Mace,
         DamageType = DamageTypes.Blunt,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
+        Price = 10,
     };
 
     public static readonly WeaponDef Flail = new()
@@ -123,6 +133,7 @@ public static class MundaneArmory
         WeaponType = WeaponTypes.Flail,
         DamageType = DamageTypes.Blunt,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.Gray),
+        Price = 8,
     };
 
     public static readonly WeaponDef Quarterstaff = new()
@@ -135,6 +146,7 @@ public static class MundaneArmory
         DamageType = DamageTypes.Blunt,
         Hands = 2,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
+        Price = 1,
     };
 
     public static readonly WeaponDef BoStaff = new()
@@ -148,6 +160,7 @@ public static class MundaneArmory
         Hands = 2,
         Range = 2,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
+        Price = 2,
     };
 
     public static readonly WeaponDef Spear = new()
@@ -162,6 +175,7 @@ public static class MundaneArmory
         Launcher = "hand",
         MeleeVerb = "thrusts",
         Range = 4,
+        Price = 1,
     };
 
     public static readonly WeaponDef Scythe = new()
@@ -174,6 +188,7 @@ public static class MundaneArmory
         DamageType = DamageTypes.Slashing,
         Hands = 2,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.Gray),
+        Price = 20,
     };
 
     public static readonly WeaponDef Whip = new()
@@ -186,6 +201,7 @@ public static class MundaneArmory
         DamageType = DamageTypes.Slashing,
         Range = 2,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
+        Price = 1,
     };
 
     public static readonly WeaponDef SpikedChain = new()
@@ -199,6 +215,7 @@ public static class MundaneArmory
         Range = 2,
         Hands = 2,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkGray),
+        Price = 30,
     };
 
     public static readonly WeaponDef Longbow = new()
@@ -212,6 +229,7 @@ public static class MundaneArmory
         Hands = 2,
         Range = 10,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
+        Price = 60,
     };
 
     public static readonly WeaponDef Dart = new()
@@ -226,6 +244,7 @@ public static class MundaneArmory
         Stackable = true,
         Launcher = "hand",
         Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
+        Price = 1,
     };
 
     public static readonly WeaponDef Bola = new()
@@ -238,6 +257,7 @@ public static class MundaneArmory
         DamageType = DamageTypes.Blunt,
         Launcher = "hand",
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
+        Price = 5,
     };
 
     public static readonly ArmorDef LeatherArmor = new()
@@ -249,6 +269,7 @@ public static class MundaneArmory
         DexCap = 4,
         Glyph = new(ItemClasses.Armor, ConsoleColor.DarkYellow),
         Components = [new ArmorBrick(1, 4)],
+        Price = 20,
     };
 
     public static readonly ArmorDef ChainShirt = new()
@@ -261,6 +282,7 @@ public static class MundaneArmory
         CheckPenalty = -1,
         Glyph = new(ItemClasses.Armor, ConsoleColor.Gray),
         Components = [new ArmorBrick(2, 3)],
+        Price = 50,
     };
 
     public static readonly ArmorDef HideArmor = new()
@@ -273,6 +295,7 @@ public static class MundaneArmory
         CheckPenalty = -2,
         Glyph = new(ItemClasses.Armor, ConsoleColor.DarkYellow),
         Components = [new ArmorBrick(3, 2)],
+        Price = 20,
     };
 
     public static readonly ArmorDef Breastplate = new()
@@ -285,6 +308,7 @@ public static class MundaneArmory
         CheckPenalty = -2,
         Glyph = new(ItemClasses.Armor, ConsoleColor.Gray),
         Components = [new ArmorBrick(4, 1)],
+        Price = 80,
     };
 
     public static readonly ArmorDef SplintMail = new()
@@ -297,6 +321,7 @@ public static class MundaneArmory
         CheckPenalty = -3,
         Glyph = new(ItemClasses.Armor, ConsoleColor.DarkGray),
         Components = [new ArmorBrick(4, 1)],
+        Price = 130,
     };
 
     public static readonly ArmorDef FullPlate = new()
@@ -309,6 +334,7 @@ public static class MundaneArmory
         CheckPenalty = -3,
         Glyph = new(ItemClasses.Armor, ConsoleColor.White),
         Components = [new ArmorBrick(6, 0)],
+        Price = 300,
     };
 
     public static readonly ItemDef RingOfKnives = new()
@@ -318,6 +344,7 @@ public static class MundaneArmory
         Glyph = new(ItemClasses.Ring, ConsoleColor.Cyan),
         DefaultEquipSlot = ItemSlots.Ring,
         Components = [new GrantProficiency(Proficiencies.LightBlade, ProficiencyLevel.Trained, requiresEquipped: true)],
+        Price = 400,
     };
 
     public static readonly WeaponDef[] AllWeapons = [Dagger, Shortsword, Longsword, Scimitar, Rapier, Falchion, Club, SpikedClub, Greatclub, Mace, Flail, Quarterstaff, BoStaff, Spear, Scythe, Whip, SpikedChain, Longbow, Dart, Bola];

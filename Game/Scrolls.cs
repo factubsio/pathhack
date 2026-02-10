@@ -12,10 +12,10 @@ public class ScrollDef : ItemDef
 
 public static class Scrolls
 {
-    public static readonly ScrollDef MagicMapping = new() { Name = "scroll of magic mapping" };
-    public static readonly ScrollDef Identify = new() { Name = "scroll of identify" };
-    public static readonly ScrollDef Teleportation = new() { Name = "scroll of teleportation" };
-    public static readonly ScrollDef Fire = new() { Name = "scroll of fire" };
+    public static readonly ScrollDef MagicMapping = new() { Name = "scroll of magic mapping", Price = 300 };
+    public static readonly ScrollDef Identify = new() { Name = "scroll of identify", Price = 40 };
+    public static readonly ScrollDef Teleportation = new() { Name = "scroll of teleportation", Price = 120 };
+    public static readonly ScrollDef Fire = new() { Name = "scroll of fire", Price = 120 };
 
     public static readonly ScrollDef[] All = [MagicMapping, Identify, Teleportation, Fire];
 

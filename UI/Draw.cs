@@ -469,7 +469,7 @@ public static class Draw
                     if (mem.Tile.IsStructural) col = ConsoleColor.Gray;
                     Cell cell;
                     if (mem.TopItem is { } item && !mem.Tile.IsStairs)
-                        cell = new(item.Glyph.Value, col);
+                        cell = new(item.Glyph.Value, item.Glyph.Color);
                     else
                     {
                         cell = MemoryTileCell(level, p, mem, col);
@@ -665,7 +665,7 @@ public static class Draw
 
     static void DrawStatus(Level level)
     {
-        Layers[0].Write(0, StatusRow, $"{level.Branch.Name}:{level.EffectiveDepth} R:{g.CurrentRound} E:{u.Energy}".PadRight(ScreenWidth));
+        Layers[0].Write(0, StatusRow, $"{level.Branch.Name}:{level.EffectiveDepth} $:{u.Gold} R:{g.CurrentRound} E:{u.Energy}".PadRight(ScreenWidth));
         int nextLvl = u.CharacterLevel + 1;
         int needed = Progression.XpForLevel(nextLvl) - Progression.XpForLevel(u.CharacterLevel);
         int progress = u.XP - Progression.XpForLevel(u.CharacterLevel);

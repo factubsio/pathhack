@@ -454,7 +454,8 @@ public static class Foods
         Name = "food ration",
         Nutrition = 800,
         EatTime = 5,
-        Weight = 10
+        Weight = 10,
+        Price = 40,
     };
 
     public static readonly ConsumableDef Apple = new()
@@ -463,7 +464,8 @@ public static class Foods
         Nutrition = 50,
         EatTime = 1,
         Weight = 2,
-        FlavorMessage = "Core dumped."
+        FlavorMessage = "Core dumped.",
+        Price = 20,
     };
 
     public static readonly ConsumableDef[] All = [Ration, Apple];
@@ -472,7 +474,8 @@ public static class Foods
     {
         Name = "corpse",
         Glyph = new(ItemClasses.Food, ConsoleColor.Red),
-        Stackable = false
+        Stackable = false,
+        Price = 5,
     };
 
     public const int RotTime = 200;

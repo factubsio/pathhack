@@ -111,6 +111,7 @@ public static class MagicAccessories
         AppearanceCategory = AppearanceCategory.Ring,
         PokedexDescription = "Grants immunity to difficult terrain.",
         Components = [FeatherStepBuff.Instance.WhenEquipped()],
+        Price = 300,
     };
 
     public static readonly ItemDef SpiritsightRing = new()
@@ -122,6 +123,7 @@ public static class MagicAccessories
         AppearanceCategory = AppearanceCategory.Ring,
         PokedexDescription = "This ring tickles your finger whenever a creature is nearby.",
         Components = [WarningBuff.Range8],
+        Price = 200,
     };
 
     public static readonly ItemDef GrimRing = new()
@@ -133,6 +135,7 @@ public static class MagicAccessories
         AppearanceCategory = AppearanceCategory.Ring,
         PokedexDescription = "Sculpted with the visage of a grinning skull. While wearing it, you can detect the presence of undead creatures.",
         Components = [DetectCreatureBuff.Undead8],
+        Price = 200,
     };
 
     public static readonly ItemDef RingOfTheWild = new()
@@ -144,6 +147,7 @@ public static class MagicAccessories
         AppearanceCategory = AppearanceCategory.Ring,
         PokedexDescription = "Carved with images of beasts. While wearing it, you can detect the presence of nearby beasts.",
         Components = [DetectCreatureBuff.Beast8],
+        Price = 200,
     };
 
     public static readonly ItemDef RingOfTheRam = new()
@@ -155,6 +159,7 @@ public static class MagicAccessories
         AppearanceCategory = AppearanceCategory.Ring,
         PokedexDescription = "Shaped to look like the head of a ram, with curling horns. Can unleash a ram-shaped blast of force.",
         Components = [RamBlast.Instance.WhenEquipped()],
+        Price = 400,
     };
 
     public static readonly ItemDef[] AllRings = [RingOfFeatherstep, SpiritsightRing, GrimRing, RingOfTheWild, RingOfTheRam];

@@ -28,6 +28,7 @@ public interface IEntity
     public IEnumerable<Fact> GetAllFacts(PHContext? ctx);
     public void CleanupMarkedFacts();
     public Fact AddFact(LogicBrick brick, int? duration = null, int count = 1);
+    public Fact? FindFact(LogicBrick brick);
     public void RemoveStack(LogicBrick brick, int count = 1);
     public void DecrementActiveFact();
     public void ExpireFacts();
@@ -442,9 +443,9 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
             AddFact(c);
     }
     private readonly List<Fact> Facts = [];
-
     public int FactCount => Facts.Count;
     public Fact FactAt(int i) => Facts[i];
+    public Fact? FindFact(LogicBrick brick) => LiveFacts.FirstOrDefault(x => x.Brick == brick);
 
     public IEnumerable<Fact> LiveFacts => Facts.Where(x => !x.MarkedForRemoval);
 

@@ -144,6 +144,12 @@ if (args.Length > 0 && args[0] == "--monsters")
     return;
 }
 
+if (args.Length > 0 && args[0] == "--items")
+{
+    MonsterTable.PrintItems();
+    return;
+}
+
 if (args.Length > 0)
 {
     var field = typeof(TestLevel).GetField(args[0]);

@@ -24,6 +24,8 @@ public static class Grammar
         
         // Handle "X of Y" patterns - pluralize first word
         int ofIdx = s.IndexOf(" of ");
+        if (ofIdx < 0)
+            ofIdx = s.IndexOf(" labelled ");
         if (ofIdx > 0)
             return PluralWord(s[..ofIdx]) + s[ofIdx..];
         

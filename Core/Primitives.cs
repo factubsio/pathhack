@@ -23,6 +23,8 @@ public readonly record struct Pos(int X, int Y) : IFormattable
 
     public bool IsDiagonal => X != 0 && Y != 0;
 
+    public Pos Ortho => new(Y, X);
+
     public char Char => (X, Y) switch
     {
         (0, -1) => '↑',

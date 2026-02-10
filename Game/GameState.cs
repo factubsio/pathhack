@@ -358,7 +358,7 @@ public class GameState
 
     public bool YouObserve(IUnit source, string? ifSee, string? sound = null, int hearRadius = 6)
     {
-        bool canSee = lvl.IsVisible(source.Pos);
+        bool canSee = u.Can("can_see") && lvl.IsVisible(source.Pos);
         bool canHear = sound != null && upos.ChebyshevDist(source.Pos) <= hearRadius;
 
         if (canSee && ifSee != null)
@@ -789,6 +789,12 @@ public class GameState
         LogicBrick.FireOnBeforeDamageRoll(source, ctx);
         LogicBrick.FireOnBeforeDamageIncomingRoll(target, ctx);
 
+        if (source.IsPlayer && target is Monster angry && angry.Peaceful)
+        {
+            g.YouObserve(angry, $"{angry:The} gets angry!", $"angry shouting!");
+            angry.Peaceful = false;
+        }
+
         int damage = 0;
         foreach (var dmg in ctx.Damage)
         {
@@ -908,6 +914,13 @@ public class GameState
         if (unit is Player p && p.Quiver == item)
             p.Quiver = null;
         lvl.PlaceItem(item, unit.Pos);
+
+
+        if (unit.IsPlayer && lvl.RoomAt(unit.Pos) is { } room && room.Type == RoomType.Shop)
+        {
+            room.Resident?.FindFact(ShopkeeperBrick.Instance)?.As<ShopState>()?.Give(item);
+        }
+
         Log.Write("drop: {0}", item.Def.Name);
     }
 
@@ -932,12 +945,29 @@ public class GameState
         return last;
     }
 
-    public void DoPickup(IUnit unit, Item item)
+    public int DoPickup(IUnit unit, Item item)
     {
         lvl.RemoveItem(item, unit.Pos);
 
-        unit.Inventory.Add(item);
-        Log.Write("pickup: {0}", item.Def.Name);
+        var maybeRoom = lvl.RoomAt(unit.Pos);
+        Log.Write($"picking up: {unit.IsPlayer}, room:{maybeRoom != null}, shop:{maybeRoom?.Type == RoomType.Shop}");
+        int price = 0;
+        if (unit.IsPlayer && maybeRoom is {} room && room.Type == RoomType.Shop)
+        {
+            price = room.Resident?.FindFact(ShopkeeperBrick.Instance)?.As<ShopState>()?.Take(item) ?? 0;
+        }
+
+        if (item.Def == MiscItems.SilverCrest && unit is Player p)
+        {
+            p.Gold += item.Count;
+        }
+        else
+        {
+            unit.Inventory.Add(item);
+            Log.Write("pickup: {0}", item.Def.Name);
+        }
+
+        return price;
     }
 
     const double XpMultiplier = 2.4;

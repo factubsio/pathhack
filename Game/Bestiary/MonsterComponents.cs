@@ -74,6 +74,7 @@ public static class NaturalWeapons
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Unarmed,
         Material = "flesh",
+        Price = -1,
     };
 
     public static readonly WeaponDef Bite_1d3 = new()
@@ -85,6 +86,7 @@ public static class NaturalWeapons
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
         Material = "tooth",
+        Price = -1,
     };
 
     public static readonly WeaponDef Bite_1d4 = new()
@@ -96,6 +98,7 @@ public static class NaturalWeapons
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
         Material = "tooth",
+        Price = -1,
     };
 
     public static readonly WeaponDef Bite_1d6 = new()
@@ -107,6 +110,7 @@ public static class NaturalWeapons
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
         Material = "tooth",
+        Price = -1,
     };
 
     public static readonly WeaponDef Bite_1d8 = new()
@@ -118,6 +122,7 @@ public static class NaturalWeapons
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
         Material = "tooth",
+        Price = -1,
     };
 
     public static readonly WeaponDef Bite_2d6 = new()
@@ -129,6 +134,7 @@ public static class NaturalWeapons
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
         Material = "tooth",
+        Price = -1,
     };
 
     public static readonly WeaponDef Bite_2d8 = new()
@@ -140,6 +146,7 @@ public static class NaturalWeapons
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
         Material = "tooth",
+        Price = -1,
     };
 
     public static readonly WeaponDef Bite_2d10 = new()
@@ -151,6 +158,7 @@ public static class NaturalWeapons
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
         Material = "tooth",
+        Price = -1,
     };
 
     public static readonly WeaponDef Stomp_1d8 = new()
@@ -162,6 +170,7 @@ public static class NaturalWeapons
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
         Material = "keratin",
+        Price = -1,
     };
 
     public static readonly WeaponDef Stomp_1d10 = new()
@@ -173,6 +182,7 @@ public static class NaturalWeapons
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
         Material = "keratin",
+        Price = -1,
     };
 
     public static readonly WeaponDef Claw_1d2 = new()
@@ -184,6 +194,7 @@ public static class NaturalWeapons
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
         Material = "keratin",
+        Price = -1,
     };
 
     public static readonly WeaponDef Claw_1d3 = new()
@@ -195,6 +206,7 @@ public static class NaturalWeapons
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
         Material = "keratin",
+        Price = -1,
     };
 
     public static readonly WeaponDef Claw_1d4 = new()
@@ -206,6 +218,7 @@ public static class NaturalWeapons
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
         Material = "keratin",
+        Price = -1,
     };
 
     public static readonly WeaponDef Claw_1d6 = new()
@@ -217,6 +230,7 @@ public static class NaturalWeapons
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
         Material = "keratin",
+        Price = -1,
     };
 
     public static readonly WeaponDef Claw_1d8 = new()
@@ -228,6 +242,7 @@ public static class NaturalWeapons
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
         Material = "keratin",
+        Price = -1,
     };
 
     public static readonly WeaponDef DogSlicer = new()
@@ -237,6 +252,7 @@ public static class NaturalWeapons
         DamageType = DamageTypes.Slashing,
         Profiency = Proficiencies.Unarmed,
         MeleeVerb = "swings",
+        Price = -1,
     };
 }
 

@@ -1,3 +1,5 @@
+using System.Linq.Expressions;
+using System.Security;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -353,7 +355,9 @@ public static class LevelGen
         var pos = new Pos(x, y);
         var tile = level[pos];
         
-        // TODO: Don't liquify shop tiles
+        // Don't liquify shop tiles
+        var room = level.RoomAt(pos);
+        if (room?.Type == RoomType.Shop) return;
         
         // Rock or non-edge wall -> Water
         if (tile.Type == TileType.Rock || (tile.Type == TileType.Wall && !edge && Rn2(3) != 0))
@@ -567,6 +571,7 @@ public static class LevelGen
             RoomRule[] shuffled = [.. RoomRules];
             _rng.Shuffle(shuffled);
 
+            bool madeRoom = false;
             foreach (var rule in shuffled)
             {
                 int chance = rule.Chance(level, room);
@@ -575,9 +580,31 @@ public static class LevelGen
                 if (roll >= chance) { Log($"Room {i} {rule.Type}: roll {roll} >= {chance}, skip"); continue; }
                 room.Type = rule.Type;
                 Log($"Room {i} {rule.Type}: roll {roll} < {chance}, assigned");
+                madeRoom = true;
                 break;
             }
+
+            if (madeRoom) break;
         }
+
+        // Shop: depth > 1, rn2(depth) < 4, one door only
+        int depth = level.EffectiveDepth;
+        if (true) //depth > 1 && Rn2(depth) < 4)
+        {
+            var ordinary = level.Rooms.Where(r =>
+                r.Type == RoomType.Ordinary && 
+                !r.HasStairs &&
+                r.Border.Count(p => level[p].Type == TileType.Door) == 1
+            ).ToList();
+            if (ordinary.Count > 0)
+            {
+                var shop = Pick(ordinary);
+                shop.Type = RoomType.Shop;
+                shop.Flags |= RoomFlags.Lit;
+                Log($"Shop assigned");
+            }
+        }
+
     }
 
     static void PopulateRooms(LevelGenContext ctx)
@@ -594,6 +621,9 @@ public static class LevelGen
                     break;
                 case RoomType.GremlinPartyBig:
                     FillGremlinParty(ctx, room, small: false);
+                    break;
+                case RoomType.Shop:
+                    FillShop(ctx, room);
                     break;
                 default:
                     FillOrdinaryRoom(ctx, room);
@@ -633,7 +663,16 @@ public static class LevelGen
             Log($"trapgen: placed {trap.Type} at {pos.Value}");
         }
         
-        // Gold: 1/3 chance (TODO: implement gold)
+        // Gold: 1/3 chance
+        if (Rn2(3) == 0)
+        {
+            var pos = ctx.FindLocationInRoom(room, p => level[p].IsPassable && !level.HasFeature(p));
+            if (pos != null)
+            {
+                int amount = 1 + (Rn2(level.EffectiveDepth + 2) + 1) * (Rn2(30) + 1);
+                level.PlaceItem(Item.Create(MiscItems.SilverCrest, amount), pos.Value);
+            }
+        }
         
         // Items: 1/3 chance for first, then 1/5 for each additional
         if (Rn2(3) == 0)
@@ -641,6 +680,63 @@ public static class LevelGen
             PlaceRoomItem(ctx, room);
             while (Rn2(5) == 0)
                 PlaceRoomItem(ctx, room);
+        }
+    }
+    
+    static void FillShop(LevelGenContext ctx, Room room)
+    {
+        var level = ctx.level;
+        
+        HashSet<Pos> shopTiles = [.. room.Interior];
+
+        var doorPos = room.Border.FirstOrDefault(p => level[p].Type == TileType.Door);
+
+        if (doorPos != default)
+        {
+            var block = doorPos.CardinalNeighbours().First(shopTiles.Contains);
+            Pos inwards = block - doorPos;
+            Pos home;
+
+            var ortho = inwards.Ortho;
+            if (shopTiles.Contains(block + ortho))
+                home = block + ortho;
+            else
+                home = block - ortho;
+
+            // Find interior tile adjacent to door
+            var shk = Monster.Spawn(EconomySystem.Shopkeeper, "shop");
+            var fact = shk.AddFact(ShopkeeperBrick.Instance);
+            var state = fact.As<ShopState>();
+            state.Block = block;
+            state.Door = doorPos;
+            state.Home = home;
+            state.Shopkeeper = shk;
+            state.Room = room;
+            level.PlaceUnit(shk, home);
+            level.GetOrCreateState(doorPos).Door = DoorState.Closed;
+
+            shopTiles.Remove(block);
+            for (int i = 1; i < 100; i++)
+            {
+                Pos p = block + ortho * i;
+                if (!shopTiles.Remove(p)) break;
+            }
+            for (int i = 1; i < 100; i++)
+            {
+                Pos p = block - ortho * i;
+                if (!shopTiles.Remove(p)) break;
+            }
+
+            // Spawn items
+            foreach (var p in shopTiles)
+            {
+                var item = ItemGen.GenerateRandomItem(ctx.level.EffectiveDepth);
+                if (item == null) continue;
+                state.Stock[item] = new();
+                ctx.level.PlaceItem(item, p);
+            }
+
+            room.Resident = shk;
         }
     }
     

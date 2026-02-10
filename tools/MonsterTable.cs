@@ -41,4 +41,22 @@ public static class MonsterTable
             Console.WriteLine($"{m.Name,-24} {m.BaseLevel,3} {m.HpPerLevel,4} {m.AC.Combined,3} {m.AttackBonus,3} {m.DamageBonus,3} {m.LandMove.Value,4} {m.Size,-8} {m.Family ?? "",-10} {grp,-6} {actStr}");
         }
     }
+
+    public static void PrintItems()
+    {
+        var defs = Assembly.GetExecutingAssembly()
+            .GetTypes()
+            .Where(t => t.IsClass && t.IsAbstract && t.IsSealed)
+            .SelectMany(t => t.GetFields(BindingFlags.Public | BindingFlags.Static))
+            .Where(f => f.FieldType.IsAssignableTo(typeof(ItemDef)))
+            .Select(f => (ItemDef)f.GetValue(null)!)
+            .OrderBy(i => i.Class)
+            .ThenBy(i => i.Name);
+
+        Console.WriteLine($"{"Name",-24} {"Class",-10} {"Price",6}");
+        Console.WriteLine(new string('-', 44));
+
+        foreach (var i in defs)
+            Console.WriteLine($"{i.Name,-24} {i.Class,-10} {i.Price,6}");
+    }
 }

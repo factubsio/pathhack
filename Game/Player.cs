@@ -54,6 +54,7 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
     public int CharacterLevel = 0;
     public int XP = 0;
     public int Nutrition = Hunger.Satiated - 1;
+    public long Gold;
     public int HippoCounter;
     public Activity? CurrentActivity;
     public HashSet<string> TakenFeats = [];
@@ -63,6 +64,61 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
     public required DeityDef Deity = null!;
     public required AncestryDef Ancestry = null!;
     public Item? Quiver;
+
+    Room? _currentRoom;
+    public Room? CurrentRoom
+    {
+        get => _currentRoom;
+        set
+        {
+            if (_currentRoom == value) return;
+            var oldRoom = _currentRoom;
+            _currentRoom = value;
+            OnRoomChange(oldRoom, value);
+        }
+    }
+
+    private static void OnRoomChange(Room? from, Room? to)
+    {
+        // Theft check
+        if (from?.Type == RoomType.Shop && from.Resident is { } shk)
+        {
+            var shop = shk.FindFact(ShopkeeperBrick.Instance)?.As<ShopState>();
+            if (shop != null && shop.Bill > 0)
+            {
+                if (shk.Peaceful)
+                {
+                    g.pline($"{shk:The} shouts: \"Thief!\"");
+                    shk.Peaceful = false;
+                }
+
+                foreach (var item in shop.UnpaidItems())
+                    item.Stolen = true;
+            }
+        }
+
+        // Room entry message (first time only)
+        if (to != null && to.Entered && to.Type == RoomType.Shop && to.Resident != null)
+        {
+            if (to.Resident.Peaceful)
+                g.pline("Welcome back to my shop.");
+            else
+                g.pline("Criminal! I'll get you!");
+        }
+        else if (to != null && !to.Entered)
+        {
+            to.Entered = true;
+            var msg = to.Type switch
+            {
+                RoomType.GoblinNest => "You find a goblin prayer circle.",
+                RoomType.GremlinParty => "You stumble across the aftermath of a gremlin party.",
+                RoomType.GremlinPartyBig => "You enter the chaos of a gremlin bender.",
+                RoomType.Shop when to.Resident != null => to.Resident.Peaceful ? "Welcome to my shop!" : "I saw your wanted poster, you're mine!",
+                _ => null
+            };
+            if (msg != null) g.pline(msg);
+        }
+    }
 
     public override bool IsPlayer => true;
 

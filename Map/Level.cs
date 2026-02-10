@@ -114,6 +114,7 @@ public enum RoomType : byte
     GoblinNest,
     GremlinParty,
     GremlinPartyBig,
+    Shop,
 }
 
 [Flags]
@@ -143,7 +144,8 @@ public record class Room(List<Pos> Border, List<Pos> Interior)
     public bool HasStairs => (Flags & RoomFlags.HasStairs) != 0;
     public bool Entered { get; set; }
     public Rect? Bounds { get; init; }
-    
+    public Monster? Resident;
+
     public Pos RandomInterior() => Interior.Pick();
     
     public static Room FromStamp(RoomStamp stamp, RoomType type = RoomType.Ordinary)
@@ -347,7 +349,51 @@ public class Level(LevelId id, int width, int height)
                 }
             }
         }
+        
+        if (unit.IsPlayer) LookHere();
     }
+
+    static void LookHere()
+    {
+        var room = lvl.RoomAt(upos);
+        u.CurrentRoom = room;
+
+        var items = lvl.ItemsAt(upos);
+        if (u.Can("can_see"))
+        {
+            foreach (var item in items)
+            {
+                item.Knowledge |= ItemKnowledge.Seen;
+                if (room?.Type == RoomType.Shop)
+                    room.Resident?.FindFact(ShopkeeperBrick.Instance)?.As<ShopState>()?.DoPrice(item);
+            }
+
+        }
+        if (items.Count == 0) {}
+        else if (items.Count == 1)
+            g.pline($"You see here {items[0]:an}.");
+        else if (items.Count >= 5)
+            g.pline("There are {0} items here.", items.Count >= 10 ? "many" : "several");
+        else
+            g.pline("There are {0} items here.", items.Count);
+
+        foreach (var n in upos.Neighbours())
+        {
+            if (!lvl.Traps.TryGetValue(n, out var trap) || trap.PlayerSeen) continue;
+
+            using var ctx = PHContext.Create(Monster.DM, Target.From(u));
+            if (CreateAndDoCheck(ctx, "perception", trap.DetectDC, "trap"))
+            {
+                g.pline("You find a trap.");
+                u.ObserveTrap(trap);
+            }
+        }
+
+        var cellMsg = lvl.GetState(upos)?.Message;
+        if (cellMsg != null)
+            g.pline(cellMsg);
+    }
+
 
     public void RemoveUnit(IUnit unit)
     {
