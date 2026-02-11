@@ -62,8 +62,6 @@
 ## Breadth - Dungeon
 - [x] Special levels, templates
 - [x] More monsters
-- [ ] More rooms
-- [ ] Inclusions
 - [x] Traps (one so far, pit, but more should be easy, not generated though)
 
 ## Spells
@@ -73,56 +71,45 @@
 - [x] One spell (cure light wounds) [we also done burning hands and magic missile]
 
 ## Economy
-- [ ] Gold
-- [ ] Shops
+- [x] Gold (silver crests)
+- [x] Shops (shopkeeper, pricing, theft)
 
 ## Breadth - Consumables
-- [ ] Potion of healing, quaff
-- [ ] Scroll of teleport, read
+- [x] Potion of healing, quaff (8 potions: healing, speed, paralysis, antivenom, omen, panacea, false life, lesser invisibility)
+- [x] Scroll of teleport, read (4 scrolls: magic mapping, identify, teleportation, fire)
 
 ## Warpriest - Fervor
-- [ ] Fervor pool (Wis-based)
-- [ ] Spend fervor to swift-cast self buff spell
-- [ ] Fervor regen (slow or per-level)
+- [x] Fervor pool (Wis-based)
+- [x] Spend fervor to swift-cast self buff spell
+- [x] Fervor regen
 
 ## FOV & Memory
 - [x] FOV/LOS
 - [x] Remembered tiles
 
 ## Breadth - More Monsters
-- [ ] Fourth monster
-- [ ] Fifth monster
-- [ ] Monster abilities (one that hits hard, one that's fast)
+- [x] Fourth monster
+- [x] Fifth monster
+- [x] Monster abilities (fire breath, war chant, pounce, constrict, web spit, daze, TK projectile, etc.)
 
 ## Warpriest - Sacred Weapon Enhancement
-- [ ] Spend fervor to enhance weapon (+1, or flaming, etc.)
-- [ ] Duration-based buff
+- [x] Spend fervor to enhance weapon (+1, or flaming, etc.)
+- [x] Duration-based buff
 
 ## ID Game
-- [ ] Unidentified appearances
-- [ ] ID on use
-- [ ] Knowledge screen
+- [x] Unidentified appearances (potions, scrolls, rings, amulets, boots, gloves, cloaks)
+- [x] ID on use
+- [x] Knowledge screen (discoveries)
 
 ## Breadth - More Items
-- [ ] Wand (fire)
-- [ ] Ring (protection)
-- [ ] Third armor type
-
-## Warpriest - Major Blessing
-- [ ] Major blessing unlocks at level X
-- [ ] Stronger active ability
+- [x] Ring (featherstep, spiritsight, grim, wild, ram)
+- [x] Third armor type (6 armors: leather, chain shirt, hide, breastplate, splint, full plate)
 
 ## XP & Leveling
 - [x] XP from kills
 - [x] Level up
 - [x] HP/stat increases
-- [ ] New spell slot levels at appropriate levels
-
-## Second Class - Oracle
-- [ ] Oracle available at creation
-- [ ] Mystery selection
-- [ ] Curse applies
-- [ ] First revelation
+- [x] New spell slot levels at appropriate levels (MediumCaster table, pools granted via progression)
 
 ## Win Path
 - [x] Get mcguffin from branch
@@ -131,41 +118,99 @@
 - [x] WINNER IS YOU
 
 ## More Level Gen
-- [ ] Branches, caves?
-
-## Iterate
-- [ ] More blessings, mysteries, monsters, items, spells...
-- [ ] Autopickup
-
-## More More Level Gen
-- [ ] More inclusions
-- [ ] More templates
+- [x] Branches (DungeonResolver, branch templates, crypt, trunau, end shrine)
 
 ## Features
 - [x] CellState has feature type, rendered
 - [x] CellState has "message", displayed when move over
-- [ ] Feature memory and farlook
+- [x] Feature memory and farlook
 
 ## Monster tagging
-- [ ] Monster templates, like zombie
-- [ ] Tag monsters so spells can affect (sun blessing vs undead)
+- [x] Monster templates (skeleton, zombie)
+- [x] Tag monsters so spells can affect (CreatureTypes, sun blessing vs undead)
+
+## Food
+- [x] Hunger system (satiated/normal/hungry/weak/fainting)
+- [x] Eating (corpses, cooking quick/careful)
+- [x] HUNGRY HUNGRY HIPPOS
+- [x] Food poisoning
+
+## Rune System
+- [x] Weapon potency, striking, property runes (flaming/frost/shock)
+- [x] Item generation tables by depth
+
+## Afflictions
+- [x] Affliction system (staged, ticking, saves)
+- [x] Snake venom, spider venom, filth fever, food poisoning
+
+## General Feats
+- [x] Fleet, Toughness, Blind Fight, Feather Step, Trap Sense, Evasion, Power Attack, Reckless Attack
+
+## Ancestries
+- [x] They exist, they can be picked, there is no mechanical effect
 
 ## LORE DUMPS
 - [x] Much lore is dumped, uses rich text and full screen to make people ignore it more
 
-## MISC
+## MISC (done)
+- [x] ground fx (grease, vomit)
+- [x] launchers (bow/thrown weapon support — thrown works, bows have no ammo system yet)
+- [x] generate traps
+- [x] shift move sucks still
+
+---
+
+## TODO
+
+### Warpriest - Major Blessing
+- [ ] Major blessing unlocks at level X
+- [ ] Stronger active ability
+
+### Warpriest - Quest Path
+- [ ] Class features/spells to CL11
+- [ ] Shared meaty branch (1 of 9 pool, 3 per game)
+- [ ] Warpriest-specific quest branch
+
+### Second Class - Oracle
+- [ ] Oracle available at creation
+- [ ] Mystery selection
+- [ ] Curse applies
+- [ ] First revelation
+
+### Level Gen
+- [ ] Caves
+- [ ] More rooms
+- [ ] More inclusions
+- [ ] More templates
+
+### Iterate
+- [ ] More blessings, mysteries, monsters, items, spells...
+- [ ] Autopickup
+
+### MISC
 - [ ] door opening not always 100% success
 - [ ] kicking (doors, monsters, items)
 - [ ] chests (locked, trapped)
-- [ ] altars/parayer
+- [ ] altars/prayer
 - [ ] fountains and other features
 - [ ] water/lava
-- [ ] ground fx (grease) ?
-- [ ] launchers - add to PHContext?
 - [ ] MORE traps
-- [ ] generate traps
 - [ ] disarm traps?
-- [ ] shift move sucks still
-
 - [ ] testing, we have done some stuff, hooked logicbricks, added some harness, early days
-
+- [ ] wands (real ones, not dummy)
+- [ ] ancestry racial abilities
+- [ ] FactSystem.cs split (UnitSystem.cs)
+- [ ] digging
+- [ ] flying
+- [ ] BUC (blessed/cursed) - flag exists, mechanics don't
+- [ ] resistances (energy res is just DR for elements, immunity only from ancestry/artifacts)
+- [ ] telepathy/ESP (DetectAllBuff or whatever, infra is basically there)
+- [ ] stoning/petrification + carry-a-cure pressure
+- [ ] instadeaths: drowning, lava (water blocks movement now, add bullrush to monsters and enjoy)
+- [ ] corpse effects/intrinsics (cooking items: portable stove, adventurer's kit, alchemist's alembic for distilling)
+- [ ] containers (bags, boh, bohexplosion obviously)
+- [ ] wishing (the wish pipeline: outsider pickup → dispatcher → sorting → deity, bureaucracy scales with player standing)
+- [ ] sacrifice (temples by alignment step? anti-scum somehow, not nh sac spam)
+- [ ] throne rooms, zoos, more special room types
+- [ ] pets/companions (do with druid first, summoner eidolon needs ui, cavalier tbd)
+- [ ] polymorph/wildshape (CurrentForm on player, hang components off it, druid-gated)
