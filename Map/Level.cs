@@ -97,6 +97,7 @@ public record class Branch(string Id, string Name, int MaxDepth, ConsoleColor Co
     public List<ResolvedLevel> ResolvedLevels { get; init; } = [];
     public int? EntranceDepthInParent { get; init; }
     public HashSet<int> BlockedEntranceDepths { get; init; } = [];
+    public bool Discovered { get; set; }
 }
 
 public readonly record struct LevelId(Branch Branch, int Depth)
@@ -207,6 +208,7 @@ public class Level(LevelId id, int width, int height)
     public ConsoleColor? WallColor;
     public string? FirstIntro;
     public string? ReturnIntro;
+    public string? Described;
     public int GeometryVersion;
 
     public bool UnderConstruction = true;

@@ -218,7 +218,7 @@ while (true)
     var dungeon = g.Branches["dungeon"];
 
     u = Create(creation.Class!, creation.Deity!, creation.Ancestry!);
-    if (u.Class == ClassDefs.Developer)
+    if (u.Class.id == "developer")
     {
         g.DebugMode = true;
         Input.InitDebugCommands();
@@ -232,6 +232,7 @@ while (true)
     Log.Write($"hp => {u.HP.Max}");
 
     LevelId startId = new(dungeon, 1);
+    dungeon.Discovered = true;
     Level startLevel = LevelGen.Generate(startId, g.Seed);
 
 

@@ -533,6 +533,12 @@ public class GameState
         MonsterSpawner.TryRuntimeSpawn(lvl);
         Perf.Stop("Runtime spawn");
 
+        // Discover branches whose stairs are visible
+        if (lvl.BranchDown is { } bd && lvl.BranchDownTarget is { } bdt && (upos == bd || lvl.IsVisible(bd)))
+            bdt.Branch.Discovered = true;
+        if (lvl.BranchUp is { } bu && lvl.BranchUpTarget is { } but && (upos == bu || lvl.IsVisible(bu)))
+            but.Branch.Discovered = true;
+
         UI.Draw.DrawCurrent();
         Perf.EndRound();
         CurrentRound++;
@@ -627,6 +633,12 @@ public class GameState
         for (int y = 0; y < lvl.Height; y++)
         for (int x = 0; x < lvl.Width; x++)
             lvl.UpdateMemory(new(x, y), includeItems: false);
+
+        if (lvl.BranchDown is { } bd && lvl.BranchDownTarget is { } bdt)
+            bdt.Branch.Discovered = true;
+        if (lvl.BranchUp is { } bu && lvl.BranchUpTarget is { } but)
+            but.Branch.Discovered = true;
+
         pline("A map coalesces in your mind.");
     }
 

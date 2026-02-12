@@ -95,6 +95,47 @@ public class GrantTempHp() : ActionBrick("Grant Temp HP")
     }
 }
 
+public class LearnDungeon() : ActionBrick("Learn Dungeon")
+{
+    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
+    {
+        whyNot = "";
+        return true;
+    }
+
+    public override void Execute(IUnit unit, object? data, Target target)
+    {
+        foreach (var branch in g.Branches.Values)
+            branch.Discovered = true;
+        g.pline("You learn the layout of the dungeon.");
+    }
+}
+
+public class GenAllLevels() : ActionBrick("Gen All Levels")
+{
+    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
+    {
+        whyNot = "";
+        return true;
+    }
+
+    public override void Execute(IUnit unit, object? data, Target target)
+    {
+        Branch branch = u.Level.Branch;
+        int count = 0;
+        for (int d = 1; d <= branch.MaxDepth; d++)
+        {
+            LevelId id = new(branch, d);
+            if (!g.Levels.ContainsKey(id))
+            {
+                g.Levels[id] = LevelGen.Generate(id, g.Seed);
+                count++;
+            }
+        }
+        g.pline($"Generated {count} levels of {branch.Name}.");
+    }
+}
+
 public static partial class ClassDefs
 {
     public static ClassDef Developer => new()
@@ -166,6 +207,8 @@ public static partial class ClassDefs
             p.AddAction(new PoisonSelf());
             p.AddAction(new GrantProtection());
             p.AddAction(new GrantTempHp());
+            p.AddAction(new LearnDungeon());
+            p.AddAction(new GenAllLevels());
             foreach (var blessing in Blessings.All)
                 blessing.ApplyMinor(p);
         },

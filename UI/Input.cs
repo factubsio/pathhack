@@ -73,7 +73,7 @@ public static partial class Input
 
     static readonly List<SpecialCommand> _specialCommands = [
         new(ConsoleKey.F, ConsoleModifiers.Control, "Use ability", ShowAbilities),
-        new(ConsoleKey.O, ConsoleModifiers.Control, "Branch overview", ShowBranchOverview),
+        new(ConsoleKey.O, ConsoleModifiers.Control, "Branch overview", DungeonOverview.Show),
         new(ConsoleKey.X, ConsoleModifiers.Control, "Character info", ShowCharacterInfo),
         new(ConsoleKey.P, ConsoleModifiers.Control, "Message history", ShowMessageHistory),
     ];
@@ -431,53 +431,6 @@ public static partial class Input
         var picked = menu.Display(MenuMode.PickOne);
         if (picked.Count == 0) return;
         ResolveTargetAndExecute(picked[0]);
-    }
-
-    static void ShowBranchOverview()
-    {
-        Branch branch = u.Level.Branch;
-        while (true)
-        {
-            var menu = new Menu<string>();
-            menu.Add($"{branch.Name}: levels 1 to {branch.MaxDepth}", LineStyle.Heading);
-            
-            for (int d = 1; d <= branch.MaxDepth; d++)
-            {
-                List<string> features = [];
-                var resolved = branch.ResolvedLevels[d - 1];
-                
-                if (resolved.Template != null) features.Add(resolved.Template.DisplayName);
-                if (resolved.BranchDown != null) features.Add($"Stairs down to {g.Branches[resolved.BranchDown].Name}");
-                if (resolved.BranchUp != null) features.Add($"Stairs up to {g.Branches[resolved.BranchUp].Name}");
-                
-                bool isHere = branch == u.Level.Branch && d == u.Level.Depth;
-                if (features.Count == 0 && !isHere) continue;
-                
-                string marker = isHere ? " <- You are here" : "";
-                menu.Add($"   Level {d}:{marker}");
-                foreach (var f in features)
-                    menu.Add($"      {f}");
-            }
-
-            if (branch.Name != "Dungeon")
-            {
-                menu.Add("");
-                menu.Add("(tab) switch branch, (esc) close");
-                menu.AddHidden('\t', "switch");
-
-                var result = menu.Display(MenuMode.PickOne);
-                if (result.Count == 0 || result[0] != "switch") break;
-
-                // Toggle to main or back to current
-                branch = branch == g.Branches["dungeon"] ? u.Level.Branch : g.Branches["dungeon"];
-            }
-            else
-            {
-                menu.Display(MenuMode.None);
-                break;
-            }
-            
-        }
     }
 
     static void ShowCharacterInfo()
