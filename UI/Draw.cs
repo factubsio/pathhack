@@ -92,7 +92,7 @@ public class ScreenBuffer(int width, int height)
         Ignore = false;
     }
 
-    public void Deactivate() => Ignore = true;
+    public void Deactivate() { Ignore = true; Draw.Invalidate(); Draw.Blit(); }
 
     public LayerScope Activate(bool fullScreen = false)
     {

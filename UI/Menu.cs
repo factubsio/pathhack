@@ -58,8 +58,11 @@ public class Menu<T>
         {
             Draw.ClearOverlay();
             Draw.Overlay.FullScreen = fullscreen;
-            var pageItems = _items.Skip(page * maxLines).Take(maxLines).ToList();
-            int pageOffset = page * maxLines;
+            int firstPageSize = InitialPage < 0 ? (_items.Count - 1) % maxLines + 1 : maxLines;
+            int skip = page == 0 ? 0 : firstPageSize + (page - 1) * maxLines;
+            int take = page == 0 ? firstPageSize : maxLines;
+            var pageItems = _items.Skip(skip).Take(take).ToList();
+            int pageOffset = skip;
             
             var lines = new List<(string Text, LineStyle Style)>();
             for (int i = 0; i < pageItems.Count; i++)
@@ -84,9 +87,11 @@ public class Menu<T>
             lines.Add((prompt, LineStyle.Text));
 
             int menuHeight = lines.Count + 2;
+            if (InitialPage < 0 && page == 0)
+                menuHeight = Math.Max(menuHeight, maxLines + 3);
             Draw.OverlayFill(menuX, startY, menuWidth, menuHeight);
 
-            int y = startY + 1;
+            int y = startY + 1 + (menuHeight - 2 - lines.Count);
             foreach (var (text, style) in lines)
             {
                 if (style == LineStyle.SubHeading)

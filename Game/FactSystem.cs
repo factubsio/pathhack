@@ -920,14 +920,16 @@ public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) :
 
     public void AddAction(ActionBrick action)
     {
+        if (!Actions.Contains(action))
+            ActionData[action] = action.CreateData();
         Actions.Add(action);
-        ActionData[action] = action.CreateData();
     }
 
     public void RemoveAction(ActionBrick action)
     {
         Actions.Remove(action);
-        ActionData.Remove(action);
+        if (!Actions.Contains(action))
+            ActionData.Remove(action);
     }
 
     public abstract ActionCost LandMove { get; }

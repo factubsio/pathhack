@@ -44,6 +44,7 @@ public static partial class Input
         ["name"] = new("name", "Name an item type", ArgType.None, _ => CallItem()),
         ["dismiss"] = new("dismiss", "Dismiss a maintained buff", ArgType.None, _ => DismissAction.DoDismiss(u)),
         ["exp"] = new("exp", "", ArgType.None, _ => DebugExp(), Hidden: true),
+        ["wish"] = new("wish", "Wish for an item", ArgType.String("For what do you wish?"), DoWish, Hidden: true),
     };
 
     static readonly Dictionary<char, Command> _commands = new()
@@ -85,6 +86,15 @@ public static partial class Input
         int needed = Progression.XpForLevel(u.CharacterLevel + 1) - u.XP;
         if (needed > 0) g.GainExp(needed);
         g.pline($"XP set to {u.XP}. Level up available.");
+    }
+
+    static void DoWish(CommandArg arg)
+    {
+        if (arg is not StringArg s || string.IsNullOrWhiteSpace(s.Value)) return;
+        var item = Pathhack.Wish.WishParser.Parse(s.Value);
+        if (item == null) { g.pline("Nothing happens."); return; }
+        u.Inventory.Add(item);
+        g.pline($"{item.InvLet} - {item}.");
     }
 
     public static void DoLevelUp()
@@ -391,7 +401,7 @@ public static partial class Input
         menu.Add("Use which ability?", LineStyle.Heading);
         char let = 'a';
         string whyNot;
-        foreach (var action in u.Actions)
+        foreach (var action in u.Actions.Distinct())
         {
             var data = u.ActionData.GetValueOrDefault(action);
             bool ready = action.CanExecute(u, data, Target.None, out whyNot);
