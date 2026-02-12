@@ -193,6 +193,8 @@ public class GameState
     {
         DeathReason = reason;
         Running = false;
+        BlackBox.Record();
+        Dump.DumpLog();
         Perf.Dump();
         Console.Clear();
         Console.SetCursorPosition(0, 0);
@@ -541,6 +543,9 @@ public class GameState
             but.Branch.Discovered = true;
 
         UI.Draw.DrawCurrent();
+        Perf.Start();
+        BlackBox.Record();
+        Perf.Stop("BlackBox");
         Perf.EndRound();
         CurrentRound++;
     }

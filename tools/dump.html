@@ -32,6 +32,26 @@ body {
 }
 #messages div { margin: 1px 0; }
 #header { margin-bottom: 1em; color: #fff; }
+#controls {
+  margin-bottom: 0.5em;
+  display: flex;
+  align-items: center;
+  gap: 1em;
+}
+#slider { width: 40em; }
+#frame-label { color: #aaa; }
+#play {
+  background: #444;
+  color: #fff;
+  border: 1px solid #666;
+  border-radius: 4px;
+  padding: 2px 10px;
+  width: 2.5em;
+  text-align: center;
+  cursor: pointer;
+  font-size: 14px;
+}
+#play:hover { background: #555; }
 #player-state {
   background: #111;
   padding: 0.5em;
@@ -56,7 +76,9 @@ body {
   padding: 6px 10px;
   border-radius: 4px;
   border: 1px solid #555;
-  white-space: nowrap;
+  white-space: normal;
+  width: max-content;
+  max-width: 30em;
   position: absolute;
   z-index: 10;
   top: 1.4em;
@@ -85,16 +107,23 @@ body {
 .c13 { color: #f5f; }
 .c14 { color: #5ff; }
 .c15 { color: #fcfcfc; }
+.mem { opacity: 0.4; }
 </style>
 </head>
 <body>
 <div id="header"></div>
+<div id="controls">
+  <button id="play">▶</button>
+  <input type="range" id="slider" min="0" value="0">
+  <span id="frame-label"></span>
+</div>
 <div id="content">
   <div id="map"></div>
   <div id="player-state"></div>
   <div id="messages"></div>
 </div>
 <div id="sections"></div>
+<script>/*__DUMP_DATA__*/</script>
 <script type="module" src="dump-view.js"></script>
 </body>
 </html>

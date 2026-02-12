@@ -8,4 +8,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="tools/dump.html" LogicalName="dump.html" />
+    <EmbeddedResource Include="tools/dump-view.js" LogicalName="dump-view.js" />
+  </ItemGroup>
+
 </Project>

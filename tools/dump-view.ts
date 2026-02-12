@@ -28,8 +28,8 @@ interface Frame {
   height: number;
   chars: number[][];
   colors: number[][];
+  vis: number[][];
   tips: number[][];
-  tipTable: string[];
   messages: string[];
   player: PlayerState;
 }
@@ -82,19 +82,24 @@ interface DumpData {
   vanquished: Record<string, number>;
   monsters: Record<string, MonsterEntry>;
   items: Record<string, ItemEntry>;
+  tipTable: string[];
   frames: Frame[];
 }
 
+declare const DATA: DumpData | undefined;
+
 async function load(): Promise<DumpData> {
+  if (typeof DATA !== "undefined") return DATA;
   const resp = await fetch("/dump.json");
   return resp.json();
 }
 
 const WALL = 1; // SOH, marker for walls
+const WALL_VIS = 4; // bit in vis array
 const DOOR_CLOSED = "+".charCodeAt(0);
 
-function isWallLike(ch: number): boolean {
-  return ch === WALL || ch === DOOR_CLOSED;
+function isWallLike(frame: Frame, x: number, y: number): boolean {
+  return (frame.vis[y][x] & WALL_VIS) !== 0;
 }
 
 // bitmask: N=1 E=2 S=4 W=8
@@ -118,12 +123,11 @@ const BOX: Record<number, string> = {
 };
 
 function wallChar(frame: Frame, x: number, y: number): string {
-  const c = frame.chars;
   let mask = 0;
-  if (y > 0 && isWallLike(c[y - 1][x])) mask |= 1;
-  if (x < frame.width - 1 && isWallLike(c[y][x + 1])) mask |= 2;
-  if (y < frame.height - 1 && isWallLike(c[y + 1][x])) mask |= 4;
-  if (x > 0 && isWallLike(c[y][x - 1])) mask |= 8;
+  if (y > 0 && isWallLike(frame, x, y - 1)) mask |= 1;
+  if (x < frame.width - 1 && isWallLike(frame, x + 1, y)) mask |= 2;
+  if (y < frame.height - 1 && isWallLike(frame, x, y + 1)) mask |= 4;
+  if (x > 0 && isWallLike(frame, x - 1, y)) mask |= 8;
   return BOX[mask];
 }
 
@@ -184,22 +188,28 @@ function renderFrame(frame: Frame, data: DumpData): void {
     row.className = "row";
 
     for (let x = 0; x < frame.width; x++) {
+      const v = frame.vis[y][x];
+      if (v === 0) { row.appendChild(document.createTextNode(" ")); continue; }
+
       const raw = frame.chars[y][x];
       const ch = raw === WALL ? wallChar(frame, x, y) : String.fromCharCode(raw);
       const color = frame.colors[y][x];
       const tipIdx = frame.tips[y][x];
+      const dim = v === 1;
 
       if (tipIdx > 0) {
-        const name = frame.tipTable[tipIdx - 1];
+        const name = data.tipTable[tipIdx - 1];
         const span = document.createElement("span");
         span.className = `tip c${color}`;
+        if (dim) span.classList.add("mem");
         span.textContent = ch;
         const tip = makeTip(name, data);
         if (tip) span.appendChild(tip);
         row.appendChild(span);
-      } else if (color !== 7) { // 7 = Gray, default
+      } else if (color !== 7 || dim) {
         const span = document.createElement("span");
         span.className = `c${color}`;
+        if (dim) span.classList.add("mem");
         span.textContent = ch;
         row.appendChild(span);
       } else {
@@ -211,10 +221,18 @@ function renderFrame(frame: Frame, data: DumpData): void {
 
   const messages = document.getElementById("messages")!;
   messages.innerHTML = "";
-  for (const msg of frame.messages) {
-    const div = document.createElement("div");
-    div.textContent = msg;
-    messages.appendChild(div);
+}
+
+function renderMessages(data: DumpData, upToIdx: number): void {
+  const el = document.getElementById("messages")!;
+  el.innerHTML = "";
+  for (let i = upToIdx; i >= 0; i--) {
+    const msgs = data.frames[i].messages;
+    for (let j = msgs.length - 1; j >= 0; j--) {
+      const div = document.createElement("div");
+      div.textContent = msgs[j];
+      el.appendChild(div);
+    }
   }
 }
 
@@ -270,10 +288,55 @@ function renderSections(data: DumpData, frame: Frame): void {
 async function main(): Promise<void> {
   const data = await load();
   renderHeader(data);
-  const frame = data.frames[0];
-  renderFrame(frame, data);
-  renderPlayerState(frame);
-  renderSections(data, frame);
+
+  const slider = document.getElementById("slider") as HTMLInputElement;
+  const label = document.getElementById("frame-label")!;
+  const last = data.frames.length - 1;
+  slider.max = String(last);
+
+  // Read initial frame from hash
+  const hash = parseInt(location.hash.slice(1));
+  let current = (hash >= 0 && hash <= last) ? hash : last;
+  slider.value = String(current);
+
+  function show(idx: number): void {
+    current = idx;
+    const frame = data.frames[idx];
+    label.textContent = `Round ${frame.round} (${idx + 1}/${data.frames.length})`;
+    renderFrame(frame, data);
+    renderPlayerState(frame);
+    renderMessages(data, idx);
+    history.replaceState(null, "", `#${idx}`);
+  }
+
+  const playBtn = document.getElementById("play")!;
+  let playing = false;
+  let timer: ReturnType<typeof setInterval> | null = null;
+
+  function togglePlay(): void {
+    playing = !playing;
+    playBtn.textContent = playing ? "⏸" : "▶";
+    if (playing) {
+      if (current >= last) { current = 0; slider.value = "0"; show(0); }
+      timer = setInterval(() => {
+        if (current >= last) { togglePlay(); return; }
+        current++;
+        slider.value = String(current);
+        show(current);
+      }, 200);
+    } else if (timer) {
+      clearInterval(timer);
+      timer = null;
+    }
+  }
+
+  playBtn.addEventListener("click", togglePlay);
+  slider.addEventListener("input", () => {
+    if (playing) togglePlay();
+    show(parseInt(slider.value));
+  });
+  show(current);
+  renderSections(data, data.frames[last]);
 }
 
 main();

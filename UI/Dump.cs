@@ -6,81 +6,64 @@ public static class Dump
 {
     public static void DumpLog()
     {
-        Level level = g.CurrentLevel!;
-        int w = level.Width;
-        int h = level.Height;
+        // Capture final frame if not already recorded this round
+        BlackBox.Record();
 
-        // Build cell grid — full reveal, no FOV
-        int[][] chars = new int[h][];
-        int[][] colors = new int[h][];
-        int[][] tips = new int[h][];
+        Level level = g.CurrentLevel!;
+        Snapshot[] snapshots = BlackBox.Drain();
+
+        // Build global tip table across all frames
         Dictionary<string, int> tipIndex = new();
         List<string> tipTable = [];
 
-        for (int y = 0; y < h; y++)
+        var frames = snapshots.Select(snap =>
         {
-            chars[y] = new int[w];
-            colors[y] = new int[w];
-            tips[y] = new int[w]; // 0 = no tip
-
-            for (int x = 0; x < w; x++)
+            int[][] tips = new int[snap.Height][];
+            for (int y = 0; y < snap.Height; y++)
             {
-                Pos p = new(x, y);
-                Cell cell = ResolveCell(level, p);
-                chars[y][x] = cell.Ch;
-                colors[y][x] = (int)cell.Fg;
-                string? desc = DescribeCell(level, p);
-                if (desc != null)
+                tips[y] = new int[snap.Width];
+                for (int x = 0; x < snap.Width; x++)
                 {
-                    if (!tipIndex.TryGetValue(desc, out int idx))
+                    string? desc = snap.Tips[y][x];
+                    if (desc != null)
                     {
-                        tipTable.Add(desc);
-                        idx = tipTable.Count; // 1-based
-                        tipIndex[desc] = idx;
+                        if (!tipIndex.TryGetValue(desc, out int idx))
+                        {
+                            tipTable.Add(desc);
+                            idx = tipTable.Count;
+                            tipIndex[desc] = idx;
+                        }
+                        tips[y][x] = idx;
                     }
-                    tips[y][x] = idx;
                 }
             }
-        }
 
-        // Recent messages
-        List<string> messages = g.MessageHistory;
-        int msgStart = Math.Max(0, messages.Count - 50);
-        string[] recentMessages = messages.GetRange(msgStart, messages.Count - msgStart).ToArray();
-
-        // Per-frame player state
-        HungerState hunger = Hunger.GetState(u.Nutrition);
-        var playerState = new
-        {
-            hp = u.HP.Current,
-            maxHp = u.HP.Max,
-            tempHp = u.TempHp,
-            ac = u.GetAC(),
-            cl = u.CharacterLevel,
-            xp = u.XP,
-            gold = u.Gold,
-            str = u.Str, dex = u.Dex, con = u.Con,
-            @int = u.Int, wis = u.Wis, cha = u.Cha,
-            hunger = Hunger.GetLabel(hunger),
-            buffs = u.LiveFacts
-                .Where(f => f.Brick.BuffName != null)
-                .Select(f => f.DisplayName)
-                .ToArray(),
-            spellSlots = GetSpellSlots(),
-        };
-
-        var frame = new
-        {
-            round = g.CurrentRound,
-            width = w,
-            height = h,
-            chars,
-            colors,
-            tips,
-            tipTable = tipTable.ToArray(),
-            messages = recentMessages,
-            player = playerState,
-        };
+            return new
+            {
+                round = snap.Round,
+                width = snap.Width,
+                height = snap.Height,
+                chars = snap.Chars,
+                colors = snap.Colors,
+                vis = snap.Vis,
+                tips,
+                messages = snap.Messages,
+                player = new
+                {
+                    hp = snap.Hp, maxHp = snap.MaxHp, tempHp = snap.TempHp,
+                    ac = snap.AC, cl = snap.CL, xp = snap.XP, gold = snap.Gold,
+                    str = snap.Str, dex = snap.Dex, con = snap.Con,
+                    @int = snap.Int, wis = snap.Wis, cha = snap.Cha,
+                    hunger = snap.Hunger,
+                    buffs = snap.Buffs,
+                    spellSlots = snap.SpellSlots.Select(s => new
+                    {
+                        level = s.Level, current = s.Current, max = s.Max,
+                        effectiveMax = s.EffectiveMax, ticks = s.Ticks, regenRate = s.RegenRate,
+                    }).ToArray(),
+                },
+            };
+        }).ToArray();
 
         // Per-game data
         var inventory = u.Inventory.Select(i => $"{i.InvLet} - {i.RealName}").ToArray();
@@ -111,28 +94,44 @@ public static class Dump
             vanquished = g.Vanquished,
             monsters = monsterDex,
             items = itemDex,
-            frames = new[] { frame },
+            tipTable = tipTable.ToArray(),
+            frames,
         };
 
-        string json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
+        string json = JsonSerializer.Serialize(data);
         string path = Path.Combine(Environment.CurrentDirectory, "dump.json");
         File.WriteAllText(path, json);
-        g.pline($"Dumped to {path}");
+
+        // Also produce self-contained HTML
+        string? htmlPath = BundleHtml(json);
+
+        g.pline(htmlPath != null ? $"Dumped to {htmlPath}" : $"Dumped to {path}");
     }
 
-    static object[] GetSpellSlots()
+    static string? BundleHtml(string json)
     {
-        List<object> slots = [];
-        for (int lvl = 1; lvl <= 9; lvl++)
-        {
-            var pool = u.GetPool($"spell_l{lvl}");
-            if (pool == null) continue;
-            slots.Add(new { level = lvl, current = pool.Current, max = pool.Max, effectiveMax = pool.EffectiveMax, ticks = pool.Ticks, regenRate = pool.RegenRate });
-        }
-        return slots.ToArray();
+        var asm = System.Reflection.Assembly.GetExecutingAssembly();
+        string? html = ReadResource(asm, "dump.html");
+        string? js = ReadResource(asm, "dump-view.js");
+        if (html == null || js == null) return null;
+
+        html = html.Replace("/*__DUMP_DATA__*/", $"const DATA = {json};");
+        html = html.Replace("<script type=\"module\" src=\"dump-view.js\"></script>", $"<script>{js}</script>");
+
+        string path = Path.Combine(Environment.CurrentDirectory, "dump.html");
+        File.WriteAllText(path, html);
+        return path;
     }
 
-    static Cell ResolveCell(Level level, Pos p)
+    static string? ReadResource(System.Reflection.Assembly asm, string name)
+    {
+        using var stream = asm.GetManifestResourceStream(name);
+        if (stream == null) return null;
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
+    }
+
+    internal static Cell ResolveCell(Level level, Pos p)
     {
         if (level.UnitAt(p) is { } unit)
             return Cell.From(unit.Glyph);
@@ -146,16 +145,47 @@ public static class Dump
         return TileCell(level, p);
     }
 
-    static Cell TileCell(Level level, Pos p)
+    internal static bool IsWallLike(Level level, Pos p)
     {
-        Tile tile = level[p];
-        DoorState door = level.GetState(p)?.Door ?? DoorState.Closed;
-        ConsoleColor fg = Draw.TileColor(level, tile.Type, door);
-        if (tile.Type == TileType.BranchUp)
-            fg = level.BranchUpTarget?.Branch.Color ?? ConsoleColor.Cyan;
-        else if (tile.Type == TileType.BranchDown)
-            fg = level.BranchDownTarget?.Branch.Color ?? ConsoleColor.Cyan;
-        char ch = tile.Type switch
+        var type = level[p].Type;
+        if (type == TileType.Wall) return true;
+        if (type == TileType.Door)
+        {
+            var door = level.GetState(p)?.Door ?? DoorState.Closed;
+            return door is DoorState.Closed or DoorState.Locked;
+        }
+        return false;
+    }
+
+    // FOV-aware cell resolution: returns (cell, visibility) where vis: 0=unseen, 1=memory, 2=visible
+    internal static (Cell Cell, int Vis) ResolveCellFov(Level level, Pos p)
+    {
+        if (level.IsVisible(p) || p == upos)
+            return (ResolveCell(level, p), 2);
+
+        if (level.WasSeen(p) && level.GetMemory(p) is { } mem)
+        {
+            Cell cell;
+            if (mem.TopItem is { } item && !mem.Tile.IsStairs)
+                cell = new(item.Glyph.Value, item.Glyph.Color);
+            else if (mem.Trap is { } trap)
+                cell = new(trap.Glyph.Value, trap.Glyph.Color);
+            else
+            {
+                ConsoleColor fg = mem.Tile.Type == TileType.Wall
+                    ? level.WallColor ?? ConsoleColor.Gray
+                    : ConsoleColor.DarkBlue;
+                cell = TileCell(level, p, mem.Tile.Type, mem.Door, fg);
+            }
+            return (cell, 1);
+        }
+
+        return (Cell.Empty, 0);
+    }
+
+    static Cell TileCell(Level level, Pos p, TileType type, DoorState door, ConsoleColor fg)
+    {
+        char ch = type switch
         {
             TileType.Floor => '.',
             TileType.Wall => '\x01',
@@ -172,7 +202,19 @@ public static class Dump
         return new(ch, fg);
     }
 
-    static string? DescribeCell(Level level, Pos p)
+    static Cell TileCell(Level level, Pos p)
+    {
+        Tile tile = level[p];
+        DoorState door = level.GetState(p)?.Door ?? DoorState.Closed;
+        ConsoleColor fg = Draw.TileColor(level, tile.Type, door);
+        if (tile.Type == TileType.BranchUp)
+            fg = level.BranchUpTarget?.Branch.Color ?? ConsoleColor.Cyan;
+        else if (tile.Type == TileType.BranchDown)
+            fg = level.BranchDownTarget?.Branch.Color ?? ConsoleColor.Cyan;
+        return TileCell(level, p, tile.Type, door, fg);
+    }
+
+    internal static string? DescribeCell(Level level, Pos p)
     {
         if (level.UnitAt(p) is Monster m && !m.IsPlayer)
             return m.ToString();
