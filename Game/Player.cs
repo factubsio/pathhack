@@ -1,3 +1,5 @@
+using System.Security.Principal;
+
 namespace Pathhack.Game;
 
 public class PlayerDef : BaseDef { }
@@ -192,12 +194,18 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
         return 10 + Math.Min(dexMod, dexCap) + mods.Calculate() + ProfBonus(armorProf);
     }
 
-    public ProficiencyLevel GetProficiency(WeaponDef weapon) =>
-        (ProficiencyLevel)Math.Max(
-            (int)GetProficiency(weapon.Profiency),
-            weapon.WeaponType != null ? (int)GetProficiency(weapon.WeaponType) : 0);
+    public (ProficiencyLevel Level, string Source) GetProficiency(WeaponDef weapon)
+    {
+        int fromGroup = (int)GetProficiency(weapon.Profiency);
+        int fromType = weapon.WeaponType != null ? (int)GetProficiency(weapon.WeaponType) : 0;
 
-    public override int GetAttackBonus(WeaponDef weapon) => StrMod + (int)GetProficiency(weapon);
+        if (fromType > fromGroup)
+            return ((ProficiencyLevel)fromType, weapon.WeaponType!);
+        else
+            return ((ProficiencyLevel)fromGroup, weapon.Profiency);
+    }
+
+    public override int GetAttackBonus(WeaponDef weapon) => StrMod + (int)GetProficiency(weapon).Level;
     public override int GetSpellAttackBonus(SpellBrickBase brick) => DexMod + ProfBonus("spell_attack");
 
     public override int GetDamageBonus() => StrMod;

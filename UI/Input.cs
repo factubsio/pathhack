@@ -43,8 +43,6 @@ public static partial class Input
         ["help"] = new("help", "Show help", ArgType.None, _ => ShowHelp()),
         ["name"] = new("name", "Name an item type", ArgType.None, _ => CallItem()),
         ["dismiss"] = new("dismiss", "Dismiss a maintained buff", ArgType.None, _ => DismissAction.DoDismiss(u)),
-        ["exp"] = new("exp", "", ArgType.None, _ => DebugExp(), Hidden: true),
-        ["wish"] = new("wish", "Wish for an item", ArgType.String("For what do you wish?"), DoWish, Hidden: true),
     };
 
     static readonly Dictionary<char, Command> _commands = new()
@@ -78,20 +76,24 @@ public static partial class Input
         new(ConsoleKey.O, ConsoleModifiers.Control, "Branch overview", ShowBranchOverview),
         new(ConsoleKey.X, ConsoleModifiers.Control, "Character info", ShowCharacterInfo),
         new(ConsoleKey.P, ConsoleModifiers.Control, "Message history", ShowMessageHistory),
-        new(ConsoleKey.T, ConsoleModifiers.Control, "Teleport (debug)", DebugTeleport),
     ];
 
     static void DebugExp()
     {
-        // if (!g.DebugMode) return;
         int needed = Progression.XpForLevel(u.CharacterLevel + 1) - u.XP;
         if (needed > 0) g.GainExp(needed);
         g.pline($"XP set to {u.XP}. Level up available.");
     }
 
+    public static void InitDebugCommands()
+    {
+        _extCommands["wish"] = new("wish", "Wish for an item", ArgType.String("For what do you wish?"), DoWish, Hidden: true);
+        _extCommands["exp"] = new("exp", "", ArgType.None, _ => DebugExp(), Hidden: true);
+        _specialCommands.Add(new(ConsoleKey.T, ConsoleModifiers.Control, "Teleport (debug)", DebugTeleport));
+    }
+
     static void DebugTeleport()
     {
-        if (!g.DebugMode) return;
         g.pline("Teleport to?");
         var pos = PickPosition();
         if (pos == null || pos == upos) return;
@@ -100,7 +102,6 @@ public static partial class Input
 
     static void DoWish(CommandArg arg)
     {
-        if (!g.DebugMode) return;
         if (arg is not StringArg s || string.IsNullOrWhiteSpace(s.Value)) return;
         var item = Pathhack.Wish.WishParser.Parse(s.Value);
         if (item == null) { g.pline("Nothing happens."); return; }

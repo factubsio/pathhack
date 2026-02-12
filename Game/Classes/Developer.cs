@@ -168,10 +168,6 @@ public static partial class ClassDefs
             p.AddAction(new GrantTempHp());
             foreach (var blessing in Blessings.All)
                 blessing.ApplyMinor(p);
-            g.DebugMode = true;
-            Log.EnabledTags.Add("cone");
-            Log.EnabledTags.Add("sun");
-            
         },
     };
 }

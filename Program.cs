@@ -1,4 +1,5 @@
 using Pathhack.Dat;
+using Pathhack.Game.Classes;
 using static Pathhack.Map.DepthAnchor;
 
 DateTime lastCtrlC = DateTime.UnixEpoch;
@@ -211,22 +212,24 @@ while (true)
         g.Seed = BitConverter.ToInt32(seed);
     }
 
-    // g.DebugMode = true;
-    // g.Seed = 12345;
-
     Log.Write($"Game seed: {g.Seed}");
     ItemDb.Reset(g.Seed);
     g.Branches = DungeonResolver.Resolve(templates, g.Seed);
     var dungeon = g.Branches["dungeon"];
 
     u = Create(creation.Class!, creation.Deity!, creation.Ancestry!);
+    if (u.Class == ClassDefs.Developer)
+    {
+        g.DebugMode = true;
+        Input.InitDebugCommands();
+    }
+
     u.Initiative = int.MaxValue;
     Input.DoLevelUp(); // Level 1
 
     u.RecalculateMaxHp();
     u.HP.Current = u.HP.Max;
     Log.Write($"hp => {u.HP.Max}");
-
 
     LevelId startId = new(dungeon, 1);
     Level startLevel = LevelGen.Generate(startId, g.Seed);

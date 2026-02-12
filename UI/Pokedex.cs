@@ -208,9 +208,13 @@ public static class Pokedex
 
         if (def is WeaponDef wpn)
         {
-            var prof = u.GetProficiency(wpn);
+            if (wpn.AltProficiencies?.Length > 0)
+                menu.Add($"Group: {wpn.Profiency} [{string.Join(",", wpn.AltProficiencies)}]");
+            else
+                menu.Add($"Group: {wpn.Profiency}");
+            var (prof, profSource) = u.GetProficiency(wpn);
             ConsoleColor? profColor = prof == ProficiencyLevel.Untrained ? ConsoleColor.Red : null;
-            menu.Add($"Proficiency: {prof} ({wpn.Profiency})", color: profColor);
+            menu.Add($"Proficiency: {prof} ({profSource})", color: profColor);
 
             string hands = wpn.Hands == 1 ? "One-handed" : "Two-handed";
             menu.Add($"{hands} {wpn.DamageType.SubCat} weapon.");
