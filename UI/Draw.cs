@@ -516,7 +516,7 @@ public static class Draw
     };
 
 
-    static ConsoleColor TileColor(Level level, TileType t, DoorState door) => t switch
+    internal static ConsoleColor TileColor(Level level, TileType t, DoorState door) => t switch
     {
         TileType.Floor => level.FloorColor ?? ConsoleColor.Gray,
         TileType.Wall => level.WallColor ?? ConsoleColor.Gray,

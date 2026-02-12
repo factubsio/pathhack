@@ -17,6 +17,7 @@
 .kiro
 *mcp.ts
 
+/dump.json
 /game.rec
 
 # User-specific files (MonoDevelop/Xamarin Studio)

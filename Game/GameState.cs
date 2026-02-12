@@ -216,6 +216,7 @@ public class GameState
     public bool DebugMode { get; set; }
     public Dictionary<string, Branch> Branches { get; set; } = [];
     public Dictionary<LevelId, Level> Levels { get; } = [];
+    public Dictionary<string, int> Vanquished { get; } = [];
     public Level? CurrentLevel { get; set; }
     public HashSet<IEntity> PendingFactCleanup { get; } = [];
     public HashSet<IEntity> ActiveEntities { get; } = [];
@@ -871,7 +872,10 @@ public class GameState
                 {
                     g.pline($"You kill {target:the}!");
                     if (target is Monster m)
+                    {
                         g.GainExp(20 * Math.Max(1, m.EffectiveLevel), m.Def.Name);
+                        g.Vanquished[m.Def.Name] = g.Vanquished.GetValueOrDefault(m.Def.Name) + 1;
+                    }
                 }
                 else if (ctx.DeathReason != null)
                     g.YouObserve(target, $"{target:The} dies by {ctx.DeathReason}!");

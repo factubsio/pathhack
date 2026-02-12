@@ -89,6 +89,7 @@ public static partial class Input
     {
         _extCommands["wish"] = new("wish", "Wish for an item", ArgType.String("For what do you wish?"), DoWish, Hidden: true);
         _extCommands["exp"] = new("exp", "", ArgType.None, _ => DebugExp(), Hidden: true);
+        _extCommands["dumplog"] = new("dumplog", "Dump screen to JSON", ArgType.None, _ => Dump.DumpLog(), Hidden: true);
         _specialCommands.Add(new(ConsoleKey.T, ConsoleModifiers.Control, "Teleport (debug)", DebugTeleport));
     }
 

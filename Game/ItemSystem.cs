@@ -103,6 +103,7 @@ public class ItemDb
 
     public bool IsIdentified(ItemDef def) => def.AppearanceCategory == null || _identified.Contains(def);
     public void Identify(ItemDef def) => _identified.Add(def);
+    public IEnumerable<ItemDef> IdentifiedDefs => _identified;
     
     public string? GetCalledName(ItemDef def) => _called.GetValueOrDefault(def);
     public void SetCalledName(ItemDef def, string? name)
@@ -251,6 +252,7 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
 
     public string DisplayName => CostOf(GetDisplayName(Count));
     public string SingleName => CostOf(GetDisplayName(1));
+    public string RealName => GetRealName(Count);
 
     private string CostOf(string displayName)
     {
@@ -325,6 +327,21 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
                 parts.Add(string.Join(" ", props));
         }
         
+        parts.Add(count > 1 ? Def.Name.Plural() : Def.Name);
+        return string.Join(" ", parts);
+    }
+
+    private string GetRealName(int count)
+    {
+        if (CorpseOf != null) return $"{CorpseOf.Name} corpse";
+        List<string> parts = [];
+        if (count > 1) parts.Add($"{count}");
+        if (Def is WeaponDef) parts.Add($"+{Potency}");
+        else if (Def is ArmorDef && Potency > 0) parts.Add($"+{Potency}");
+        if (Fundamental != null && !Fundamental.Def.IsNull)
+            parts.Add($"{Fundamental.Def.DisplayName}/{Fundamental.Def.Quality}");
+        var props = PropertyRunes.Where(r => !r.Def.IsNull).Select(r => r.Def.DisplayName);
+        if (props.Any()) parts.Add(string.Join(" ", props));
         parts.Add(count > 1 ? Def.Name.Plural() : Def.Name);
         return string.Join(" ", parts);
     }
