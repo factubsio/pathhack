@@ -13,6 +13,9 @@ public static class LevelGen
     public static StreamWriter? SharedLog; // for --gen-dungeons, receives final renders
     public static bool ForceRiver = false; // always generate river
     public static bool ForceMiniVault = false; // always generate mini vault
+    public static CaveAlgorithm? ForceAlgorithm; // override level gen algorithm
+    public static int ParamSweep = -1; // parameter sweep index, -1 = off
+    public static int ParamSweepMax = 10; // total number of sweep steps
 
     static void Log(string msg) => _log?.WriteLine(msg);
     static void LogVerbose(string msg) { if (!QuietLog) _log?.WriteLine(msg); }
@@ -68,6 +71,8 @@ public static class LevelGen
             };
             
             var resolved = id.Branch.ResolvedLevels[id.Depth - 1];
+            ctx.level.FloorColor = resolved.FloorColor;
+            ctx.level.WallColor = resolved.WallColor;
             SpecialLevel? special = (ForcedLevel1, id.Depth, resolved.Template) switch
             {
                 ({ } forced, 1, _) => forced,
@@ -80,6 +85,23 @@ public static class LevelGen
                 Log($"GenSpecial: {special.Id}");
                 GenSpecial(ctx, special);
                 Log("GenSpecial done");
+            }
+            else if ((ForceAlgorithm ?? resolved.Algorithm) is { } algo)
+            {
+                Log($"GenCave: {algo} sweep={ParamSweep}");
+                switch (algo)
+                {
+                    case CaveAlgorithm.Worley: CaveGen.GenerateWorley(ctx, WorleyConfig.Sweep(WorleyConfig.Outdoor)); break;
+                    case CaveAlgorithm.WorleyCavern: CaveGen.GenerateWorley(ctx, WorleyConfig.Sweep(WorleyConfig.Cavern)); break;
+                    case CaveAlgorithm.WorleyWarren: CaveGen.GenerateWorley(ctx, WorleyConfig.Sweep(WorleyConfig.Warren)); break;
+                    case CaveAlgorithm.CA: CaveGen.GenerateCA(ctx); break;
+                    case CaveAlgorithm.Drunkard: CaveGen.GenerateDrunkard(ctx); break;
+                    case CaveAlgorithm.BSP: CaveGen.GenerateBSP(ctx); break;
+                    case CaveAlgorithm.Perlin: PerlinNoise.Generate(ctx); break;
+                    case CaveAlgorithm.Circles: CaveGen.GenerateCircles(ctx); break;
+                    case CaveAlgorithm.GrowingTree: CaveGen.GenerateGrowingTree(ctx); break;
+                }
+                Log("GenCave done");
             }
             else
             {
@@ -108,10 +130,25 @@ public static class LevelGen
             {
                 Log("AssignRoomTypes...");
                 AssignRoomTypes(ctx);
+
+                if (ctx.WantsRiver)
+                {
+                    Log("MakeRiver...");
+                    MakeRiver(ctx);
+                    RemoveOrphanWalls(ctx.level);
+                    ctx.level.Outdoors = Rn2(20) > ctx.level.EffectiveDepth;
+                }
+
                 Log("PopulateRooms...");
                 PopulateRooms(ctx);
                 Log("PopulateRooms done");
-            };
+            }
+
+            if (ctx.level.Rooms.Count == 0)
+            {
+                Log("PopulateCave (roomless)...");
+                PopulateCave(ctx);
+            }
             
             LogLevel(ctx.level);
             ctx.level.UnderConstruction = false;
@@ -275,14 +312,9 @@ public static class LevelGen
         MakeCorridors(ctx);
         Log("MakeCorridors done");
 
-        // Rivers (depth 4+, 1/4 chance)
+        // Rivers — defer until after room assignment so shops can be protected
         if (ForceRiver || (ctx.level.EffectiveDepth > 3 && Rn2(4) == 0))
-        {
-            Log("MakeRiver...");
-            MakeRiver(ctx);
-            RemoveOrphanWalls(ctx.level);
-            ctx.level.Outdoors = Rn2(20) > ctx.level.EffectiveDepth;
-        }
+            ctx.WantsRiver = true;
 
         if (ForceMiniVault || (ctx.level.EffectiveDepth >= 3 && Rn2(8) == 0))
         {
@@ -631,6 +663,18 @@ public static class LevelGen
     }
 
     // NH rules from mklev.c for OROOM
+    static void PopulateCave(LevelGenContext ctx)
+    {
+        var level = ctx.level;
+        int count = RnRange(4, 8 + level.EffectiveDepth / 2);
+        for (int i = 0; i < count; i++)
+        {
+            var pos = level.FindLocation(p => level.NoUnit(p) && !level[p].IsStairs);
+            if (pos == null) break;
+            MonsterSpawner.SpawnAndPlace(level, "cave", null, true, pos, true);
+        }
+    }
+
     static void FillOrdinaryRoom(LevelGenContext ctx, Room room)
     {
         var level = ctx.level;
@@ -656,7 +700,12 @@ public static class LevelGen
             var pos = ctx.FindLocationInRoom(room, p => level[p].IsPassable && !level[p].IsStairs && !level.Traps.ContainsKey(p));
             if (pos == null) break;
             
-            Trap trap = Rn2(3) == 0 ? new WebTrap(level.EffectiveDepth) : new PitTrap(level.EffectiveDepth);
+            Trap trap = Rn2(4) switch
+            {
+                0 => new WebTrap(level.EffectiveDepth),
+                1 => new HoleTrap(TrapType.Trapdoor, level.EffectiveDepth),
+                _ => new PitTrap(level.EffectiveDepth),
+            };
             level.Traps[pos.Value] = trap;
             Log($"trapgen: placed {trap.Type} at {pos.Value}");
         }
@@ -1148,6 +1197,17 @@ public class LevelGenContext(TextWriter? log)
     public required Level level;
     public bool NoSpawns;
     public bool NoRoomAssignment;
+    public bool WantsRiver;
+
+    public Pos? FindStairsLocation()
+    {
+        if (level.Rooms.Count > 0)
+        {
+            var r = FindRoom(r => !r.HasStairs) ?? PickRoom();
+            return FindLocationInRoom(r, p => !level.HasFeature(p) && !level[p].IsStructural);
+        }
+        return level.FindLocation(p => !level.HasFeature(p) && !level[p].IsStructural && !level[p].IsStairs);
+    }
     public List<RoomStamp> Stamps = [];
 
     public void Log(string str) => log?.WriteLine(str);

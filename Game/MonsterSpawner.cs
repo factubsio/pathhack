@@ -11,10 +11,16 @@ public static class MonsterSpawner
 
         if (g.Rn2(RuntimeSpawnFrequency) != 0) return;
         
-        // Layered approach like dNH: prefer out of LOS, then out of sight, then anywhere
-        var pos = level.FindLocation(p => level.NoUnit(p) && !level[p].IsStairs && !level.HasLOS(p))
-               ?? level.FindLocation(p => level.NoUnit(p) && !level[p].IsStairs && !level.IsVisible(p))
-               ?? level.FindLocation(p => level.NoUnit(p) && !level[p].IsStairs);
+        const int minDist = 10;
+        bool far(Pos p) => p.ChebyshevDist(upos) >= minDist;
+        bool basic(Pos p) => level.NoUnit(p) && !level[p].IsStairs;
+
+        // Layered: far+no LOS, far+no visible, far, no LOS, anywhere
+        var pos = level.FindLocation(p => basic(p) && far(p) && !level.HasLOS(p))
+               ?? level.FindLocation(p => basic(p) && far(p) && !level.IsVisible(p))
+               ?? level.FindLocation(p => basic(p) && far(p))
+               ?? level.FindLocation(p => basic(p) && !level.HasLOS(p))
+               ?? level.FindLocation(p => basic(p));
         
         if (pos == null) return;
         

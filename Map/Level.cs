@@ -56,7 +56,7 @@ public enum DoorState : byte
     Broken,
 }
 
-public record struct TileMemory(Tile Tile, DoorState Door, Item? TopItem);
+public record struct TileMemory(Tile Tile, DoorState Door, Item? TopItem, Trap? Trap);
 
 public class TileFeature(string id)
 {
@@ -203,6 +203,8 @@ public class Level(LevelId id, int width, int height)
 
     public bool NoInitialSpawns;
     public bool Outdoors;
+    public ConsoleColor? FloorColor;
+    public ConsoleColor? WallColor;
     public string? FirstIntro;
     public string? ReturnIntro;
     public int GeometryVersion;
@@ -243,7 +245,8 @@ public class Level(LevelId id, int width, int height)
         {
             top = _memory[p.Y * Width + p.X]?.TopItem;
         }
-        _memory[p.Y * Width + p.X] = new TileMemory(this[p], GetState(p)?.Door ?? DoorState.Closed, top);
+        Trap? trap = Traps.TryGetValue(p, out var t) && t.PlayerSeen ? t : null;
+        _memory[p.Y * Width + p.X] = new TileMemory(this[p], GetState(p)?.Door ?? DoorState.Closed, top, trap);
     }
 
     public bool IsOpaque(Pos p)
@@ -459,11 +462,22 @@ public class Level(LevelId id, int width, int height)
 
     public Pos? FindLocation(Func<Pos, bool> predicate, int maxAttempts = 100)
     {
-        for (int i = 0; i < maxAttempts; i++)
+        if (Rooms.Count > 0)
         {
-            Room room = Rooms.Pick();
-            Pos p = room.RandomInterior();
-            if (predicate(p)) return p;
+            for (int i = 0; i < maxAttempts; i++)
+            {
+                Room room = Rooms.Pick();
+                Pos p = room.RandomInterior();
+                if (predicate(p)) return p;
+            }
+        }
+        else
+        {
+            for (int i = 0; i < maxAttempts; i++)
+            {
+                Pos p = new(g.Rn2(Width), g.Rn2(Height));
+                if (this[p].Type == TileType.Floor && predicate(p)) return p;
+            }
         }
         return null;
     }

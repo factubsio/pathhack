@@ -78,6 +78,7 @@ public static partial class Input
         new(ConsoleKey.O, ConsoleModifiers.Control, "Branch overview", ShowBranchOverview),
         new(ConsoleKey.X, ConsoleModifiers.Control, "Character info", ShowCharacterInfo),
         new(ConsoleKey.P, ConsoleModifiers.Control, "Message history", ShowMessageHistory),
+        new(ConsoleKey.T, ConsoleModifiers.Control, "Teleport (debug)", DebugTeleport),
     ];
 
     static void DebugExp()
@@ -88,8 +89,18 @@ public static partial class Input
         g.pline($"XP set to {u.XP}. Level up available.");
     }
 
+    static void DebugTeleport()
+    {
+        if (!g.DebugMode) return;
+        g.pline("Teleport to?");
+        var pos = PickPosition();
+        if (pos == null || pos == upos) return;
+        lvl.MoveUnit(u, pos.Value, free: true);
+    }
+
     static void DoWish(CommandArg arg)
     {
+        if (!g.DebugMode) return;
         if (arg is not StringArg s || string.IsNullOrWhiteSpace(s.Value)) return;
         var item = Pathhack.Wish.WishParser.Parse(s.Value);
         if (item == null) { g.pline("Nothing happens."); return; }
@@ -648,7 +659,7 @@ public static partial class Input
             
             if (key.Key == ConsoleKey.Escape) return null;
             
-            if (key.Key == ConsoleKey.Enter || key.KeyChar == '.')
+            if (key.Key == ConsoleKey.Enter || key.KeyChar == '.' || key.KeyChar == ',')
                 return cursor;
             
             if (GetDirection(key.Key) is { } dir)

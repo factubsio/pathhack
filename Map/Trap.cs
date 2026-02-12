@@ -10,6 +10,8 @@ public enum TrapType
     Alarm = 1 << 3,
     Fire = 1 << 4,
     Web = 1 << 5,
+    Trapdoor = 1 << 6,
+    Hole = 1 << 7,
 }
 
 public abstract class Trap(TrapType type, int depth, int detectDelta, int escapeDelta, int escapeBonus)
@@ -107,5 +109,72 @@ public class WebTrap(int depth) : Trap(TrapType.Web, depth, -2, 0, 4)
         }
         g.YouObserve(unit, $"{unit:The} {VTense(unit, "struggle")} in the web.");
         return false;
+    }
+}
+
+public class HoleTrap(TrapType type, int depth) : Trap(type, depth, 2, 0, 0)
+{
+    public override Glyph Glyph => new('^', ConsoleColor.DarkYellow);
+
+    private string Name => Type == TrapType.Trapdoor ? "trapdoor" : "hole";
+
+    public override bool Trigger(IUnit? unit, Item? item)
+    {
+        if (unit == null) return false;
+
+        var below = LevelBelow(u.Level);
+        if (below == null)
+        {
+            g.pline("The floor vibrates ominously, but holds.");
+            return false;
+        }
+
+        if (!unit.IsPlayer)
+        {
+            if (g.YouObserve(unit, $"{unit:The} {VTense(unit, "grab")} the edge of the {Name}."))
+                u.ObserveTrap(this);
+            return false;
+        }
+
+        if (!PlayerSeen && Type == TrapType.Trapdoor)
+            g.YouObserveSelf(unit, "A trapdoor opens beneath you!", $"{unit:The} triggers a trapdoor!");
+        else if (unit.IsAwareOf(this) && g.Rn2(3) == 0)
+        {
+            g.YouObserveSelf(unit, $"You avoid the {Name}.", null);
+            return false;
+        }
+
+        u.ObserveTrap(this);
+
+        using var ctx = PHContext.Create(Monster.DM, Target.From(unit));
+        if (CheckReflex(ctx, DetectDC, "trap"))
+        {
+            g.YouObserveSelf(unit, $"You grab the edge of the {Name}!", $"{unit:The} grabs the edge of the {Name}!");
+            return false;
+        }
+
+        g.YouObserveSelf(unit, $"You fall through the {Name}!", $"{unit:The} falls through the {Name}!");
+
+        var target = below.Value;
+        int floors = 1;
+        while (g.Rn2(4) == 0)
+        {
+            var next = LevelBelow(target);
+            if (next == null) break;
+            target = next.Value;
+            floors++;
+        }
+
+        g.GoToLevel(target, SpawnAt.RandomLegal);
+        if (floors > 1)
+            g.pline($"You fall through {floors} floors!");
+        ctx.Damage.Add(new DamageRoll { Formula = d(floors, 6), Type = DamageTypes.Blunt });
+        DoDamage(ctx);
+        return true;
+    }
+
+    public static LevelId? LevelBelow(LevelId id)
+    {
+        return id.Depth < id.Branch.MaxDepth ? id + 1 : null;
     }
 }

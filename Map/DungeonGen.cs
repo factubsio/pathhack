@@ -28,6 +28,8 @@ public record BranchTemplate(
 )
 {
     public List<LevelRule> Levels { get; init; } = [];
+    public CaveAlgorithm[]? AlgorithmPool { get; init; }
+    public (ConsoleColor Floor, ConsoleColor Wall)[]? ColorPool { get; init; }
 }
 
 public record ResolvedLevel(int LocalIndex, SpecialLevel? Template = null)
@@ -35,6 +37,9 @@ public record ResolvedLevel(int LocalIndex, SpecialLevel? Template = null)
     private readonly List<DungeonGenCommand> GenCommands = [];
     public string? BranchDown { get; set; }
     public string? BranchUp { get; set; }
+    public CaveAlgorithm? Algorithm { get; set; }
+    public ConsoleColor? FloorColor { get; set; }
+    public ConsoleColor? WallColor { get; set; }
 
     public IEnumerable<DungeonGenCommand> Commands => GenCommands;
     public void AddCommand(string debug, Action<LevelGenContext> action) => GenCommands.Add(new(action, debug));
@@ -108,6 +113,21 @@ public static class DungeonResolver
             if (!PlaceLevels(template.Levels, 0, branchLength, resolved, placed))
                 throw new Exception($"Failed to resolve branch {template.Id}");
 
+            // Assign cave algorithms from pool
+            if (template.AlgorithmPool is { } pool)
+                foreach (var rl in resolved)
+                    if (rl.Template == null)
+                        rl.Algorithm = pool[_rng.Next(pool.Length)];
+
+            // Assign colors from pool
+            if (template.ColorPool is { } colors)
+                foreach (var rl in resolved)
+                {
+                    var pick = colors[_rng.Next(colors.Length)];
+                    rl.FloorColor = pick.Floor;
+                    rl.WallColor = pick.Wall;
+                }
+
             // Compute blocked entrance depths from NoBranchEntrance rules
             var blockedDepths = template.Levels
                 .Where(r => r.NoBranchEntrance && placed.ContainsKey(r.Id))
@@ -173,8 +193,7 @@ public static class DungeonResolver
     {
         return ctx =>
         {
-            var r = ctx.FindRoom(r => !r.HasStairs) ?? ctx.PickRoom();
-            var pos = ctx.FindLocationInRoom(r, p => !ctx.level.HasFeature(p) && !ctx.level[p].IsStructural) ?? ctx.Throw<Pos>($"cannot place stairs {type} (no pos)");
+            var pos = ctx.FindStairsLocation() ?? ctx.Throw<Pos>($"cannot place stairs {type}");
             ctx.level.Set(pos, type);
         };
     }
@@ -188,19 +207,14 @@ public static class DungeonResolver
 
             if (!patchExisting)
             {
-                var r = ctx.FindRoom(r => !r.HasStairs) ?? ctx.PickRoom();
-                var pos = ctx.FindLocationInRoom(r, p => !ctx.level.HasFeature(p) && !ctx.level[p].IsStructural) ?? ctx.Throw<Pos>("cannot place portal (no pos)");
+                var pos = ctx.FindStairsLocation() ?? ctx.Throw<Pos>("cannot place portal");
                 ctx.level.Set(pos, type);
             }
 
             if (dir == BranchDir.Down)
-            {
                 ctx.level.BranchDownTarget = to;
-            }
             else
-            {
                 ctx.level.BranchUpTarget = to;
-            }
         };
     }
 

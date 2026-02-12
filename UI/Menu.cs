@@ -5,12 +5,12 @@ public enum LineStyle { Text, Heading, SubHeading, Item }
 
 public class Menu<T>
 {
-    readonly List<(char? Letter, string Text, T? Value, LineStyle Style, char? Category)> _items = [];
+    readonly List<(char? Letter, string Text, T? Value, LineStyle Style, char? Category, ConsoleColor? Color)> _items = [];
     readonly Dictionary<char, T?> _hidden = [];
     public int InitialPage { get; set; }
     
-    public void Add(string line, LineStyle style = LineStyle.Text) => _items.Add((null, line, default, style, null));
-    public void Add(char letter, string text, T value, char? category = null) => _items.Add((letter, text, value, LineStyle.Item, category));
+    public void Add(string line, LineStyle style = LineStyle.Text, ConsoleColor? color = null) => _items.Add((null, line, default, style, null, color));
+    public void Add(char letter, string text, T value, char? category = null) => _items.Add((letter, text, value, LineStyle.Item, category, null));
     public void AddHidden(char letter, T? value) => _hidden[letter] = value;
 
     public List<T> Display(MenuMode mode = MenuMode.None)
@@ -64,18 +64,18 @@ public class Menu<T>
             var pageItems = _items.Skip(skip).Take(take).ToList();
             int pageOffset = skip;
             
-            var lines = new List<(string Text, LineStyle Style)>();
+            var lines = new List<(string Text, LineStyle Style, ConsoleColor? Color)>();
             for (int i = 0; i < pageItems.Count; i++)
             {
-                var (letter, text, _, style, _) = pageItems[i];
+                var (letter, text, _, style, _, color) = pageItems[i];
                 if (style == LineStyle.Item && letter.HasValue)
                 {
                     char sel = mode == MenuMode.PickAny && selected.Contains(pageOffset + i) ? '+' : '-';
-                    lines.Add(($"{letter} {sel} {text}", style));
+                    lines.Add(($"{letter} {sel} {text}", style, color));
                 }
                 else
                 {
-                    lines.Add((text, style));
+                    lines.Add((text, style, color));
                 }
             }
             
@@ -84,7 +84,7 @@ public class Menu<T>
                 MenuMode.PickAny => pages > 1 ? $"({page + 1}/{pages}) < > page, letter toggle, enter confirm" : "letter toggle, enter confirm",
                 _ => pages > 1 ? $"({page + 1}/{pages}) < > page" : "(press any key)"
             };
-            lines.Add((prompt, LineStyle.Text));
+            lines.Add((prompt, LineStyle.Text, null));
 
             int menuHeight = lines.Count + 2;
             if (InitialPage < 0 && page == 0)
@@ -92,15 +92,15 @@ public class Menu<T>
             Draw.OverlayFill(menuX, startY, menuWidth, menuHeight);
 
             int y = startY + 1 + (menuHeight - 2 - lines.Count);
-            foreach (var (text, style) in lines)
+            foreach (var (text, style, color) in lines)
             {
                 if (style == LineStyle.SubHeading)
                 {
-                    Draw.OverlayWrite(menuX + 1, y++, text, style: CellStyle.Reverse);
+                    Draw.OverlayWrite(menuX + 1, y++, text, fg: color ?? ConsoleColor.Gray, style: CellStyle.Reverse);
                 }
                 else
                 {
-                    Draw.OverlayWrite(menuX + 1, y++, text);
+                    Draw.OverlayWrite(menuX + 1, y++, text, fg: color ?? ConsoleColor.Gray);
                 }
             }
 

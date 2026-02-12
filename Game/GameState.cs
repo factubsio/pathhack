@@ -384,74 +384,75 @@ public class GameState
 
     public void DoRound()
     {
-        if (!(CurrentLevel is { } lvl)) return;
+        if (!(CurrentLevel is { } _)) return;
 
         Perf.StartRound();
         Draw.ResetRoundStats();
-        lvl.SortUnitsByInitiative();
 
-        LevelId startLevel = u.Level;
+        // === Player phase ===
+        u.Energy += 12;
 
-        foreach (var Unit in lvl.LiveUnits)
-        {
-            Unit.Energy += 12;
-        }
-
-        // OnRoundStart for active entities and all units
         Perf.Start();
         foreach (var entity in ActiveEntities)
             LogicBrick.FireOnRoundStart(entity);
-        foreach (var unit in lvl.LiveUnits)
-        {
-            LogicBrick.FireOnRoundStart(unit);
-        }
+        LogicBrick.FireOnRoundStart(u);
         Perf.Stop("OnRoundStart");
 
+        while (u.Energy > 1 && !u.IsDead)
+        {
+            // Paralysis check (And merge so immunity can override)
+            if (u.Query("paralyzed", null, MergeStrategy.And, false))
+            {
+                g.pline("You are paralyzed!");
+                u.Energy -= ActionCosts.OneAction.Value;
+                continue;
+            }
+
+            FovCalculator.Compute(lvl, upos, u.DarkVisionRadius);
+
+            Perf.Start();
+            Draw.DrawCurrent();
+            Perf.Stop("Draw");
+
+            Perf.Start();
+            Input.PlayerTurn();
+            Perf.Stop("PlayerTurn");
+        }
+
+        // === Monster phase (runs on whatever level we're now on) ===
+        lvl.SortUnitsByInitiative();
+
         foreach (var unit in lvl.LiveUnits)
         {
-            // Check for dead here in case somethign kills itself
+            if (unit.IsPlayer) continue;
+            unit.Energy += 12;
+            LogicBrick.FireOnRoundStart(unit);
+        }
+
+        foreach (var unit in lvl.LiveUnits)
+        {
+            if (unit.IsPlayer) continue;
             while (unit.Energy > 1 && !unit.IsDead)
             {
-                if (u.Level != startLevel) break;
-
-                // Paralysis check (And merge so immunity can override)
                 if (unit.Query("paralyzed", null, MergeStrategy.And, false))
                 {
-                    if (unit.IsPlayer)
-                        g.pline("You are paralyzed!");
                     unit.Energy -= ActionCosts.OneAction.Value;
                     continue;
                 }
 
-                FovCalculator.Compute(lvl, upos, u.DarkVisionRadius);
-
                 Perf.Start();
-                Draw.DrawCurrent();
-                Perf.Stop("Draw");
-
-                if (unit.IsPlayer)
-                {
-                    Perf.Start();
-                    Input.PlayerTurn();
-                    Perf.Stop("PlayerTurn");
-                    if (u.Level != startLevel) break;
-                }
-                else
-                {
-                    Perf.Start();
-                    MonsterTurn(unit);
-                    Perf.Stop("MonsterTurn");
-                }
-                FovCalculator.Compute(lvl, upos, u.DarkVisionRadius);
-
-                Perf.Start();
-                Draw.DrawCurrent();
-                Perf.Stop("Draw");
-
-                CleanupFacts();
+                MonsterTurn(unit);
+                Perf.Stop("MonsterTurn");
             }
-            if (u.Level != startLevel) break;
         }
+
+        FovCalculator.Compute(lvl, upos, u.DarkVisionRadius);
+
+        Perf.Start();
+        Draw.DrawCurrent();
+        Perf.Stop("Draw");
+
+        CleanupFacts();
 
         // OnRoundEnd for all units
         Perf.Start();
@@ -972,11 +973,25 @@ public class GameState
 
     const double XpMultiplier = 2.4;
 
+    static readonly string[] LevelUpNags = [
+        "9 out of 10 dentists recommend levelling up. (#levelup)",
+        "You could level up, but standing around works too. (#levelup)",
+        "Fun fact: unspent experience points do not accrue interest. (#levelup)",
+        "Your XP bar is full. This is not a drill. (#levelup)",
+        "A nearby sign reads: LEVEL UP OR DIE TRYING. (#levelup)",
+        "You feel like you're forgetting something. It's #levelup.",
+        "Somewhere, a disappointed mentor shakes their head. (#levelup)",
+        "You trip over your unspent experience. (#levelup)",
+    ];
+
     public void GainExp(int amount, string? source = null)
     {
+        bool wasPending = Progression.HasPendingLevelUp(u);
         amount = (int)(amount * XpMultiplier);
         u.XP += amount;
         Log.Write($"exp: +{amount} (total {u.XP}) XL={u.CharacterLevel} DL={lvl.Id.Depth} src={source ?? "?"}");
+        if (!wasPending && Progression.HasPendingLevelUp(u))
+            pline(LevelUpNags.Pick());
     }
 
     static bool CorpseChance(MonsterDef def)
@@ -1067,8 +1082,25 @@ public class GameState
             case TileType.BranchUp when lvl.BranchUpTarget is { } target:
                 GoToLevel(target, SpawnAt.BranchDown);
                 break;
+            default:
+                if (lvl.Traps.TryGetValue(upos, out var trap) && trap is HoleTrap hole)
+                {
+                    var below = HoleTrap.LevelBelow(u.Level);
+                    if (below != null)
+                    {
+                        GoToLevel(below.Value, SpawnAt.RandomLegal);
+                    }
+                    else
+                    {
+                        pline("The floor vibrates ominously, but holds.");
+                        return;
+                    }
+                }
+                else return;
+                break;
         }
         Log.Write($"Portal: after level={u.Level} pos={upos}");
+        unit.Energy -= unit.LandMove.Value;
     }
 
 }

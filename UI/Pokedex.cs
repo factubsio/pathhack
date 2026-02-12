@@ -198,6 +198,7 @@ public static class Pokedex
     {
         var def = item.Def;
         var menu = new Menu();
+        bool propsKnown = item.Knowledge.HasFlag(ItemKnowledge.Props);
 
         string equipped = item.Holder?.Equipped.ContainsValue(item) == true
             ? (def is ArmorDef ? " (being worn)" : " (weapon in hand)")
@@ -207,41 +208,58 @@ public static class Pokedex
 
         if (def is WeaponDef wpn)
         {
+            var prof = u.GetProficiency(wpn);
+            ConsoleColor? profColor = prof == ProficiencyLevel.Untrained ? ConsoleColor.Red : null;
+            menu.Add($"Proficiency: {prof} ({wpn.Profiency})", color: profColor);
+
             string hands = wpn.Hands == 1 ? "One-handed" : "Two-handed";
             menu.Add($"{hands} {wpn.DamageType.SubCat} weapon.");
             menu.Add($"Base damage: {wpn.BaseDamage}");
-            menu.Add($"Potency: {item.Potency}");
-            
-            // fundamental rune
-            if (item.Fundamental is { } fund)
+
+            if (propsKnown)
             {
-                if (fund.Def.IsNull)
-                    menu.Add("Fundamental: [blocked]");
+                menu.Add($"Potency: {item.Potency}");
+                
+                if (item.Fundamental is { } fund)
+                {
+                    if (fund.Def.IsNull)
+                        menu.Add("Fundamental: [blocked]");
+                    else
+                        menu.Add($"Fundamental: {fund.Def.DisplayName}, {fund.Def.Description}");
+                }
                 else
-                    menu.Add($"Fundamental: {fund.Def.DisplayName}, {fund.Def.Description}");
+                    menu.Add("Fundamental: [empty]");
+                
+                menu.Add($"Property slots: {item.PropertyRunes.Count}/{item.Potency}");
+                foreach (var rune in item.PropertyRunes)
+                    menu.Add($"  - {rune.Def.DisplayName}, {rune.Def.Description}");
+                for (int i = item.PropertyRunes.Count; i < item.Potency; i++)
+                    menu.Add("  - [empty]");
             }
-            else
-                menu.Add("Fundamental: [empty]");
-            
-            // property slots
-            menu.Add($"Property slots: {item.PropertyRunes.Count}/{item.Potency}");
-            foreach (var rune in item.PropertyRunes)
-                menu.Add($"  - {rune.Def.DisplayName}, {rune.Def.Description}");
-            for (int i = item.PropertyRunes.Count; i < item.Potency; i++)
-                menu.Add("  - [empty]");
         }
         else if (def is ArmorDef armor)
         {
+            var prof = u.GetProficiency(armor.Proficiency);
+            ConsoleColor? profColor = prof == ProficiencyLevel.Untrained ? ConsoleColor.Red : null;
+            menu.Add($"Proficiency: {prof} ({armor.Proficiency})", color: profColor);
             menu.Add($"Armor. AC bonus: {armor.ACBonus}");
-            if (armor.DexCap < 99)
-                menu.Add($"Dex cap: {armor.DexCap}");
+
+            if (propsKnown)
+            {
+                if (armor.DexCap < 99)
+                    menu.Add($"Dex cap: {armor.DexCap}");
+            }
         }
 
         menu.Add("");
         menu.Add($"Weighs {def.Weight}. Made of {item.Material}.");
 
         // Description: only show when identified
-        if (def.IsKnown())
+        if (!propsKnown)
+        {
+            menu.Add("Properties not identified.", color: ConsoleColor.DarkYellow);
+        }
+        else if (def.IsKnown())
         {
             if (def.PokedexDescription != null)
             {

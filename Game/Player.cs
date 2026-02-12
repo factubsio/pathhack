@@ -192,7 +192,12 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
         return 10 + Math.Min(dexMod, dexCap) + mods.Calculate() + ProfBonus(armorProf);
     }
 
-    public override int GetAttackBonus(WeaponDef weapon) => StrMod + ProfBonus(weapon.Profiency);
+    public ProficiencyLevel GetProficiency(WeaponDef weapon) =>
+        (ProficiencyLevel)Math.Max(
+            (int)GetProficiency(weapon.Profiency),
+            weapon.WeaponType != null ? (int)GetProficiency(weapon.WeaponType) : 0);
+
+    public override int GetAttackBonus(WeaponDef weapon) => StrMod + (int)GetProficiency(weapon);
     public override int GetSpellAttackBonus(SpellBrickBase brick) => DexMod + ProfBonus("spell_attack");
 
     public override int GetDamageBonus() => StrMod;

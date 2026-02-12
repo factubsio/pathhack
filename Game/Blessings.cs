@@ -291,9 +291,6 @@ public class LuckBlessingPassive : LogicBrick<LuckBlessingData>
 
         data.NextAvailable = g.CurrentRound + 6 + d(12).Roll();
         context.Check!.Advantage++;
-
-        if (fact.Entity is IUnit { IsPlayer: true })
-            g.pline("Luck is on your side!");
     }
 }
 

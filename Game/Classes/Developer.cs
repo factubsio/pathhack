@@ -1,6 +1,6 @@
 namespace Pathhack.Game.Classes;
 
-public class MagicMapping() : ActionBrick("Magic Mapping")
+public class DebugMap() : ActionBrick("Magic Mapping")
 {
     public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
     {
@@ -10,13 +10,9 @@ public class MagicMapping() : ActionBrick("Magic Mapping")
     
     public override void Execute(IUnit unit, object? data, Target target)
     {
-        for (int y = 0; y < lvl.Height; y++)
-        for (int x = 0; x < lvl.Width; x++)
-        {
-            Pos p = new(x, y);
-            lvl.UpdateMemory(p, includeItems: false);
-        }
-        g.pline("A map coalesces in your mind.");
+        g.DoMapLevel();
+        foreach (var trap in lvl.Traps.Values)
+            u.ObserveTrap(trap);
     }
 }
 
@@ -164,7 +160,7 @@ public static partial class ClassDefs
             foreach (var def in DummyThings.All)
                 p.Inventory.Add(Item.Create(def));
             
-            p.AddAction(new MagicMapping());
+            p.AddAction(new DebugMap());
             p.AddAction(new BlindSelf());
             p.AddAction(new GreaseAround());
             p.AddAction(new PoisonSelf());

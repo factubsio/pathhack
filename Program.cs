@@ -8,11 +8,17 @@ Console.CancelKeyPress += (o, e) =>
     var now = DateTime.Now;
     if ((now - lastCtrlC).TotalMilliseconds > 160)
         e.Cancel = true;
+    else
+    {
+        Console.CursorVisible = true;
+        Console.Write("\x1b[0m");
+        TtyRec.Stop();
+    }
     lastCtrlC = now;
 };
 
 List<BranchTemplate> templates = [
-    new("dungeon", "Dungeon", (18, 22)) {
+    new("dungeon", "Dungeon", (18, 22), Color: ConsoleColor.Yellow) {
         Levels = [
             new("sanctuary", ["sanctuary_1"], FromBottom, 0, NoBranchEntrance: true),
             new("bigroom", ["bigroom_rect", "bigroom_oval"], FromTop, 12, 4, Required: false),
@@ -20,45 +26,51 @@ List<BranchTemplate> templates = [
     },
     
     // Quest (5 levels)
-    new("quest", "Quest", (5, 5)) {
+    new("quest", "Quest", (5, 5), Color: ConsoleColor.Magenta) {
         Parent = "dungeon",
         EntranceDepth = (8, 10),
         Levels = []
     },
     
     // Easy meaty (7 levels)
-    new("meaty1", "Meaty 1", (7, 7)) {
+    new("meaty1", "Meaty 1", (7, 7), Color: ConsoleColor.DarkYellow) {
         Parent = "dungeon",
         EntranceDepth = (2, 4),
-        Levels = []
+        Levels = [],
+        AlgorithmPool = [CaveAlgorithm.Worley, CaveAlgorithm.WorleyWarren, CaveAlgorithm.CA],
+        ColorPool = [
+            (ConsoleColor.DarkYellow, ConsoleColor.DarkYellow),
+            (ConsoleColor.DarkRed, ConsoleColor.DarkRed),
+            (ConsoleColor.Cyan, ConsoleColor.Cyan),
+        ],
     },
     
     // Hard meaty (7 levels)
-    new("meaty2", "Meaty 2", (7, 7)) {
+    new("meaty2", "Meaty 2", (7, 7), Color: ConsoleColor.Red) {
         Parent = "dungeon",
         EntranceDepth = (11, 13),
         Levels = []
     },
     
     // Hard meaty (7 levels)
-    new("meaty3", "Meaty 3", (7, 7)) {
+    new("meaty3", "Meaty 3", (7, 7), Color: ConsoleColor.DarkCyan) {
         Parent = "dungeon",
         EntranceDepth = (14, 16),
         Levels = []
     },
     
     // Mini branches (1 level each, underleveled challenge)
-    new("mini1", "Mini 1", (1, 1)) {
+    new("mini1", "Mini 1", (1, 1), Color: ConsoleColor.Blue) {
         Parent = "dungeon",
         EntranceDepth = (4, 16),
         Levels = []
     },
-    new("mini2", "Mini 2", (1, 1)) {
+    new("mini2", "Mini 2", (1, 1), Color: ConsoleColor.Blue) {
         Parent = "dungeon",
         EntranceDepth = (4, 16),
         Levels = []
     },
-    new("mini3", "Mini 3", (1, 1)) {
+    new("mini3", "Mini 3", (1, 1), Color: ConsoleColor.Blue) {
         Parent = "dungeon",
         EntranceDepth = (4, 16),
         Levels = []
@@ -74,6 +86,7 @@ bool ConsumeFlag(ref string[] args, string flag)
 
 LevelGen.ForceRiver = ConsumeFlag(ref args, "--river");
 LevelGen.ForceMiniVault = ConsumeFlag(ref args, "--mivault");
+bool doSweep = ConsumeFlag(ref args, "--sweep");
 
 int testDepth = 1;
 int depthIdx = Array.FindIndex(args, a => a == "--depth");
@@ -81,6 +94,13 @@ if (depthIdx >= 0 && depthIdx + 1 < args.Length && int.TryParse(args[depthIdx + 
 {
     testDepth = depthArg;
     args = args.Where((_, i) => i != depthIdx && i != depthIdx + 1).ToArray();
+}
+
+int algoIdx = Array.FindIndex(args, a => a == "--algo");
+if (algoIdx >= 0 && algoIdx + 1 < args.Length && Enum.TryParse<CaveAlgorithm>(args[algoIdx + 1], true, out var algoArg))
+{
+    LevelGen.ForceAlgorithm = algoArg;
+    args = args.Where((_, i) => i != algoIdx && i != algoIdx + 1).ToArray();
 }
 
 if (args.Length > 0 && args[0] == "--test-dungeon")
@@ -128,7 +148,8 @@ if (args.Length > 2 && args[0] == "--gen-dungeons" && int.TryParse(args[1], out 
     LevelGen.SharedLog = shared;
     for (int i = startGen; i < endGen; i++)
     {
-        shared.WriteLine($"=== Seed {i} ===");
+        LevelGen.ParamSweep = doSweep ? (i - startGen) / 10 : -1;
+        shared.WriteLine($"=== Seed {i} (sweep {LevelGen.ParamSweep}) ===");
         g.Branches = DungeonResolver.Resolve(templates, i, log: false);
         var dungeon = g.Branches["dungeon"];
         LevelGen.Generate(new LevelId(dungeon, testDepth), i);

@@ -466,10 +466,12 @@ public static class Draw
                 else if (level.WasSeen(p) && level.GetMemory(p) is { } mem)
                 {
                     ConsoleColor col = ConsoleColor.DarkBlue;
-                    if (mem.Tile.IsStructural) col = ConsoleColor.Gray;
+                    if (mem.Tile.Type == TileType.Wall) col = level.WallColor ?? ConsoleColor.Gray;
                     Cell cell;
                     if (mem.TopItem is { } item && !mem.Tile.IsStairs)
                         cell = new(item.Glyph.Value, item.Glyph.Color);
+                    else if (mem.Trap is { } trap)
+                        cell = new(trap.Glyph.Value, trap.Glyph.Color);
                     else
                     {
                         cell = MemoryTileCell(level, p, mem, col);
@@ -495,15 +497,31 @@ public static class Draw
 
     static Cell MemoryTileCell(Level level, Pos p, TileMemory mem, ConsoleColor memoryColor)
     {
-        return TileCellInner(level, p, mem.Tile.Type, mem.Door, isMemory: true, memoryColor);
+        bool realColor = mem.Tile.IsStairs || mem.Tile.Type == TileType.Door;
+        return TileCellInner(level, p, mem.Tile.Type, mem.Door, isMemory: !realColor, memoryColor);
     }
 
-    static ConsoleColor TileColor(TileType t, DoorState door) => t switch
+    static ConsoleColor Dim(ConsoleColor c) => c switch
     {
-        TileType.Floor => ConsoleColor.Gray,
-        TileType.Wall => ConsoleColor.Gray,
+        ConsoleColor.Gray => ConsoleColor.DarkGray,
+        ConsoleColor.White => ConsoleColor.Gray,
+        ConsoleColor.Red => ConsoleColor.DarkRed,
+        ConsoleColor.Green => ConsoleColor.DarkGreen,
+        ConsoleColor.Blue => ConsoleColor.DarkBlue,
+        ConsoleColor.Yellow => ConsoleColor.DarkYellow,
+        ConsoleColor.Cyan => ConsoleColor.DarkCyan,
+        ConsoleColor.Magenta => ConsoleColor.DarkMagenta,
+        ConsoleColor.DarkGray => ConsoleColor.Black,
+        _ => c, // already dark
+    };
+
+
+    static ConsoleColor TileColor(Level level, TileType t, DoorState door) => t switch
+    {
+        TileType.Floor => level.FloorColor ?? ConsoleColor.Gray,
+        TileType.Wall => level.WallColor ?? ConsoleColor.Gray,
         TileType.Rock => ConsoleColor.Gray,
-        TileType.Corridor => ConsoleColor.Gray,
+        TileType.Corridor => level.FloorColor ?? ConsoleColor.Gray,
         TileType.Door => door switch
         {
             DoorState.Closed => ConsoleColor.DarkYellow,
@@ -520,7 +538,7 @@ public static class Draw
 
     static Cell TileCellInner(Level level, Pos p, TileType t, DoorState door, bool isMemory, ConsoleColor memoryColor = default)
     {
-        ConsoleColor fg = isMemory ? memoryColor : TileColor(t, door);
+        ConsoleColor fg = isMemory ? memoryColor : TileColor(level, t, door);
         if (t == TileType.BranchUp)
             fg = level.BranchUpTarget?.Branch.Color ?? ConsoleColor.Cyan;
         else if (t == TileType.BranchDown)
@@ -669,9 +687,12 @@ public static class Draw
         int nextLvl = u.CharacterLevel + 1;
         int needed = Progression.XpForLevel(nextLvl) - Progression.XpForLevel(u.CharacterLevel);
         int progress = u.XP - Progression.XpForLevel(u.CharacterLevel);
-        string xpStr = Progression.HasPendingLevelUp(u) ? $"XP:{progress}/{needed}*" : $"XP:{progress}/{needed} ";
+        string xpStr = $"XP:{progress}/{needed}";
         string hpStr = u.TempHp > 0 ? $"HP:{u.HP.Current}+{u.TempHp}/{u.HP.Max}" : $"HP:{u.HP.Current}/{u.HP.Max}";
-        Layers[0].Write(0, StatusRow + 1, $"{hpStr} AC:{u.GetAC()} CL:{u.CharacterLevel} {xpStr}".PadRight(ScreenWidth));
+        string prefix = $"{hpStr} AC:{u.GetAC()} CL:{u.CharacterLevel} ";
+        Layers[0].Write(0, StatusRow + 1, prefix.PadRight(ScreenWidth));
+        bool pendingLvl = Progression.HasPendingLevelUp(u);
+        Layers[0].Write(prefix.Length, StatusRow + 1, xpStr, style: pendingLvl ? CellStyle.Reverse : CellStyle.None);
         DrawSpellPips();
     }
 
