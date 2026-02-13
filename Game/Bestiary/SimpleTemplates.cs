@@ -48,17 +48,28 @@ public class SkeletonTemplate() : MonsterTemplate("skeleton")
     internal static readonly SkeletonFacts Instance = new();
   }
 
+  // Gems?
+  // public static ItemDef Bones = new()
+  // {
+  //   Price = 1,
+  //   Material = "bone",
+  // };
+
   public override bool CanApplyTo(MonsterDef def) => !TemplateHelper.CannotBeUndead.Contains(def.CreatureType);
 
   public override int LevelBonus(MonsterDef def, int level) => Math.Clamp((int)(level * 0.15), 0, 2);
 
   public override IEnumerable<LogicBrick> GetComponents(MonsterDef def) =>
-    TemplateHelper.StripMindless(def.Components).Append(SkeletonFacts.Instance).Append(SimpleDR.Blunt.Lookup(def.BaseLevel));
+    TemplateHelper.StripMindless(def.Components)
+      .Append(SkeletonFacts.Instance)
+      .Append(SimpleDR.Blunt.Lookup(def.BaseLevel));
+      // .Append(new DropOnDeath(Bones, d(4)+4));
 
   public override void ModifySpawn(Monster m)
   {
     TemplateHelper.MakeUndead(m);
     m.ItemBonusAC -= 2;
+    m.OwnBrainFlags = m.Def.BrainFlags | MonFlags.NoCorpse;
 
     m.OwnGlyph = m.Def.Glyph with { Background = ConsoleColor.Gray };
 

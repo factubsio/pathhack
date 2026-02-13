@@ -440,9 +440,9 @@ public static partial class Input
         menu.Add("Base Attributes", LineStyle.Heading);
         menu.Add("");
         menu.Add("Starting", LineStyle.SubHeading);
-        menu.Add($"  class          : {u.Class?.Name ?? "none"}");
-        menu.Add($"  deity          : {u.Deity?.Name ?? "none"}");
-        menu.Add($"  ancestry       : {u.Ancestry?.Name ?? "none"}");
+        menu.Add($"  Class          : {u.Class?.Name ?? "none"}");
+        menu.Add($"  Deity          : {u.Deity?.Name ?? "none"}");
+        menu.Add($"  Ancestry       : {u.Ancestry?.Name ?? "none"}");
         menu.Add("");
         menu.Add("Current", LineStyle.SubHeading);
         string levelDisplay = Progression.HasPendingLevelUp(u)

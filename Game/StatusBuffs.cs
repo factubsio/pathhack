@@ -1,3 +1,5 @@
+using System.Security;
+
 namespace Pathhack.Game;
 
 public class BlindBuff : LogicBrick
@@ -176,24 +178,44 @@ public abstract class AfflictionBrick(int dc, string? tag = null) : LogicBrick<A
 
 public class RegenBrick(params DamageType[] suppressedBy) : LogicBrick<RegenBrick.State>
 {
-  public class State { public bool Suppressed; }
+  public class State
+  {
+    public int SuppressedUntil;
+    public void Suppress() => SuppressedUntil = Math.Max(SuppressedUntil, g.CurrentRound + d(3).Roll());
+    public bool IsSuppressed => g.CurrentRound < SuppressedUntil;
+  }
 
   public override AbilityTags Tags => AbilityTags.Biological;
+  public override bool IsActive => true;
 
   public static readonly RegenBrick Always = new();
+  public static readonly RegenBrick FireOrAcid = new(DamageTypes.Fire, DamageTypes.Acid);
+  public static readonly RegenBrick Fire = new(DamageTypes.Fire);
+  public static readonly RegenBrick Acid = new(DamageTypes.Acid);
+
+  public override string? PokedexDescription => $"Regen{SuppressingString}";
+  private string SuppressingString => suppressedBy.Length switch
+  {
+    0 => "",
+    _ => $"/{string.Join(",", suppressedBy.Select(x => x.SubCat.Capitalize()))}",
+  };
+
+    protected override void OnRoundEnd(Fact fact)
+    {
+        if (fact.Entity is not IUnit {} unit) return;
+        unit.HP += 1;
+    }
 
   protected override void OnDamageTaken(Fact fact, PHContext ctx)
   {
     foreach (var roll in ctx.Damage)
       if (suppressedBy.Contains(roll.Type))
       {
-        X(fact).Suppressed = true;
+        X(fact).Suppress();
         return;
       }
   }
 
-  protected override void OnRoundEnd(Fact fact) => X(fact).Suppressed = false;
-
   protected override object? OnQuery(Fact fact, string key, string? arg) =>
-      key == "respawn_from_corpse" && !X(fact).Suppressed ? true : null;
+      key == "respawn_from_corpse" && !X(fact).IsSuppressed ? true : null;
 }

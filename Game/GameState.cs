@@ -901,7 +901,7 @@ public class GameState
                     DoDrop(target, item);
 
                 // drop corpse
-                if (target is Monster m2 && !m2.Def.NoCorpse && CorpseChance(m2, out var doRespawn))
+                if (target is Monster m2 && !m2.NoCorpse && ShouldGenerateCorpse(m2, out var doRespawn))
                 {
                     var corpse = Item.Create(Foods.Corpse);
                     corpse.CorpseOf = m2.Def;
@@ -911,7 +911,7 @@ public class GameState
                         corpse.RotTimer = m2.Def.StartingRot;
 
                     if (doRespawn)
-                        corpse.RotTimer = -g.RnRange(3, 8);
+                        corpse.RotTimer = -g.RnRange(15, 30);
 
                     lvl.PlaceItem(corpse, target.Pos);
                 }
@@ -1019,12 +1019,12 @@ public class GameState
             pline(LevelUpNags.Pick());
     }
 
-    static bool CorpseChance(Monster m, out bool doRespawn)
+    static bool ShouldGenerateCorpse(Monster m, out bool doRespawn)
     {
         var def = m.Def;
 
         // respawn 90% of the time, seems fair?
-        doRespawn = m.Query("respawn_from_corpse", null, MergeStrategy.And, false) && g.Rn2(10) != 0;
+        doRespawn = m.Query("respawn_from_corpse", null, MergeStrategy.And, false); // && g.Rn2(10) != 0;
 
         // if we are respawning we have to leave a corpse
         if (doRespawn || def.Size >= UnitSize.Large) return true;

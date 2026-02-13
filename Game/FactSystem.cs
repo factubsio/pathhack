@@ -371,7 +371,7 @@ public class AttackWithWeapon() : ActionBrick("attack_with_weapon")
         if (target.Unit == null) return false;
         int dist = unit.Pos.ChebyshevDist(target.Unit.Pos);
         if (dist == 1) return true; // melee
-        
+
         var weapon = unit.GetWieldedItem().Def as WeaponDef;
         if (weapon?.Launcher == null) return false;
         // TODO: check we are wielding the correct launcher
@@ -393,7 +393,7 @@ public class AttackWithWeapon() : ActionBrick("attack_with_weapon")
                 toThrow = weapon;
                 unit.Inventory.Remove(weapon);
             }
-      DoThrow(unit, toThrow, dir);
+            DoThrow(unit, toThrow, dir);
         }
         else
         {

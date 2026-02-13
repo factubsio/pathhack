@@ -43,7 +43,6 @@ public static class Hunger
                 HungerState.Hungry => "You are beginning to feel hungry.",
                 HungerState.Weak => "You feel weak from hunger.",
                 HungerState.Fainting => "You feel faint from lack of food.",
-                HungerState.Normal when before == HungerState.Satiated => "You no longer feel stuffed.",
                 _ => null
             };
             if (msg != null) g.pline(msg);

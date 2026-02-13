@@ -33,7 +33,7 @@ public static class DummyThings
         EthicalAxis = EthicalAxis.Neutral,
         Components =
         [
-            RegenBrick.Always,
+            RegenBrick.FireOrAcid,
         ],
     };
 
@@ -55,9 +55,9 @@ public static class DummyThings
         [
             new GrantPool("spell_l1", 3, 20),
             new GrantPool("spell_l2", 2, 30),
-            new GrantSpell(Spells.BasicLevel1Spells.CureLightWounds),
-            new GrantSpell(Spells.BasicLevel1Spells.Light),
-            new GrantSpell(Spells.BasicLevel1Spells.AcidArrow),
+            new GrantSpell(BasicLevel1Spells.CureLightWounds),
+            new GrantSpell(BasicLevel1Spells.Light),
+            new GrantSpell(BasicLevel1Spells.AcidArrow),
         ],
     };
 }

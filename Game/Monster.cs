@@ -56,13 +56,14 @@ public static class CreatureSubtypes
 public enum GroupSize { None, Small, SmallMixed, Large, LargeMixed }
 
 [Flags]
-public enum BrainFlags
+public enum MonFlags
 {
     None            = 0,
     PrefersCasting  = 1 << 0,
     Stalks          = 1 << 1,
     WaitsForPlayer  = 1 << 2,
     Cowardly        = 1 << 3,
+    NoCorpse        = 1 << 4,
 }
 
 public abstract class MonsterBrain
@@ -106,7 +107,7 @@ public class MonsterDef : BaseDef
   public bool NoCorpse = false;
   public int StartingRot = 0;
   public GroupSize GroupSize = GroupSize.None;
-  public BrainFlags BrainFlags = BrainFlags.None;
+  public MonFlags BrainFlags = MonFlags.None;
   public Func<MonsterDef>? GrowsInto;
 
   string? _creatureTypeKey;
@@ -174,10 +175,10 @@ public class Monster : Unit<MonsterDef>, IFormattable
   public MoralAxis? OwnMoralAxis;
   public EthicalAxis? OwnEthicalAxis;
   public Glyph? OwnGlyph;
-  public BrainFlags? OwnBrainFlags;
+  public MonFlags? OwnBrainFlags;
 
-  public BrainFlags EffectiveBrainFlags => OwnBrainFlags ?? Def.BrainFlags;
-  public bool HasBrainFlag(BrainFlags flag) => (EffectiveBrainFlags & flag) != 0;
+  public MonFlags EffectiveBrainFlags => OwnBrainFlags ?? Def.BrainFlags;
+  public bool HasBrainFlag(MonFlags flag) => (EffectiveBrainFlags & flag) != 0;
 
   public override MoralAxis MoralAxis => Query("moral_axis", null, MergeStrategy.Replace, OwnMoralAxis ?? Def.MoralAxis);
   public override EthicalAxis EthicalAxis => Query("ethical_axis", null, MergeStrategy.Replace, OwnEthicalAxis ?? Def.EthicalAxis);
@@ -346,7 +347,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
     {
       Target playerTarget = new(u, upos);
 
-      if (HasBrainFlag(BrainFlags.PrefersCasting))
+      if (HasBrainFlag(MonFlags.PrefersCasting))
       {
         if (TryUseAbility(Spells.Shuffled()) || TryUseAbility(Actions)) return true;
       }
@@ -490,6 +491,8 @@ public class Monster : Unit<MonsterDef>, IFormattable
       return $"{OwnCreatureType ?? Def.CreatureType}{sub} {OwnEthicalAxis ?? Def.EthicalAxis}/{OwnMoralAxis ?? Def.MoralAxis}";
     }
   }
+
+  public bool NoCorpse => EffectiveBrainFlags.HasFlag(MonFlags.NoCorpse);
 
   public TrapType KnownTraps;
   internal bool Peaceful;
