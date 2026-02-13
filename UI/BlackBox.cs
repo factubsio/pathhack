@@ -17,7 +17,7 @@ public class Snapshot
     public int Str, Dex, Con, Int, Wis, Cha;
     public string Hunger = "";
     public string[] Buffs = [];
-    public SpellSlotState[] SpellSlots = [];
+    public List<SpellSlotState> SpellSlots = [];
 }
 
 public record struct SpellSlotState(int Level, int Current, int Max, int EffectiveMax, int Ticks, int RegenRate);
@@ -65,7 +65,7 @@ public static class BlackBox
         List<string> messages = g.MessageHistory;
         int from = Math.Max(0, _lastMessageIndex);
         string[] newMessages = from < messages.Count
-            ? messages.GetRange(from, messages.Count - from).ToArray()
+            ? [.. messages.GetRange(from, messages.Count - from)]
             : [];
         _lastMessageIndex = messages.Count;
 
@@ -75,7 +75,7 @@ public static class BlackBox
         {
             var pool = u.GetPool($"spell_l{lvl}");
             if (pool == null) continue;
-            slots.Add(new(lvl, pool.Current, pool.Max, pool.EffectiveMax, pool.Ticks, pool.RegenRate));
+            slots.Add(new(lvl, pool.Current, pool.Max, pool.EffectiveMax, pool.Ticks, (int)pool.RegenRate.Average()));
         }
 
         HungerState hunger = Hunger.GetState(u.Nutrition);
@@ -100,11 +100,10 @@ public static class BlackBox
             Str = u.Str, Dex = u.Dex, Con = u.Con,
             Int = u.Int, Wis = u.Wis, Cha = u.Cha,
             Hunger = Hunger.GetLabel(hunger),
-            Buffs = u.LiveFacts
+            Buffs = [.. u.LiveFacts
                 .Where(f => f.Brick.BuffName != null)
-                .Select(f => f.DisplayName)
-                .ToArray(),
-            SpellSlots = slots.ToArray(),
+                .Select(f => f.DisplayName)],
+            SpellSlots = slots,
         };
 
         _buffer[_head] = snap;

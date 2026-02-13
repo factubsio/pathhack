@@ -175,6 +175,29 @@ public static class Pokedex
         // passives
         foreach (var fact in m.LiveFacts.Where(f => f.Brick is not GrantAction && f.Brick.PokedexDescription != null))
             menu.Add($"  {fact.Brick.PokedexDescription}");
+
+        // spells
+        if (m.Spells.Count > 0)
+        {
+            menu.Add("");
+            var byLevel = m.Spells.GroupBy(s => s.Level).OrderBy(g => g.Key);
+            foreach (var group in byLevel)
+            {
+                var pool = m.GetPool($"spell_l{group.Key}");
+                string slots = pool != null ? $" ({pool.Max} slots)" : "";
+                menu.Add($"Level {group.Key} spells{slots}:");
+                foreach (var spell in group)
+                    menu.Add($"  {spell.Name}");
+            }
+        }
+
+        // active buffs
+        bool firstBuff = true;
+        foreach (var buff in m.LiveFacts.Where(f => f.Brick.IsBuff))
+        {
+            if (firstBuff) { menu.Add(""); menu.Add("Active effects:"); firstBuff = false; }
+            menu.Add($"  {buff.DisplayName}");
+        }
         
         menu.Display();
     }

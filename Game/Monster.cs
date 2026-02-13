@@ -55,6 +55,16 @@ public static class CreatureSubtypes
 
 public enum GroupSize { None, Small, SmallMixed, Large, LargeMixed }
 
+[Flags]
+public enum BrainFlags
+{
+    None            = 0,
+    PrefersCasting  = 1 << 0,
+    Stalks          = 1 << 1,
+    WaitsForPlayer  = 1 << 2,
+    Cowardly        = 1 << 3,
+}
+
 public abstract class MonsterBrain
 {
   public abstract bool DoTurn(Monster m);
@@ -96,6 +106,7 @@ public class MonsterDef : BaseDef
   public bool NoCorpse = false;
   public int StartingRot = 0;
   public GroupSize GroupSize = GroupSize.None;
+  public BrainFlags BrainFlags = BrainFlags.None;
   public Func<MonsterDef>? GrowsInto;
 
   string? _creatureTypeKey;
@@ -163,6 +174,10 @@ public class Monster : Unit<MonsterDef>, IFormattable
   public MoralAxis? OwnMoralAxis;
   public EthicalAxis? OwnEthicalAxis;
   public Glyph? OwnGlyph;
+  public BrainFlags? OwnBrainFlags;
+
+  public BrainFlags EffectiveBrainFlags => OwnBrainFlags ?? Def.BrainFlags;
+  public bool HasBrainFlag(BrainFlags flag) => (EffectiveBrainFlags & flag) != 0;
 
   public override MoralAxis MoralAxis => Query("moral_axis", null, MergeStrategy.Replace, OwnMoralAxis ?? Def.MoralAxis);
   public override EthicalAxis EthicalAxis => Query("ethical_axis", null, MergeStrategy.Replace, OwnEthicalAxis ?? Def.EthicalAxis);
@@ -321,28 +336,28 @@ public class Monster : Unit<MonsterDef>, IFormattable
 
     if (Def.Brain?.DoTurn(this) == true) return true;
 
+    if (!Peaceful)
+      UpdateApparentPos();
+
     // peaceful monsters don't attack
     if (!Peaceful)
     {
-      // try any action that can execute
       Target playerTarget = new(u, upos);
-      foreach (var action in Actions)
+
+      if (HasBrainFlag(BrainFlags.PrefersCasting))
       {
-        var data = ActionData.GetValueOrDefault(action);
-        if (action.CanExecute(this, data, playerTarget, out var _))
-        {
-          Log.Write($"{this} uses {action.Name}");
-          action.Execute(this, data, playerTarget);
-          Energy -= action.GetCost(this, data, playerTarget).Value;
-          return true;
-        }
+        if (TryCastSpell()) return true;
+        if (TryAction(playerTarget)) return true;
+      }
+      else
+      {
+        if (TryAction(playerTarget)) return true;
+        if (TryCastSpell()) return true;
       }
     }
 
     if (Def.LandMove.Value <= 0 || Def.Stationary) return false;
 
-    if (!Peaceful)
-      UpdateApparentPos();
     Pos mp = Pos;
 
     // move toward goal, or wander if none
@@ -395,6 +410,93 @@ public class Monster : Unit<MonsterDef>, IFormattable
     return false;
   }
 
+  bool TryAction(Target playerTarget)
+  {
+    foreach (var action in Actions)
+    {
+      var data = ActionData.GetValueOrDefault(action);
+      if (action.CanExecute(this, data, playerTarget, out _))
+      {
+        Log.Write($"{this} uses {action.Name}");
+        action.Execute(this, data, playerTarget);
+        Energy -= action.GetCost(this, data, playerTarget).Value;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool TryCastSpell()
+  {
+    if (Spells.Count == 0) return false;
+
+    // TODO: smart monsters should bounce directional spells off walls at player
+    Pos? targetPos = ApparentPlayerPos;
+
+    foreach (var spell in Spells.Shuffled())
+    {
+      bool beneficial = spell.Tags.HasFlag(AbilityTags.Beneficial);
+
+      // Heal spells: only when below 50% HP
+      if (spell.Tags.HasFlag(AbilityTags.Heal) && HP.Current > HP.Max / 2)
+        continue;
+
+      // Slightly prefer buffing before nuking
+      if (!beneficial && spell.Tags.HasFlag(AbilityTags.Harmful) && g.Rn2(3) == 0)
+        continue;
+
+      Target? target = beneficial ? BeneficialTarget(spell) : HarmfulTarget(spell, targetPos);
+      if (target == null) continue;
+
+      var data = ActionData.GetValueOrDefault(spell);
+      if (spell.CanExecute(this, data, target, out _))
+      {
+        Log.Write($"{this} casts {spell.Name}{(beneficial ? " on self" : "")}");
+        g.YouObserve(this, $"{this:The} casts {spell.Name}!", SpellChants.Pick());
+        spell.Execute(this, data, target);
+        Energy -= spell.GetCost(this, data, target).Value;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Beneficial: self-cast. Direction = (0,0), None = Target.None
+  // TODO: target allies (adventurer parties)
+  Target? BeneficialTarget(SpellBrickBase spell) => spell.Targeting switch
+  {
+    TargetingType.None => Target.None,
+    TargetingType.Direction => Target.From(Pos.Zero),
+    TargetingType.Unit => Target.From(this),
+    TargetingType.Pos => Target.From(Pos),
+    _ => null,
+  };
+
+  // Harmful: target player (apparent position)
+  Target? HarmfulTarget(SpellBrickBase spell, Pos? targetPos)
+  {
+    // Direction spells need target on an 8-dir line
+    if (spell.Targeting == TargetingType.Direction && targetPos is { } dp)
+    {
+      var delta = dp - Pos;
+      if (delta.X != 0 && delta.Y != 0 && Math.Abs(delta.X) != Math.Abs(delta.Y))
+        return null;
+    }
+
+    // Respect max range
+    if (spell.MaxRange > 0 && targetPos is { } rp && spell.Targeting is not TargetingType.None && Pos.ChebyshevDist(rp) > spell.MaxRange)
+      return null;
+
+    return spell.Targeting switch
+    {
+      TargetingType.Direction when targetPos is { } tp => new(null, (tp - Pos).Signed),
+      TargetingType.Unit when CanSeeYou => new(u, upos),
+      TargetingType.Pos when targetPos is { } tp => new(null, tp),
+      TargetingType.None => Target.None,
+      _ => null,
+    };
+  }
+
   public override bool IsAwareOf(Trap trap) => (trap.Type & KnownTraps) != 0;
   public override void ObserveTrap(Trap trap) => KnownTraps |= trap.Type;
 
@@ -412,4 +514,20 @@ public class Monster : Unit<MonsterDef>, IFormattable
 
   public TrapType KnownTraps;
   internal bool Peaceful;
+
+  static readonly string[] SpellChants =
+  [
+    "a mumbled incantation",
+    "someone chanting nearby",
+    "arcane words being spoken",
+    "a low, rhythmic drone",
+    "words that make your skin crawl",
+    "syllables that hurt to hear",
+    "a crackling of magical energy",
+    "an unsettling hum in the air",
+    "whispered words of power",
+    "the air thickening with magic",
+    "a faint smell of ozone",
+    "something gathering power",
+  ];
 }

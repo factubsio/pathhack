@@ -112,6 +112,7 @@ public abstract class LogicBrick
     public virtual int MaxStacks => int.MaxValue;
     public virtual bool RequiresEquipped => false;
     public virtual string? PokedexDescription => null;
+    public virtual AbilityTags Tags => AbilityTags.None;
 
     protected virtual object? OnQuery(Fact fact, string key, string? arg) => null;
 
@@ -235,13 +236,29 @@ public enum MergeStrategy { Replace, Max, Min, Sum, Or, And }
 
 public enum TargetingType { None, Direction, Unit, Pos }
 
+[Flags]
+public enum AbilityTags
+{
+    None       = 0,
+    Harmful    = 1 << 0,
+    Beneficial = 1 << 1,
+    Heal       = 1 << 2,  // only self-cast when below 50% HP
+    Mental     = 1 << 3,  // blocked by mindless
+    Verbal     = 1 << 4,  // blocked by silence
+    AoE        = 1 << 5,  // AI avoids if allies in blast
+    Evil       = 1 << 6,
+    Holy       = 1 << 7,
+    Biological = 1 << 8,  // stripped by undead templates
+}
+
 public enum ToggleState { NotAToggle, Off, On }
 
-public abstract class ActionBrick(string name, TargetingType targeting = TargetingType.None, int maxRange = -1)
+public abstract class ActionBrick(string name, TargetingType targeting = TargetingType.None, int maxRange = -1, AbilityTags tags = AbilityTags.None)
 {
     public int MaxRange => maxRange;
     public string Name => name;
     public TargetingType Targeting => targeting;
+    public AbilityTags Tags => tags;
     public virtual string? PokedexDescription => null;
 
     public virtual ToggleState IsToggleOn(object? data) => ToggleState.NotAToggle;
@@ -747,6 +764,7 @@ public interface IUnit : IEntity
     int EscapeAttempts { get; set; }
     IUnit? GrabbedBy { get; set; }
     IUnit? Grabbing { get; set; }
+    MoveMode CurrentMoveMode { get; set; }
     bool IsDM { get; }
     int CasterLevel { get; }
 
@@ -768,7 +786,7 @@ public interface IUnit : IEntity
     public bool IsAwareOf(Trap trap);
     public void ObserveTrap(Trap trap);
 
-    void AddPool(string name, int max, int regenRate);
+    void AddPool(string name, int max, DiceFormula regenRate);
     bool HasCharge(string name, out string whyNot);
     bool TryUseCharge(string name);
     void TickPools();
@@ -786,12 +804,13 @@ public interface IUnit : IEntity
     public int DamageTaken { get; set; }
 }
 
-public class ChargePool(int max, int regenRate)
+public class ChargePool(int max, DiceFormula regenRate)
 {
     public int Current = max;
     public int Max = max;
-    public int RegenRate = regenRate;
+    public DiceFormula RegenRate = regenRate;
     public int Ticks;
+    public int NextRegen = regenRate.Roll();
     public int Locked { get; private set; }
 
     public int EffectiveMax => Max - Locked;
@@ -801,10 +820,11 @@ public class ChargePool(int max, int regenRate)
 
     public void Tick()
     {
-        if (Current < EffectiveMax && ++Ticks >= RegenRate)
+        if (Current < EffectiveMax && ++Ticks >= NextRegen)
         {
             Current++;
             Ticks = 0;
+            NextRegen = RegenRate.Roll();
         }
     }
 }
@@ -848,17 +868,19 @@ public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) :
     public int EscapeAttempts { get; set; }
     public IUnit? GrabbedBy { get; set; }
     public IUnit? Grabbing { get; set; }
+    public MoveMode CurrentMoveMode { get; set; } = MoveMode.Walk;
 
     public abstract bool IsAwareOf(Trap trap);
     public abstract void ObserveTrap(Trap trap);
 
-    public void AddPool(string name, int max, int regenRate)
+    public void AddPool(string name, int max, DiceFormula regenRate)
     {
         if (Pools.TryGetValue(name, out var existing))
         {
             existing.Max += max;
             existing.Current += max;
-            existing.RegenRate = Math.Min(existing.RegenRate, regenRate);
+            if (regenRate.Average() < existing.RegenRate.Average())
+                existing.RegenRate = regenRate;
         }
         else
             Pools[name] = new(max, regenRate);
@@ -1069,6 +1091,7 @@ public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) :
 public class GrantAction(ActionBrick action) : LogicBrick
 {
     public ActionBrick Action => action;
+    public override AbilityTags Tags => action.Tags;
     protected override void OnFactAdded(Fact fact) => (fact.Entity as IUnit)?.AddAction(action);
     // TODO: if action is a toggle and currently on, clean up the inner buff fact
     protected override void OnFactRemoved(Fact fact) => (fact.Entity as IUnit)?.RemoveAction(action);
@@ -1080,7 +1103,7 @@ public class GrantSpell(SpellBrickBase spell) : LogicBrick
     protected override void OnFactAdded(Fact fact) => (fact.Entity as IUnit)?.AddSpell(spell);
 }
 
-public class GrantPool(string name, int max, int regenRate) : LogicBrick
+public class GrantPool(string name, int max, DiceFormula regenRate) : LogicBrick
 {
     protected override void OnFactAdded(Fact fact)
     {

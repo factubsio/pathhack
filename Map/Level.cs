@@ -319,6 +319,7 @@ public class Level(LevelId id, int width, int height)
                 unit.TrappedIn = null;
 
             unit.EscapeAttempts++;
+            unit.Energy = Math.Min(0, unit.Energy - unit.LandMove.Value);
             return;
         }
 
@@ -329,6 +330,8 @@ public class Level(LevelId id, int width, int height)
         GetOrCreateState(to).Unit = unit;
 
         if (!free) unit.Energy -= unit.LandMove.Value;
+
+        unit.CurrentMoveMode = unit.Has(CreatureTags.Flying) ? MoveMode.Fly : MoveMode.Walk;
 
         foreach (var area in Areas)
         {
@@ -341,7 +344,7 @@ public class Level(LevelId id, int width, int height)
 
         if (Traps.TryGetValue(to, out var trap))
         {
-            if (trap.Trigger(unit, null))
+            if ((trap.TriggeredBy & unit.CurrentMoveMode) != 0 && trap.Trigger(unit, null))
             {
                 using var bitset = TileBitset.GetPooled();
                 FovCalculator.ScanShadowcast(lvl, bitset, to, 80, false);
@@ -422,7 +425,11 @@ public class Level(LevelId id, int width, int height)
     {
         Tile t = this[to];
         if (IsDoor(to) && IsDoorClosed(to)) return false;
-        if (!t.IsPassable) return false;
+
+        bool flying = who != null && who.Has(CreatureTags.Flying);
+
+        if (!t.IsPassable && !(flying && t.Type == TileType.Water))
+            return false;
 
         // diagonal movement through doors blocked
         int dx = to.X - from.X;
@@ -437,7 +444,7 @@ public class Level(LevelId id, int width, int height)
             }
         }
 
-        // TODO: phasing, swimming, flying, etc. based on who
+        // TODO: phasing, swimming
 
         return true;
     }

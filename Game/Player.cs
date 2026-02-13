@@ -39,8 +39,8 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
         _ => throw new NotImplementedException(),
     };
 
-    public override MoralAxis MoralAxis => Query("moral_axis", null, MergeStrategy.Replace, MoralAxis.Neutral);
-    public override EthicalAxis EthicalAxis => Query("ethical_axis", null, MergeStrategy.Replace, EthicalAxis.Neutral);
+    public override MoralAxis MoralAxis => Deity.Moral;
+    public override EthicalAxis EthicalAxis => Deity.Ethical;
     public override bool IsCreature(string? type = null, string? subtype = null) =>
       (type == null || type == CreatureTypes.Humanoid) && (subtype == null || Has(subtype));
 

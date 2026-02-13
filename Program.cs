@@ -253,6 +253,13 @@ while (true)
     // u.XP = 980;
     lvl.PlaceUnit(u, (lvl.BranchUp ?? lvl.StairsUp)!.Value);
 
+    // DEBUG: spawn test dummy near player
+    {
+        // var dummyPos = upos.Neighbours().FirstOrDefault(p => startLevel.InBounds(p) && startLevel.NoUnit(p) && startLevel[p].IsPassable);
+        // if (dummyPos != default)
+        //     startLevel.PlaceUnit(Monster.Spawn(DummyThings.Dummy, "debug"), dummyPos);
+    }
+
     // TEST: lock one L1 slot
 
     Draw.DrawCurrent();

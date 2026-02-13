@@ -14,10 +14,24 @@ public enum TrapType
     Hole = 1 << 7,
 }
 
+[Flags]
+public enum MoveMode
+{
+    Walk    = 1 << 0,
+    Fly     = 1 << 1,
+    Swim    = 1 << 2,
+    Phase   = 1 << 3,
+    Burrow  = 1 << 4,
+    Climb   = 1 << 5,
+}
+
 public abstract class Trap(TrapType type, int depth, int detectDelta, int escapeDelta, int escapeBonus)
 {
     public TrapType Type => type;
     public bool PlayerSeen;
+
+    /// <summary>Which movement modes trigger this trap. Default: all.</summary>
+    public virtual MoveMode TriggeredBy => MoveMode.Walk | MoveMode.Fly | MoveMode.Swim | MoveMode.Burrow;
 
     public static int BaseDC(int depth) => 12 + depth / 3;
 
@@ -33,6 +47,7 @@ public abstract class Trap(TrapType type, int depth, int detectDelta, int escape
 
 public class PitTrap(int depth) : Trap(TrapType.Pit, depth, 0, 0, 4)
 {
+    public override MoveMode TriggeredBy => MoveMode.Walk;
     public override Glyph Glyph => new('^', ConsoleColor.Blue);
     private readonly bool IsSpiked = g.Rn2(4) == 0;
     private string Name => IsSpiked ? "spiked pit" : "pit";
@@ -71,6 +86,7 @@ public class PitTrap(int depth) : Trap(TrapType.Pit, depth, 0, 0, 4)
 
 public class WebTrap(int depth) : Trap(TrapType.Web, depth, -2, 0, 4)
 {
+    public override MoveMode TriggeredBy => MoveMode.Walk;
     public override Glyph Glyph => new('"', ConsoleColor.Gray);
 
     public override bool Trigger(IUnit? unit, Item? item)
@@ -114,6 +130,7 @@ public class WebTrap(int depth) : Trap(TrapType.Web, depth, -2, 0, 4)
 
 public class HoleTrap(TrapType type, int depth) : Trap(type, depth, 2, 0, 0)
 {
+    public override MoveMode TriggeredBy => MoveMode.Walk;
     public override Glyph Glyph => new('^', ConsoleColor.DarkYellow);
 
     private string Name => Type == TrapType.Trapdoor ? "trapdoor" : "hole";

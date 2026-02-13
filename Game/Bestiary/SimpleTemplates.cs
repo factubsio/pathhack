@@ -10,6 +10,18 @@ public static class TemplateHelper
     CreatureTypes.Construct,
     CreatureTypes.Ooze,
   ];
+
+  const AbilityTags MindlessUndeadStrip = AbilityTags.Biological | AbilityTags.Mental | AbilityTags.Holy | AbilityTags.Verbal;
+
+  public static IEnumerable<LogicBrick> StripMindless(IEnumerable<LogicBrick> components) =>
+    components.Where(c => (c.Tags & MindlessUndeadStrip) == 0);
+
+  public static void MakeUndead(Monster m)
+  {
+    m.OwnMoralAxis = MoralAxis.Evil;
+    if (m.Def.EthicalAxis == EthicalAxis.Lawful) m.OwnEthicalAxis = EthicalAxis.Neutral;
+    m.OwnCreatureType = CreatureTypes.Undead;
+  }
 }
 
 public class SkeletonTemplate() : MonsterTemplate("skeleton")
@@ -40,19 +52,12 @@ public class SkeletonTemplate() : MonsterTemplate("skeleton")
 
   public override int LevelBonus(MonsterDef def, int level) => Math.Clamp((int)(level * 0.15), 0, 2);
 
-  public override IEnumerable<LogicBrick> GetComponents(MonsterDef def)
-  {
-    foreach (var c in def.Components) yield return c;
-    yield return SkeletonFacts.Instance;
-    yield return SimpleDR.Blunt.Lookup(def.BaseLevel);
-  }
+  public override IEnumerable<LogicBrick> GetComponents(MonsterDef def) =>
+    TemplateHelper.StripMindless(def.Components).Append(SkeletonFacts.Instance).Append(SimpleDR.Blunt.Lookup(def.BaseLevel));
 
   public override void ModifySpawn(Monster m)
   {
-    m.OwnMoralAxis = MoralAxis.Evil;
-    if (m.Def.EthicalAxis == EthicalAxis.Lawful) m.OwnEthicalAxis = EthicalAxis.Neutral;
-
-    m.OwnCreatureType = CreatureTypes.Undead;
+    TemplateHelper.MakeUndead(m);
     m.ItemBonusAC -= 2;
 
     m.OwnGlyph = m.Def.Glyph with { Background = ConsoleColor.Gray };
@@ -88,21 +93,12 @@ public class ZombieTemplate() : MonsterTemplate("zombie")
 
   public override int LevelBonus(MonsterDef def, int level) => Math.Clamp((int)(level * 0.2), 1, 3);
 
-  public override IEnumerable<LogicBrick> GetComponents(MonsterDef def)
-  {
-    // TODO: remove abilities with mental/good tags (first implement ability tags)
-    foreach (var c in def.Components) yield return c;
-    yield return ZombieFacts.Instance;
-    yield return SimpleDR.Slashing.Lookup(def.BaseLevel);
-  }
+  public override IEnumerable<LogicBrick> GetComponents(MonsterDef def) =>
+    TemplateHelper.StripMindless(def.Components).Append(ZombieFacts.Instance).Append(SimpleDR.Slashing.Lookup(def.BaseLevel));
 
   public override void ModifySpawn(Monster m)
   {
-    // Undead are ALWAYS evil and NEVER lawful
-    m.OwnMoralAxis = MoralAxis.Evil;
-    if (m.Def.EthicalAxis == EthicalAxis.Lawful) m.OwnEthicalAxis = EthicalAxis.Neutral;
-
-    m.OwnCreatureType = CreatureTypes.Undead;
+    TemplateHelper.MakeUndead(m);
 
     m.OwnGlyph = m.Def.Glyph with { Background = ConsoleColor.DarkGreen };
 

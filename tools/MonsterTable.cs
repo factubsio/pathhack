@@ -10,9 +10,13 @@ public static class MonsterTable
             .GetTypes()
             .Where(t => t.IsClass && t.IsAbstract && t.IsSealed) // static classes
             .SelectMany(t => t.GetFields(BindingFlags.Public | BindingFlags.Static))
-            .Where(f => f.FieldType == typeof(MonsterDef))
-            .Select(f => (MonsterDef)f.GetValue(null)!)
+            .SelectMany(f => f.FieldType == typeof(MonsterDef)
+                ? [(MonsterDef)f.GetValue(null)!]
+                : f.FieldType == typeof(MonsterDef[])
+                    ? (MonsterDef[])f.GetValue(null)!
+                    : [])
             .Where(m => family == null || m.Family.Contains(family, StringComparison.InvariantCultureIgnoreCase))
+            .DistinctBy(m => m.id)
             .OrderBy(m => m.BaseLevel)
             .ThenBy(m => m.Name);
 

@@ -11,6 +11,9 @@ public class DeityDef : ISelectable
     public string[] Tags => Aspects;
     public string Subtitle => $"[fg={AlignmentToColor}]{Alignment}[/fg]";
 
+    public EthicalAxis Ethical => Alignment[0] switch { 'L' => EthicalAxis.Lawful, 'C' => EthicalAxis.Chaotic, _ => EthicalAxis.Neutral };
+    public MoralAxis Moral => Alignment[1] switch { 'G' => MoralAxis.Good, 'E' => MoralAxis.Evil, _ => MoralAxis.Neutral };
+
     public string? WhyNot => null;
 
     private string AlignmentToColor => 

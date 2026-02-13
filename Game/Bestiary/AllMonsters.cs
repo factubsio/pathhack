@@ -10,5 +10,6 @@ public static class AllMonsters
         .. Cats.All,
         .. Snakes.All,
         .. Spiders.All,
+        .. Dragons.All,
     ];
 }

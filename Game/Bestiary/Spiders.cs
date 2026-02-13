@@ -105,6 +105,7 @@ public class WebSpit(int cooldown = 120) : CooldownAction("spit web", TargetingT
 
 public class SpiderVenom(int dc) : AfflictionBrick(dc, "poison")
 {
+    public override AbilityTags Tags => AbilityTags.Biological;
     public static readonly SpiderVenom DC10 = new(10);
     public static readonly SpiderVenom DC11 = new(11);
     public static readonly SpiderVenom DC12 = new(12);

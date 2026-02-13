@@ -23,7 +23,7 @@ public static class DummyThings
         Name = "training dummy",
         CreatureType = CreatureTypes.Construct,
         Family = "construct",
-        Glyph = new('d', ConsoleColor.DarkYellow),
+        Glyph = new('\'', ConsoleColor.DarkYellow),
         AttackBonus = 0,
         HpPerLevel = 100,
         AC = 10,
@@ -31,5 +31,13 @@ public static class DummyThings
         Unarmed = Bestiary.NaturalWeapons.Fist,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
+        Components =
+        [
+            new GrantPool("spell_l1", 3, 20),
+            new GrantPool("spell_l2", 2, 30),
+            new GrantSpell(Spells.BasicLevel1Spells.CureLightWounds),
+            new GrantSpell(Spells.BasicLevel1Spells.Light),
+            new GrantSpell(Spells.BasicLevel1Spells.AcidArrow),
+        ],
     };
 }

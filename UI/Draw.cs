@@ -443,7 +443,7 @@ public static class Draw
                         else
                         {
                             var items = level.ItemsAt(p);
-                            if (items.Count > 0)
+                            if (items.Count > 0 && level[p].Type != TileType.Water)
                             {
                                 var top = items[^1];
                                 Layers[0][x, y + MapRow] = Cell.From(top.Glyph);
@@ -468,7 +468,7 @@ public static class Draw
                     ConsoleColor col = ConsoleColor.DarkBlue;
                     if (mem.Tile.Type == TileType.Wall) col = level.WallColor ?? ConsoleColor.Gray;
                     Cell cell;
-                    if (mem.TopItem is { } item && !mem.Tile.IsStairs)
+                    if (mem.TopItem is { } item && !mem.Tile.IsStairs && mem.Tile.Type != TileType.Water)
                         cell = new(item.Glyph.Value, item.Glyph.Color);
                     else if (mem.Trap is { } trap)
                         cell = new(trap.Glyph.Value, trap.Glyph.Color);
@@ -719,7 +719,7 @@ public static class Draw
                 }
                 else if (i < pool.Current)
                     ch = '●';
-                else if (i == pool.Current && pool.Ticks >= pool.RegenRate / 2)
+                else if (i == pool.Current && pool.Ticks >= pool.NextRegen / 2)
                     ch = '◐';
                 else
                     ch = '○';
