@@ -104,7 +104,6 @@ public class MonsterDef : BaseDef
   public required EthicalAxis EthicalAxis;
   public required string CreatureType = CreatureTypes.Humanoid;
   public HashSet<string> Subtypes = [];
-  public bool NoCorpse = false;
   public int StartingRot = 0;
   public GroupSize GroupSize = GroupSize.None;
   public MonFlags BrainFlags = MonFlags.None;

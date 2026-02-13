@@ -1113,6 +1113,7 @@ public class GameState
             case TileType.BranchUp when lvl.BranchUpTarget is { } target:
                 GoToLevel(target, SpawnAt.BranchDown);
                 break;
+            // This looks garbage but it works and it probably won't change.
             default:
                 if (lvl.Traps.TryGetValue(upos, out var trap) && trap is HoleTrap hole)
                 {

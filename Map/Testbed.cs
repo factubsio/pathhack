@@ -122,7 +122,8 @@ public static class CaveGen
             for (int x = 2; x < width - 1; x++)
             {
                 int n = CountNeighbors(level, x, y, TileType.Floor);
-                buf[x, y] = n == killThreshold ? false : level[new(x, y)].Type == TileType.Floor;
+                bool kill = pass == 0 ? n == killThreshold : n < killThreshold;
+                buf[x, y] = kill ? false : level[new(x, y)].Type == TileType.Floor;
             }
             for (int y = 1; y < height - 1; y++)
             for (int x = 2; x < width - 1; x++)

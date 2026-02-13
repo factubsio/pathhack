@@ -203,6 +203,7 @@ public class RegenBrick(params DamageType[] suppressedBy) : LogicBrick<RegenBric
     protected override void OnRoundEnd(Fact fact)
     {
         if (fact.Entity is not IUnit {} unit) return;
+        if (X(fact).IsSuppressed) return;
         unit.HP += 1;
     }
 
