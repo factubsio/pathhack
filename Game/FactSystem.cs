@@ -41,6 +41,7 @@ public interface IEntity
     bool Has(string key);
     bool Allows(string key);
     bool HasFact(LogicBrick brick);
+    IEnumerable<string> ActiveBuffNames { get; }
 
     int EffectiveLevel { get; }
 }
@@ -254,6 +255,13 @@ public enum AbilityTags
 
 public enum ToggleState { NotAToggle, Off, On }
 
+public record struct ActionPlan(bool Ok, string WhyNot = "", object? Plan = null)
+{
+    public static implicit operator ActionPlan(bool ok) => new(ok);
+    public static implicit operator bool(ActionPlan p) => p.Ok;
+    public static implicit operator ActionPlan(string whyNot) => new(false, whyNot);
+}
+
 public abstract class ActionBrick(string name, TargetingType targeting = TargetingType.None, int maxRange = -1, AbilityTags tags = AbilityTags.None)
 {
     public int MaxRange => maxRange;
@@ -266,14 +274,10 @@ public abstract class ActionBrick(string name, TargetingType targeting = Targeti
 
     public virtual object? CreateData() => null;
     public virtual ActionCost GetCost(IUnit unit, object? data, Target target) => ActionCosts.OneAction;
-    public abstract bool CanExecute(IUnit unit, object? data, Target target, out string whyNot);
-    public abstract void Execute(IUnit unit, object? data, Target target);
+    public abstract ActionPlan CanExecute(IUnit unit, object? data, Target target);
+    public abstract void Execute(IUnit unit, object? data, Target target, object? plan = null);
 
-    protected static bool Always(out string _)
-    {
-        _ = "";
-        return true;
-    }
+    protected static ActionPlan Always() => true;
 }
 
 public abstract class CooldownAction(string name, TargetingType target, Func<IUnit, int> cooldown, int maxRange = -1) : ActionBrick(name, target, maxRange)
@@ -297,9 +301,14 @@ public abstract class CooldownAction(string name, TargetingType target, Func<IUn
 
     public sealed override object? CreateData() => new CooldownTracker(cooldown);
 
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot) => ((CooldownTracker)data!).CanExecute(out whyNot);
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target)
+    {
+        var tracker = (CooldownTracker)data!;
+        int remaining = tracker.CooldownUntil - g.CurrentRound;
+        return remaining <= 0 ? true : new ActionPlan(false, $"{remaining} rounds left");
+    }
 
-    public sealed override void Execute(IUnit unit, object? data, Target target)
+    public sealed override void Execute(IUnit unit, object? data, Target target, object? plan = null)
     {
         ((CooldownTracker)data!).OnActivate(unit);
         Execute(unit, target);
@@ -320,13 +329,9 @@ public abstract class SimpleToggleAction<T>(string name, T fact) : ActionBrick(n
 
     public override object? CreateData() => new DataFlag();
 
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
-    {
-        whyNot = "";
-        return true;
-    }
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target) => true;
 
-    public override void Execute(IUnit unit, object? data, Target target)
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
     {
         DataFlag dat = (DataFlag)data!;
         dat.On = !dat.On;
@@ -341,11 +346,8 @@ public static class ActionHelpers
 {
     public static bool IsAdjacent(this IUnit unit, Target target) =>
         target.Unit != null && unit.Pos.ChebyshevDist(target.Unit.Pos) == 1;
-    public static bool IsAdjacent(this IUnit unit, Target target, out string whyNot)
-    {
-        whyNot = "not adjacent";
-        return target.Unit != null && unit.Pos.ChebyshevDist(target.Unit.Pos) == 1;
-    }
+    public static ActionPlan IsAdjacentPlan(this IUnit unit, Target target) =>
+        unit.IsAdjacent(target) ? true : new ActionPlan(false, "not adjacent");
 }
 
 public static class LogicHelpers
@@ -358,60 +360,6 @@ public class QueryBrick(string queryKey, object value) : LogicBrick
 {
     protected override object? OnQuery(Fact fact, string key, string? arg) =>
         key == queryKey ? value : null;
-}
-
-public class AttackWithWeapon() : ActionBrick("attack_with_weapon")
-{
-    public static readonly AttackWithWeapon Instance = new();
-
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
-    {
-        whyNot = "no target in range";
-
-        if (target.Unit == null) return false;
-        int dist = unit.Pos.ChebyshevDist(target.Unit.Pos);
-        if (dist == 1) return true; // melee
-
-        var weapon = unit.GetWieldedItem().Def as WeaponDef;
-        if (weapon?.Launcher == null) return false;
-        // TODO: check we are wielding the correct launcher
-        return dist <= 4 && target.Unit.Pos.IsCompassFrom(unit.Pos) && (unit as Monster)?.CanSeeYou == true;
-    }
-
-    public override void Execute(IUnit unit, object? data, Target target)
-    {
-        int dist = unit.Pos.ChebyshevDist(target.Unit!.Pos);
-        if (dist > 1)
-        {
-            Pos dir = (target.Unit.Pos - unit.Pos).Signed;
-            var weapon = unit.GetWieldedItem();
-            Item toThrow;
-            if (weapon.Count > 1)
-                toThrow = weapon.Split(1);
-            else
-            {
-                toThrow = weapon;
-                unit.Inventory.Remove(weapon);
-            }
-            DoThrow(unit, toThrow, dir);
-        }
-        else
-        {
-            DoWeaponAttack(unit, target.Unit, unit.GetWieldedItem());
-        }
-    }
-}
-
-public class NaturalAttack(WeaponDef weapon) : ActionBrick("attack_with_nat")
-{
-    public WeaponDef Weapon => weapon;
-    public override string? PokedexDescription => weapon.BaseDamage.ToString();
-    readonly Item _item = new(weapon);
-
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot) => unit.IsAdjacent(target, out whyNot);
-
-    public override void Execute(IUnit unit, object? data, Target target) =>
-        DoWeaponAttack(unit, target.Unit!, _item);
 }
 
 public class GrantProficiency(string skill, ProficiencyLevel level, bool requiresEquipped = false) : LogicBrick
@@ -585,6 +533,7 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
     public virtual bool Allows(string key) => Query(key, null, MergeStrategy.And, true);
 
     public bool HasFact(LogicBrick brick) => LiveFacts.Any(f => f.Brick == brick);
+    public IEnumerable<string> ActiveBuffNames => LiveFacts.Where(f => f.Brick.IsBuff).Select(f => f.DisplayName!);
 
     protected static object? Merge(object? current, object? next, MergeStrategy strategy)
     {

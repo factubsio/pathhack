@@ -40,6 +40,12 @@ public class EquipSet(params Outfit[] outfits) : LogicBrick
     public static EquipSet Roll(ItemDef item, int chance) =>
         new(new Outfit(1, new OutfitItem(item, chance)));
 
+    public static EquipSet WithCount(ItemDef item, DiceFormula count) =>
+        new(new Outfit(1, new OutfitItem(item, Count: count)));
+
+    public static EquipSet Weighted(params (int weight, ItemDef? item)[] entries) =>
+        new([.. entries.Select(e => e.item != null ? new Outfit(e.weight, new OutfitItem(e.item)) : new Outfit(e.weight))]);
+
     protected override void OnSpawn(Fact fact, PHContext context)
     {
         int total = outfits.Sum(o => o.Weight);

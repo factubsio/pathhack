@@ -10,7 +10,8 @@ public abstract class SpellBrickBase(string name, int level, string description,
 
   public readonly string Pool = $"spell_l{level}";
 
-  public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot) => unit.HasCharge(Pool, out whyNot);
+  public override ActionPlan CanExecute(IUnit unit, object? data, Target target) =>
+    unit.HasCharge(Pool, out var whyNot) ? true : new ActionPlan(false, whyNot);
 
   public FeatDef ToFeat() => new()
   {
@@ -25,7 +26,7 @@ public abstract class SpellBrickBase(string name, int level, string description,
 
 public class SpellBrick(string name, int level, string description, Action<IUnit, Target> act, TargetingType targeting = TargetingType.None, bool maintained = false, int maxRange = -1, AbilityTags tags = AbilityTags.None) : SpellBrickBase(name, level, description, targeting, maintained, maxRange, tags)
 {
-  public override void Execute(IUnit unit, object? data, Target target) 
+  public override void Execute(IUnit unit, object? data, Target target, object? plan = null) 
   {
     if (unit.TryUseCharge(Pool)) act(unit, target);
   }
@@ -33,14 +34,14 @@ public class SpellBrick(string name, int level, string description, Action<IUnit
 
 public class ActivateMaintainedSpell(string name, int level, string description, Action<IUnit> act, MaintainedBuff buff) : SpellBrickBase(name, level, description, TargetingType.None, true, tags: AbilityTags.Beneficial)
 {
-  public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
+  public override ActionPlan CanExecute(IUnit unit, object? data, Target target)
   {
-    if (!base.CanExecute(unit, data, target, out whyNot)) return false;
-    whyNot = "buff already active";
-    return !unit.HasFact(buff);
+    var basePlan = base.CanExecute(unit, data, target);
+    if (!basePlan) return basePlan;
+    return !unit.HasFact(buff) ? true : new ActionPlan(false, "buff already active");
   }
 
-  public override void Execute(IUnit unit, object? data, Target target) 
+  public override void Execute(IUnit unit, object? data, Target target, object? plan = null) 
   {
     if (unit.TryUseCharge(Pool))
     {
@@ -53,7 +54,7 @@ public class ActivateMaintainedSpell(string name, int level, string description,
 public class SpellBrick<T>(string name, int level, string description, Action<IUnit, Target, T> act, TargetingType targeting = TargetingType.None, bool maintained = false) : SpellBrickBase(name, level, description, targeting, maintained) where T : new()
 {
   public override object? CreateData() => new T();
-  public override void Execute(IUnit unit, object? data, Target target) 
+  public override void Execute(IUnit unit, object? data, Target target, object? plan = null) 
   {
     if (unit.TryUseCharge(Pool)) act(unit, target, (T)data!);
   }
@@ -71,13 +72,10 @@ public class DismissAction() : ActionBrick("Dismiss")
 {
   public static readonly DismissAction Instance = new();
 
-  public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
-  {
-    whyNot = "No maintained spells active.";
-    return unit.Facts.Any(f => f.Brick is MaintainedBuff);
-  }
+  public override ActionPlan CanExecute(IUnit unit, object? data, Target target) =>
+    unit.Facts.Any(f => f.Brick is MaintainedBuff) ? true : new ActionPlan(false, "No maintained spells active.");
 
-  public override void Execute(IUnit unit, object? data, Target target) => DoDismiss(unit);
+  public override void Execute(IUnit unit, object? data, Target target, object? plan = null) => DoDismiss(unit);
 
   public static void DoDismiss(IUnit unit)
   {
@@ -107,9 +105,10 @@ public class DismissAction() : ActionBrick("Dismiss")
 internal class ConsumeSpell(int lvl) : ActionBrick($"consume spell {lvl}")
 {
     private string Pool => $"spell_l{lvl}";
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot) => unit.HasCharge(Pool, out whyNot);
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target) =>
+        unit.HasCharge(Pool, out var whyNot) ? true : new ActionPlan(false, whyNot);
 
-    public override void Execute(IUnit unit, object? data, Target target)
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
     {
         unit.TryUseCharge(Pool);
     }

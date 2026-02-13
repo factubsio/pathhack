@@ -190,6 +190,15 @@ public class Monster : Unit<MonsterDef>, IFormattable
 
   // where monster thinks player is
   public Pos? ApparentPlayerPos { get; private set; }
+  public int ApparentPlayerPosAge { get; private set; }
+
+  void SetApparentPos(Pos pos)
+  {
+    ApparentPlayerPos = pos;
+    ApparentPlayerPosAge = g.CurrentRound;
+  }
+
+  public bool IsApparentPosFresh => ApparentPlayerPos != null && g.CurrentRound - ApparentPlayerPosAge <= 3;
 
   public bool IsAsleep;
 
@@ -212,13 +221,13 @@ public class Monster : Unit<MonsterDef>, IFormattable
     // always knows (pet, grabber, etc)
     if (Has("always_knows_u") && !IsAsleep)
     {
-      ApparentPlayerPos = upos;
+      SetApparentPos(upos);
       return;
     }
 
     if (CanSeeYou && !IsAsleep)
     {
-      ApparentPlayerPos = upos;
+      SetApparentPos(upos);
       return;
     }
 
@@ -228,7 +237,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
     {
       if (Has("keen_ears") || g.Rn2(7) == 0)
       {
-        ApparentPlayerPos = upos;
+        SetApparentPos(upos);
         return;
       }
     }
@@ -236,14 +245,14 @@ public class Monster : Unit<MonsterDef>, IFormattable
     // aggravate monster - player always detected
     if (u.Has("aggravate_monster"))
     {
-      ApparentPlayerPos = upos;
+      SetApparentPos(upos);
       return;
     }
 
     // adjacent stumble - 1/8 chance to notice adjacent player
     if (Pos.ChebyshevDist(upos) <= 1 && g.Rn2(8) == 0)
     {
-      ApparentPlayerPos = upos;
+      SetApparentPos(upos);
       return;
     }
 
@@ -425,17 +434,22 @@ public class Monster : Unit<MonsterDef>, IFormattable
       if (!beneficial && action.Tags.HasFlag(AbilityTags.Harmful) && g.Rn2(3) == 0)
         continue;
 
+      // don't waste spells on stale positions
+      if (!beneficial && action is SpellBrickBase && !IsApparentPosFresh)
+        continue;
+
       Target? target = beneficial ? BeneficialTarget(action) : HarmfulTarget(action, targetPos);
       if (target == null) continue;
 
       var data = ActionData.GetValueOrDefault(action);
-      if (!action.CanExecute(this, data, target, out _)) continue;
+      var plan = action.CanExecute(this, data, target);
+      if (!plan) continue;
 
       bool isSpell = action is SpellBrickBase;
       Log.Write($"{this} {(isSpell ? "casts" : "uses")} {action.Name}{(beneficial ? " on self" : "")}");
       if (isSpell) g.YouObserve(this, $"{this:The} casts {action.Name}!", SpellChants.Pick());
 
-      action.Execute(this, data, target);
+      action.Execute(this, data, target, plan.Plan);
       Energy -= action.GetCost(this, data, target).Value;
       return true;
     }

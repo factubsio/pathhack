@@ -524,14 +524,29 @@ public class Level(LevelId id, int width, int height)
             Corpses.Add((item, p));
     }
 
+    private void CleanUp(Item item)
+    {
+        if (item.CorpseOf != null)
+            Corpses.RemoveAll(c => c.Corpse == item);
+    }
+
     public bool RemoveItem(Item item, Pos p)
     {
         var items = GetState(p)?.Items;
         if (items?.Remove(item) != true) return false;
+
+        CleanUp(item);
         
-        if (item.CorpseOf != null)
-            Corpses.RemoveAll(c => c.Corpse == item);
         return true;
+    }
+
+    internal void RemoveAllItems(Pos p)
+    {
+        var items = GetState(p)?.Items;
+        if (items == null) return;
+        foreach (var item in items)
+            CleanUp(item);
+        items.Clear();
     }
 
     internal void PlaceDoor(Pos pos, DoorState state = DoorState.Closed)

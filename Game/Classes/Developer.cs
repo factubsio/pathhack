@@ -2,13 +2,9 @@ namespace Pathhack.Game.Classes;
 
 public class DebugMap() : ActionBrick("Magic Mapping")
 {
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
-    {
-        whyNot = "";
-        return true;
-    }
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target) => true;
     
-    public override void Execute(IUnit unit, object? data, Target target)
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
     {
         g.DoMapLevel();
         foreach (var trap in lvl.Traps.Values)
@@ -18,13 +14,9 @@ public class DebugMap() : ActionBrick("Magic Mapping")
 
 public class BlindSelf() : ActionBrick("Blind Self")
 {
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
-    {
-        whyNot = "";
-        return true;
-    }
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target) => true;
     
-    public override void Execute(IUnit unit, object? data, Target target)
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
     {
         unit.AddFact(BlindBuff.Instance.Timed(), duration: 5);
         g.pline("You blind yourself!");
@@ -33,13 +25,9 @@ public class BlindSelf() : ActionBrick("Blind Self")
 
 public class GreaseAround() : ActionBrick("grease test")
 {
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
-    {
-        whyNot = "";
-        return true;
-    }
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target) => true;
 
-    public override void Execute(IUnit unit, object? data, Target target)
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
     {
         var area = new GreaseArea("Grease", unit, 14, 6) { Tiles = [..unit.Pos.Neighbours().Where(p => !lvl[p].IsStructural)] };
         lvl.CreateArea(area);
@@ -48,13 +36,9 @@ public class GreaseAround() : ActionBrick("grease test")
 
 public class PoisonSelf() : ActionBrick("Poison Self")
 {
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
-    {
-        whyNot = "";
-        return true;
-    }
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target) => true;
 
-    public override void Execute(IUnit unit, object? data, Target target)
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
     {
         unit.AddFact(new SpiderVenom(100));
         g.pline("You inject yourself with spider venom!");
@@ -63,13 +47,9 @@ public class PoisonSelf() : ActionBrick("Poison Self")
 
 public class GrantProtection() : ActionBrick("Grant Protection")
 {
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
-    {
-        whyNot = "";
-        return true;
-    }
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target) => true;
 
-    public override void Execute(IUnit unit, object? data, Target target)
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
     {
         unit.AddFact(ProtectionBrick.Fire, count: 20);
         unit.AddFact(ProtectionBrick.Cold, count: 20);
@@ -82,13 +62,9 @@ public class GrantProtection() : ActionBrick("Grant Protection")
 
 public class GrantTempHp() : ActionBrick("Grant Temp HP")
 {
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
-    {
-        whyNot = "";
-        return true;
-    }
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target) => true;
 
-    public override void Execute(IUnit unit, object? data, Target target)
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
     {
         unit.GrantTempHp(10);
         g.pline("You gain temporary hit points!");
@@ -97,13 +73,9 @@ public class GrantTempHp() : ActionBrick("Grant Temp HP")
 
 public class LearnDungeon() : ActionBrick("Learn Dungeon")
 {
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
-    {
-        whyNot = "";
-        return true;
-    }
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target) => true;
 
-    public override void Execute(IUnit unit, object? data, Target target)
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
     {
         foreach (var branch in g.Branches.Values)
             branch.Discovered = true;
@@ -113,13 +85,9 @@ public class LearnDungeon() : ActionBrick("Learn Dungeon")
 
 public class GenAllLevels() : ActionBrick("Gen All Levels")
 {
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
-    {
-        whyNot = "";
-        return true;
-    }
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target) => true;
 
-    public override void Execute(IUnit unit, object? data, Target target)
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
     {
         Branch branch = u.Level.Branch;
         int count = 0;
@@ -133,6 +101,55 @@ public class GenAllLevels() : ActionBrick("Gen All Levels")
             }
         }
         g.pline($"Generated {count} levels of {branch.Name}.");
+    }
+}
+
+public class MakeWater() : ActionBrick("Make Water", TargetingType.Pos)
+{
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target) => true;
+
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
+    {
+        if (target.Pos is not { } pos) return;
+        lvl.Set(pos, TileType.Water);
+        g.pline("Water springs forth!");
+    }
+}
+
+public class IdentifyAll() : ActionBrick("Identify All")
+{
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target) => true;
+
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
+    {
+        foreach (var item in unit.Inventory)
+            item.Identify();
+        g.pline("Everything in your pack glows briefly.");
+    }
+}
+
+public class HealFull() : ActionBrick("Heal Full")
+{
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target) => true;
+
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
+    {
+        unit.HP.Current = unit.HP.Max;
+        g.pline("You feel completely restored.");
+    }
+}
+
+public class Probe() : ActionBrick("Probe", TargetingType.Unit, maxRange: 5)
+{
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target) => true;
+
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
+    {
+        if (target.Unit is not { } tgt) return;
+        g.pline($"{tgt:The}: HP {tgt.HP.Current}/{tgt.HP.Max} AC {tgt.GetAC()} L{tgt.EffectiveLevel}");
+        var buffs = tgt.ActiveBuffNames.ToList();
+        if (buffs.Count > 0) g.pline($"  Buffs: {string.Join(", ", buffs)}");
+        if (tgt.Inventory.Count > 0) g.pline($"  Inv: {string.Join(", ", tgt.Inventory.Select(i => i.ToString()))}");
     }
 }
 
@@ -209,6 +226,10 @@ public static partial class ClassDefs
             p.AddAction(new GrantTempHp());
             p.AddAction(new LearnDungeon());
             p.AddAction(new GenAllLevels());
+            p.AddAction(new MakeWater());
+            p.AddAction(new IdentifyAll());
+            p.AddAction(new HealFull());
+            p.AddAction(new Probe());
             foreach (var blessing in Blessings.All)
                 blessing.ApplyMinor(p);
         },

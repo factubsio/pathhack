@@ -260,6 +260,70 @@ public static class MundaneArmory
         Price = 5,
     };
 
+    public static readonly WeaponDef Hatchet = new()
+    {
+        id = "hatchet",
+        Name = "hatchet",
+        BaseDamage = d(6),
+        Profiency = Proficiencies.Axe,
+        WeaponType = WeaponTypes.Hatchet,
+        DamageType = DamageTypes.Slashing,
+        Launcher = "hand",
+        Stackable = true,
+        Glyph = new(ItemClasses.Weapon, ConsoleColor.Gray),
+        Price = 4,
+    };
+
+    public static readonly WeaponDef Battleaxe = new()
+    {
+        id = "battleaxe",
+        Name = "battleaxe",
+        BaseDamage = d(8),
+        Profiency = Proficiencies.Axe,
+        WeaponType = WeaponTypes.Axe,
+        DamageType = DamageTypes.Slashing,
+        Glyph = new(ItemClasses.Weapon, ConsoleColor.Gray),
+        Price = 10,
+    };
+
+    public static readonly WeaponDef DwarvenWaraxe = new()
+    {
+        id = "dwarven_waraxe",
+        Name = "dwarven waraxe",
+        BaseDamage = d(10),
+        Profiency = Proficiencies.Axe,
+        WeaponType = WeaponTypes.Axe,
+        DamageType = DamageTypes.Slashing,
+        Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
+        Price = 30,
+    };
+
+    public static readonly WeaponDef Greataxe = new()
+    {
+        id = "greataxe",
+        Name = "greataxe",
+        BaseDamage = d(12),
+        Profiency = Proficiencies.Axe,
+        WeaponType = WeaponTypes.Greataxe,
+        DamageType = DamageTypes.Slashing,
+        Hands = 2,
+        Glyph = new(ItemClasses.Weapon, ConsoleColor.Gray),
+        Price = 20,
+    };
+
+    public static readonly WeaponDef Gandasa = new()
+    {
+        id = "gandasa",
+        Name = "gandasa",
+        BaseDamage = d(2, 4),
+        Profiency = Proficiencies.Axe,
+        WeaponType = WeaponTypes.Greataxe,
+        DamageType = DamageTypes.Slashing,
+        Hands = 2,
+        Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
+        Price = 15,
+    };
+
     public static readonly ArmorDef LeatherArmor = new()
     {
         id = "leather_armor",
@@ -347,6 +411,6 @@ public static class MundaneArmory
         Price = 400,
     };
 
-    public static readonly WeaponDef[] AllWeapons = [Dagger, Shortsword, Longsword, Scimitar, Rapier, Falchion, Club, SpikedClub, Greatclub, Mace, Flail, Quarterstaff, BoStaff, Spear, Scythe, Whip, SpikedChain, Longbow, Dart, Bola];
+    public static readonly WeaponDef[] AllWeapons = [Dagger, Shortsword, Longsword, Scimitar, Rapier, Falchion, Club, SpikedClub, Greatclub, Mace, Flail, Quarterstaff, BoStaff, Spear, Scythe, Whip, SpikedChain, Longbow, Dart, Bola, Hatchet, Battleaxe, DwarvenWaraxe, Greataxe, Gandasa];
     public static readonly ArmorDef[] AllArmors = [LeatherArmor, ChainShirt, HideArmor, Breastplate, SplintMail, FullPlate];
 }

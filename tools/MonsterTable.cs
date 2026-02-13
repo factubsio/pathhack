@@ -6,15 +6,7 @@ public static class MonsterTable
 {
     public static void Print(string? family)
     {
-        var defs = Assembly.GetExecutingAssembly()
-            .GetTypes()
-            .Where(t => t.IsClass && t.IsAbstract && t.IsSealed) // static classes
-            .SelectMany(t => t.GetFields(BindingFlags.Public | BindingFlags.Static))
-            .SelectMany(f => f.FieldType == typeof(MonsterDef)
-                ? [(MonsterDef)f.GetValue(null)!]
-                : f.FieldType == typeof(MonsterDef[])
-                    ? (MonsterDef[])f.GetValue(null)!
-                    : [])
+        var defs = AllMonsters.ActuallyAll
             .Where(m => family == null || m.Family.Contains(family, StringComparison.InvariantCultureIgnoreCase))
             .DistinctBy(m => m.id)
             .OrderBy(m => m.BaseLevel)

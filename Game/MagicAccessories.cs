@@ -25,15 +25,15 @@ public class RamBlast() : CooldownAction("Ram Blast", TargetingType.Unit, _ => 4
 {
     public static readonly RamBlast Instance = new();
 
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target)
     {
-        if (!base.CanExecute(unit, data, target, out whyNot)) return false;
+        var basePlan = base.CanExecute(unit, data, target);
+        if (!basePlan) return basePlan;
 
         if (unit.IsPlayer) return true; // player manual target!
 
-        if (target.Unit is not { } tgt) { whyNot = "no target"; return false; }
-        if (unit.Pos.ChebyshevDist(tgt.Pos) > MaxRange) { whyNot = "too far"; return false; }
-        whyNot = "";
+        if (target.Unit is not { } tgt) return new(false, "no target");
+        if (unit.Pos.ChebyshevDist(tgt.Pos) > MaxRange) return new(false, "too far");
         return true;
     }
 

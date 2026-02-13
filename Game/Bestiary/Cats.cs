@@ -161,9 +161,9 @@ public class QuickBite() : ActionBrick("quick_bite")
 
     public override ActionCost GetCost(IUnit unit, object? data, Target target) => new(6);
 
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot) => unit.IsAdjacent(target, out whyNot);
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target) => unit.IsAdjacentPlan(target);
 
-    public override void Execute(IUnit unit, object? data, Target target) => DoWeaponAttack(unit, target.Unit!, Weapon);
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null) => DoWeaponAttack(unit, target.Unit!, Weapon);
 }
 
 public class Pounce() : ActionBrick("pounce", TargetingType.Unit) 
@@ -171,58 +171,34 @@ public class Pounce() : ActionBrick("pounce", TargetingType.Unit)
     public static readonly Pounce Instance = new();
     const int Range = 2;
 
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target)
     {
-        whyNot = "no target";
-        if (target.Unit is not { } tgt) return false;
+        if (target.Unit is not { } tgt) return new(false, "no target");
 
         int dist = unit.Pos.ChebyshevDist(tgt.Pos);
-        whyNot = "wrong range";
-        if (dist != Range + 1) return false; // must be exactly 3 away to land adjacent
+        if (dist != Range + 1) return new(false, "wrong range");
 
         Pos dir = (tgt.Pos - unit.Pos).Signed;
         Pos landing = tgt.Pos - dir;
 
-        whyNot = "blocked";
-        if (!lvl.CanMoveTo(unit.Pos, landing, unit) || lvl.UnitAt(landing) != null) return false;
+        if (!lvl.CanMoveTo(unit.Pos, landing, unit) || lvl.UnitAt(landing) != null) return new(false, "blocked");
 
-        whyNot = "";
         return true;
     }
 
-    public override void Execute(IUnit unit, object? data, Target target)
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
     {
         var tgt = target.Unit!;
         Pos dir = (tgt.Pos - unit.Pos).Signed;
         Pos landing = tgt.Pos - dir;
 
         g.pline($"{unit:The} pounces!");
-        // The move is free, we pay the cost as the action
         lvl.MoveUnit(unit, landing, true);
 
-        // Find and execute full attack
         var fullAttack = unit.Actions.OfType<FullAttack>().FirstOrDefault();
         if (fullAttack != null)
             fullAttack.Execute(unit, null, target);
         else
             DoWeaponAttack(unit, tgt, unit.GetWieldedItem());
     }
-}
-
-public class FullAttack(string name, params WeaponDef[] attacks) : ActionBrick($"full:{name}:{string.Join(",", attacks.Select(a => a.id ?? a.Name))}")
-{
-    readonly Item[] _weapons = [.. attacks.Select(Item.Create)];
-
-    public override void Execute(IUnit unit, object? data, Target target)
-    {
-        var tgt = target.Unit!;
-        for (int i = 0; i < _weapons.Length; i++)
-        {
-            Item? weapon = _weapons[i];
-            if (tgt.IsDead) break; // rampage to others here!!!
-            DoWeaponAttack(unit, tgt, weapon, attackBonus: i > 0 ? -5 : 0);
-        }
-    }
-
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot) => unit.IsAdjacent(target, out whyNot);
 }

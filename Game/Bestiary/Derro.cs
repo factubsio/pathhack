@@ -38,20 +38,16 @@ public class DazeAction(int range, int dc, string pool) : ActionBrick("Daze")
 {
     public const string Resource = "daze";
 
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target)
     {
-        if (!unit.HasCharge(pool, out whyNot)) return false;
-        whyNot = "can't see target";
-        if (unit is not Monster m || !m.CanSeeYou) return false;
-        whyNot = "out of range";
-        if (unit.Pos.ChebyshevDist(upos) > range) return false;
-        whyNot = "target immune";
-        if (u.HasFact(DazeImmunity.Instance)) return false;
-        whyNot = "";
+        if (!unit.HasCharge(pool, out var whyNot)) return new(false, whyNot);
+        if (unit is not Monster m || !m.CanSeeYou) return new(false, "can't see target");
+        if (unit.Pos.ChebyshevDist(upos) > range) return new(false, "out of range");
+        if (u.HasFact(DazeImmunity.Instance)) return new(false, "target immune");
         return true;
     }
 
-    public override void Execute(IUnit unit, object? data, Target target)
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
     {
         if (target.Unit is not { } tgt) return;
 
@@ -91,14 +87,11 @@ public class TelekineticProjectile(int range, Dice damage, string pool) : Action
         Launcher = "tk",
         Price = -1,
     };
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target)
     {
-        if (!unit.HasCharge(pool, out whyNot)) return false;
-        whyNot = "can't see target";
-        if (unit is not Monster m || !m.CanSeeYou) return false;
-        whyNot = "no valid position";
-        if (FindLaunchPos(unit) == null) return false;
-        whyNot = "";
+        if (!unit.HasCharge(pool, out var whyNot)) return new(false, whyNot);
+        if (unit is not Monster m || !m.CanSeeYou) return new(false, "can't see target");
+        if (FindLaunchPos(unit) == null) return new(false, "no valid position");
         return true;
     }
 
@@ -122,7 +115,7 @@ public class TelekineticProjectile(int range, Dice damage, string pool) : Action
         return null;
     }
 
-    public override void Execute(IUnit unit, object? data, Target target)
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
     {
         unit.TryUseCharge(pool);
         var from = FindLaunchPos(unit)!.Value;

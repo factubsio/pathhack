@@ -115,6 +115,10 @@ public static class WeaponTypes
     public const string Bola = "bola";
     public const string OrcKnuckleDagger = "orc_knuckle_dagger";
     public const string OrcNecksplitter = "orc_necksplitter";
+    public const string Hatchet = "hatchet";
+    public const string Axe = "axe";
+    public const string Greataxe = "greataxe";
+    public const string Rock = "rock";
 }
 
 public enum ProficiencyLevel

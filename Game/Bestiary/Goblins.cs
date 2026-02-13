@@ -2,18 +2,15 @@ namespace Pathhack.Game.Bestiary;
 
 public class FireBreath(int radius, Dice damage, int dc, string pool = "fire_breath") : ActionBrick("Goblin Fire Breath")
 {
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target)
     {
-        if (!unit.HasCharge(pool, out whyNot)) return false;
-        whyNot = "can't see target";
-        if (unit is not Monster m || !m.CanSeeYou) return false;
-        whyNot = "out of range";
-        if (unit.Pos.ChebyshevDist(target.Pos!.Value) > radius) return false;
-        whyNot = "";
+        if (!unit.HasCharge(pool, out var whyNot)) return new(false, whyNot);
+        if (unit is not Monster m || !m.CanSeeYou) return new(false, "can't see target");
+        if (unit.Pos.ChebyshevDist(target.Pos!.Value) > radius) return new(false, "out of range");
         return true;
     }
 
-    public override void Execute(IUnit unit, object? data, Target target)
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
     {
         unit.TryUseCharge(pool);
         Pos dir = (target.Pos!.Value - unit.Pos).Signed;
@@ -43,10 +40,10 @@ public class WarChant(string pool = "war_chant") : ActionBrick("Goblin War Chant
     const int Duration = 10;
     const int Range = 6;
 
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot) =>
-        unit.HasCharge(pool, out whyNot);
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target) =>
+        unit.HasCharge(pool, out var whyNot) ? true : new ActionPlan(false, whyNot);
 
-    public override void Execute(IUnit unit, object? data, Target target)
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
     {
         unit.TryUseCharge(pool);
 

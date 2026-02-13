@@ -151,6 +151,7 @@ public static class Draw
 
     public static void AnimateBeam(Pos from, Pos to, Glyph glyph, int delayMs = 30)
     {
+        // TODO: move visibility clipping to overlay layer instead of per-callsite
         var dir = (to - from).Signed;
         
         // DEC: x = vertical, q = horizontal. Unicode for diagonals.
@@ -167,7 +168,8 @@ public static class Draw
         Pos p = from + dir;
         while (p != to + dir)
         {
-            Overlay[p.X, p.Y + MapRow] = new Cell(beamChar, glyph.Color, Dec: dec);
+            if (lvl.IsVisible(p))
+                Overlay[p.X, p.Y + MapRow] = new Cell(beamChar, glyph.Color, Dec: dec);
             Blit();
             Thread.Sleep(delayMs);
             p += dir;
@@ -195,10 +197,13 @@ public static class Draw
 
         while (p != to)
         {
-            Overlay[p.X, p.Y + MapRow] = new Cell(glyph.Value, glyph.Color);
-            Blit();
-            Thread.Sleep(delayMs);
-            Overlay[p.X, p.Y + MapRow] = null;
+            if (lvl.IsVisible(p))
+            {
+                Overlay[p.X, p.Y + MapRow] = new Cell(glyph.Value, glyph.Color);
+                Blit();
+                Thread.Sleep(delayMs);
+                Overlay[p.X, p.Y + MapRow] = null;
+            }
             p += new Pos(dx, dy);
         }
         Blit();
@@ -208,7 +213,8 @@ public static class Draw
     {
         using var layer = Overlay.Activate();
         foreach (var p in positions)
-            Overlay[p.X, p.Y + MapRow] = new Cell(glyph.Value, glyph.Color);
+            if (lvl.IsVisible(p))
+                Overlay[p.X, p.Y + MapRow] = new Cell(glyph.Value, glyph.Color);
         Blit();
         Thread.Sleep(delayMs);
     }
@@ -230,12 +236,14 @@ public static class Draw
             {
                 var glyph = (i - j) >= 2 ? trail : mid;
                 foreach (var p in rings[j])
-                    Overlay[p.X, p.Y + MapRow] = new Cell(glyph.Value, glyph.Color);
+                    if (lvl.IsVisible(p))
+                        Overlay[p.X, p.Y + MapRow] = new Cell(glyph.Value, glyph.Color);
             }
             
             // Draw frontier
             foreach (var p in rings[i])
-                Overlay[p.X, p.Y + MapRow] = new Cell(frontier.Value, frontier.Color);
+                if (lvl.IsVisible(p))
+                    Overlay[p.X, p.Y + MapRow] = new Cell(frontier.Value, frontier.Color);
             
             Blit();
             Thread.Sleep(delayMs);

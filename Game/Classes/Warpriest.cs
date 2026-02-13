@@ -6,9 +6,10 @@ public static class Fervor
 
     public class EnhanceWeaponAction() : ActionBrick("Fervor: Enhance Weapon")
     {
-        public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot) => unit.HasCharge(Resource, out whyNot);
+        public override ActionPlan CanExecute(IUnit unit, object? data, Target target) =>
+            unit.HasCharge(Resource, out var whyNot) ? true : new ActionPlan(false, whyNot);
 
-        public override void Execute(IUnit unit, object? data, Target target)
+        public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
         {
             if (!unit.TryUseCharge(Resource)) return;
 

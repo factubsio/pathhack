@@ -4,22 +4,18 @@ public enum BreathShape { Cone, Line }
 
 public class BreathWeapon(BreathShape shape, DamageType damageType, ConsoleColor color, string pool = "dragon_breath") : ActionBrick("breath weapon", tags: AbilityTags.Biological)
 {
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target)
     {
-        if (!unit.HasCharge(pool, out whyNot)) return false;
-        whyNot = "can't see target";
-        if (unit is not Monster m || !m.CanSeeYou) return false;
-        whyNot = "out of range";
-        if (unit.Pos.ChebyshevDist(target.Pos!.Value) > Range(unit)) return false;
+        if (!unit.HasCharge(pool, out var whyNot)) return new(false, whyNot);
+        if (unit is not Monster m || !m.CanSeeYou) return new(false, "can't see target");
+        if (unit.Pos.ChebyshevDist(target.Pos!.Value) > Range(unit)) return new(false, "out of range");
 
         if (shape == BreathShape.Line)
         {
             var delta = target.Pos!.Value - unit.Pos;
-            whyNot = "not in line";
-            if (delta.X != 0 && delta.Y != 0 && Math.Abs(delta.X) != Math.Abs(delta.Y)) return false;
+            if (delta.X != 0 && delta.Y != 0 && Math.Abs(delta.X) != Math.Abs(delta.Y)) return new(false, "not in line");
         }
 
-        whyNot = "";
         return true;
     }
 
@@ -40,7 +36,7 @@ public class BreathWeapon(BreathShape shape, DamageType damageType, ConsoleColor
         _ => dt.SubCat,
     };
 
-    public override void Execute(IUnit unit, object? data, Target target)
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
     {
         unit.TryUseCharge(pool);
         Pos dir = (target.Pos!.Value - unit.Pos).Signed;
@@ -122,7 +118,8 @@ public record DragonAge(
     int HpPerLevel,
     int AC,
     int AB,
-    int DmgBonus
+    int DmgBonus,
+    ActionCost Speed
 );
 
 /// <summary>Peaceful if player alignment is within 1 step on both axes.</summary>
@@ -164,8 +161,8 @@ public static class Dragons
 
     static readonly DragonAge[] Ages =
     [
-        new("wyrmling", 0,  0, 6,  0, 0, 0),
-        new("young",    4,  1, 8,  1, 1, 2),
+        new("wyrmling", 0,  0, 6,  0, 0, 0, ActionCosts.LandMove20),
+        new("young",    4,  1, 8,  1, 1, 2, ActionCosts.LandMove25),
     ];
 
     static UnitSize SizeFromStep(int step) => step switch
@@ -213,7 +210,7 @@ public static class Dragons
             AC = age.AC,
             AttackBonus = age.AB,
             DamageBonus = age.DmgBonus,
-            LandMove = ActionCosts.StandardLandMove,
+            LandMove = age.Speed,
             Unarmed = bite,
             Size = size,
             BaseLevel = level,

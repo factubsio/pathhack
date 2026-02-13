@@ -20,26 +20,22 @@ public class WebSpit(int cooldown = 120) : CooldownAction("spit web", TargetingT
     public static readonly WebSpit Instance = new();
     const int Range = 6;
 
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target)
     {
-        if (!base.CanExecute(unit, data, target, out whyNot)) return false;
+        var basePlan = base.CanExecute(unit, data, target);
+        if (!basePlan) return basePlan;
         
-        whyNot = "can't see target";
-        if (unit is Monster m && !m.CanSeeYou) return false;
+        if (unit is Monster m && !m.CanSeeYou) return new(false, "can't see target");
 
-        whyNot = "no target";
-        if (target.Pos is not { } tgtPos) return false;
+        if (target.Pos is not { } tgtPos) return new(false, "no target");
         var delta = tgtPos - unit.Pos;
-        if (delta == Pos.Zero) return false;
+        if (delta == Pos.Zero) return new(false, "no target");
 
-        whyNot = "too far";
-        if (unit.Pos.ChebyshevDist(tgtPos) > Range) return false;
+        if (unit.Pos.ChebyshevDist(tgtPos) > Range) return new(false, "too far");
 
-        whyNot = "not in line";
         var signed = delta.Signed;
-        if (signed.X * delta.Y != signed.Y * delta.X) return false; // not on 8-dir line
+        if (signed.X * delta.Y != signed.Y * delta.X) return new(false, "not in line");
 
-        whyNot = "";
         return true;
     }
 

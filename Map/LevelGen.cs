@@ -57,6 +57,7 @@ public static class LevelGen
     ];
 
     public static SpecialLevel? ForcedLevel1;
+    public static MonsterDef[]? MenagerieMonsters;
 
     public static Level Generate(LevelId id, int gameSeed)
     {
@@ -73,6 +74,14 @@ public static class LevelGen
             var resolved = id.Branch.ResolvedLevels[id.Depth - 1];
             ctx.level.FloorColor = resolved.FloorColor;
             ctx.level.WallColor = resolved.WallColor;
+
+            if (MenagerieMonsters is { } menagerie)
+            {
+                Menagerie.Generate(ctx, menagerie);
+                ctx.level.UnderConstruction = false;
+                return ctx.level;
+            }
+
             SpecialLevel? special = (ForcedLevel1, id.Depth, resolved.Template) switch
             {
                 ({ } forced, 1, _) => forced,

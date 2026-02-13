@@ -160,6 +160,18 @@ if (args.Length > 2 && args[0] == "--gen-dungeons" && int.TryParse(args[1], out 
     return;
 }
 
+if (args.Length > 1 && args[0] == "--test-family")
+{
+    string family = args[1];
+    var monsters = AllMonsters.All.Where(m => m.Family == family).OrderBy(m => m.BaseLevel).ToArray();
+    if (monsters.Length == 0)
+    {
+        Console.WriteLine($"No monsters with family '{family}'");
+        return;
+    }
+    LevelGen.MenagerieMonsters = monsters;
+}
+
 if (args.Length > 0 && args[0] == "--monsters")
 {
     MonsterTable.Print(args.Length > 1 ? args[1] : null);
@@ -253,12 +265,15 @@ while (true)
     // u.XP = 980;
     lvl.PlaceUnit(u, (lvl.BranchUp ?? lvl.StairsUp)!.Value);
 
-    // DEBUG: spawn test dummy near player
-    {
-        var dummyPos = upos.Neighbours().FirstOrDefault(p => startLevel.InBounds(p) && startLevel.NoUnit(p) && startLevel[p].IsPassable);
-        if (dummyPos != default)
-            startLevel.PlaceUnit(Monster.Spawn(DummyThings.Balloon, "debug"), dummyPos);
-    }
+    // MonsterDef MONSTER_UNDER_TEST = 
+
+    // // DEBUG: spawn test dummy near player
+    // if (MONSTER_UNDER_TEST != null)
+    // {
+    //     var dummyPos = upos.Neighbours().FirstOrDefault(p => startLevel.InBounds(p) && startLevel.NoUnit(p) && startLevel[p].IsPassable);
+    //     if (dummyPos != default)
+    //         startLevel.PlaceUnit(Monster.Spawn(MONSTER_UNDER_TEST, "debug"), dummyPos);
+    // }
 
     // TEST: lock one L1 slot
 

@@ -483,17 +483,17 @@ public static class Foods
     public static bool IsTainted(Item item) => item.RotTimer >= RotTainted;
 
     /// <summary>Tick corpse rot. Returns true if rotted away.</summary>
-    public static bool TickCorpse(Item item, IUnit? holder, Pos? floorPos)
+    public static bool TickCorpse(Item corpseItem, IUnit? holder, Pos? floorPos)
     {
-        if (item.CorpseOf == null) return false;
+        if (corpseItem.CorpseOf == null) return false;
         
         // Don't rot while being cooked
-        if (u.CurrentActivity?.Target == item) return false;
+        if (u.CurrentActivity?.Target == corpseItem) return false;
         
-        item.RotTimer++;
+        corpseItem.RotTimer++;
 
         // Respawn: negative timer ticking up to 0
-        if (item.RotTimer == 0 && item.CorpseOf is { } def)
+        if (corpseItem.RotTimer == 0 && corpseItem.CorpseOf is { } def)
         {
             Pos origin = floorPos ?? holder!.Pos;
             Pos? spawnPos = null;
@@ -514,29 +514,33 @@ public static class Foods
             }
             if (spawnPos != null)
             {
-                var mon = Monster.Spawn(def, "respawn", firstTimeSpawn: false);
-                lvl.PlaceUnit(mon, spawnPos.Value);
-                // pick up any equipment at the corpse tile
-                foreach (var loot in lvl.ItemsAt(origin))
+                g.Defer(() =>
                 {
-                    // Don't add your own corspe??
-                    if (loot == item) continue;
-                    lvl.RemoveItem(loot, origin);
-                    mon.Inventory.Add(loot);
-                    mon.Equip(loot);
-                }
+                    var mon = Monster.Spawn(def, "respawn", firstTimeSpawn: false);
+                    lvl.PlaceUnit(mon, spawnPos.Value);
+                    // pick up any equipment at the corpse tile
+                    foreach (var loot in lvl.ItemsAt(origin))
+                    {
+                        // Don't add your own corspe??
+                        if (loot == corpseItem) continue;
+                        mon.Inventory.Add(loot);
+                        mon.Equip(loot);
+                    }
 
-                g.YouObserve(spawnPos.Value, $"{mon:The} rises from the dead!");
+                    lvl.RemoveAllItems(origin);
+
+                    g.YouObserve(spawnPos.Value, $"{mon:The} rises from the dead!");
+                });
                 return true;
             }
             // couldn't spawn, missed our chance
             return false;
         }
 
-        if (item.RotTimer < RotTime) return false;
+        if (corpseItem.RotTimer < RotTime) return false;
 
         if (holder?.IsPlayer == true)
-            g.pline($"Your {item.CorpseOf.Name} corpse rots away!");
+            g.pline($"Your {corpseItem.CorpseOf.Name} corpse rots away!");
 
         return true;
     }

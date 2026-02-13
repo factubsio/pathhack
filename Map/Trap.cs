@@ -12,6 +12,7 @@ public enum TrapType
     Web = 1 << 5,
     Trapdoor = 1 << 6,
     Hole = 1 << 7,
+    Release = 1 << 8,
 }
 
 [Flags]

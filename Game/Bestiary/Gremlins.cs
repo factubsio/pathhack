@@ -10,22 +10,21 @@ public class CurseWeaponInRange(int range) : ActionBrick("Curse Weapon")
 
     public const string Resource = "pugwampi_curse";
 
-    public override bool CanExecute(IUnit unit, object? data, Target target, out string whyNot)
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target)
     {
-        whyNot = "";
-        if (!unit.HasCharge(Resource, out whyNot)) return false;
+        if (!unit.HasCharge(Resource, out var whyNot)) return new(false, whyNot);
 
         int dist = unit.Pos.ChebyshevDist(u.Pos);
-        if (dist > range) { whyNot = "out of range"; return false; }
+        if (dist > range) return new(false, "out of range");
 
         var weapon = u.GetWieldedItem();
-        if (weapon == null) { whyNot = "no weapon"; return false; }
-        if (weapon.Def is WeaponDef w && w.Category == WeaponCategory.Unarmed) { whyNot = "unarmed"; return false; }
+        if (weapon == null) return new(false, "no weapon");
+        if (weapon.Def is WeaponDef w && w.Category == WeaponCategory.Unarmed) return new(false, "unarmed");
 
         return true;
     }
 
-    public override void Execute(IUnit unit, object? data, Target target)
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
     {
         if (!unit.TryUseCharge(Resource)) return;
         var weapon = u.GetWieldedItem();

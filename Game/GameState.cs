@@ -1024,7 +1024,7 @@ public class GameState
         var def = m.Def;
 
         // respawn 90% of the time, seems fair?
-        doRespawn = m.Query("respawn_from_corpse", null, MergeStrategy.And, false); // && g.Rn2(10) != 0;
+        doRespawn = m.Query("respawn_from_corpse", null, MergeStrategy.And, false) && g.Rn2(10) != 0;
 
         // if we are respawning we have to leave a corpse
         if (doRespawn || def.Size >= UnitSize.Large) return true;

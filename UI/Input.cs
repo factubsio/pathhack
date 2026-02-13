@@ -299,15 +299,14 @@ public static partial class Input
         var menu = new Menu<ActionBrick>();
         menu.Add("Choose which spell to cast", LineStyle.Heading);
         char let = 'a';
-        string whyNot;
         foreach (var level in u.Spells.GroupBy(s => s.Level))
         {
             menu.Add($"Level {level.Key}:", LineStyle.SubHeading);
             foreach (var spell in level)
             {
                 var data = u.ActionData.GetValueOrDefault(spell);
-                bool ready = spell.CanExecute(u, data, Target.None, out whyNot);
-                string status = ready ? "" : $" ({whyNot})";
+                var spellPlan = spell.CanExecute(u, data, Target.None);
+                string status = spellPlan ? "" : $" ({spellPlan.WhyNot})";
                 menu.Add(let++, spell.Name + status, spell);
             }
         }
@@ -321,9 +320,10 @@ public static partial class Input
     {
         var data = u.ActionData.GetValueOrDefault(ability);
         
-        if (!ability.CanExecute(u, data, Target.None, out var whyNot))
+        var plan = ability.CanExecute(u, data, Target.None);
+        if (!plan)
         {
-            g.pline($"That ability is not ready ({whyNot}).");
+            g.pline($"That ability is not ready ({plan.WhyNot}).");
             return;
         }
 
@@ -378,9 +378,10 @@ public static partial class Input
             Log.Write($"target unit {tgt} at {tgt.Pos}");
 
             target = Target.From(tgt);
-            if (!ability.CanExecute(u, data, target, out whyNot))
+            var targetPlan = ability.CanExecute(u, data, target);
+            if (!targetPlan)
             {
-                g.pline($"Cannot target there ({whyNot}).");
+                g.pline($"Cannot target there ({targetPlan.WhyNot}).");
                 return;
             }
         }
@@ -398,7 +399,7 @@ public static partial class Input
             target = new Target(null, pos.Value);
         }
         
-        ability.Execute(u, data, target);
+        ability.Execute(u, data, target, plan.Plan);
         u.Energy -= ability.GetCost(u, data, target).Value;
     }
 
@@ -413,11 +414,12 @@ public static partial class Input
         var menu = new Menu<ActionBrick>();
         menu.Add("Use which ability?", LineStyle.Heading);
         char let = 'a';
-        string whyNot;
         foreach (var action in u.Actions.Distinct())
         {
             var data = u.ActionData.GetValueOrDefault(action);
-            bool ready = action.CanExecute(u, data, Target.None, out whyNot);
+            var result = action.CanExecute(u, data, Target.None);
+            bool ready = result;
+            string whyNot = result.WhyNot;
             var toggle = action.IsToggleOn(data);
             string status = toggle switch
             {
@@ -475,10 +477,10 @@ public static partial class Input
 
     static void ShowEffects()
     {
-        var buffs = u.LiveFacts.Where(f => f.Brick.IsBuff).ToList();
+        var buffs = u.ActiveBuffNames.ToList();
         // Also check inventory items for buffs
         foreach (var item in u.Inventory)
-            buffs.AddRange(item.LiveFacts.Where(f => f.Brick.IsBuff));
+            buffs.AddRange(item.ActiveBuffNames);
         
         var menu = new Menu();
         menu.Add("Current Effects", LineStyle.Heading);
@@ -489,8 +491,8 @@ public static partial class Input
         }
         else
         {
-            foreach (var fact in buffs)
-                menu.Add($"  {fact.DisplayName}");
+            foreach (var name in buffs)
+                menu.Add($"  {name}");
         }
         menu.Display();
     }
