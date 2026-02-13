@@ -188,6 +188,36 @@ public class SleepTarget() : ActionBrick("Sleep Target", TargetingType.Unit)
     }
 }
 
+public class CurseInventory() : ActionBrick("Curse Inventory")
+{
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target) => true;
+
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
+    {
+        foreach (var item in unit.Inventory)
+        {
+            item.BUC = BUC.Cursed;
+            item.Knowledge |= ItemKnowledge.BUC;
+        }
+        g.pline("Everything feels heavy.");
+    }
+}
+
+public class UncurseInventory() : ActionBrick("Uncurse Inventory")
+{
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target) => true;
+
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
+    {
+        foreach (var item in unit.Inventory)
+        {
+            item.BUC = BUC.Uncursed;
+            item.Knowledge |= ItemKnowledge.BUC;
+        }
+        g.pline("A malevolent aura dissipates.");
+    }
+}
+
 public static partial class ClassDefs
 {
     public static ClassDef Developer => new()
@@ -268,6 +298,8 @@ public static partial class ClassDefs
             p.AddAction(new HealFull());
             p.AddAction(new Probe());
             p.AddAction(new SleepTarget());
+            p.AddAction(new CurseInventory());
+            p.AddAction(new UncurseInventory());
             foreach (var blessing in Blessings.All)
                 blessing.ApplyMinor(p);
         },

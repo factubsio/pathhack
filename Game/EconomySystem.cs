@@ -47,8 +47,26 @@ public class ShopItem
     public int PricedAt = -500;
 }
 
+public enum ShopType { General, Weapon, Armor, Potion, Scroll, Ring }
+
+public static class ShopTypes
+{
+    static readonly (ShopType type, int weight)[] Weights =
+    [
+        (ShopType.General, 40),
+        (ShopType.Weapon, 15),
+        (ShopType.Armor, 15),
+        (ShopType.Potion, 10),
+        (ShopType.Scroll, 10),
+        (ShopType.Ring, 5),
+    ];
+
+    public static ShopType Roll() => Weights.PickWeighted(w => w.weight).type;
+}
+
 public class ShopState
 {
+    public ShopType Type;
     public Pos Block;
     public Pos Door;
     public Pos Home;

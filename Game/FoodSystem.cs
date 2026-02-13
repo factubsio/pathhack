@@ -33,7 +33,8 @@ public static class Hunger
     public static void Tick(Player p)
     {
         var before = GetState(p.Nutrition);
-        p.Nutrition = Math.Max(0, p.Nutrition - 1);
+        int rate = p.Query<int>("hunger_rate", null, MergeStrategy.Max, 1);
+        p.Nutrition = Math.Max(0, p.Nutrition - rate);
         var after = GetState(p.Nutrition);
 
         if (after != before)

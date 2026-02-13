@@ -16,8 +16,9 @@ public static class Scrolls
     public static readonly ScrollDef Identify = new() { Name = "scroll of identify", Price = 40 };
     public static readonly ScrollDef Teleportation = new() { Name = "scroll of teleportation", Price = 120 };
     public static readonly ScrollDef Fire = new() { Name = "scroll of fire", Price = 120 };
+    public static readonly ScrollDef RemoveCurse = new() { Name = "scroll of remove curse", Price = 200 };
 
-    public static readonly ScrollDef[] All = [MagicMapping, Identify, Teleportation, Fire];
+    public static readonly ScrollDef[] All = [MagicMapping, Identify, Teleportation, Fire, RemoveCurse];
 
     static Scrolls()
     {
@@ -25,7 +26,7 @@ public static class Scrolls
             All[i].AppearanceIndex = i;
     }
 
-    public static void DoEffect(ScrollDef def, IUnit user, Func<Item?> pickItemToIdentify)
+    public static void DoEffect(ScrollDef def, IUnit user, Func<Item?> pickItemToIdentify, BUC buc = BUC.Uncursed)
     {
         bool doIdentify = user.IsPlayer;
 
@@ -72,6 +73,22 @@ public static class Scrolls
                         DoDamage(ctx);
                     }
                 }
+                break;
+            case var _ when def == RemoveCurse:
+                if (!user.IsPlayer) return;
+                var cursedItems = user.Equipped.Values.Distinct().Where(i => i.BUC == BUC.Cursed).ToList();
+                if (cursedItems.Count > 0)
+                {
+                    var toUncurse = buc == BUC.Blessed
+                        ? cursedItems
+                        : [cursedItems[g.Rn2(cursedItems.Count)]];
+                    foreach (var item in toUncurse)
+                    {
+                        item.BUC = BUC.Uncursed;
+                        item.Knowledge |= ItemKnowledge.BUC;
+                    }
+                }
+                g.pline(cursedItems.Count > 0 ? "You feel a malevolent aura dissipate." : "You feel vaguely reassured.");
                 break;
         }
 

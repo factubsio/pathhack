@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Formats.Tar;
 
 namespace Pathhack.Game;
 
@@ -1071,29 +1070,75 @@ public class GameState
         return StruggleResult.Failed;
     }
 
-    public EquipSlot? DoEquip(IUnit unit, Item? item, EquipSlot? slotOverride = null)
+    public enum EquipResult { Ok, Cursed, NoSlot }
+
+    public EquipResult DoEquip(IUnit unit, Item? item, EquipSlot? slotOverride = null)
     {
-        EquipSlot? result = null;
         if (item == null)
         {
-            // bare hands
-            unit.Unequip(ItemSlots.HandSlot);
+            if (unit.Unequip(ItemSlots.HandSlot) == UnequipResult.Cursed)
+            {
+                if (unit.IsPlayer) WeldMsg(unit);
+                return EquipResult.Cursed;
+            }
         }
         else
         {
             EquipSlot slot = slotOverride ?? new(item.Def.DefaultEquipSlot, "_");
-            unit.Unequip(slot);
-            result = unit.Equip(item);
+            if (unit.Unequip(slot) == UnequipResult.Cursed)
+            {
+                if (unit.IsPlayer)
+                {
+                    var existing = unit.Equipped[slot];
+                    if (existing.Def is WeaponDef)
+                        WeldMsg(unit);
+                    else
+                        g.pline("You can't.  It is cursed.");
+                }
+                return EquipResult.Cursed;
+            }
+            var result = unit.Equip(item);
+            if (result == null)
+            {
+                unit.Energy -= ActionCosts.OneAction.Value;
+                return EquipResult.NoSlot;
+            }
+            if (item.IsCursed && item.Def is WeaponDef)
+            {
+                item.Knowledge |= ItemKnowledge.BUC;
+                g.pline($"The {item.Def.Name} welds itself to your {HandStr(item)}!");
+            }
         }
         unit.Energy -= ActionCosts.OneAction.Value;
-        return result;
+        return EquipResult.Ok;
     }
 
-    public void DoUnequip(IUnit unit, Item item)
+    static string HandStr(Item item) =>
+        item.Def is WeaponDef { Hands: > 1 } ? "hands" : "hand";
+
+    static void WeldMsg(IUnit unit)
+    {
+        var weapon = unit.GetWieldedItem();
+        g.pline($"Your {weapon.Def.Name} is welded to your {HandStr(weapon)}!");
+    }
+
+    public bool DoUnequip(IUnit unit, Item item)
     {
         var slot = unit.Equipped.First(kv => kv.Value == item).Key;
-        unit.Unequip(slot);
+        var r = unit.Unequip(slot);
+        if (r == UnequipResult.Cursed)
+        {
+            if (unit.IsPlayer)
+            {
+                if (item.Def is WeaponDef)
+                    WeldMsg(unit);
+                else
+                    g.pline("You can't.  It is cursed.");
+            }
+            return false;
+        }
         unit.Energy -= ActionCosts.OneAction.Value;
+        return true;
     }
 
     internal static void ResetGameState() => g = new();

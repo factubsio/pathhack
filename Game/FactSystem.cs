@@ -9,6 +9,8 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Pathhack.Game;
 
+public enum UnequipResult { Empty, Ok, Cursed }
+
 // This is a valiant attempt to not leak Draw into here, is it worth it?
 [Flags]
 public enum GlyphFlags : byte
@@ -623,7 +625,7 @@ public class Inventory(IUnit owner) : IEnumerable<Item>
         
         // auto-unequip if equipped
         foreach (var slot in owner.Equipped.Where(kv => kv.Value == item).Select(kv => kv.Key).ToList())
-            owner.Unequip(slot);
+            owner.Unequip(slot, force: true);
         
         item.Holder = null;
     }
@@ -731,7 +733,7 @@ public interface IUnit : IEntity
     int GetSpellDC();
     Item GetWieldedItem();
     EquipSlot? Equip(Item item);
-    bool Unequip(EquipSlot slot);
+    UnequipResult Unequip(EquipSlot slot, bool force = false);
     Modifiers QueryModifiers(string key, string? arg = null);
     List<Fact> QueryFacts(string key, string? arg = null);
 
@@ -1021,16 +1023,19 @@ public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) :
         return resultSlot;
     }
 
-    public bool Unequip(EquipSlot slot)
+    public UnequipResult Unequip(EquipSlot slot, bool force = false)
     {
-        if (!Equipped.TryGetValue(slot, out var item)) return false;
+        if (!Equipped.TryGetValue(slot, out var item)) return UnequipResult.Empty;
+        if (!force && item.IsCursed)
+        {
+            item.Knowledge |= ItemKnowledge.BUC;
+            return UnequipResult.Cursed;
+        }
 
         Equipped.Remove(slot);
-        // Remove from off hand too if 2h
         EquipSlot offSlot = new(slot.Type, "off");
         if (Equipped.TryGetValue(offSlot, out var offItem) && offItem == item)
             Equipped.Remove(offSlot);
-        // Remove from main hand if unequipping off
         EquipSlot mainSlot = new(slot.Type, "_");
         if (Equipped.TryGetValue(mainSlot, out var mainItem) && mainItem == item)
             Equipped.Remove(mainSlot);
@@ -1038,7 +1043,7 @@ public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) :
         using var ctx = PHContext.Create(this, Target.None);
         LogicBrick.FireOnUnequip(item, ctx);
         Log.Write("unequip: {0}", item.Def.Name);
-        return true;
+        return UnequipResult.Ok;
     }
 }
 

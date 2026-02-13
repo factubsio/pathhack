@@ -763,6 +763,7 @@ public static class LevelGen
             var shk = Monster.Spawn(EconomySystem.Shopkeeper, "shop");
             var fact = shk.AddFact(ShopkeeperBrick.Instance);
             var state = fact.As<ShopState>();
+            state.Type = ShopTypes.Roll();
             state.Block = block;
             state.Door = doorPos;
             state.Home = home;
@@ -786,7 +787,7 @@ public static class LevelGen
             // Spawn items
             foreach (var p in shopTiles)
             {
-                var item = ItemGen.GenerateRandomItem(ctx.level.EffectiveDepth);
+                var item = ItemGen.GenerateForShop(state.Type, ctx.level.EffectiveDepth);
                 if (item == null) continue;
                 state.Stock[item] = new();
                 ctx.level.PlaceItem(item, p);

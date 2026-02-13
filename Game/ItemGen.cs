@@ -18,6 +18,16 @@ public static class ItemGen
     
     static int TotalWeight => ClassWeights.Sum(x => x.weight);
 
+    public static Item? GenerateForShop(ShopType type, int depth) => type switch
+    {
+        ShopType.Weapon => GenerateWeapon(depth),
+        ShopType.Armor => GenerateArmor(depth),
+        ShopType.Potion => GeneratePotion(depth),
+        ShopType.Scroll => GenerateScroll(depth),
+        ShopType.Ring => GenerateRing(depth),
+        _ => GenerateRandomItem(depth),
+    };
+
     public static Item? GenerateRandomItem(int depth)
     {
         int roll = g.Rn2(TotalWeight);
@@ -30,27 +40,27 @@ public static class ItemGen
         return null;
     }
 
-    static Item? GeneratePotion(int depth)
+    public static Item? GeneratePotion(int depth)
     {
         if (Potions.All.Length == 0) return null;
         var def = Potions.All[g.Rn2(Potions.All.Length)];
-        return Item.Create(def);
+        return GenerateItem(def, depth);
     }
 
-    static Item? GenerateScroll(int depth)
+    public static Item? GenerateScroll(int depth)
     {
         if (Scrolls.All.Length == 0) return null;
         var def = Scrolls.All[g.Rn2(Scrolls.All.Length)];
-        return Item.Create(def);
+        return GenerateItem(def, depth);
     }
 
-    static Item? GenerateWeapon(int depth)
+    public static Item? GenerateWeapon(int depth)
     {
         var def = PickWeaponDef(depth);
         return GenerateItem(def, depth);
     }
 
-    static Item? GenerateArmor(int depth)
+    public static Item? GenerateArmor(int depth)
     {
         var def = MundaneArmory.AllArmors.Pick();
         return GenerateItem(def, depth);
@@ -60,12 +70,26 @@ public static class ItemGen
     {
         if (MagicAccessories.AllRings.Length == 0) return null;
         var def = MagicAccessories.AllRings[g.Rn2(MagicAccessories.AllRings.Length)];
-        return Item.Create(def);
+        return GenerateItem(def, depth);
+    }
+
+    public static BUC RollBUC(int chance = 10)
+    {
+        if (g.Rn2(chance) != 0) return BUC.Uncursed;
+        return g.Rn2(2) == 0 ? BUC.Cursed : BUC.Blessed;
     }
 
     public static Item GenerateItem(ItemDef def, int depth = 1, int? maxPotency = null, bool propertyRunes = true)
     {
-        Item item = new(def);
+        int bucChance = def switch
+        {
+            WeaponDef => 10,
+            ArmorDef => 10,
+            ScrollDef => 10,
+            PotionDef => 10,
+            _ => 5, // rings, tools, gems
+        };
+        Item item = new(def) { BUC = RollBUC(bucChance) };
         List<string> genLog = [];
         
         if (def is WeaponDef)
@@ -76,6 +100,10 @@ public static class ItemGen
                 RollPropertyRunes(item, depth, genLog);
         }
         else if (def is ArmorDef)
+        {
+            item.Potency = RollPotency(depth, genLog, maxPotency);
+        }
+        else if (def.CanHavePotency)
         {
             item.Potency = RollPotency(depth, genLog, maxPotency);
         }

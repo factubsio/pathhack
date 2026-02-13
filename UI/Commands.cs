@@ -343,11 +343,12 @@ public static partial class Input
         }
         var picked = menu.Display(MenuMode.PickOne);
         if (picked.Count == 0) return;
-        g.DoEquip(u, picked[0]);
+        var result = g.DoEquip(u, picked[0]);
+        if (result == GameState.EquipResult.Cursed) return;
         if (picked[0] == null)
             g.pline("You are empty handed.");
         else
-            g.pline("{0} - {1} (weapon in hand).", picked[0]!.InvLet, picked[0]!.Def.Name);
+            g.pline($"{picked[0]!.InvLet} - {picked[0]!.Def.Name} (weapon in hand).");
     }
 
     static void WearArmor()
@@ -365,10 +366,11 @@ public static partial class Input
         if (picked.Count == 0) return;
         var armor = picked[0];
         var slot = g.DoEquip(u, armor);
-        if (slot == null)
+        if (slot == GameState.EquipResult.Cursed) return;
+        if (slot == GameState.EquipResult.NoSlot)
             g.pline("You are already wearing body armor.");
         else
-            g.pline("{0} - {1} {2}.", armor.InvLet, armor.DisplayName, EquipDescription(armor, slot));
+            g.pline($"{armor.InvLet} - {armor.DisplayName} (being worn).");
     }
 
     static void PutOnAccessory()
@@ -386,14 +388,15 @@ public static partial class Input
         if (picked.Count == 0) return;
         var item = picked[0];
         var slot = g.DoEquip(u, item);
-        if (slot == null)
+        if (slot == GameState.EquipResult.Cursed) return;
+        if (slot == GameState.EquipResult.NoSlot)
         {
             g.pline(item.Def.DefaultEquipSlot == ItemSlots.Ring
                 ? "You have no free ring fingers."
                 : "You are already wearing an amulet.");
         }
         else
-            g.pline("{0} - {1} {2}.", item.InvLet, item.DisplayName, EquipDescription(item, slot));
+            g.pline($"{item.InvLet} - {item.DisplayName} (being worn).");
     }
 
     static string EquipDescription(Item item, EquipSlot? slot) => slot?.Type switch
@@ -417,8 +420,8 @@ public static partial class Input
         BuildItemList(menu, equipped, u);
         var picked = menu.Display(MenuMode.PickOne);
         if (picked.Count == 0) return;
-        g.DoUnequip(u, picked[0]);
-        g.pline("You take off {0}.", DoName(picked[0]));
+        if (g.DoUnequip(u, picked[0]))
+            g.pline("You take off {0}.", DoName(picked[0]));
     }
 
     static void RemoveAccessory()
@@ -434,8 +437,8 @@ public static partial class Input
         BuildItemList(menu, equipped, u);
         var picked = menu.Display(MenuMode.PickOne);
         if (picked.Count == 0) return;
-        g.DoUnequip(u, picked[0]);
-        g.pline("You remove {0}.", DoName(picked[0]));
+        if (g.DoUnequip(u, picked[0]))
+            g.pline("You remove {0}.", DoName(picked[0]));
     }
 
     static void Quaff()
@@ -556,13 +559,19 @@ public static partial class Input
 
     static void ReadScroll()
     {
-        if (!u.Allows("can_see"))
+        var scrolls = u.Inventory.Where(i => i.Def is ScrollDef).ToList();
+        bool blind = !u.Allows("can_see");
+
+        if (blind)
         {
-            g.pline("You can't read while blind!");
-            return;
+            scrolls = scrolls.Where(i => i.Def.IsKnown()).ToList();
+            if (scrolls.Count == 0)
+            {
+                g.pline("You don't know any of the formulas!");
+                return;
+            }
         }
 
-        var scrolls = u.Inventory.Where(i => i.Def is ScrollDef).ToList();
         if (scrolls.Count == 0)
         {
             g.pline("You have no scrolls.");
@@ -577,9 +586,11 @@ public static partial class Input
         var scroll = picked[0];
         var def = (ScrollDef)scroll.Def;
 
-        g.pline("As you read the scroll, it disappears.");
+        g.pline(blind
+            ? "As you pronounce the formula on it, the scroll disappears."
+            : "As you read the scroll, it disappears.");
         u.Inventory.Consume(scroll);
-        Scrolls.DoEffect(def, u, PickItemToIdentify);
+        Scrolls.DoEffect(def, u, PickItemToIdentify, scroll.BUC);
 
         u.Energy -= ActionCosts.OneAction.Value;
     }

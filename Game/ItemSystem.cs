@@ -1,5 +1,7 @@
 namespace Pathhack.Game;
 
+public enum BUC { Cursed = -1, Uncursed = 0, Blessed = 1 }
+
 [Flags]
 public enum ItemKnowledge { None = 0, Seen = 1, Props = 2, BUC = 4 }
 
@@ -136,6 +138,7 @@ public class ItemDef : BaseDef
     public AppearanceCategory? AppearanceCategory;
     public int AppearanceIndex = -1;
     public required int Price;
+    public bool CanHavePotency;
 
     public char Class => Glyph.Value;
     public virtual ItemKnowledge RelevantKnowledge => ItemKnowledge.Seen;
@@ -206,8 +209,12 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
     public IUnit? Holder;
     public int Count = 1;
     public ItemKnowledge Knowledge;
+    public BUC BUC;
 
     public bool IsNamedUnique = false;
+
+    public bool IsCursed => BUC == BUC.Cursed;
+    public bool IsBlessed => BUC == BUC.Blessed;
 
     public bool IsUnique => IsNamedUnique || Def.IsUnique;
     
@@ -307,6 +314,10 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
         
         if (count > 1)
             parts.Add($"{count}");
+
+        var bucKnown = Knowledge.HasFlag(ItemKnowledge.BUC);
+        if (bucKnown)
+            parts.Add(BUC switch { BUC.Blessed => "blessed", BUC.Cursed => "cursed", _ => "uncursed" });
         
         if (propsKnown)
         {
@@ -336,6 +347,8 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
         if (CorpseOf != null) return $"{CorpseOf.Name} corpse";
         List<string> parts = [];
         if (count > 1) parts.Add($"{count}");
+        if (BUC != BUC.Uncursed)
+            parts.Add(BUC == BUC.Blessed ? "blessed" : "cursed");
         if (Def is WeaponDef) parts.Add($"+{Potency}");
         else if (Def is ArmorDef && Potency > 0) parts.Add($"+{Potency}");
         if (Fundamental != null && !Fundamental.Def.IsNull)
