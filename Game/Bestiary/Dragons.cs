@@ -217,7 +217,6 @@ public static class Dragons
             Unarmed = bite,
             Size = size,
             BaseLevel = level,
-            SpawnWeight = 100,
             MinDepth = Math.Max(1, level + 2),
             MoralAxis = color.Moral,
             EthicalAxis = color.Ethical,

@@ -91,7 +91,7 @@ public class MonsterDef : BaseDef
   public required WeaponDef Unarmed;
   public UnitSize Size = UnitSize.Small;
   public int BaseLevel = 1;
-  public int SpawnWeight = 1;
+  public int SpawnWeight = 10;
   public int MinDepth = 1;
   public bool IsUnique = false;
   public bool Peaceful = false;
@@ -346,13 +346,11 @@ public class Monster : Unit<MonsterDef>, IFormattable
 
       if (HasBrainFlag(BrainFlags.PrefersCasting))
       {
-        if (TryCastSpell()) return true;
-        if (TryAction(playerTarget)) return true;
+        if (TryUseAbility(Spells.Shuffled()) || TryUseAbility(Actions)) return true;
       }
       else
       {
-        if (TryAction(playerTarget)) return true;
-        if (TryCastSpell()) return true;
+        if (TryUseAbility(Actions) || TryUseAbility(Spells.Shuffled())) return true;
       }
     }
 
@@ -410,60 +408,40 @@ public class Monster : Unit<MonsterDef>, IFormattable
     return false;
   }
 
-  bool TryAction(Target playerTarget)
+  bool TryUseAbility(IEnumerable<ActionBrick> abilities)
   {
-    foreach (var action in Actions)
-    {
-      var data = ActionData.GetValueOrDefault(action);
-      if (action.CanExecute(this, data, playerTarget, out _))
-      {
-        Log.Write($"{this} uses {action.Name}");
-        action.Execute(this, data, playerTarget);
-        Energy -= action.GetCost(this, data, playerTarget).Value;
-        return true;
-      }
-    }
-    return false;
-  }
-
-  bool TryCastSpell()
-  {
-    if (Spells.Count == 0) return false;
-
-    // TODO: smart monsters should bounce directional spells off walls at player
     Pos? targetPos = ApparentPlayerPos;
 
-    foreach (var spell in Spells.Shuffled())
+    foreach (var action in abilities)
     {
-      bool beneficial = spell.Tags.HasFlag(AbilityTags.Beneficial);
+      bool beneficial = action.Tags.HasFlag(AbilityTags.Beneficial);
 
-      // Heal spells: only when below 50% HP
-      if (spell.Tags.HasFlag(AbilityTags.Heal) && HP.Current > HP.Max / 2)
+      if (action.Tags.HasFlag(AbilityTags.Heal) && HP.Current > HP.Max / 2)
         continue;
 
-      // Slightly prefer buffing before nuking
-      if (!beneficial && spell.Tags.HasFlag(AbilityTags.Harmful) && g.Rn2(3) == 0)
+      if (!beneficial && action.Tags.HasFlag(AbilityTags.Harmful) && g.Rn2(3) == 0)
         continue;
 
-      Target? target = beneficial ? BeneficialTarget(spell) : HarmfulTarget(spell, targetPos);
+      Target? target = beneficial ? BeneficialTarget(action) : HarmfulTarget(action, targetPos);
       if (target == null) continue;
 
-      var data = ActionData.GetValueOrDefault(spell);
-      if (spell.CanExecute(this, data, target, out _))
-      {
-        Log.Write($"{this} casts {spell.Name}{(beneficial ? " on self" : "")}");
-        g.YouObserve(this, $"{this:The} casts {spell.Name}!", SpellChants.Pick());
-        spell.Execute(this, data, target);
-        Energy -= spell.GetCost(this, data, target).Value;
-        return true;
-      }
+      var data = ActionData.GetValueOrDefault(action);
+      if (!action.CanExecute(this, data, target, out _)) continue;
+
+      bool isSpell = action is SpellBrickBase;
+      Log.Write($"{this} {(isSpell ? "casts" : "uses")} {action.Name}{(beneficial ? " on self" : "")}");
+      if (isSpell) g.YouObserve(this, $"{this:The} casts {action.Name}!", SpellChants.Pick());
+
+      action.Execute(this, data, target);
+      Energy -= action.GetCost(this, data, target).Value;
+      return true;
     }
     return false;
   }
 
   // Beneficial: self-cast. Direction = (0,0), None = Target.None
   // TODO: target allies (adventurer parties)
-  Target? BeneficialTarget(SpellBrickBase spell) => spell.Targeting switch
+  Target? BeneficialTarget(ActionBrick action) => action.Targeting switch
   {
     TargetingType.None => Target.None,
     TargetingType.Direction => Target.From(Pos.Zero),
@@ -473,10 +451,9 @@ public class Monster : Unit<MonsterDef>, IFormattable
   };
 
   // Harmful: target player (apparent position)
-  Target? HarmfulTarget(SpellBrickBase spell, Pos? targetPos)
+  Target? HarmfulTarget(ActionBrick action, Pos? targetPos)
   {
-    // Direction spells need target on an 8-dir line
-    if (spell.Targeting == TargetingType.Direction && targetPos is { } dp)
+    if (action.Targeting == TargetingType.Direction && targetPos is { } dp)
     {
       var delta = dp - Pos;
       if (delta.X != 0 && delta.Y != 0 && Math.Abs(delta.X) != Math.Abs(delta.Y))
@@ -484,15 +461,15 @@ public class Monster : Unit<MonsterDef>, IFormattable
     }
 
     // Respect max range
-    if (spell.MaxRange > 0 && targetPos is { } rp && spell.Targeting is not TargetingType.None && Pos.ChebyshevDist(rp) > spell.MaxRange)
+    if (action.MaxRange > 0 && targetPos is { } rp && action.Targeting is not TargetingType.None && Pos.ChebyshevDist(rp) > action.MaxRange)
       return null;
 
-    return spell.Targeting switch
+    return action.Targeting switch
     {
       TargetingType.Direction when targetPos is { } tp => new(null, (tp - Pos).Signed),
       TargetingType.Unit when CanSeeYou => new(u, upos),
       TargetingType.Pos when targetPos is { } tp => new(null, tp),
-      TargetingType.None => Target.None,
+      TargetingType.None => new(u, upos),
       _ => null,
     };
   }

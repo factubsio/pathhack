@@ -120,7 +120,6 @@ public static class Gremlins
         Unarmed = NaturalWeapons.Fist,
         Size = UnitSize.Small,
         BaseLevel = -1,
-        SpawnWeight = 3,
         MinDepth = 1,
         MaxDepth = 3,
         MoralAxis = MoralAxis.Evil,
