@@ -12,7 +12,7 @@ public class AttackWithWeapon() : ActionBrick("attack_with_weapon")
         if (target.Unit == null) return new(false, "no target");
         int dist = unit.Pos.ChebyshevDist(target.Unit.Pos);
 
-        // fast path: adjacent + wielding a real weapon
+        // fast path: adjacent + wielding a weapon
         var wielded = unit.Equipped.GetValueOrDefault(ItemSlots.HandSlot);
         if (dist == 1 && wielded != null)
             return new(true, Plan: new Decision(Act.Melee));
@@ -44,6 +44,9 @@ public class AttackWithWeapon() : ActionBrick("attack_with_weapon")
             Log.Write($"[AWW] {unit}: will equip {bestEquip.Def.Name}");
             return new(true, Plan: new Decision(Act.Equip, bestEquip));
         }
+        
+        // Last resort punch them
+        if (dist == 1) return new(true, Plan: new Decision(Act.Melee));
         return "nothing to do";
     }
 

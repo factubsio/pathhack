@@ -117,7 +117,7 @@ public class SpiderVenom(int dc) : AfflictionBrick(dc, "poison")
 
     protected override void DoPeriodicEffect(IUnit unit, int stage)
     {
-        if (stage == 1)
+        if (stage == 1 && unit.IsPlayer) //FIXME YouObserveSelf?
             g.pline($"{unit:The} {VTense(unit, "feel")} woozy from spider venom!");
         
         if (stage >= 5)

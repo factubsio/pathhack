@@ -12,6 +12,29 @@ public class DebugMap() : ActionBrick("Magic Mapping")
     }
 }
 
+public class ToggleOmniscience() : ActionBrick("Omniscience")
+{
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target) => true;
+
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
+    {
+        g.SeeAllMonsters = !g.SeeAllMonsters;
+        if (g.SeeAllMonsters) g.DoMapLevel();
+        g.pline(g.SeeAllMonsters ? "You see all monsters!" : "Monster vision returns to normal.");
+    }
+}
+
+public class ToggleGlobalHatred() : ActionBrick("Global Hatred")
+{
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target) => true;
+
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
+    {
+        g.GlobalHatred = !g.GlobalHatred;
+        g.pline(g.GlobalHatred ? "All monsters hate each other!" : "Monsters return to normal allegiances.");
+    }
+}
+
 public class BlindSelf() : ActionBrick("Blind Self")
 {
     public override ActionPlan CanExecute(IUnit unit, object? data, Target target) => true;
@@ -153,6 +176,18 @@ public class Probe() : ActionBrick("Probe", TargetingType.Unit, maxRange: 5)
     }
 }
 
+public class SleepTarget() : ActionBrick("Sleep Target", TargetingType.Unit)
+{
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target) => true;
+
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
+    {
+        if (target.Unit is not Monster m) return;
+        m.IsAsleep = !m.IsAsleep;
+        g.pline(m.IsAsleep ? $"{m:The} falls asleep!" : $"{m:The} wakes up!");
+    }
+}
+
 public static partial class ClassDefs
 {
     public static ClassDef Developer => new()
@@ -219,6 +254,8 @@ public static partial class ClassDefs
                 p.Inventory.Add(Item.Create(def));
             
             p.AddAction(new DebugMap());
+            p.AddAction(new ToggleOmniscience());
+            p.AddAction(new ToggleGlobalHatred());
             p.AddAction(new BlindSelf());
             p.AddAction(new GreaseAround());
             p.AddAction(new PoisonSelf());
@@ -230,6 +267,7 @@ public static partial class ClassDefs
             p.AddAction(new IdentifyAll());
             p.AddAction(new HealFull());
             p.AddAction(new Probe());
+            p.AddAction(new SleepTarget());
             foreach (var blessing in Blessings.All)
                 blessing.ApplyMinor(p);
         },

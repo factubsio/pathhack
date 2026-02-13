@@ -38,7 +38,7 @@ public static class MonsterTable
         }
     }
 
-    public static void PrintItems()
+    public static void PrintItems(string? filter)
     {
         var defs = Assembly.GetExecutingAssembly()
             .GetTypes()
@@ -46,6 +46,7 @@ public static class MonsterTable
             .SelectMany(t => t.GetFields(BindingFlags.Public | BindingFlags.Static))
             .Where(f => f.FieldType.IsAssignableTo(typeof(ItemDef)))
             .Select(f => (ItemDef)f.GetValue(null)!)
+            .Where(i => filter == null || ClassName(i.Class).Contains(filter, StringComparison.OrdinalIgnoreCase))
             .OrderBy(i => i.Class)
             .ThenBy(i => i.Name);
 
@@ -53,6 +54,23 @@ public static class MonsterTable
         Console.WriteLine(new string('-', 44));
 
         foreach (var i in defs)
-            Console.WriteLine($"{i.Name,-24} {i.Class,-10} {i.Price,6}");
+            Console.WriteLine($"{i.Name,-24} {ClassName(i.Class),-10} {i.Price,6}");
     }
+
+    static string ClassName(char c) => c switch
+    {
+        ItemClasses.Weapon => "Weapon",
+        ItemClasses.Armor => "Armor",
+        ItemClasses.Food => "Food",
+        ItemClasses.Potion => "Potion",
+        ItemClasses.Scroll => "Scroll",
+        ItemClasses.Spellbook => "Spellbook",
+        ItemClasses.Wand => "Wand",
+        ItemClasses.Ring => "Ring",
+        ItemClasses.Amulet => "Amulet",
+        ItemClasses.Tool => "Tool",
+        ItemClasses.Gem => "Gem",
+        ItemClasses.Gold => "Gold",
+        _ => "Other",
+    };
 }

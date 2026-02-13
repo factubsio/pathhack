@@ -90,6 +90,7 @@ public static partial class Input
         _extCommands["wish"] = new("wish", "Wish for an item", ArgType.String("For what do you wish?"), DoWish, Hidden: true);
         _extCommands["exp"] = new("exp", "", ArgType.None, _ => DebugExp(), Hidden: true);
         _extCommands["dumplog"] = new("dumplog", "Dump screen to JSON", ArgType.None, _ => Dump.DumpLog(), Hidden: true);
+        _extCommands["spawn"] = new("spawn", "Spawn a monster", ArgType.String("What monster?"), DoSpawn, Hidden: true);
         _specialCommands.Add(new(ConsoleKey.T, ConsoleModifiers.Control, "Teleport (debug)", DebugTeleport));
     }
 
@@ -108,6 +109,19 @@ public static partial class Input
         if (item == null) { g.pline("Nothing happens."); return; }
         u.Inventory.Add(item);
         g.pline($"{item.InvLet} - {item}.");
+    }
+
+    static void DoSpawn(CommandArg arg)
+    {
+        if (arg is not StringArg s || string.IsNullOrWhiteSpace(s.Value)) return;
+        var def = Pathhack.Wish.WishParser.ParseMonster(s.Value);
+        if (def == null) { g.pline("No such monster."); return; }
+        g.pline("Spawn where?");
+        var pos = PickPosition();
+        if (pos == null) return;
+        if (!MonsterSpawner.SpawnAndPlace(lvl, "debug", def, false, pos: pos))
+        { g.pline("Couldn't place monster."); return; }
+        g.pline($"A {def.Name} appears!");
     }
 
     public static void DoLevelUp()
@@ -342,7 +356,7 @@ public static partial class Input
             Draw.DrawCurrent();
             List<IUnit> candidates = [..lvl.LiveUnits
                 .OfType<Monster>()
-                .Where(m => m.Pos.ChebyshevDist(upos) < ability.MaxRange && m.Perception >= PlayerPerception.Detected)
+                .Where(m => m.Pos.ChebyshevDist(upos) < ability.EffectiveMaxRange && m.Perception >= PlayerPerception.Detected)
                 .OrderBy(m => m.Pos.ChebyshevDist(upos))
             ];
             Menu<IUnit> m = new();
@@ -361,7 +375,7 @@ public static partial class Input
                 g.pline("Pick a target.");
                 var pos = PickPosition();
                 if (pos == null) return;
-                if (pos.Value.ChebyshevDist(upos) > ability.MaxRange)
+                if (pos.Value.ChebyshevDist(upos) > ability.EffectiveMaxRange)
                 {
                     g.pline("Too far.");
                     return;
@@ -391,7 +405,7 @@ public static partial class Input
             Draw.DrawCurrent();
             var pos = PickPosition();
             if (pos == null) return;
-            if (pos.Value.ChebyshevDist(upos) > ability.MaxRange)
+            if (pos.Value.ChebyshevDist(upos) > ability.EffectiveMaxRange)
             {
                 g.pline("Too far.");
                 return;

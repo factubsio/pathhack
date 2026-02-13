@@ -66,6 +66,8 @@ public enum MonFlags
     NoCorpse        = 1 << 4,
 }
 
+public enum Approach { Undirected, Approach, Flee }
+
 public abstract class MonsterBrain
 {
   public abstract bool DoTurn(Monster m);
@@ -149,6 +151,16 @@ public class Monster : Unit<MonsterDef>, IFormattable
 
   public PlayerPerception Perception;
 
+  public static bool Hates(Monster a, Monster b)
+  {
+    if (a == b) return false;
+    if (g.GlobalHatred) return true;
+    bool aUndead = a.IsCreature(CreatureTypes.Undead);
+    bool bUndead = b.IsCreature(CreatureTypes.Undead);
+    if (aUndead != bUndead) return true;
+    return false;
+  }
+
   public static readonly Monster DM = new(new()
   {
     Name = "DM",
@@ -187,17 +199,18 @@ public class Monster : Unit<MonsterDef>, IFormattable
   string? _creatureTypeKey;
   public string CreatureTypeKey => _creatureTypeKey ?? Def.CreatureTypeKey;
 
-  // where monster thinks player is
-  public Pos? ApparentPlayerPos { get; private set; }
-  public int ApparentPlayerPosAge { get; private set; }
+  // where monster's current target is (player, grudge, etc.)
+  public Pos? TargetPos { get; private set; }
+  public int TargetPosAge { get; private set; }
+  public Approach Approach { get; private set; }
 
-  void SetApparentPos(Pos pos)
+  void SetTargetPos(Pos pos)
   {
-    ApparentPlayerPos = pos;
-    ApparentPlayerPosAge = g.CurrentRound;
+    TargetPos = pos;
+    TargetPosAge = g.CurrentRound;
   }
 
-  public bool IsApparentPosFresh => ApparentPlayerPos != null && g.CurrentRound - ApparentPlayerPosAge <= 3;
+  public bool IsApparentPosFresh => TargetPos != null && g.CurrentRound - TargetPosAge <= 3;
 
   public bool IsAsleep;
 
@@ -220,23 +233,23 @@ public class Monster : Unit<MonsterDef>, IFormattable
     // always knows (pet, grabber, etc)
     if (Has("always_knows_u") && !IsAsleep)
     {
-      SetApparentPos(upos);
+      SetTargetPos(upos);
       return;
     }
 
     if (CanSeeYou && !IsAsleep)
     {
-      SetApparentPos(upos);
+      SetTargetPos(upos);
       return;
     }
 
     // hearing: within 10 tiles, 1/7 chance (or always if keen ears)
-    // blocked by stealth
-    if (!u.Has("stealth") && Pos.ChebyshevDist(upos) <= 10)
+    // blocked by stealth, requires LOS from player
+    if (!u.Has("stealth") && Pos.ChebyshevDist(upos) <= 10 && lvl.HasLOS(Pos))
     {
       if (Has("keen_ears") || g.Rn2(7) == 0)
       {
-        SetApparentPos(upos);
+        SetTargetPos(upos);
         return;
       }
     }
@@ -244,23 +257,23 @@ public class Monster : Unit<MonsterDef>, IFormattable
     // aggravate monster - player always detected
     if (u.Has("aggravate_monster"))
     {
-      SetApparentPos(upos);
+      SetTargetPos(upos);
       return;
     }
 
     // adjacent stumble - 1/8 chance to notice adjacent player
     if (Pos.ChebyshevDist(upos) <= 1 && g.Rn2(8) == 0)
     {
-      SetApparentPos(upos);
+      SetTargetPos(upos);
       return;
     }
 
     // can't see - chance to forget if at stale pos or random
-    if (ApparentPlayerPos is { } last)
+    if (TargetPos is { } last)
     {
       // if we're adjacent to where we thought player was but they're not there, or 1/100
       if ((Pos.ChebyshevDist(last) <= 1 && last != upos) || g.Rn2(100) == 0)
-        ApparentPlayerPos = null;
+        TargetPos = null;
     }
   }
 
@@ -341,7 +354,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
     if (IsAsleep)
     {
       UpdateApparentPos();
-      if (ApparentPlayerPos == null) { return false; }
+      if (TargetPos == null) { return false; }
       IsAsleep = false;
     }
 
@@ -350,10 +363,64 @@ public class Monster : Unit<MonsterDef>, IFormattable
     if (!Peaceful)
       UpdateApparentPos();
 
+    // compute approach state
+    // TODO: confused → Undirected, fleeing → Flee
+    if (Peaceful)
+      Approach = Approach.Undirected;
+    else if (TargetPos != null)
+      Approach = Approach.Approach;
+    else
+      Approach = Approach.Undirected;
+
+    Log.Verbose("ai", $"[AI] {this} at {Pos}: targetPos={TargetPos} approach={Approach}");
+
+    // grudge scan: when undirected, look for hated monsters
+    if (Approach == Approach.Undirected)
+    {
+      int bestDist = int.MaxValue;
+      foreach (var unit in lvl.LiveUnits)
+      {
+        if (unit is not Monster other) continue;
+        bool hates = Hates(this, other);
+        int dist = Pos.ChebyshevDist(other.Pos);
+        bool canSee = dist <= 12 && CanSee(this, other);
+        Log.Verbose("ai", $"[AI] {this}: scan {other} at {other.Pos} hates={hates} dist={dist} canSee={canSee}");
+        if (!hates) continue;
+        if (dist > 12 || dist >= bestDist) continue;
+        if (!canSee) continue;
+        bestDist = dist;
+        SetTargetPos(other.Pos);
+        Approach = Approach.Approach;
+        Log.Verbose("ai", $"[AI] {this}: grudge target {other} at {other.Pos} dist={dist}");
+      }
+    }
+
+    // compute goal for movement (may follow track instead of beelining)
+    Pos? goal = TargetPos;
+    if (goal != null && !CanSeeYou && Has("can_track"))
+    {
+      Pos? trail = u.GetTrack(Pos);
+      if (trail != null) goal = trail;
+    }
+
     // peaceful monsters don't attack
     if (!Peaceful)
     {
-      Target playerTarget = new(u, upos);
+      // build hated target list for ability targeting
+      _hatedTargets.Clear();
+      foreach (var unit in lvl.LiveUnits)
+      {
+        if (unit is not Monster other || !Hates(this, other)) continue;
+        int dist = Pos.ChebyshevDist(other.Pos);
+        if (dist > 12) continue;
+        if (!CanSee(this, other)) continue;
+        _hatedTargets.Add((other, other.Pos));
+      }
+      // player is also a valid target
+      if (TargetPos != null)
+        _hatedTargets.Add((u, upos));
+
+      Log.Verbose("ai", $"[AI] {this}: {_hatedTargets.Count} targets, goal={goal}");
 
       if (HasBrainFlag(MonFlags.PrefersCasting))
       {
@@ -369,7 +436,6 @@ public class Monster : Unit<MonsterDef>, IFormattable
 
     Pos mp = Pos;
 
-    // move toward goal, or wander if none
     Pos? best = null;
     int bestScore = int.MaxValue;
 
@@ -380,11 +446,11 @@ public class Monster : Unit<MonsterDef>, IFormattable
       if (!lvl.CanMoveTo(mp, candidate, this)) continue;
       if (lvl.UnitAt(candidate) != null) continue;
 
-      int dist = ApparentPlayerPos is { } goal ? candidate.ChebyshevDist(goal) : 0;
+      int dist = goal is { } g2 ? candidate.ChebyshevDist(g2) : 0;
+      if (Approach == Approach.Flee) dist = -dist;
       int penalty = WasRecentlyAt(candidate) ? 100 : 0;
       int score = dist + penalty;
 
-      // weighted tiebreaker: 2/3 chance to prefer cardinal over diagonal
       bool wins = score < bestScore 
           || (score == bestScore && g.Rn2(dir.IsDiagonal ? 6 : 3) == 0);
       
@@ -396,7 +462,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
     }
 
     // wander: pick random if no goal
-    if (ApparentPlayerPos is null && best is null)
+    if (goal is null && best is null)
     {
       var valid = new List<Pos>();
       foreach (var dir in Pos.AllDirs)
@@ -419,10 +485,10 @@ public class Monster : Unit<MonsterDef>, IFormattable
     return false;
   }
 
+  static readonly List<(IUnit Unit, Pos Pos)> _hatedTargets = [];
+
   bool TryUseAbility(IEnumerable<ActionBrick> abilities)
   {
-    Pos? targetPos = ApparentPlayerPos;
-
     foreach (var action in abilities)
     {
       bool beneficial = action.Tags.HasFlag(AbilityTags.Beneficial);
@@ -433,26 +499,42 @@ public class Monster : Unit<MonsterDef>, IFormattable
       if (!beneficial && action.Tags.HasFlag(AbilityTags.Harmful) && g.Rn2(3) == 0)
         continue;
 
-      // don't waste spells on stale positions
-      if (!beneficial && action is SpellBrickBase && !IsApparentPosFresh)
+      if (beneficial)
+      {
+        Target? target = BeneficialTarget(action);
+        if (target == null) continue;
+        if (TryExecuteAbility(action, target)) return true;
         continue;
+      }
 
-      Target? target = beneficial ? BeneficialTarget(action) : HarmfulTarget(action, targetPos);
-      if (target == null) continue;
+      // try each hated target (includes player)
+      foreach (var (tgtUnit, tgtPos) in _hatedTargets)
+      {
+        // don't waste spells on stale positions
+        if (action is SpellBrickBase && !IsApparentPosFresh && tgtUnit.IsPlayer)
+          continue;
 
-      var data = ActionData.GetValueOrDefault(action);
-      var plan = action.CanExecute(this, data, target);
-      if (!plan) continue;
-
-      bool isSpell = action is SpellBrickBase;
-      Log.Write($"{this} {(isSpell ? "casts" : "uses")} {action.Name}{(beneficial ? " on self" : "")}");
-      if (isSpell) g.YouObserve(this, $"{this:The} casts {action.Name}!", SpellChants.Pick());
-
-      action.Execute(this, data, target, plan.Plan);
-      Energy -= action.GetCost(this, data, target).Value;
-      return true;
+        Target? target = HarmfulTarget(action, tgtUnit, tgtPos);
+        if (target == null) continue;
+        if (TryExecuteAbility(action, target)) return true;
+      }
     }
     return false;
+  }
+
+  bool TryExecuteAbility(ActionBrick action, Target target)
+  {
+    var data = ActionData.GetValueOrDefault(action);
+    var plan = action.CanExecute(this, data, target);
+    if (!plan) return false;
+
+    bool isSpell = action is SpellBrickBase;
+    Log.Write($"{this} {(isSpell ? "casts" : "uses")} {action.Name}");
+    if (isSpell) g.YouObserve(this, $"{this:The} casts {action.Name}!", SpellChants.Pick());
+
+    action.Execute(this, data, target, plan.Plan);
+    Energy -= action.GetCost(this, data, target).Value;
+    return true;
   }
 
   // Beneficial: self-cast. Direction = (0,0), None = Target.None
@@ -466,26 +548,26 @@ public class Monster : Unit<MonsterDef>, IFormattable
     _ => null,
   };
 
-  // Harmful: target player (apparent position)
-  Target? HarmfulTarget(ActionBrick action, Pos? targetPos)
+  // Harmful: target any unit at a position
+  Target? HarmfulTarget(ActionBrick action, IUnit targetUnit, Pos targetPos)
   {
-    if (action.Targeting == TargetingType.Direction && targetPos is { } dp)
+    if (action.Targeting == TargetingType.Direction)
     {
-      var delta = dp - Pos;
+      var delta = targetPos - Pos;
       if (delta.X != 0 && delta.Y != 0 && Math.Abs(delta.X) != Math.Abs(delta.Y))
         return null;
     }
 
     // Respect max range
-    if (action.MaxRange > 0 && targetPos is { } rp && action.Targeting is not TargetingType.None && Pos.ChebyshevDist(rp) > action.MaxRange)
+    if (action.MaxRange > 0 && action.Targeting is not TargetingType.None && Pos.ChebyshevDist(targetPos) > action.MaxRange)
       return null;
 
     return action.Targeting switch
     {
-      TargetingType.Direction when targetPos is { } tp => new(null, (tp - Pos).Signed),
-      TargetingType.Unit when CanSeeYou => new(u, upos),
-      TargetingType.Pos when targetPos is { } tp => new(null, tp),
-      TargetingType.None => new(u, upos),
+      TargetingType.Direction => new(null, (targetPos - Pos).Signed),
+      TargetingType.Unit when CanSee(this, targetUnit) => new(targetUnit, targetPos),
+      TargetingType.Pos => new(null, targetPos),
+      TargetingType.None => new(targetUnit, targetPos),
       _ => null,
     };
   }

@@ -270,6 +270,8 @@ public abstract class ActionBrick(string name, TargetingType targeting = Targeti
     public AbilityTags Tags => tags;
     public virtual string? PokedexDescription => null;
 
+    public int EffectiveMaxRange => maxRange < 0 ? 101 : maxRange;
+
     public virtual ToggleState IsToggleOn(object? data) => ToggleState.NotAToggle;
 
     public virtual object? CreateData() => null;

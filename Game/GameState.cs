@@ -123,9 +123,19 @@ public class GameState
 
     public static Awareness GetAwareness(IUnit viewer, IUnit target)
     {
-        // monster<->monster always full awareness (for now)
+        // monster<->monster: simplified visual check
         if (!viewer.IsPlayer && !target.IsPlayer)
-            return new(true, false, PlayerPerception.Visible);
+        {
+            bool adjacent = viewer.Pos.ChebyshevDist(target.Pos) <= 1;
+            bool mBlind = !viewer.Allows("can_see");
+            bool mTargetInvis = target.Has("invisible");
+            bool mTargetInDark = !lvl.IsLit(target.Pos) && !viewer.Has("darkvision");
+            bool mLOS = adjacent || FovCalculator.IsPathClear(lvl, viewer.Pos, target.Pos);
+            bool mVisual = !mBlind && !mTargetInvis && !mTargetInDark && mLOS;
+            if (!mVisual && adjacent && g.Rn2(8) == 0)
+                return new(true, false, PlayerPerception.Detected);
+            return new(mVisual, false, mVisual ? PlayerPerception.Visible : PlayerPerception.None);
+        }
 
         int tremor = viewer.Query<int>("tremorsense", null, MergeStrategy.Max, 0);
         bool hasTremor = tremor > 0 && viewer.Pos.ChebyshevDist(target.Pos) <= tremor;
@@ -216,6 +226,8 @@ public class GameState
     }
 
     public bool DebugMode { get; set; }
+    public bool SeeAllMonsters { get; set; }
+    public bool GlobalHatred { get; set; }
     public Dictionary<string, Branch> Branches { get; set; } = [];
     public Dictionary<LevelId, Level> Levels { get; } = [];
     public Dictionary<string, int> Vanquished { get; } = [];
@@ -735,8 +747,10 @@ public class GameState
             {
                 if (defender.IsPlayer)
                     g.pline($"{with:The} hits you!");
-                else
+                else if (attacker.IsPlayer)
                     g.pline($"{with:The} hits {defender:the}.");
+                else
+                    g.YouObserve(attacker, $"{with:The} hits {defender:the}.");
             }
             else if (attacker.IsPlayer)
             {
@@ -752,9 +766,9 @@ public class GameState
             else
             {
                 if (weapon?.Category == WeaponCategory.Item)
-                    g.pline($"{attacker:The} {verb} its {with}! {attacker:The} hits {defender:the}.");
+                    g.YouObserve(attacker, $"{attacker:The} {verb} its {with}! {attacker:The} hits {defender:the}.");
                 else
-                    g.pline($"{attacker:The} hits {defender:the}.");
+                    g.YouObserve(attacker, $"{attacker:The} hits {defender:the}.");
             }
             DoDamage(ctx);
 
@@ -777,8 +791,10 @@ public class GameState
             {
                 if (defender.IsPlayer)
                     g.pline($"{with:The} misses you.");
-                else
+                else if (attacker.IsPlayer)
                     g.pline($"{with:The} misses {defender:the}.");
+                else
+                    g.YouObserve(attacker, $"{with:The} misses {defender:the}.");
             }
             else if (attacker.IsPlayer)
                 g.pline($"You miss the {defender}.");
@@ -792,9 +808,9 @@ public class GameState
             else
             {
                 if (weapon?.Category == WeaponCategory.Item)
-                    g.pline($"{attacker:The} {verb} its {with}!  {attacker:The} misses {defender:the}.");
+                    g.YouObserve(attacker, $"{attacker:The} {verb} its {with}!  {attacker:The} misses {defender:the}.");
                 else
-                    g.pline($"{attacker:The} misses {defender:the}.");
+                    g.YouObserve(attacker, $"{attacker:The} misses {defender:the}.");
             }
         }
         return hit;

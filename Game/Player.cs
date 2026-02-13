@@ -232,6 +232,39 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
     public override bool IsDM => false;
     public override int CasterLevel => CharacterLevel;
     public override int EffectiveLevel => CharacterLevel;
+
+    const int TrackSize = 200;
+    readonly Pos[] _track = new Pos[TrackSize];
+    int _trackCount;
+    int _trackPtr;
+
+    public void RecordTrack()
+    {
+        if (_trackCount < TrackSize) _trackCount++;
+        if (_trackPtr == TrackSize) _trackPtr = 0;
+        _track[_trackPtr++] = upos;
+    }
+
+    public void ClearTrack()
+    {
+        _trackCount = 0;
+        _trackPtr = 0;
+    }
+
+    public Pos? GetTrack(Pos from, int maxTrack = 0)
+    {
+        int cnt = maxTrack <= 0 ? _trackCount : Math.Min(maxTrack, _trackCount);
+        int ptr = _trackPtr;
+        for (; cnt > 0; cnt--)
+        {
+            if (ptr == 0) ptr = TrackSize;
+            ptr--;
+            int dist = from.ChebyshevDist(_track[ptr]);
+            if (dist == 1) return _track[ptr];
+            if (dist == 0) return null;
+        }
+        return null;
+    }
 }
 
 internal class PlayerSkills : LogicBrick

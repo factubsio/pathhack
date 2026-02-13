@@ -18,7 +18,7 @@ public class SnakeVenomLesser(int dc) : AfflictionBrick(dc, "poison")
         ctx.Damage.Add(new DamageRoll { Formula = d(4), Type = DamageTypes.Poison });
         DoDamage(ctx);
         
-        if (stage == 1)
+        if (stage == 1 && unit.IsPlayer) //FIXME YouObserveSelf?
             g.pline($"{unit:The} {VTense(unit, "feel")} poisoned!");
     }
 
@@ -46,7 +46,7 @@ public class SnakeVenomGreater(int dc) : AfflictionBrick(dc, "poison")
         ctx.Damage.Add(new DamageRoll { Formula = formula, Type = DamageTypes.Poison });
         DoDamage(ctx);
         
-        if (stage == 1)
+        if (stage == 1 && unit.IsPlayer) //FIXME YouObserveSelf?
             g.pline($"{unit:The} {VTense(unit, "feel")} badly poisoned!");
     }
 

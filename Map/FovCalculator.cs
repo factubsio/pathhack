@@ -169,7 +169,7 @@ public static class FovCalculator
         foreach (var unit in level.LiveUnits)
         {
             if (unit is not Monster m) continue;
-            m.Perception = GetAwareness(u, m).Perception;
+            m.Perception = g.SeeAllMonsters ? PlayerPerception.Visible : GetAwareness(u, m).Perception;
         }
 
         Perf.Stop("FovCompute");

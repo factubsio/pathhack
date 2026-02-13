@@ -358,7 +358,14 @@ public class Level(LevelId id, int width, int height)
             }
         }
         
-        if (unit.IsPlayer) LookHere();
+        if (unit.IsPlayer)
+        {
+            if (from.ChebyshevDist(to) <= 1)
+                Player.u.RecordTrack();
+            else
+                Player.u.ClearTrack();
+            LookHere();
+        }
     }
 
     static void LookHere()

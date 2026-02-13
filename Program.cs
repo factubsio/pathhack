@@ -180,7 +180,7 @@ if (args.Length > 0 && args[0] == "--monsters")
 
 if (args.Length > 0 && args[0] == "--items")
 {
-    MonsterTable.PrintItems();
+    MonsterTable.PrintItems(args.Length > 1 ? args[1] : null);
     return;
 }
 
