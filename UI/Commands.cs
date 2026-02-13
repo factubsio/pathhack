@@ -162,7 +162,7 @@ public static partial class Input
 
         char? lastClass = null;
         char autoLet = 'a';
-        var canSee = unit?.Can("can_see") == true && unit.IsPlayer;
+        var canSee = unit?.Allows("can_see") == true && unit.IsPlayer;
         foreach (var item in sorted)
         {
             if (!item.Knowledge.HasFlag(ItemKnowledge.Seen) && canSee)
@@ -556,7 +556,7 @@ public static partial class Input
 
     static void ReadScroll()
     {
-        if (!u.Can("can_see"))
+        if (!u.Allows("can_see"))
         {
             g.pline("You can't read while blind!");
             return;

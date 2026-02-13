@@ -39,7 +39,7 @@ public interface IEntity
     object? Query(string key, string? arg = null, MergeStrategy merge = MergeStrategy.Replace);
     T Query<T>(string key, string? arg, MergeStrategy merge, T defaultValue);
     bool Has(string key);
-    bool Can(string key);
+    bool Allows(string key);
     bool HasFact(LogicBrick brick);
 
     int EffectiveLevel { get; }
@@ -581,7 +581,7 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
         Query(key, arg, merge) is T v ? v : defaultValue;
 
     public virtual bool Has(string key) => Query(key, null, MergeStrategy.Or, false);
-    public virtual bool Can(string key) => Query(key, null, MergeStrategy.And, true);
+    public virtual bool Allows(string key) => Query(key, null, MergeStrategy.And, true);
 
     public bool HasFact(LogicBrick brick) => LiveFacts.Any(f => f.Brick == brick);
 

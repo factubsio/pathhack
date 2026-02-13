@@ -285,7 +285,7 @@ public static partial class Input
 
     static void ZapSpell()
     {
-        if (!u.Can("can_speak"))
+        if (!u.Allows("can_speak"))
         {
             g.pline($"You are currently silenced!");
             return;
@@ -554,7 +554,7 @@ public static partial class Input
     {
         var items = lvl.ItemsAt(upos);
         if (items.Count == 0) return;
-        if (u.Can("can_see"))
+        if (u.Allows("can_see"))
             foreach (var item in items)
                 item.Knowledge |= ItemKnowledge.Seen;
         List<Item> toPickup;

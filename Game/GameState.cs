@@ -130,7 +130,7 @@ public class GameState
         int tremor = viewer.Query<int>("tremorsense", null, MergeStrategy.Max, 0);
         bool hasTremor = tremor > 0 && viewer.Pos.ChebyshevDist(target.Pos) <= tremor;
 
-        bool blind = !viewer.Can("can_see");
+        bool blind = !viewer.Allows("can_see");
         bool targetInvis = target.Has("invisible") && !viewer.Has("see_invisible");
         bool targetInDark = !lvl.IsLit(target.Pos) && !viewer.Has("darkvision");
 
@@ -361,7 +361,7 @@ public class GameState
 
     public bool YouObserve(IUnit source, string? ifSee, string? sound = null, int hearRadius = 6)
     {
-        bool canSee = u.Can("can_see") && lvl.IsVisible(source.Pos);
+        bool canSee = u.Allows("can_see") && lvl.IsVisible(source.Pos);
         bool canHear = sound != null && upos.ChebyshevDist(source.Pos) <= hearRadius;
 
         if (canSee && ifSee != null)

@@ -367,7 +367,7 @@ public class Level(LevelId id, int width, int height)
         u.CurrentRoom = room;
 
         var items = lvl.ItemsAt(upos);
-        if (u.Can("can_see"))
+        if (u.Allows("can_see"))
         {
             foreach (var item in items)
             {
