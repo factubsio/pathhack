@@ -249,6 +249,7 @@ public enum AbilityTags
     Evil       = 1 << 6,
     Holy       = 1 << 7,
     Biological = 1 << 8,  // stripped by undead templates
+    FirstSpawnOnly  = 1 << 9,  // skipped on respawn
 }
 
 public enum ToggleState { NotAToggle, Off, On }
@@ -1025,6 +1026,8 @@ public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) :
         if (!Inventory.Contains(item))
             throw new InvalidOperationException("Item not in inventory");
         if (Equipped.ContainsValue(item))
+            return null;
+        if (item.Def.DefaultEquipSlot == ItemSlots.None)
             return null;
 
         EquipSlot mainSlot = new(item.Def.DefaultEquipSlot, "_");

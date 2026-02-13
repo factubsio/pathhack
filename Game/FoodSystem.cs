@@ -492,6 +492,48 @@ public static class Foods
         if (u.CurrentActivity?.Target == item) return false;
         
         item.RotTimer++;
+
+        // Respawn: negative timer ticking up to 0
+        if (item.RotTimer == 0 && item.CorpseOf is { } def)
+        {
+            Pos origin = floorPos ?? holder!.Pos;
+            Pos? spawnPos = null;
+            if (lvl.NoUnit(origin))
+            {
+                spawnPos = origin;
+            }
+            else
+            {
+                foreach (var n in origin.Neighbours())
+                {
+                    if (lvl.InBounds(n) && lvl[n].IsPassable && lvl.NoUnit(n))
+                    {
+                        spawnPos = n;
+                        break;
+                    }
+                }
+            }
+            if (spawnPos != null)
+            {
+                var mon = Monster.Spawn(def, "respawn", firstTimeSpawn: false);
+                lvl.PlaceUnit(mon, spawnPos.Value);
+                // pick up any equipment at the corpse tile
+                foreach (var loot in lvl.ItemsAt(origin))
+                {
+                    // Don't add your own corspe??
+                    if (loot == item) continue;
+                    lvl.RemoveItem(loot, origin);
+                    mon.Inventory.Add(loot);
+                    mon.Equip(loot);
+                }
+
+                g.YouObserve(spawnPos.Value, $"{mon:The} rises from the dead!");
+                return true;
+            }
+            // couldn't spawn, missed our chance
+            return false;
+        }
+
         if (item.RotTimer < RotTime) return false;
 
         if (holder?.IsPlayer == true)

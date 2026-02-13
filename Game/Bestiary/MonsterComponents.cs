@@ -18,6 +18,7 @@ public class Ferocity : LogicBrick<DataFlag>
 
 public class Equip(ItemDef itemDef) : LogicBrick
 {
+    public override AbilityTags Tags => AbilityTags.FirstSpawnOnly;
     protected override void OnSpawn(Fact fact, PHContext context)
     {
         var item = ItemGen.GenerateItem(itemDef);
@@ -32,6 +33,7 @@ public record Outfit(int Weight, params OutfitItem[] Items);
 
 public class EquipSet(params Outfit[] outfits) : LogicBrick
 {
+    public override AbilityTags Tags => AbilityTags.FirstSpawnOnly;
     public static EquipSet OneOf(params ItemDef[] items) =>
         new([.. items.Select(i => new Outfit(1, new OutfitItem(i)))]);
 

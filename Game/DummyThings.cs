@@ -17,6 +17,26 @@ public static class DummyThings
 
     public static readonly ItemDef[] All = [FireWand, ColdWand, Blindfold];
 
+    public static readonly MonsterDef Balloon = new()
+    {
+        id = "balloon",
+        Name = "training balloon",
+        CreatureType = CreatureTypes.Construct,
+        Family = "construct",
+        Glyph = new('\'', ConsoleColor.White),
+        AttackBonus = 0,
+        HpPerLevel = 1,
+        AC = -10,
+        LandMove = 0,
+        Unarmed = NaturalWeapons.Fist,
+        MoralAxis = MoralAxis.Neutral,
+        EthicalAxis = EthicalAxis.Neutral,
+        Components =
+        [
+            RegenBrick.Always,
+        ],
+    };
+
     public static readonly MonsterDef Dummy = new()
     {
         id = "dummy",
@@ -28,7 +48,7 @@ public static class DummyThings
         HpPerLevel = 100,
         AC = 10,
         LandMove = 0,
-        Unarmed = Bestiary.NaturalWeapons.Fist,
+        Unarmed = NaturalWeapons.Fist,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
         Components =

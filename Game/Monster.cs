@@ -306,9 +306,11 @@ public class Monster : Unit<MonsterDef>, IFormattable
   public string? TemplatedName;
   const double HpMultiplier = 1.5;
 
-  public static Monster Spawn(MonsterDef def, string reason, MonsterTemplate? template = null, int depthBonus = 0)
+  public static Monster Spawn(MonsterDef def, string reason, MonsterTemplate? template = null, int depthBonus = 0, bool firstTimeSpawn = true)
   {
-    Monster m = new(def, template?.GetComponents(def) ?? def.Components);
+    IEnumerable<LogicBrick> components = template?.GetComponents(def) ?? def.Components;
+    if (!firstTimeSpawn) components = components.Where(c => !c.Tags.HasFlag(AbilityTags.FirstSpawnOnly));
+    Monster m = new(def, components);
     m.Peaceful = def.Peaceful;
     m.TemplateBonusLevels = (template?.LevelBonus(def, m.EffectiveLevel) ?? 0) + depthBonus;
     m.HP.Reset((int)(Math.Max(1, def.HpPerLevel * m.EffectiveLevel - 1) * HpMultiplier));

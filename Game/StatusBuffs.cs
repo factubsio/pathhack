@@ -173,3 +173,27 @@ public abstract class AfflictionBrick(int dc, string? tag = null) : LogicBrick<A
   protected override object? OnQuery(Fact fact, string key, string? arg) =>
       key == Tag ? fact : DoQuery(Stage(fact), key, arg);
 }
+
+public class RegenBrick(params DamageType[] suppressedBy) : LogicBrick<RegenBrick.State>
+{
+  public class State { public bool Suppressed; }
+
+  public override AbilityTags Tags => AbilityTags.Biological;
+
+  public static readonly RegenBrick Always = new();
+
+  protected override void OnDamageTaken(Fact fact, PHContext ctx)
+  {
+    foreach (var roll in ctx.Damage)
+      if (suppressedBy.Contains(roll.Type))
+      {
+        X(fact).Suppressed = true;
+        return;
+      }
+  }
+
+  protected override void OnRoundEnd(Fact fact) => X(fact).Suppressed = false;
+
+  protected override object? OnQuery(Fact fact, string key, string? arg) =>
+      key == "respawn_from_corpse" && !X(fact).Suppressed ? true : null;
+}

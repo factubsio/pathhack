@@ -257,7 +257,7 @@ while (true)
     {
         // var dummyPos = upos.Neighbours().FirstOrDefault(p => startLevel.InBounds(p) && startLevel.NoUnit(p) && startLevel[p].IsPassable);
         // if (dummyPos != default)
-        //     startLevel.PlaceUnit(Monster.Spawn(DummyThings.Dummy, "debug"), dummyPos);
+        //     startLevel.PlaceUnit(Monster.Spawn(DummyThings.Balloon, "debug"), dummyPos);
     }
 
     // TEST: lock one L1 slot
