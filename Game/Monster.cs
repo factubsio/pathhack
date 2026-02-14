@@ -364,9 +364,10 @@ public class Monster : Unit<MonsterDef>, IFormattable
       UpdateApparentPos();
 
     // compute approach state
-    // TODO: confused → Undirected, fleeing → Flee
     if (Peaceful)
       Approach = Approach.Undirected;
+    else if (Has("fleeing"))
+      Approach = Approach.Flee;
     else if (TargetPos != null)
       Approach = Approach.Approach;
     else
@@ -404,7 +405,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
     }
 
     // peaceful monsters don't attack
-    if (!Peaceful)
+    if (!Peaceful && Approach != Approach.Flee)
     {
       // build hated target list for ability targeting
       _hatedTargets.Clear();

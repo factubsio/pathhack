@@ -17,6 +17,7 @@
 .kiro
 *mcp.ts
 
+/brick_stats.txt
 /dump.json
 /dump.html
 /game.rec

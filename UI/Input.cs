@@ -92,7 +92,9 @@ public static partial class Input
         _extCommands["exp"] = new("exp", "", ArgType.None, _ => DebugExp(), Hidden: true);
         _extCommands["dumplog"] = new("dumplog", "Dump screen to JSON", ArgType.None, _ => Dump.DumpLog(), Hidden: true);
         _extCommands["spawn"] = new("spawn", "Spawn a monster", ArgType.String("What monster?"), DoSpawn, Hidden: true);
+        _extCommands["brickstats"] = new("brickstats", "Dump brick hook stats", ArgType.None, _ => BrickStatsHook.Instance.Dump(), Hidden: true);
         _specialCommands.Add(new(ConsoleKey.T, ConsoleModifiers.Control, "Teleport (debug)", DebugTeleport));
+        LogicBrick.GlobalHook = BrickStatsHook.Instance;
     }
 
     static void DebugTeleport()

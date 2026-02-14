@@ -182,6 +182,41 @@ public static class BasicLevel1Spells
       {
         g.YouObserve(c, $"A glimmering shield materialises in front of {c:the}.", "a new hum");
       }, CastedShieldBuff.Instance);
+
+  public static readonly SpellBrick Command = new("Command", 1,
+      """You shout a command at a creature, forcing it to flee. Will save negates.""",
+      (c, t) =>
+      {
+        if (t.Unit is not IUnit target) return;
+        if (target.IsPlayer) { g.pline("It has no effect on you."); return; }
+        if (target.Has("mindless")) { g.pline($"{target:The} is mindless."); return; }
+
+        g.YouObserve(c, $"{c:The} {VTense(c, "command")} {target:the} to flee!", "a commanding shout");
+        using var ctx = PHContext.Create(c, t);
+        if (!CheckWill(ctx, c.GetSpellDC(), "command"))
+        {
+          g.pline($"{target:The} {VTense(target, "turn")} to flee!");
+          target.AddFact(FleeingBuff.Instance.Timed(), 3 + c.CasterLevel / 3);
+        }
+        else
+        {
+          g.pline($"{target:The} {VTense(target, "resist")} the command.");
+        }
+      }, TargetingType.Unit, maxRange: 3);
+
+  public static readonly SpellBrick FalseLifeLesser = new("False life, lesser", 1,
+      """You gain a small amount of temporary hit points.""",
+      (c, _) =>
+      {
+        int amount = d(4).Roll() + c.CasterLevel;
+        c.GrantTempHp(amount);
+        g.YouObserveSelf(c, $"You feel a surge of vitality! (+{amount} temp HP)", $"{c:The} looks more resilient.", "a surge of energy");
+      }, tags: AbilityTags.Beneficial);
+
+  public static SpellBrickBase ProtFromEvil => ProtectionFromAlignmentBuff.SpellEvil;
+  public static SpellBrickBase ProtFromGood => ProtectionFromAlignmentBuff.SpellGood;
+  public static SpellBrickBase ProtFromLaw => ProtectionFromAlignmentBuff.SpellLaw;
+  public static SpellBrickBase ProtFromChaos => ProtectionFromAlignmentBuff.SpellChaos;
 }
 
 public class CastedLightBuff() : MaintainedBuff("spell_l1")
@@ -259,4 +294,33 @@ public class GreaseArea(string name, IUnit? source, int dc, int duration) : Area
       if (unit.HasFact(ProneBuff.Instance)) unit.Energy -= unit.LandMove.Value;
     }
   }
+}
+
+public class ProtectionFromAlignmentBuff(string name, MoralAxis? moral, EthicalAxis? ethical) : MaintainedBuff("spell_l1")
+{
+  public override string? BuffName => name;
+
+  protected override void OnBeforeDefendRoll(Fact fact, PHContext ctx)
+  {
+    if (!ctx.IsCheckingOwnerOf(fact)) return;
+    if (ctx.Source is not IUnit attacker) return;
+    bool matches = (moral != null && attacker.MoralAxis == moral) || (ethical != null && attacker.EthicalAxis == ethical);
+    if (matches)
+      ctx.Check!.Modifiers.AddModifier(new(ModifierCategory.CircumstanceBonus, 1, name));
+  }
+
+  static readonly ProtectionFromAlignmentBuff Evil = new("Prot. from Evil", MoralAxis.Evil, null);
+  static readonly ProtectionFromAlignmentBuff Good = new("Prot. from Good", MoralAxis.Good, null);
+  static readonly ProtectionFromAlignmentBuff Law = new("Prot. from Law", null, EthicalAxis.Lawful);
+  static readonly ProtectionFromAlignmentBuff Chaos = new("Prot. from Chaos", null, EthicalAxis.Chaotic);
+
+  static ActivateMaintainedSpell MakeSpell(string label, ProtectionFromAlignmentBuff buff) => new(label, 1,
+      $"You are protected from {label.Split(' ').Last().ToLower()} creatures, gaining +1 AC against their attacks.",
+      c => g.YouObserveSelf(c, $"A ward shimmers around you.", $"A ward shimmers around {c:the}.", "a faint hum"),
+      buff);
+
+  public static readonly ActivateMaintainedSpell SpellEvil = MakeSpell("Protection from Evil", Evil);
+  public static readonly ActivateMaintainedSpell SpellGood = MakeSpell("Protection from Good", Good);
+  public static readonly ActivateMaintainedSpell SpellLaw = MakeSpell("Protection from Law", Law);
+  public static readonly ActivateMaintainedSpell SpellChaos = MakeSpell("Protection from Chaos", Chaos);
 }

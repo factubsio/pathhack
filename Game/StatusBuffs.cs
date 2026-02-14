@@ -60,14 +60,22 @@ public class ParalyzedBuff : LogicBrick
 {
   public static readonly ParalyzedBuff Instance = new();
   public override bool IsBuff => true;
+  public override bool IsActive => true;
   public override string? BuffName => "Paralyzed";
   public override StackMode StackMode => StackMode.Stack;
 
   protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
   {
     "paralyzed" => true,
+    "helpless" => true,
     _ => null
   };
+
+  protected override void OnRoundStart(Fact fact)
+  {
+    if (fact.Entity is not IUnit unit) return;
+    unit.Energy = 0;
+  }
 
   protected override void OnStackRemoved(Fact fact)
   {
@@ -91,6 +99,39 @@ public class NauseatedBuff : LogicBrick
       context.Check!.Disadvantage++;
       fact.Entity.RemoveStack(Instance);
     }
+  }
+}
+
+public class FleeingBuff : LogicBrick
+{
+  public static readonly FleeingBuff Instance = new();
+  public override bool IsBuff => true;
+  public override string? BuffName => "Fleeing";
+
+  protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
+  {
+    "fleeing" => true,
+    _ => null
+  };
+}
+
+public class StunnedBuff : LogicBrick
+{
+  public static readonly StunnedBuff Instance = new();
+  public override bool IsBuff => true;
+  public override bool IsActive => true;
+  public override string? BuffName => "Stunned";
+
+  protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
+  {
+    "helpless" => true,
+    _ => null
+  };
+
+  protected override void OnRoundStart(Fact fact)
+  {
+    if (fact.Entity is not IUnit unit) return;
+    unit.Energy = 0;
   }
 }
 
@@ -151,6 +192,9 @@ public abstract class AfflictionBrick(int dc, string? tag = null) : LogicBrick<A
     if (g.CurrentRound < data.NextTick) return;
 
     var unit = (IUnit)fact.Entity;
+
+    if (tag != null && unit.Query<bool>("suppress_affliction", tag, MergeStrategy.Or, false)) return;
+
     data.NextTick = g.CurrentRound + TickInterval.Roll();
 
     // auto-cure

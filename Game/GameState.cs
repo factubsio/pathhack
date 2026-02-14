@@ -414,14 +414,6 @@ public class GameState
 
         while (u.Energy > 1 && !u.IsDead)
         {
-            // Paralysis check (And merge so immunity can override)
-            if (u.Query("paralyzed", null, MergeStrategy.And, false))
-            {
-                g.pline("You are paralyzed!");
-                u.Energy -= ActionCosts.OneAction.Value;
-                continue;
-            }
-
             FovCalculator.Compute(lvl, upos, u.DarkVisionRadius);
 
             Perf.Start();

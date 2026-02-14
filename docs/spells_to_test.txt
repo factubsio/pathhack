@@ -1,0 +1,84 @@
+Spell Test Plan
+===============
+
+L1 - Command (Flee)
+  u→mon: cast on monster, verify it flees and skips abilities
+  mon→mon: give to monster, verify it works on other monsters
+  blocked on player (for now)
+  check: mindless creatures immune
+
+L1 - False Life Lesser
+  u: cast, verify temp HP granted
+  mon: give to monster, verify it self-casts
+
+L1 - Prot from Evil/Good/Law/Chaos
+  u: maintain, get hit by matching alignment monster, verify +1 AC
+  u: verify non-matching alignment gives no bonus
+  mon: give to monster, verify it maintains
+
+L2 - Scorching Ray
+  u→mon: beam hits first target, attack roll, 4d6 fire
+  mon→u: monster casts at player
+  mon→mon: monster casts at hated monster
+
+L2 - Sound Burst
+  u→mon: 3x3 burst, damage + stun on fail
+  mon→u: monster casts, player takes damage + stun
+  check: caster not hit by own burst
+  check: stun lasts 1 round (energy stolen)
+
+L2 - Resist Fire/Cold/Shock/Acid
+  u: maintain, take matching element damage, verify DR
+  u: verify non-matching element not reduced
+  check: DR scales with CL
+
+L2 - Delay Poison
+  u: get poisoned, maintain, verify poison stops ticking
+  u: dismiss, verify poison resumes
+
+L2 - Hold Person
+  u→mon: cast on humanoid, verify paralysis
+  u→mon: cast on non-humanoid, verify rejection
+  mon→u: monster casts on player, verify paralysis
+  mon→mon: monster casts on humanoid monster
+
+L2 - Dimension Door
+  u: teleport to visible tile, verify scatter without teleport_control
+  u: verify blocked if no passable landing tiles
+  mon: monster casts (will it pick a sensible target pos?)
+
+L3 - Fireball
+  u→mon: pos target, radius 2 burst, reflex half
+  mon→u: monster casts at player
+  check: caster not hit by own fireball
+  check: multiple targets in burst
+
+L3 - Vampiric Touch
+  u→mon: adjacent, attack roll, heal for damage dealt
+  mon→u: monster drains player, heals itself
+  mon→mon: monster drains hated monster
+
+L3 - Fly Lesser
+  u: maintain, verify flying flag, verify speed penalty
+  u: fly over water/pits
+  mon: give to monster, verify it maintains and flies
+
+L3 - Heroism
+  u: maintain, verify +2 attack and saves
+  mon: give to monster, verify it maintains
+
+L3 - False Life
+  u: cast, verify temp HP (bigger than lesser)
+  mon: give to monster, verify it self-casts
+
+L3 - Prot Fire/Cold/Shock/Acid
+  u: cast, take matching damage, verify pool absorbs
+  u: verify pool depletes and buff removed
+  check: pool scales with CL
+
+System changes
+  paralysis: verify energy steal works for player AND monster
+  paralysis: no more per-turn "You are paralyzed!" message
+  stunned: energy steal, 1 round duration
+  fleeing: monster flees, skips abilities, stops when buff expires
+  affliction suppress: delay poison actually pauses ticks
