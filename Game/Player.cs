@@ -106,24 +106,36 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
         }
 
         // Room entry message (first time only)
-        if (to != null && to.Entered && to.Type == RoomType.Shop && to.Resident != null)
+        if (to != null && to.Entered && to.Type == RoomType.Shop && to.Resident is Monster shk2)
         {
-            if (to.Resident.Peaceful)
-                g.pline("Welcome back to my shop.");
+            var state2 = shk2.FindFact(ShopkeeperBrick.Instance)?.As<ShopState>();
+            if (shk2.Peaceful && state2 != null)
+                g.pline($"{shk2.ProperName} says: \"Welcome again to {shk2.ProperName}'s {ShopTypes.DisplayName(state2.Type)}!\"");
             else
-                g.pline("Criminal! I'll get you!");
+                g.pline($"{shk2.ProperName} says: \"Criminal! I'll get you!\"");
         }
         else if (to != null && !to.Entered)
         {
             to.Entered = true;
-            var msg = to.Type switch
+            string? msg = null;
+            if (to.Type == RoomType.Shop && to.Resident is Monster shkNew)
             {
-                RoomType.GoblinNest => "You find a goblin prayer circle.",
-                RoomType.GremlinParty => "You stumble across the aftermath of a gremlin party.",
-                RoomType.GremlinPartyBig => "You enter the chaos of a gremlin bender.",
-                RoomType.Shop when to.Resident != null => to.Resident.Peaceful ? "Welcome to my shop!" : "I saw your wanted poster, you're mine!",
-                _ => null
-            };
+                var state = shkNew.FindFact(ShopkeeperBrick.Instance)?.As<ShopState>();
+                if (shkNew.Peaceful && state != null)
+                    msg = $"{shkNew.ProperName} says: \"Welcome to {shkNew.ProperName}'s {ShopTypes.DisplayName(state.Type)}!\"";
+                else if (shkNew is { Peaceful: false })
+                    msg = $"{shkNew.ProperName} says: \"I saw your wanted poster, you're mine!\"";
+            }
+            else
+            {
+                msg = to.Type switch
+                {
+                    RoomType.GoblinNest => "You find a goblin prayer circle.",
+                    RoomType.GremlinParty => "You stumble across the aftermath of a gremlin party.",
+                    RoomType.GremlinPartyBig => "You enter the chaos of a gremlin bender.",
+                    _ => null
+                };
+            }
             if (msg != null) g.pline(msg);
         }
     }

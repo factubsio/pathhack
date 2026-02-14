@@ -303,7 +303,7 @@ public static partial class Input
 
     static void SetQuiver()
     {
-        var throwable = u.Inventory.Where(i => i.Def is WeaponDef w && w.Range > 1).ToList();
+        var throwable = u.Inventory.Where(i => i.Def is WeaponDef w && (w.Range > 1 || w.Launcher != null)).ToList();
         if (throwable.Count == 0)
         {
             g.pline("You have nothing to ready.");
@@ -353,10 +353,11 @@ public static partial class Input
 
     static void WearArmor()
     {
-        var armors = u.Inventory.Where(i => i.Def is ArmorDef).ToList();
+        var armors = u.Inventory.Where(i => i.Def is ArmorDef
+            || i.Def.DefaultEquipSlot is ItemSlots.Feet or ItemSlots.Hands).ToList();
         if (armors.Count == 0)
         {
-            g.pline("You have no armor.");
+            g.pline("You have nothing to wear.");
             return;
         }
         var menu = new Menu<Item>();
@@ -368,7 +369,7 @@ public static partial class Input
         var slot = g.DoEquip(u, armor);
         if (slot == GameState.EquipResult.Cursed) return;
         if (slot == GameState.EquipResult.NoSlot)
-            g.pline("You are already wearing body armor.");
+            g.pline("You can't wear that.");
         else
             g.pline($"{armor.InvLet} - {armor.DisplayName} (being worn).");
     }
@@ -409,10 +410,11 @@ public static partial class Input
 
     static void TakeOff()
     {
-        var equipped = u.Equipped.Values.Where(i => i.Def is ArmorDef).ToList();
+        var equipped = u.Equipped.Values.Where(i => i.Def is ArmorDef
+            || i.Def.DefaultEquipSlot is ItemSlots.Feet or ItemSlots.Hands).ToList();
         if (equipped.Count == 0)
         {
-            g.pline("You have no armor equipped.");
+            g.pline("You have nothing to take off.");
             return;
         }
         var menu = new Menu<Item>();

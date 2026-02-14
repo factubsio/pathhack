@@ -128,6 +128,67 @@ public class InvisibilityRingBuff : LogicBrick<InvisibilityRingBuff.State>
     }
 }
 
+public class BootsOfSpeedBuff : LogicBrick
+{
+    public static readonly BootsOfSpeedBuff Instance = new();
+    public override bool RequiresEquipped => true;
+
+    protected override object? OnQuery(Fact fact, string key, string? arg) =>
+        key == "speed_bonus" ? new Modifier(ModifierCategory.ItemBonus, 2, "boots of speed") : null;
+}
+
+public class FumbleBuff : LogicBrick
+{
+    public static readonly FumbleBuff Instance = new();
+    public override bool IsActive => true;
+    public override bool RequiresEquipped => true;
+
+    protected override void OnRoundStart(Fact fact)
+    {
+        if (fact.Entity is not Item { Holder: { } unit }) return;
+        if (g.Rn2(10) != 0) return;
+        g.YouObserveSelf(unit, "You stumble!", $"{unit:The} stumbles!");
+        unit.Energy -= unit.LandMove.Value;
+    }
+}
+
+public class MissileSnaring : LogicBrick
+{
+    public static readonly MissileSnaring Instance = new();
+    public override bool RequiresEquipped => true;
+
+    protected override void OnBeforeDefendRoll(Fact fact, PHContext ctx)
+    {
+        if (ctx.Melee) return;
+        if (g.Rn2(5) != 0) return; // 20% chance
+        ctx.Check!.ForceFailure();
+        if (fact.Entity is Item { Holder: { } unit })
+            g.YouObserveSelf(unit, "You snatch the projectile out of the air!", $"{unit:The} snatches a projectile!");
+    }
+}
+
+public class PowerGauntletBuff : LogicBrick
+{
+    public static readonly PowerGauntletBuff Instance = new();
+    public override bool RequiresEquipped => true;
+
+    protected override object? OnQuery(Fact fact, string key, string? arg) =>
+        key == "stat/Str" && fact.Entity is Item item
+            ? new Modifier(ModifierCategory.ItemBonus, Math.Max(1, item.Potency) * 2, "gauntlets of power")
+            : null;
+}
+
+public class PotencyDexBuff : LogicBrick
+{
+    public static readonly PotencyDexBuff Instance = new();
+    public override bool RequiresEquipped => true;
+
+    protected override object? OnQuery(Fact fact, string key, string? arg) =>
+        key == "stat/Dex" && fact.Entity is Item item
+            ? new Modifier(ModifierCategory.ItemBonus, Math.Max(1, item.Potency) * 2, "gauntlets of dexterity")
+            : null;
+}
+
 public class WarningBuff(int range) : LogicBrick
 {
     public static readonly WarningBuff Range8 = new(8);
@@ -472,6 +533,7 @@ public static class MagicAccessories
         PokedexDescription = "Occasionally teleports the wearer to a random location.",
         Components = [TeleportationCurseBuff.Instance.WhenEquipped()],
         Price = 100,
+        BUCBias = -1,
     };
 
     public static readonly ItemDef RingOfInvisibility = new()
@@ -496,6 +558,7 @@ public static class MagicAccessories
         PokedexDescription = "Monsters always know where the wearer is.",
         Components = [new QueryBrick("aggravate_monster", true).WhenEquipped()],
         Price = 50,
+        BUCBias = -1,
     };
 
     public static readonly ItemDef RingOfHunger = new()
@@ -508,7 +571,127 @@ public static class MagicAccessories
         PokedexDescription = "The wearer feels constantly famished.",
         Components = [new QueryBrick("hunger_rate", 2).WhenEquipped()],
         Price = 50,
+        BUCBias = -1,
     };
+
+    // === Boots ===
+
+    public static readonly ItemDef BootsOfSpeed = new()
+    {
+        id = "boots_of_speed",
+        Name = "boots of speed",
+        Glyph = new(ItemClasses.Armor, ConsoleColor.Yellow),
+        DefaultEquipSlot = ItemSlots.Feet,
+        AppearanceCategory = AppearanceCategory.Boots,
+        PokedexDescription = "The wearer moves with unnatural swiftness.",
+        Components = [BootsOfSpeedBuff.Instance.WhenEquipped()],
+        Price = 400,
+    };
+
+    public static readonly ItemDef BootsOfElvenkind = new()
+    {
+        id = "boots_of_elvenkind",
+        Name = "boots of elvenkind",
+        Glyph = new(ItemClasses.Armor, ConsoleColor.Green),
+        DefaultEquipSlot = ItemSlots.Feet,
+        AppearanceCategory = AppearanceCategory.Boots,
+        PokedexDescription = "Soft-soled boots that muffle the wearer's footsteps.",
+        Components = [new QueryBrick("stealth", true).WhenEquipped()],
+        Price = 200,
+    };
+
+    public static readonly ItemDef BootsOfFlying = new()
+    {
+        id = "boots_of_flying",
+        Name = "boots of flying",
+        Glyph = new(ItemClasses.Armor, ConsoleColor.Cyan),
+        DefaultEquipSlot = ItemSlots.Feet,
+        AppearanceCategory = AppearanceCategory.Boots,
+        PokedexDescription = "Winged boots that grant the wearer flight.",
+        Components = [new QueryBrick(CreatureTags.Flying, true).WhenEquipped()],
+        Price = 500,
+    };
+
+    public static readonly ItemDef FumbleBoots = new()
+    {
+        id = "fumble_boots",
+        Name = "fumble boots",
+        Glyph = new(ItemClasses.Armor, ConsoleColor.DarkYellow),
+        DefaultEquipSlot = ItemSlots.Feet,
+        AppearanceCategory = AppearanceCategory.Boots,
+        PokedexDescription = "These boots make the wearer clumsy.",
+        Components = [FumbleBuff.Instance.WhenEquipped()],
+        Price = 50,
+        BUCBias = -1,
+    };
+
+    public static readonly ItemDef[] AllBoots = [BootsOfSpeed, BootsOfElvenkind, BootsOfFlying, FumbleBoots];
+
+    // === Gloves ===
+
+    public static readonly ItemDef GauntletsOfPower = new()
+    {
+        id = "gauntlets_of_power",
+        Name = "gauntlets of power",
+        Glyph = new(ItemClasses.Armor, ConsoleColor.Red),
+        DefaultEquipSlot = ItemSlots.Hands,
+        AppearanceCategory = AppearanceCategory.Gloves,
+        PokedexDescription = "Heavy gauntlets that grant the wearer tremendous striking power.",
+        Components = [PowerGauntletBuff.Instance.WhenEquipped()],
+        Price = 400,
+    };
+
+    public static readonly ItemDef GauntletsOfDexterity = new()
+    {
+        id = "gauntlets_of_dexterity",
+        Name = "gauntlets of dexterity",
+        Glyph = new(ItemClasses.Armor, ConsoleColor.Cyan),
+        DefaultEquipSlot = ItemSlots.Hands,
+        AppearanceCategory = AppearanceCategory.Gloves,
+        PokedexDescription = "Light gloves that sharpen the wearer's reflexes.",
+        Components = [PotencyDexBuff.Instance.WhenEquipped()],
+        Price = 300,
+        CanHavePotency = true,
+    };
+
+    public static readonly ItemDef GlovesOfThievery = new()
+    {
+        id = "gloves_of_thievery",
+        Name = "gloves of thievery",
+        Glyph = new(ItemClasses.Armor, ConsoleColor.DarkGray),
+        DefaultEquipSlot = ItemSlots.Hands,
+        AppearanceCategory = AppearanceCategory.Gloves,
+        PokedexDescription = "Thin gloves that grant a deft touch with traps and locks.",
+        Components = [TrapSense.Instance.WhenEquipped()],
+        Price = 300,
+    };
+
+    public static readonly ItemDef GlovesOfMissileSnaring = new()
+    {
+        id = "gloves_of_missile_snaring",
+        Name = "gloves of missile snaring",
+        Glyph = new(ItemClasses.Armor, ConsoleColor.White),
+        DefaultEquipSlot = ItemSlots.Hands,
+        AppearanceCategory = AppearanceCategory.Gloves,
+        PokedexDescription = "The wearer can pluck projectiles from the air.",
+        Components = [MissileSnaring.Instance.WhenEquipped()],
+        Price = 400,
+    };
+
+    public static readonly ItemDef FumbleGloves = new()
+    {
+        id = "fumble_gloves",
+        Name = "fumble gloves",
+        Glyph = new(ItemClasses.Armor, ConsoleColor.DarkYellow),
+        DefaultEquipSlot = ItemSlots.Hands,
+        AppearanceCategory = AppearanceCategory.Gloves,
+        PokedexDescription = "These gloves make the wearer clumsy.",
+        Components = [FumbleBuff.Instance.WhenEquipped()],
+        Price = 50,
+        BUCBias = -1,
+    };
+
+    public static readonly ItemDef[] AllGloves = [GauntletsOfPower, GauntletsOfDexterity, GlovesOfThievery, GlovesOfMissileSnaring, FumbleGloves];
 
     public static readonly ItemDef[] AllRings =
     [
@@ -525,5 +708,9 @@ public static class MagicAccessories
     {
         for (int i = 0; i < AllRings.Length; i++)
             AllRings[i].AppearanceIndex = i;
+        for (int i = 0; i < AllBoots.Length; i++)
+            AllBoots[i].AppearanceIndex = i;
+        for (int i = 0; i < AllGloves.Length; i++)
+            AllGloves[i].AppearanceIndex = i;
     }
 }

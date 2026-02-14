@@ -615,6 +615,7 @@ public class GameState
         };
         level.PlaceUnit(u, upos);
         FovCalculator.Compute(level, upos, u.DarkVisionRadius);
+        Draw.DrawCurrent();
     }
 
     public static void LoreDump(string message)

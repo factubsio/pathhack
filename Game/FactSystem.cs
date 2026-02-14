@@ -696,6 +696,7 @@ public interface IUnit : IEntity
 {
     bool IsPlayer { get; }
     bool IsDead { get; set; }
+    string? ProperName { get; set; }
     Hitpoints HP { get; set; }
     Pos Pos { get; set; }
     int Energy { get; set; }
@@ -951,6 +952,7 @@ public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) :
 
     public abstract bool IsPlayer { get; }
     public bool IsDead { get; set; }
+    public string? ProperName { get; set; }
 
     public Hitpoints HP { get; set; } = new();
     public Pos Pos { get; set; }

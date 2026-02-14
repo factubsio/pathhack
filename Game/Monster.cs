@@ -310,16 +310,16 @@ public class Monster : Unit<MonsterDef>, IFormattable
   protected override WeaponDef GetUnarmedDef() => Def.Unarmed;
   public override Glyph Glyph => OwnGlyph ?? Def.Glyph;
 
-  public string RealName => TemplatedName ?? Def.Name;
+  public string RealName => ProperName ?? TemplatedName ?? Def.Name;
 
   public override string ToString() => RealName;
 
   public string ToString(string? format, IFormatProvider? provider) => format switch
   {
-    "the" => Def.IsUnique ? RealName : RealName.The(),
-    "The" => Def.IsUnique ? RealName : RealName.The().Capitalize(),
-    "an" => Def.IsUnique ? RealName : RealName.An(),
-    "An" => Def.IsUnique ? RealName : RealName.An().Capitalize(),
+    "the" => ProperName ?? (Def.IsUnique ? RealName : RealName.The()),
+    "The" => ProperName ?? (Def.IsUnique ? RealName : RealName.The().Capitalize()),
+    "an" => ProperName ?? (Def.IsUnique ? RealName : RealName.An()),
+    "An" => ProperName ?? (Def.IsUnique ? RealName : RealName.An().Capitalize()),
     "own" => "his",
     "Own" => "His",
     _ => RealName,

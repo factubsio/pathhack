@@ -5,9 +5,13 @@ public static class Grammar
     static readonly HashSet<char> Vowels = ['a', 'e', 'i', 'o', 'u'];
     static readonly string[] AnExceptions = []; // leading vowels that sound like constants
 
+    static readonly string[] PluralWords = ["boots", "gloves", "gauntlets"];
+
     public static string An(this string s)
     {
         if (string.IsNullOrEmpty(s)) return s;
+        if (PluralWords.Any(p => s.Contains(p)))
+            return "a pair of " + s;
         bool useAn = Vowels.Contains(char.ToLower(s[0]))
             && !AnExceptions.Any(ex => s.StartsWith(ex, StringComparison.OrdinalIgnoreCase));
         return (useAn ? "an " : "a ") + s;

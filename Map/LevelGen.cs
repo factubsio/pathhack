@@ -764,6 +764,7 @@ public static class LevelGen
             var fact = shk.AddFact(ShopkeeperBrick.Instance);
             var state = fact.As<ShopState>();
             state.Type = ShopTypes.Roll();
+            shk.ProperName = ShopTypes.PickName(state.Type);
             state.Block = block;
             state.Door = doorPos;
             state.Home = home;

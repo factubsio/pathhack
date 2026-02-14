@@ -47,7 +47,7 @@ public class ShopItem
     public int PricedAt = -500;
 }
 
-public enum ShopType { General, Weapon, Armor, Potion, Scroll, Ring }
+public enum ShopType { General, Weapon, Armor, Potion, Scroll, Ring, Food, Wand, Tool, Book }
 
 public static class ShopTypes
 {
@@ -62,6 +62,145 @@ public static class ShopTypes
     ];
 
     public static ShopType Roll() => Weights.PickWeighted(w => w.weight).type;
+
+    // dNethack shopkeeper name pools
+    static readonly string[] GeneralNames =
+    [
+        "Hebiwerie", "Possogroenoe", "Asidonhopo", "Manlobbi",
+        "Adjama", "Pakka Pakka", "Kabalebo", "Wonotobo",
+        "Akalapi", "Sipaliwini",
+        "Annootok", "Upernavik", "Angmagssalik",
+        "Aklavik", "Inuvik", "Tuktoyaktuk",
+        "Chicoutimi", "Ouiatchouane", "Chibougamau",
+        "Matagami", "Kipawa", "Kinojevis",
+        "Abitibi", "Maganasipi",
+        "Akureyri", "Kopasker", "Budereyri", "Akranes", "Bordeyri",
+        "Holmavik",
+    ];
+
+    static readonly string[] WeaponNames =
+    [
+        "Voulgezac", "Rouffiac", "Lerignac", "Touverac", "Guizengeard",
+        "Melac", "Neuvicq", "Vanzac", "Picq", "Urignac", "Corignac",
+        "Fleac", "Lonzac", "Vergt", "Queyssac", "Liorac", "Echourgnac",
+        "Cazelon", "Eypau", "Carignan", "Monbazillac", "Jonzac",
+        "Pons", "Jumilhac", "Fenouilledes", "Laguiolet", "Saujon",
+        "Eymoutiers", "Eygurande", "Eauze", "Labouheyre",
+    ];
+
+    static readonly string[] ArmorNames =
+    [
+        "Demirci", "Kalecik", "Boyabai", "Yildizeli", "Gaziantep",
+        "Siirt", "Akhalataki", "Tirebolu", "Aksaray", "Ermenak",
+        "Iskenderun", "Kadirli", "Siverek", "Pervari", "Malasgirt",
+        "Bayburt", "Ayancik", "Zonguldak", "Balya", "Tefenni",
+        "Artvin", "Kars", "Makharadze", "Malazgirt", "Midyat",
+        "Birecik", "Kirikkale", "Alaca", "Polatli", "Nallihan",
+    ];
+
+    static readonly string[] PotionNames =
+    [
+        "Njezjin", "Tsjernigof", "Ossipewsk", "Gorlowka",
+        "Gomel",
+        "Konosja", "Weliki Oestjoeg", "Syktywkar", "Sablja",
+        "Narodnaja", "Kyzyl",
+        "Walbrzych", "Swidnica", "Klodzko", "Raciborz", "Gliwice",
+        "Brzeg", "Krnov", "Hradec Kralove",
+        "Leuk", "Brig", "Brienz", "Thun", "Sarnen", "Burglen", "Elm",
+        "Flims", "Vals", "Schuls", "Zum Loch",
+    ];
+
+    static readonly string[] ScrollNames =
+    [
+        "Skibbereen", "Kanturk", "Rath Luirc", "Ennistymon", "Lahinch",
+        "Kinnegad", "Lugnaquillia", "Enniscorthy", "Gweebarra",
+        "Kittamagh", "Nenagh", "Sneem", "Ballingeary", "Kilgarvan",
+        "Cahersiveen", "Glenbeigh", "Kilmihil", "Kiltamagh",
+        "Droichead Atha", "Inniscrone", "Clonegal", "Lisnaskea",
+        "Culdaff", "Dunfanaghy", "Inishbofin", "Kesh",
+    ];
+
+    static readonly string[] RingNames =
+    [
+        "Feyfer", "Flugi", "Gheel", "Havic", "Haynin", "Hoboken",
+        "Imbyze", "Juyn", "Kinsky", "Massis", "Matray", "Moy",
+        "Olycan", "Sadelin", "Svaving", "Tapper", "Terwen", "Wirix",
+        "Ypey",
+        "Rastegaisa", "Varjag Njarga", "Kautekeino", "Abisko",
+        "Enontekis", "Rovaniemi", "Avasaksa", "Haparanda",
+        "Lulea", "Gellivare", "Oeloe", "Kajaani", "Fauske",
+    ];
+
+    static readonly string[] FoodNames =
+    [
+        "Djasinga", "Tjibarusa", "Tjiwidej", "Pengalengan",
+        "Bandjar", "Parbalingga", "Bojolali", "Sarangan",
+        "Ngebel", "Djombang", "Ardjawinangun", "Berbek",
+        "Papar", "Baliga", "Tjisolok", "Siboga", "Banjoewangi",
+        "Trenggalek", "Karangkobar", "Njalindoeng", "Pasawahan",
+        "Pameunpeuk", "Patjitan", "Kediri", "Pemboeang", "Tringanoe",
+        "Makin", "Tipor", "Semai", "Berhala", "Tegal", "Samoe",
+    ];
+
+    static readonly string[] WandNames =
+    [
+        "Yr Wyddgrug", "Trallwng", "Mallwyd", "Pontarfynach",
+        "Rhaeader", "Llandrindod", "Llanfair-ym-muallt",
+        "Y-Fenni", "Maesteg", "Rhydaman", "Beddgelert",
+        "Curig", "Llanrwst", "Llanerchymedd", "Caergybi",
+        "Nairn", "Turriff", "Inverurie", "Braemar", "Lochnagar",
+        "Kerloch", "Beinn a Ghlo", "Drumnadrochit", "Morven",
+        "Uist", "Storr", "Sgurr na Ciche", "Cannich", "Gairloch",
+        "Kyleakin", "Dunvegan",
+    ];
+
+    static readonly string[] ToolNames =
+    [
+        "Ymla", "Eed-morra", "Cubask", "Nieb", "Bnowr Falr", "Telloc Cyaj",
+        "Sperc", "Noskcirdneh", "Yawolloh", "Hyeghu", "Niskal", "Trahnil",
+        "Htargcm", "Enrobwem", "Kachzi Rellim", "Regien", "Donmyar",
+        "Yelpur", "Nosnehpets", "Stewe", "Renrut", "Zlaw", "Nosalnef",
+        "Rewuorb", "Rellenk", "Yad", "Cire Htims", "Y-crad", "Nenilukah",
+        "Corsh", "Aned",
+    ];
+
+    static readonly string[] BookNames =
+    [
+        "Zarnesti", "Slanic", "Nehoiasu", "Ludus", "Sighisoara", "Nisipitu",
+        "Razboieni", "Bicaz", "Dorohoi", "Vaslui", "Fetesti", "Tirgu Neamt",
+        "Babadag", "Zimnicea", "Zlatna", "Jiu", "Eforie", "Mamaia",
+        "Silistra", "Tulovo", "Panagyuritshte", "Smolyan", "Kirklareli",
+        "Pernik", "Lom", "Haskovo", "Dobrinishte", "Varvara", "Oryahovo",
+        "Troyan", "Lovech", "Sliven",
+    ];
+
+    public static string DisplayName(ShopType type) => type switch
+    {
+        ShopType.Weapon => "antique weapons outlet",
+        ShopType.Armor => "used armor dealership",
+        ShopType.Potion => "liquor emporium",
+        ShopType.Scroll => "second-hand bookstore",
+        ShopType.Ring => "jewelers",
+        ShopType.Food => "delicatessen",
+        ShopType.Wand => "quality apparel and accessories",
+        ShopType.Tool => "hardware store",
+        ShopType.Book => "rare books",
+        _ => "general store",
+    };
+
+    public static string PickName(ShopType type) => (type switch
+    {
+        ShopType.Weapon => WeaponNames,
+        ShopType.Armor => ArmorNames,
+        ShopType.Potion => PotionNames,
+        ShopType.Scroll => ScrollNames,
+        ShopType.Ring => RingNames,
+        ShopType.Food => FoodNames,
+        ShopType.Wand => WandNames,
+        ShopType.Tool => ToolNames,
+        ShopType.Book => BookNames,
+        _ => GeneralNames,
+    }).Pick();
 }
 
 public class ShopState

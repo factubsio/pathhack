@@ -14,14 +14,18 @@ public static class ItemGen
         (10, GenerateWeapon),
         (10, GenerateArmor),
         (3, GenerateRing),
+        (2, GenerateBoots),
+        (2, GenerateGloves),
     ];
     
     static int TotalWeight => ClassWeights.Sum(x => x.weight);
 
+    static readonly ItemDef[] ArmorShopPool = [..MundaneArmory.AllArmors, ..MagicAccessories.AllBoots, ..MagicAccessories.AllGloves];
+
     public static Item? GenerateForShop(ShopType type, int depth) => type switch
     {
         ShopType.Weapon => GenerateWeapon(depth),
-        ShopType.Armor => GenerateArmor(depth),
+        ShopType.Armor => GenerateItem(ArmorShopPool.Pick(), depth),
         ShopType.Potion => GeneratePotion(depth),
         ShopType.Scroll => GenerateScroll(depth),
         ShopType.Ring => GenerateRing(depth),
@@ -73,8 +77,26 @@ public static class ItemGen
         return GenerateItem(def, depth);
     }
 
-    public static BUC RollBUC(int chance = 10)
+    static Item? GenerateBoots(int depth)
     {
+        if (MagicAccessories.AllBoots.Length == 0) return null;
+        var def = MagicAccessories.AllBoots[g.Rn2(MagicAccessories.AllBoots.Length)];
+        return GenerateItem(def, depth);
+    }
+
+    static Item? GenerateGloves(int depth)
+    {
+        if (MagicAccessories.AllGloves.Length == 0) return null;
+        var def = MagicAccessories.AllGloves[g.Rn2(MagicAccessories.AllGloves.Length)];
+        return GenerateItem(def, depth);
+    }
+
+    public static BUC RollBUC(int chance = 10, int bias = 0)
+    {
+        if (bias <= -2) return BUC.Cursed;
+        if (bias >= 2) return BUC.Blessed;
+        if (bias == -1 && g.Rn2(10) != 0) return BUC.Cursed;
+        if (bias == 1 && g.Rn2(10) != 0) return BUC.Blessed;
         if (g.Rn2(chance) != 0) return BUC.Uncursed;
         return g.Rn2(2) == 0 ? BUC.Cursed : BUC.Blessed;
     }
@@ -89,7 +111,7 @@ public static class ItemGen
             PotionDef => 10,
             _ => 5, // rings, tools, gems
         };
-        Item item = new(def) { BUC = RollBUC(bucChance) };
+        Item item = new(def) { BUC = RollBUC(bucChance, def.BUCBias) };
         List<string> genLog = [];
         
         if (def is WeaponDef)

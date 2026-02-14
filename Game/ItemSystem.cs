@@ -48,12 +48,20 @@ public class ItemDb
             new("riding boots", ConsoleColor.Gray),
             new("fur-lined boots", ConsoleColor.White),
             new("combat boots", ConsoleColor.DarkGray),
+            new("mud boots", ConsoleColor.DarkYellow),
+            new("jackboots", ConsoleColor.DarkRed),
+            new("hiking boots", ConsoleColor.Green),
+            new("iron-shod boots", ConsoleColor.DarkGray, "iron"),
         ],
         [AppearanceCategory.Gloves] = [
             new("leather gloves", ConsoleColor.DarkYellow),
             new("padded gloves", ConsoleColor.Gray),
             new("riding gloves", ConsoleColor.White),
             new("gauntlets", ConsoleColor.DarkGray),
+            new("fencing gloves", ConsoleColor.DarkCyan),
+            new("iron gauntlets", ConsoleColor.DarkGray, "iron"),
+            new("silk gloves", ConsoleColor.Magenta),
+            new("fingerless gloves", ConsoleColor.DarkYellow),
         ],
         [AppearanceCategory.Cloak] = [
             new("tattered cloak", ConsoleColor.DarkGray),
@@ -70,6 +78,22 @@ public class ItemDb
             new("ruby ring", ConsoleColor.Red, "ruby"),
             new("sapphire ring", ConsoleColor.Blue, "sapphire"),
             new("opal ring", ConsoleColor.Cyan, "opal"),
+            new("obsidian ring", ConsoleColor.DarkGray, "obsidian"),
+            new("pearl ring", ConsoleColor.White, "pearl"),
+            new("amethyst ring", ConsoleColor.Magenta, "amethyst"),
+            new("onyx ring", ConsoleColor.DarkGray, "onyx"),
+            new("topaz ring", ConsoleColor.Yellow, "topaz"),
+            new("emerald ring", ConsoleColor.Green, "emerald"),
+            new("bone ring", ConsoleColor.White, "bone"),
+            new("bronze ring", ConsoleColor.DarkYellow, "bronze"),
+            new("moonstone ring", ConsoleColor.Cyan, "moonstone"),
+            new("granite ring", ConsoleColor.Gray, "granite"),
+            new("coral ring", ConsoleColor.Red, "coral"),
+            new("ivory ring", ConsoleColor.White, "ivory"),
+            new("tin ring", ConsoleColor.Gray, "tin"),
+            new("brass ring", ConsoleColor.DarkYellow, "brass"),
+            new("wooden ring", ConsoleColor.DarkYellow, "wood"),
+            new("agate ring", ConsoleColor.DarkRed, "agate"),
         ],
     };
 
@@ -139,6 +163,7 @@ public class ItemDef : BaseDef
     public int AppearanceIndex = -1;
     public required int Price;
     public bool CanHavePotency;
+    public int BUCBias; // -2=always cursed, -1=90% cursed, 0=normal, +1=90% blessed, +2=always blessed
 
     public char Class => Glyph.Value;
     public virtual ItemKnowledge RelevantKnowledge => ItemKnowledge.Seen;
@@ -171,7 +196,7 @@ public class WeaponDef : ItemDef
     public required string Profiency; // weapon group
     public required DamageType DamageType;
     public string? WeaponType; // specific weapon type for feats/sacred weapon
-    public int Range = 1;
+    public int Range = 1; // TODO: unused for attack resolution, only quiver filter. Remove and use Launcher instead.
     public int Hands = 1;
     public ActionCost Cost = 12;
     public string[]? AltProficiencies;
@@ -454,10 +479,14 @@ public static class ItemSlots
     public const string Ring = "ring";
     public const string Amulet = "amulet";
     public const string Face = "face";
+    public const string Feet = "feet";
+    public const string Hands = "hands";
 
     public static readonly EquipSlot BodySlot = new(Body, "_");
     public static readonly EquipSlot FaceSlot = new(Face, "_");
     public static readonly EquipSlot HandSlot = new(Hand, "_");
+    public static readonly EquipSlot FeetSlot = new(Feet, "_");
+    public static readonly EquipSlot HandsSlot = new(Hands, "_");
 }
 
 public static class ItemClasses
