@@ -221,6 +221,7 @@ public static class BasicLevel1Spells
 
 public class CastedLightBuff() : MaintainedBuff("spell_l1")
 {
+    public override string Id => "spb:light";
   internal static readonly CastedLightBuff Instance = new();
   public override string? BuffName => "Light";
 
@@ -230,6 +231,7 @@ public class CastedLightBuff() : MaintainedBuff("spell_l1")
 
 public class CastedShieldBuff() : MaintainedBuff("spell_l1")
 {
+  public override string Id => "spb:shield";
   internal static readonly CastedShieldBuff Instance = new();
   public override string? BuffName => "Shield";
 
@@ -239,6 +241,7 @@ public class CastedShieldBuff() : MaintainedBuff("spell_l1")
 
 public class AcidBurnBuff : LogicBrick
 {
+  public override string Id => "spb:acid_burn";
   public override bool IsActive => true;
   public override bool IsBuff => true;
   public override string? BuffName => "Acid burn";
@@ -298,6 +301,7 @@ public class GreaseArea(string name, IUnit? source, int dc, int duration) : Area
 
 public class ProtectionFromAlignmentBuff(string name, MoralAxis? moral, EthicalAxis? ethical) : MaintainedBuff("spell_l1")
 {
+  public override string Id => $"spb:prot_align+{moral}/{ethical}";
   public override string? BuffName => name;
 
   protected override void OnBeforeDefendRoll(Fact fact, PHContext ctx)
@@ -309,10 +313,10 @@ public class ProtectionFromAlignmentBuff(string name, MoralAxis? moral, EthicalA
       ctx.Check!.Modifiers.AddModifier(new(ModifierCategory.CircumstanceBonus, 1, name));
   }
 
-  static readonly ProtectionFromAlignmentBuff Evil = new("Prot. from Evil", MoralAxis.Evil, null);
-  static readonly ProtectionFromAlignmentBuff Good = new("Prot. from Good", MoralAxis.Good, null);
-  static readonly ProtectionFromAlignmentBuff Law = new("Prot. from Law", null, EthicalAxis.Lawful);
-  static readonly ProtectionFromAlignmentBuff Chaos = new("Prot. from Chaos", null, EthicalAxis.Chaotic);
+  public static readonly ProtectionFromAlignmentBuff Evil = new("Prot. from Evil", MoralAxis.Evil, null);
+  public static readonly ProtectionFromAlignmentBuff Good = new("Prot. from Good", MoralAxis.Good, null);
+  public static readonly ProtectionFromAlignmentBuff Law = new("Prot. from Law", null, EthicalAxis.Lawful);
+  public static readonly ProtectionFromAlignmentBuff Chaos = new("Prot. from Chaos", null, EthicalAxis.Chaotic);
 
   static ActivateMaintainedSpell MakeSpell(string label, ProtectionFromAlignmentBuff buff) => new(label, 1,
       $"You are protected from {label.Split(' ').Last().ToLower()} creatures, gaining +1 AC against their attacks.",

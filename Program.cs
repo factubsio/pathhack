@@ -89,6 +89,8 @@ LevelGen.ForceRiver = ConsumeFlag(ref args, "--river");
 LevelGen.ForceMiniVault = ConsumeFlag(ref args, "--mivault");
 bool doSweep = ConsumeFlag(ref args, "--sweep");
 
+MasonryYard.RegisterAll();
+
 int testDepth = 1;
 int depthIdx = Array.FindIndex(args, a => a == "--depth");
 if (depthIdx >= 0 && depthIdx + 1 < args.Length && int.TryParse(args[depthIdx + 1], out var depthArg))
@@ -172,6 +174,8 @@ if (args.Length > 1 && args[0] == "--test-family")
     LevelGen.MenagerieMonsters = monsters;
 }
 
+LevelGen.MonitorAttached = ConsumeFlag(ref args, "--debug-server");
+
 if (args.Length > 0 && args[0] == "--monsters")
 {
     MonsterTable.Print(args.Length > 1 ? args[1] : null);
@@ -181,6 +185,18 @@ if (args.Length > 0 && args[0] == "--monsters")
 if (args.Length > 0 && args[0] == "--items")
 {
     MonsterTable.PrintItems(args.Length > 1 ? args[1] : null);
+    return;
+}
+
+if (args.Length > 0 && args[0] == "--spells")
+{
+    MonsterTable.PrintSpells(args.Length > 1 ? args[1] : null);
+    return;
+}
+
+if (args.Length > 0 && args[0] == "--bricks")
+{
+    MonsterTable.PrintBricks(args.Length > 1 ? args[1] : null);
     return;
 }
 
@@ -206,7 +222,13 @@ using var _plog = new StreamWriter("pline.log") { AutoFlush = true };
 // return;
 
 var creation = new CharCreation();
-if (!creation.Run()) return;
+if (LevelGen.MonitorAttached)
+{
+    creation.Class = ClassDefs.Warpriest;
+    creation.Deity = Pantheon.Iomedae;
+    creation.Ancestry = Ancestries.Human;
+}
+else if (!creation.Run()) return;
 
 // Log.EnabledTags.Add("movement");
 
@@ -237,7 +259,10 @@ while (true)
     }
 
     u.Initiative = int.MaxValue;
-    Input.DoLevelUp(); // Level 1
+    if (LevelGen.MonitorAttached)
+        Progression.AutoAdvanceLevel(u);
+    else
+        Input.DoLevelUp(); // Level 1
 
     u.RecalculateMaxHp();
     u.HP.Current = u.HP.Max;
@@ -264,6 +289,8 @@ while (true)
 
     // u.XP = 980;
     lvl.PlaceUnit(u, (lvl.BranchUp ?? lvl.StairsUp)!.Value);
+
+    if (LevelGen.MonitorAttached) PHMonitor.Init();
 
     // MonsterDef MONSTER_UNDER_TEST = 
 

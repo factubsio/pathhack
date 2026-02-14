@@ -3,6 +3,7 @@ namespace Pathhack.Game.Bestiary;
 public class WebImmunity : LogicBrick
 {
     public static readonly WebImmunity Instance = new();
+    public override string Id => "spider:web_immune";
     public override string? PokedexDescription => "Immune to webs";
 
     protected override object? OnQuery(Fact fact, string key, string? arg) =>
@@ -101,6 +102,7 @@ public class WebSpit(int cooldown = 120) : CooldownAction("spit web", TargetingT
 
 public class SpiderVenom(int dc) : AfflictionBrick(dc, "poison")
 {
+    public override string Id => $"spider:venom+{DC}";
     public override AbilityTags Tags => AbilityTags.Biological;
     public static readonly SpiderVenom DC10 = new(10);
     public static readonly SpiderVenom DC11 = new(11);
@@ -109,6 +111,8 @@ public class SpiderVenom(int dc) : AfflictionBrick(dc, "poison")
     public static readonly SpiderVenom DC14 = new(14);
     public static readonly SpiderVenom DC15 = new(15);
     public static readonly SpiderVenom DC17 = new(17);
+
+    public static readonly SpiderVenom DC100 = new(100); // for testing
 
     public override string AfflictionName => "Spider Venom";
     public override int MaxStage => 13;
@@ -139,6 +143,7 @@ public class SpiderVenom(int dc) : AfflictionBrick(dc, "poison")
 public class PhaseShift : LogicBrick
 {
     public static readonly PhaseShift Instance = new();
+    public override string Id => "spider:phase_shift";
     public override string? PokedexDescription => "50% miss chance (phase shift)";
 
     protected override void OnBeforeDefendRoll(Fact fact, PHContext ctx)

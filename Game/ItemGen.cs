@@ -218,11 +218,13 @@ public static class ItemGen
 
 public class NullFundamental() : RuneBrick("null", -1, RuneSlot.Fundamental)
 {
+    public override string Id => "rune_null";
     public static readonly NullFundamental Instance = new();
 }
 
 public class BonusRune(int quality) : RuneBrick("accurate", quality, RuneSlot.Fundamental)
 {
+    public override string Id => $"r_fund:bonus/{Quality}";
     public override string Description => $"+{Quality}d4 accuracy";
 
     protected override void OnBeforeAttackRoll(Fact fact, PHContext context)
@@ -237,6 +239,7 @@ public class BonusRune(int quality) : RuneBrick("accurate", quality, RuneSlot.Fu
 
 public class StrikingRune(int quality) : RuneBrick("striking", quality, RuneSlot.Fundamental)
 {
+    public override string Id => $"r_fund:striking/{Quality}";
     public override string Description => $"+{Quality} dice damage";
 
     protected override void OnBeforeDamageRoll(Fact fact, PHContext context)
@@ -254,6 +257,7 @@ public class StrikingRune(int quality) : RuneBrick("striking", quality, RuneSlot
 public class ElementalRune : RuneBrick
 {
     readonly DamageType _type;
+    public override string Id => $"r_prop:{_type.SubCat}/{Quality}";
 
     ElementalRune(string displayName, DamageType type, int quality) : base(displayName, quality, RuneSlot.Property)
         => _type = type;

@@ -2,6 +2,7 @@ namespace Pathhack.Game.Bestiary;
 
 public class Thorns(Dice damage, DamageType type) : LogicBrick
 {
+    public override string Id => "thorns";
     public override string? PokedexDescription => $"Thorns ({damage} {type.SubCat} when hit)";
 
     protected override void OnDamageTaken(Fact fact, PHContext context)

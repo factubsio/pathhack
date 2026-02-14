@@ -874,54 +874,7 @@ public static partial class Input
                 return;
             }
 
-            if (dir == Pos.Zero)
-            {
-                u.Energy -= ActionCosts.OneAction.Value;
-            }
-            else
-            {
-                Pos next = upos + dir;
-                if (!lvl.InBounds(next)) return;
-
-                // Grabbed: moving toward grabber = attack, away = struggle
-                if (u.GrabbedBy is { } grabber)
-                {
-                    if (next == grabber.Pos)
-                    {
-                        DoWeaponAttack(u, grabber, u.GetWieldedItem());
-                    }
-                    else
-                    {
-                        int dc = grabber.GetSpellDC();
-                        if (g.DoStruggle(u, dc) == StruggleResult.Escaped)
-                        {
-                            lvl.MoveUnit(u, next);
-                        }
-                    }
-                    u.Energy -= ActionCosts.OneAction.Value;
-                    return;
-                }
-
-                var tgt = lvl.UnitAt(next);
-                if (tgt != null && (tgt is not Monster m || !m.Peaceful))
-                {
-                    DoWeaponAttack(u, tgt, u.GetWieldedItem());
-                    u.Energy -= ActionCosts.OneAction.Value;
-                }
-                else if (tgt != null)
-                {
-                    // peaceful - can't walk through
-                    g.pline($"{tgt:The} is in the way.");
-                }
-                else if (lvl.CanMoveTo(upos, next, u) || g.DebugMode)
-                {
-                    lvl.MoveUnit(u, next);
-                }
-                else if (lvl.IsDoorClosed(next))
-                {
-                    OpenDoor(new DirArg(dir));
-                }
-            }
+            DoMoveU(dir);
         }
         else if (key.KeyChar == '>')
         {

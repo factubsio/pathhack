@@ -140,4 +140,19 @@ public static class Progression
 
 
     public static bool HasPendingLevelUp(Player p) => p.CharacterLevel < LevelForXp(p.XP);
+
+    public static void AutoAdvanceLevel(Player p)
+    {
+        int newLevel = p.CharacterLevel + 1;
+        var entry = p.Class?.Progression.ElementAtOrDefault(newLevel - 1);
+        if (entry != null)
+            foreach (var brick in entry.Grants)
+                p.AddFact(brick);
+
+        p.CharacterLevel = newLevel;
+        int hpGain = p.Class!.HpPerLevel;
+        p.HP.BaseMax += hpGain;
+        p.HP.Current += hpGain;
+        p.RecalculateMaxHp();
+    }
 }

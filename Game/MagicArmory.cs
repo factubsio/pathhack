@@ -2,6 +2,7 @@ namespace Pathhack.Game;
 
 public class FlamingWeapon : LogicBrick
 {
+    public override string Id => "flaming";
     protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
     {
         "flaming" => true,

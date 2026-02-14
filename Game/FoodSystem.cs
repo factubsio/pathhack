@@ -550,6 +550,7 @@ public static class Foods
 
 public class FoodPoisoning() : AfflictionBrick(11, "fortitude")
 {
+    public override string Id => "food_poisoning";
     public static readonly FoodPoisoning Instance = new();
 
     public override string AfflictionName => "Food Poisoning";

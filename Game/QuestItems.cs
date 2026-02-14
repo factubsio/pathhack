@@ -11,6 +11,7 @@ public class EverflameData
 
 public class EverflameComponent : LogicBrick<EverflameData>
 {
+    public override string Id => "_everflame";
     public override bool IsActive => true;
 
     protected override void OnRoundStart(Fact fact)

@@ -4,6 +4,7 @@ namespace Pathhack.Game.Bestiary;
 public class FloodCondition : LogicBrick
 {
     public static readonly FloodCondition Instance = new();
+    public override string Id => "troll:flood";
 
     static bool NearWater(IUnit unit) =>
         unit.Pos.Neighbours().Any(p => lvl.InBounds(p) && lvl[p].Type == TileType.Water);
@@ -37,6 +38,7 @@ public class ShedArmorAction() : ActionBrick("Shed Armor", tags: AbilityTags.Ben
 public class ShedArmorDebuff : LogicBrick
 {
     public static readonly ShedArmorDebuff Instance = new();
+    public override string Id => "troll:shed_armor";
     public override bool IsBuff => true;
     public override string? BuffName => "Shed Armor";
 
@@ -109,7 +111,7 @@ public static class Trolls
     public static readonly MonsterDef IceTroll = Troll("ice_troll", "ice troll", 4,
         NaturalWeapons.Bite_1d3, NaturalWeapons.Claw_1d3, RegenBrick.FireOrAcid,
         extra: [
-            EnergyResist.Cold(99),  // placeholder for immunity
+            EnergyResist.Cold.Immune,  // placeholder for immunity
             EquipSet.WithCount(MundaneArmory.Hatchet, d(2) + 1),
             TrollWeapons,
             TrollArmor,

@@ -407,19 +407,39 @@ public record struct DamageType(string Category, string SubCat);
 
 public static class DamageTypes
 {
-    public static readonly DamageType Slashing = new("phys", "slashing");
-    public static readonly DamageType Piercing = new("phys", "piercing");
-    public static readonly DamageType Blunt = new("phys", "blunt");
-    public static readonly DamageType Fire = new("elem", "fire");
-    public static readonly DamageType Cold = new("elem", "cold");
-    public static readonly DamageType Shock = new("elem", "shock");
-    public static readonly DamageType Acid = new("elem", "acid");
+    public static readonly DamageType Slashing = new("phys", P_Slashing);
+    public static readonly DamageType Piercing = new("phys", P_Piercing);
+    public static readonly DamageType Blunt = new("phys", P_Blunt);
+    public static readonly DamageType Fire = new("elem", E_Fire);
+    public static readonly DamageType Cold = new("elem", E_Cold);
+    public static readonly DamageType Shock = new("elem", E_Shock);
+    public static readonly DamageType Acid = new("elem", E_Acid);
+    public static readonly DamageType Sonic = new("elem", E_Sonic);
     public static readonly DamageType Magic = new("magic", "_");
     public static readonly DamageType Force = new("force", "_");
 
-    public static readonly DamageType Holy = new("spirit", "good");
-    public static readonly DamageType Unholy = new("spirit", "evil");
+    public static readonly DamageType Holy = new("spirit", A_Good);
+    public static readonly DamageType Unholy = new("spirit", A_Evil);
+    public static readonly DamageType Axiomatic = new("spirit", A_Law);
+    public static readonly DamageType Anarchic = new("spirit", A_Chaos);
+
     public static readonly DamageType Poison = new("poison", "_");
+
+    public const string A_Good = "good";
+    public const string A_Evil = "evil";
+
+    public const string A_Chaos = "chaos";
+    public const string A_Law = "law";
+
+    public const string P_Slashing = "slashing";
+    public const string P_Piercing = "piercing";
+    public const string P_Blunt = "blunt";
+
+    public const string E_Fire = "fire";
+    public const string E_Cold = "cold";
+    public const string E_Shock = "shock";
+    public const string E_Acid = "acid";
+    public const string E_Sonic = "sonic";
 }
 
 public enum UnitSize

@@ -2,6 +2,7 @@ namespace Pathhack.Game.Bestiary;
 
 public class Ferocity : LogicBrick<DataFlag>
 {
+    public override string Id => "ferocity";
     public override string? PokedexDescription => "Ferocity (survives first lethal blow at 1 HP)";
 
     protected override void OnDamageTaken(Fact fact, PHContext ctx)
@@ -18,6 +19,7 @@ public class Ferocity : LogicBrick<DataFlag>
 
 public class Equip(ItemDef itemDef) : LogicBrick
 {
+    public override string Id => $"equip+{itemDef.id}";
     public override AbilityTags Tags => AbilityTags.FirstSpawnOnly;
     protected override void OnSpawn(Fact fact, PHContext context)
     {
@@ -33,6 +35,7 @@ public record Outfit(int Weight, params OutfitItem[] Items);
 
 public class EquipSet(params Outfit[] outfits) : LogicBrick
 {
+    public override string Id => "equip_set";
     public override AbilityTags Tags => AbilityTags.FirstSpawnOnly;
     public static EquipSet OneOf(params ItemDef[] items) =>
         new([.. items.Select(i => new Outfit(1, new OutfitItem(i)))]);
@@ -264,15 +267,18 @@ public static class NaturalWeapons
 
 public class SayOnDeath(string message) : LogicBrick
 {
+    public override string Id => $"say_death+{message}";
     protected override void OnDeath(Fact fact, PHContext ctx) => LoreDump(message);
 }
 
 public class DropOnDeath(ItemDef def) : LogicBrick
 {
+    public override string Id => $"drop_death+{def.id}";
     protected override void OnDeath(Fact fact, PHContext ctx) => lvl.PlaceItem(Item.Create(def), ctx.Target.Unit!.Pos);
 }
 
 public class GenerateDropOnDeath(ItemDef item) : LogicBrick
 {
+  public override string Id => $"gen_drop_death+{item.id}";
   protected override void OnDeath(Fact fact, PHContext ctx) => lvl.PlaceItem(ItemGen.GenerateItem(item), ctx.Target.Unit!.Pos);
 }

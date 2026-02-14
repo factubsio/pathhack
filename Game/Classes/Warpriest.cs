@@ -56,6 +56,7 @@ public static class Fervor
 public class DivineFortitudeBrick : LogicBrick
 {
     public static readonly DivineFortitudeBrick Instance = new();
+    public override string Id => "cls_wp:divine_fortitude";
     protected override void OnBeforeCheck(Fact fact, PHContext ctx)
     {
         if (!ctx.IsCheckingOwnerOf(fact)) return;
@@ -68,6 +69,7 @@ public class DivineFortitudeBrick : LogicBrick
 public class WeaponsOfFaithBrick : LogicBrick
 {
     public static readonly WeaponsOfFaithBrick Instance = new();
+    public override string Id => "cls_wp:weapons_of_faith";
 
   protected override void OnBeforeDamageRoll(Fact fact, PHContext context)
   {
@@ -79,6 +81,7 @@ public class WeaponsOfFaithBrick : LogicBrick
 public class SacredArmorBrick : LogicBrick
 {
     public static readonly SacredArmorBrick Instance = new();
+    public override string Id => "cls_wp:sacred_armor";
     protected override object? OnQuery(Fact fact, string key, string? arg)
     {
         if (fact.Entity is not Player) return null;
@@ -96,6 +99,7 @@ public class SacredArmorBrick : LogicBrick
 public class SacredStrikeBrick : LogicBrick
 {
     public static readonly SacredStrikeBrick Instance = new();
+    public override string Id => "cls_wp:sacred_strike";
     protected override void OnBeforeAttackRoll(Fact fact, PHContext ctx)
     {
         if (fact.Entity is not Player p) return;
@@ -109,6 +113,7 @@ public class SacredStrikeBrick : LogicBrick
 public class SacredWeapon : LogicBrick
 {
     public static readonly SacredWeapon Instance = new();
+    public override string Id => "cls_wp:sacred_weapon";
     static readonly DiceFormula[] LevelScaling = [
         d(6),   // 1-4
         d(8),   // 5-9

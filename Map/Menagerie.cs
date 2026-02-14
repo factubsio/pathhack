@@ -3,6 +3,7 @@ namespace Pathhack.Map;
 public class StasisBuff : LogicBrick
 {
     public static readonly StasisBuff Instance = new();
+    public override string Id => "stasis";
 
     protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
     {

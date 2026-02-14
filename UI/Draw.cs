@@ -582,10 +582,13 @@ public static class Draw
     private static bool More(bool save, int col, int row)
     {
         if (save) SaveTopLine();
-        Layers[0].Write(col, row, "--more--");
-        Blit(0);
-        while (Input.NextKey().Key != ConsoleKey.Spacebar)
-            ;
+        if (!PHMonitor.Active)
+        {
+            Layers[0].Write(col, row, "--more--");
+            Blit(0);
+            while (Input.NextKey().Key != ConsoleKey.Spacebar)
+                ;
+        }
         TopLine = "";
         TopLineState = TopLineState.Empty;
         return false; //return true if skip rest (esc?)

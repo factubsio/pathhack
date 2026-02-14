@@ -58,6 +58,7 @@ public static class LevelGen
 
     public static SpecialLevel? ForcedLevel1;
     public static MonsterDef[]? MenagerieMonsters;
+    public static bool MonitorAttached;
 
     public static Level Generate(LevelId id, int gameSeed)
     {
@@ -78,6 +79,13 @@ public static class LevelGen
             if (MenagerieMonsters is { } menagerie)
             {
                 Menagerie.Generate(ctx, menagerie);
+                ctx.level.UnderConstruction = false;
+                return ctx.level;
+            }
+
+            if (MonitorAttached)
+            {
+                Arena.Generate(ctx);
                 ctx.level.UnderConstruction = false;
                 return ctx.level;
             }

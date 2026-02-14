@@ -65,6 +65,7 @@ public class WarChant(string pool = "war_chant") : ActionBrick("Goblin War Chant
 public class WarChantBuff : LogicBrick
 {
     public static readonly WarChantBuff Instance = new();
+    public override string Id => "goblin:war_chant";
     public override bool IsBuff => true;
     public override string? BuffName => "War Chant";
     public override bool IsActive => true;

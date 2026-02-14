@@ -82,6 +82,8 @@ public record struct Dice(int D, int F, int Flat = 0)
     public static Dice operator+(Dice d, int bonus) => new(d.D, d.F, d.Flat + bonus);
 
     internal readonly Dice WithExtra(int extraDice) => new(D * (1 + extraDice), F, Flat);
+
+    internal readonly string Serialize() => $"{D},{F},{Flat}";
 }
 
 public record struct DiceFormula(Dice[] Dice)
@@ -139,4 +141,5 @@ public record struct DiceFormula(Dice[] Dice)
             return new([Dice[0].WithExtra(extraDice), ..Dice[1..]]);
         
     }
+
 }

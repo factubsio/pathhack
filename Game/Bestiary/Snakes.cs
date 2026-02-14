@@ -2,6 +2,7 @@ namespace Pathhack.Game.Bestiary;
 
 public class SnakeVenomLesser(int dc) : AfflictionBrick(dc, "poison")
 {
+    public override string Id => $"snake:venom_lesser+{DC}";
     public override AbilityTags Tags => AbilityTags.Biological;
     public static readonly SnakeVenomLesser DC10 = new(10);
     public static readonly SnakeVenomLesser DC12 = new(12);
@@ -28,6 +29,7 @@ public class SnakeVenomLesser(int dc) : AfflictionBrick(dc, "poison")
 
 public class SnakeVenomGreater(int dc) : AfflictionBrick(dc, "poison")
 {
+    public override string Id => $"snake:venom_greater+{DC}";
     public override AbilityTags Tags => AbilityTags.Biological;
     public static readonly SnakeVenomGreater DC13 = new(13);
     public static readonly SnakeVenomGreater DC14 = new(14);
@@ -62,6 +64,7 @@ public class SnakeVenomGreater(int dc) : AfflictionBrick(dc, "poison")
 public class GrabOnHit : LogicBrick
 {
     public static readonly GrabOnHit Instance = new();
+    public override string Id => "snake:grab";
     public override string? PokedexDescription => "Grabs on hit";
     
     protected override void OnAfterAttackRoll(Fact fact, PHContext ctx)
@@ -78,8 +81,9 @@ public class GrabOnHit : LogicBrick
     }
 }
 
-public class Constrict(DiceFormula damage) : LogicBrick
+public class Constrict(Dice damage) : LogicBrick
 {
+    public override string Id => $"snake:constrict+{damage.Serialize()}";
     public static readonly Constrict Small = new(d(6));
     public static readonly Constrict Medium = new(d(8));
     public static readonly Constrict Large = new(d(10) + 7);

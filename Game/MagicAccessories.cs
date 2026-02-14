@@ -3,6 +3,7 @@ namespace Pathhack.Game;
 public class PotencyACBuff : LogicBrick
 {
     public static readonly PotencyACBuff Instance = new();
+    public override string Id => "potency_ac";
     public override bool RequiresEquipped => true;
 
     protected override object? OnQuery(Fact fact, string key, string? arg) =>
@@ -14,6 +15,7 @@ public class PotencyACBuff : LogicBrick
 public class PotencyAttackBuff : LogicBrick
 {
     public static readonly PotencyAttackBuff Instance = new();
+    public override string Id => "potency_attack";
     public override bool RequiresEquipped => true;
 
     protected override void OnBeforeAttackRoll(Fact fact, PHContext context)
@@ -25,6 +27,7 @@ public class PotencyAttackBuff : LogicBrick
 
 public class PotencyEnergyResist(DamageType type) : LogicBrick
 {
+    public override string Id => $"potency_resist+{type.SubCat}";
     public static readonly PotencyEnergyResist Fire = new(DamageTypes.Fire);
     public static readonly PotencyEnergyResist Cold = new(DamageTypes.Cold);
     public static readonly PotencyEnergyResist Shock = new(DamageTypes.Shock);
@@ -44,6 +47,7 @@ public class PotencyEnergyResist(DamageType type) : LogicBrick
 public class FreeActionBuff : LogicBrick
 {
     public static readonly FreeActionBuff Instance = new();
+    public override string Id => "free_action";
     public override bool RequiresEquipped => true;
 
     protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
@@ -55,6 +59,7 @@ public class FreeActionBuff : LogicBrick
 
 public class SaveAdvantageBuff(string saveKey) : LogicBrick
 {
+    public override string Id => $"save_adv+{saveKey}";
     public static readonly SaveAdvantageBuff Reflex = new(Check.Reflex);
     public static readonly SaveAdvantageBuff Fortitude = new(Check.Fort);
     public static readonly SaveAdvantageBuff Will = new(Check.Will);
@@ -71,6 +76,7 @@ public class SaveAdvantageBuff(string saveKey) : LogicBrick
 public class FastHealingBuff : LogicBrick
 {
     public static readonly FastHealingBuff Instance = new();
+    public override string Id => "fast_healing";
     public override bool IsActive => true;
     public override bool RequiresEquipped => true;
 
@@ -84,6 +90,7 @@ public class FastHealingBuff : LogicBrick
 public class TeleportationCurseBuff : LogicBrick
 {
     public static readonly TeleportationCurseBuff Instance = new();
+    public override string Id => "teleport_curse";
     public override bool IsActive => true;
     public override bool RequiresEquipped => true;
 
@@ -103,6 +110,7 @@ public class TeleportationCurseBuff : LogicBrick
 public class InvisibilityRingBuff : LogicBrick<InvisibilityRingBuff.State>
 {
     public static readonly InvisibilityRingBuff Instance = new();
+    public override string Id => "invisibility_ring";
 
     public class State { public bool Suppressed; }
 
@@ -131,6 +139,7 @@ public class InvisibilityRingBuff : LogicBrick<InvisibilityRingBuff.State>
 public class BootsOfSpeedBuff : LogicBrick
 {
     public static readonly BootsOfSpeedBuff Instance = new();
+    public override string Id => "boots_speed";
     public override bool RequiresEquipped => true;
 
     protected override object? OnQuery(Fact fact, string key, string? arg) =>
@@ -140,6 +149,7 @@ public class BootsOfSpeedBuff : LogicBrick
 public class FumbleBuff : LogicBrick
 {
     public static readonly FumbleBuff Instance = new();
+    public override string Id => "fumble";
     public override bool IsActive => true;
     public override bool RequiresEquipped => true;
 
@@ -155,6 +165,7 @@ public class FumbleBuff : LogicBrick
 public class MissileSnaring : LogicBrick
 {
     public static readonly MissileSnaring Instance = new();
+    public override string Id => "missile_snaring";
     public override bool RequiresEquipped => true;
 
     protected override void OnBeforeDefendRoll(Fact fact, PHContext ctx)
@@ -167,9 +178,10 @@ public class MissileSnaring : LogicBrick
     }
 }
 
-public class PowerGauntletBuff : LogicBrick
+public class PotencyStrBuff : LogicBrick
 {
-    public static readonly PowerGauntletBuff Instance = new();
+    public static readonly PotencyStrBuff Instance = new();
+    public override string Id => "potency_str";
     public override bool RequiresEquipped => true;
 
     protected override object? OnQuery(Fact fact, string key, string? arg) =>
@@ -181,6 +193,7 @@ public class PowerGauntletBuff : LogicBrick
 public class PotencyDexBuff : LogicBrick
 {
     public static readonly PotencyDexBuff Instance = new();
+    public override string Id => "potency_dex";
     public override bool RequiresEquipped => true;
 
     protected override object? OnQuery(Fact fact, string key, string? arg) =>
@@ -191,6 +204,7 @@ public class PotencyDexBuff : LogicBrick
 
 public class WarningBuff(int range) : LogicBrick
 {
+    public override string Id => $"warning+{range}";
     public static readonly WarningBuff Range8 = new(8);
 
     public override bool RequiresEquipped => true;
@@ -201,6 +215,7 @@ public class WarningBuff(int range) : LogicBrick
 
 public class DetectCreatureBuff(string creatureType, int range) : LogicBrick
 {
+    public override string Id => $"detect+{creatureType}/{range}";
     public static readonly DetectCreatureBuff Undead8 = new(CreatureTypes.Undead, 8);
     public static readonly DetectCreatureBuff Beast8 = new(CreatureTypes.Beast, 8);
 
@@ -637,7 +652,7 @@ public static class MagicAccessories
         DefaultEquipSlot = ItemSlots.Hands,
         AppearanceCategory = AppearanceCategory.Gloves,
         PokedexDescription = "Heavy gauntlets that grant the wearer tremendous striking power.",
-        Components = [PowerGauntletBuff.Instance.WhenEquipped()],
+        Components = [PotencyStrBuff.Instance.WhenEquipped()],
         Price = 400,
     };
 

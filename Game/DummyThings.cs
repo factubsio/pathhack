@@ -46,18 +46,18 @@ public static class DummyThings
         Glyph = new('\'', ConsoleColor.DarkYellow),
         AttackBonus = 0,
         HpPerLevel = 100,
-        AC = 10,
+        AC = 0,
         LandMove = 0,
         Unarmed = NaturalWeapons.Fist,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
         Components =
         [
-            new GrantPool("spell_l1", 3, 20),
-            new GrantPool("spell_l2", 2, 30),
-            new GrantSpell(BasicLevel1Spells.CureLightWounds),
-            new GrantSpell(BasicLevel1Spells.Light),
-            new GrantSpell(BasicLevel1Spells.AcidArrow),
+            // new GrantPool("spell_l1", 3, 20),
+            // new GrantPool("spell_l2", 2, 30),
+            // new GrantSpell(BasicLevel1Spells.CureLightWounds),
+            // new GrantSpell(BasicLevel1Spells.Light),
+            // new GrantSpell(BasicLevel1Spells.AcidArrow),
         ],
     };
 }

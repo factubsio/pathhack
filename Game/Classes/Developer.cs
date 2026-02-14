@@ -63,7 +63,7 @@ public class PoisonSelf() : ActionBrick("Poison Self")
 
     public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
     {
-        unit.AddFact(new SpiderVenom(100));
+        unit.AddFact(SpiderVenom.DC100);
         g.pline("You inject yourself with spider venom!");
     }
 }

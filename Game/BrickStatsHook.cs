@@ -4,6 +4,7 @@ namespace Pathhack.Game;
 
 public class BrickStatsHook : LogicBrick
 {
+    public override string Id => "_brick_stats";
     public static readonly BrickStatsHook Instance = new();
     readonly ConcurrentDictionary<string, int> _counts = new();
 

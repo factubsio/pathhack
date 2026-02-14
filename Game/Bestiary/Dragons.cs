@@ -84,24 +84,6 @@ public class BreathWeapon(BreathShape shape, DamageType damageType, ConsoleColor
     }
 }
 
-/// <summary>Flat reduction of a specific damage type. Like DR but keyed on DamageType instead of bypass tag.</summary>
-public class EnergyResist(DamageType type, int amount) : LogicBrick
-{
-    public override string? PokedexDescription => $"Resist {type.SubCat} {amount}";
-
-    protected override void OnBeforeDamageIncomingRoll(Fact fact, PHContext ctx)
-    {
-        foreach (var roll in ctx.Damage)
-            if (roll.Type == type) roll.ApplyDR(amount);
-    }
-
-    // Common presets
-    public static EnergyResist Fire(int n) => new(DamageTypes.Fire, n);
-    public static EnergyResist Cold(int n) => new(DamageTypes.Cold, n);
-    public static EnergyResist Shock(int n) => new(DamageTypes.Shock, n);
-    public static EnergyResist Acid(int n) => new(DamageTypes.Acid, n);
-}
-
 public record DragonColor(
     string Name,
     ConsoleColor GlyphColor,
@@ -123,8 +105,9 @@ public record DragonAge(
 );
 
 /// <summary>Peaceful if player alignment is within 1 step on both axes.</summary>
-public class AlignmentPeaceful(MoralAxis moral, EthicalAxis ethical) : LogicBrick
+public class AlignmentPeaceful(EthicalAxis ethical, MoralAxis moral) : LogicBrick
 {
+    public override string Id => $"dragon:peaceful+{ethical}/{moral}";
     protected override void OnSpawn(Fact fact, PHContext ctx)
     {
         if (ctx.Source is not Monster m) return;
@@ -132,6 +115,33 @@ public class AlignmentPeaceful(MoralAxis moral, EthicalAxis ethical) : LogicBric
                    && Math.Abs((int)ethical - (int)u.EthicalAxis) <= 1;
         m.Peaceful = close;
     }
+
+    // If we get more of thesse extract `AlignmentBlock<T>(Func<Ethical,Moral,T> factory);` class, similar to Ramp
+    public static readonly AlignmentPeaceful LG = new(EthicalAxis.Lawful, MoralAxis.Good);
+    public static readonly AlignmentPeaceful LN = new(EthicalAxis.Lawful, MoralAxis.Neutral);
+    public static readonly AlignmentPeaceful LE = new(EthicalAxis.Lawful, MoralAxis.Evil);
+
+    public static readonly AlignmentPeaceful CG = new(EthicalAxis.Chaotic, MoralAxis.Good);
+    public static readonly AlignmentPeaceful CN = new(EthicalAxis.Chaotic, MoralAxis.Neutral);
+    public static readonly AlignmentPeaceful CE = new(EthicalAxis.Chaotic, MoralAxis.Evil);
+
+    public static readonly AlignmentPeaceful NG = new(EthicalAxis.Neutral, MoralAxis.Good);
+    public static readonly AlignmentPeaceful NE = new(EthicalAxis.Neutral, MoralAxis.Evil);
+
+    internal static AlignmentPeaceful For(EthicalAxis ethical, MoralAxis moral) =>  (ethical, moral) switch
+    {
+        (EthicalAxis.Lawful, MoralAxis.Good) => LG,
+        (EthicalAxis.Lawful, MoralAxis.Neutral) => LN,
+        (EthicalAxis.Lawful, MoralAxis.Evil) => LE,
+
+        (EthicalAxis.Chaotic, MoralAxis.Good) => CG,
+        (EthicalAxis.Chaotic, MoralAxis.Neutral) => CN,
+        (EthicalAxis.Chaotic, MoralAxis.Evil) => CE,
+
+        (EthicalAxis.Neutral, MoralAxis.Good) => NG,
+        (EthicalAxis.Neutral, MoralAxis.Evil) => NE,
+        _ => throw new NotSupportedException(),
+    };
 }
 
 public static class Dragons
@@ -181,7 +191,6 @@ public static class Dragons
         bool isWyrmling = age.Name == "wyrmling";
         string name = isWyrmling ? $"{color.Name} wyrmling" : $"{age.Name} {color.Name} dragon";
         char glyph = 'D';
-        int resist = 5 + level / 3;
 
         WeaponDef bite = size switch
         {
@@ -219,11 +228,11 @@ public static class Dragons
             EthicalAxis = color.Ethical,
             Components =
             [
-                new AlignmentPeaceful(color.Moral, color.Ethical),
+                AlignmentPeaceful.For(color.Ethical, color.Moral),
                 new GrantPool("dragon_breath", 1, 12),
                 new GrantAction(breath),
                 new GrantAction(new FullAttack("dragon", bite, claw, claw)),
-                new EnergyResist(color.BreathType, resist),
+                EnergyResist.Dynamic(color.BreathType),
                 new QueryBrick(CreatureTags.Flying, true),
             ],
         };

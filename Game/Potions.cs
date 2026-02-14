@@ -96,6 +96,7 @@ public static class Potions
 public class SpeedBuff : LogicBrick
 {
     public static readonly SpeedBuff Instance = new();
+    public override string Id => "speed";
     public override bool IsBuff => true;
     public override string? BuffName => "Haste";
 
@@ -109,6 +110,7 @@ public class SpeedBuff : LogicBrick
 public class OmenBuff : LogicBrick
 {
     public static readonly OmenBuff Instance = new();
+    public override string Id => "omen";
     public override bool IsBuff => true;
     public override string? BuffName => "Omen";
     public override StackMode StackMode => StackMode.Stack;
@@ -128,6 +130,7 @@ public class OmenBuff : LogicBrick
 public class LesserInvisibilityBuff : LogicBrick
 {
     public static readonly LesserInvisibilityBuff Instance = new();
+    public override string Id => "invisibility";
     public override bool IsBuff => true;
     public override string? BuffName => "Invisible";
 

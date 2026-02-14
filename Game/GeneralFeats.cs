@@ -3,6 +3,7 @@ namespace Pathhack.Game;
 
 public class BlindFight : LogicBrick
 {
+    public override string Id => "blind_fight";
     protected override object? OnQuery(Fact fact, string key, string? arg)
     {
         return key switch
@@ -17,6 +18,7 @@ public class BlindFight : LogicBrick
 public class DebilitatingStrikesBrick : LogicBrick
 {
     public static readonly DebilitatingStrikesBrick Instance = new();
+    public override string Id => "debilitating";
     protected override void OnDamageDone(Fact fact, PHContext context)
     {
         // roll for effect todo: we need the effects
@@ -27,6 +29,7 @@ public class DebilitatingStrikesBrick : LogicBrick
 public class EvasionBrick : LogicBrick
 {
     public static readonly EvasionBrick Instance = new();
+    public override string Id => "evasion";
     protected override void OnBeforeDamageIncomingRoll(Fact fact, PHContext context)
     {
         // no check, no evade
@@ -45,6 +48,7 @@ public class EvasionBrick : LogicBrick
 public class TrapSense : LogicBrick
 {
     public static readonly TrapSense Instance = new();
+    public override string Id => "trap_sense";
     protected override object? OnQuery(Fact fact, string key, string? arg) =>
       key == "trap_sense" ? true : null;
 
@@ -58,6 +62,7 @@ public class TrapSense : LogicBrick
 public class FeatherStepBuff : LogicBrick
 {
     public static readonly FeatherStepBuff Instance = new();
+    public override string Id => "featherstep";
     public override StackMode StackMode => StackMode.Stack;
 
     protected override object? OnQuery(Fact fact, string key, string? arg) =>
@@ -65,11 +70,13 @@ public class FeatherStepBuff : LogicBrick
 }
 public class Toughness : LogicBrick
 {
+    public override string Id => "toughness";
     protected override object? OnQuery(Fact fact, string key, string? arg) =>
       key == "max_hp" ? new Modifier(ModifierCategory.UntypedStackable, fact.Entity.EffectiveLevel * 3, "Toughness") : null;
 }
 public class FleetBrick : LogicBrick
 {
+    public override string Id => "fleet";
     protected override object? OnQuery(Fact fact, string key, string? arg) =>
         key == "speed_bonus" ? new Modifier(ModifierCategory.CircumstanceBonus, fact.Entity.EffectiveLevel >= 10 ? 3 : 2, "fleet") : null;
 }
@@ -88,6 +95,7 @@ internal static class LevelScaling
 public class RecklessAttackBuff : LogicBrick<DataFlag>
 {
     public static readonly RecklessAttackBuff Instance = new();
+    public override string Id => "reckless_attack";
     public override StackMode StackMode => StackMode.Stack;
 
     protected override void OnRoundEnd(Fact fact) => X(fact).On = false;
@@ -108,6 +116,7 @@ public class RecklessAttackBuff : LogicBrick<DataFlag>
 public class PowerAttackBuff : LogicBrick
 {
     public static readonly PowerAttackBuff Instance = new();
+    public override string Id => "power_attack";
     public override StackMode StackMode => StackMode.Stack;
 
     protected override void OnBeforeAttackRoll(Fact fact, PHContext context)

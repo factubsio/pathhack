@@ -163,7 +163,7 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
 
         p.BaseAttributes = cls.StartingStats;
 
-        p.AddFact(new PlayerSkills());
+        p.AddFact(PlayerSkills.Instance);
         p.AddAction(DismissAction.Instance);
 
         // Apply ancestry boosts
@@ -281,6 +281,9 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
 
 internal class PlayerSkills : LogicBrick
 {
+    public static readonly PlayerSkills Instance = new();
+
+    public override string Id => "_player_skills";
     protected override object? OnQuery(Fact fact, string key, string? arg)
     {
         return key switch

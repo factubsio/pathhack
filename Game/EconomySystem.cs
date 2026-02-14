@@ -312,6 +312,7 @@ public class ShopState
 
 public class ShopkeeperBrick : LogicBrick<ShopState>
 {
+    public override string Id => "_shopkeeper";
     internal static readonly ShopkeeperBrick Instance = new();
 
     protected override void OnDeath(Fact fact, PHContext context)

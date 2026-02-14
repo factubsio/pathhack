@@ -26,8 +26,9 @@ public static class TemplateHelper
 
 public class SkeletonTemplate() : MonsterTemplate("skeleton")
 {
-  class SkeletonFacts : LogicBrick
+  public class SkeletonFacts : LogicBrick
   {
+    public override string Id => "template:skeleton";
     protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
     {
       "mindless" => true,
@@ -45,7 +46,7 @@ public class SkeletonTemplate() : MonsterTemplate("skeleton")
         roll.Modifiers.AddModifier(new(ModifierCategory.UntypedStackable, -2, "skeleton"));
     }
 
-    internal static readonly SkeletonFacts Instance = new();
+    public static readonly SkeletonFacts Instance = new();
   }
 
   // Gems?
@@ -82,8 +83,9 @@ public class SkeletonTemplate() : MonsterTemplate("skeleton")
 
 public class ZombieTemplate() : MonsterTemplate("zombie")
 {
-  class ZombieFacts : LogicBrick
+  public class ZombieFacts : LogicBrick
   {
+    public override string Id => "template:zombie";
     protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
     {
       "speed_bonus" => new Modifier(ModifierCategory.UntypedStackable, -4, "zombie"),
@@ -97,7 +99,7 @@ public class ZombieTemplate() : MonsterTemplate("zombie")
         if (dmg.Type == DamageTypes.Fire) dmg.Double();
     }
 
-    internal static readonly ZombieFacts Instance = new();
+    public static readonly ZombieFacts Instance = new();
   }
 
   public override bool CanApplyTo(MonsterDef def) => !TemplateHelper.CannotBeUndead.Contains(def.CreatureType);

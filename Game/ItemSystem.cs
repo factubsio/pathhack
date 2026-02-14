@@ -460,6 +460,10 @@ public record struct EquipSlot(string Type, string Slot);
 public static class Materials
 {
     public const string Iron = "iron";
+    public const string Silver = "silver";
+    public const string Gold = "gold";
+    public const string ColdIron = "cold_iron";
+    public const string Adamantine = "adamantine";
 }
 
 public static class ItemSlots

@@ -37,6 +37,7 @@ public class CurseWeaponInRange(int range) : ActionBrick("Curse Weapon")
 public class WeaponCurse : LogicBrick
 {
     public static readonly WeaponCurse Instance = new();
+    public override string Id => "gremlin:weapon_curse";
     public override bool IsBuff => true;
     public override bool IsActive => true;
     public override string? BuffName => "Pugwampi's Ill Fortune";
@@ -53,6 +54,7 @@ public class WeaponCurse : LogicBrick
 public class JinkinCurse : LogicBrick
 {
     public static readonly JinkinCurse Instance = new();
+    public override string Id => "gremlin:jinkin_curse";
     public override bool IsBuff => true;
     public override bool IsActive => true;
     public override string? BuffName => "Jinkin's Ill Fortune";
@@ -70,6 +72,7 @@ public class JinkinCurse : LogicBrick
 // FilthFever: periodic damage/penalty until cured
 public class FilthFever : LogicBrick
 {
+    public override string Id => "gremlin:filth_fever";
     public override string? BuffName => "Filth Fever";
     public static readonly FilthFever Instance = new();
     public override bool IsBuff => true;
@@ -85,6 +88,7 @@ public class FilthFever : LogicBrick
 public class DrunkenDodge : LogicBrick
 {
     public static readonly DrunkenDodge Instance = new();
+    public override string Id => "gremlin:drunken_dodge";
     public override string? PokedexDescription => "30% dodge (drunken)";
 
     protected override void OnBeforeDefendRoll(Fact fact, PHContext ctx)

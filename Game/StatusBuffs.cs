@@ -5,6 +5,7 @@ namespace Pathhack.Game;
 public class BlindBuff : LogicBrick
 {
   public static readonly BlindBuff Instance = new();
+  public override string Id => "blind";
 
   public override bool IsBuff => true;
   public override string? BuffName => "Blind";
@@ -30,6 +31,7 @@ public class BlindBuff : LogicBrick
 public class ProneBuff : LogicBrick
 {
   public static readonly ProneBuff Instance = new();
+  public override string Id => "prone";
   public override bool IsBuff => true;
   public override string? BuffName => "Hamstrung";
   public override StackMode StackMode => StackMode.Stack;
@@ -45,6 +47,7 @@ public class ProneBuff : LogicBrick
 public class SilencedBuff : LogicBrick
 {
   public static readonly SilencedBuff Instance = new();
+  public override string Id => "silenced";
   public override bool IsBuff => true;
   public override string? BuffName => "Silenced";
   public override StackMode StackMode => StackMode.Stack;
@@ -59,6 +62,7 @@ public class SilencedBuff : LogicBrick
 public class ParalyzedBuff : LogicBrick
 {
   public static readonly ParalyzedBuff Instance = new();
+  public override string Id => "paralyzed";
   public override bool IsBuff => true;
   public override bool IsActive => true;
   public override string? BuffName => "Paralyzed";
@@ -88,6 +92,7 @@ public class ParalyzedBuff : LogicBrick
 public class NauseatedBuff : LogicBrick
 {
   public static readonly NauseatedBuff Instance = new();
+  public override string Id => "nauseated";
   public override bool IsBuff => true;
   public override string? BuffName => "Nauseated";
   public override StackMode StackMode => StackMode.Stack;
@@ -105,6 +110,7 @@ public class NauseatedBuff : LogicBrick
 public class FleeingBuff : LogicBrick
 {
   public static readonly FleeingBuff Instance = new();
+  public override string Id => "fleeing";
   public override bool IsBuff => true;
   public override string? BuffName => "Fleeing";
 
@@ -118,6 +124,7 @@ public class FleeingBuff : LogicBrick
 public class StunnedBuff : LogicBrick
 {
   public static readonly StunnedBuff Instance = new();
+  public override string Id => "stunned";
   public override bool IsBuff => true;
   public override bool IsActive => true;
   public override string? BuffName => "Stunned";
@@ -222,6 +229,7 @@ public abstract class AfflictionBrick(int dc, string? tag = null) : LogicBrick<A
 
 public class RegenBrick(params DamageType[] suppressedBy) : LogicBrick<RegenBrick.State>
 {
+  public override string Id => suppressedBy.Length == 0 ? "regen" : $"regen+{string.Join("/", suppressedBy.Select(t => t.SubCat))}";
   public class State
   {
     public int SuppressedUntil;

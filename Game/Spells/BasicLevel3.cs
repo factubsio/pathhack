@@ -107,19 +107,24 @@ public static class BasicLevel3Spells
 
 public class FlyLesserBuff() : MaintainedBuff("spell_l3")
 {
+  public override string Id => "spb:fly";
   internal static readonly FlyLesserBuff Instance = new();
   public override string? BuffName => "Fly";
+  public override bool IsBuff => true;
+  public override StackMode StackMode => StackMode.Stack;
+  public override int MaxStacks => 2;
 
   protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
   {
     "flying" => true,
-    "speed_bonus" => new Modifier(ModifierCategory.UntypedStackable, -4, "lesser fly"),
+    "speed_bonus" => new Modifier(ModifierCategory.UntypedStackable, fact.Stacks == 1 ? -4 : 0, "lesser fly"),
     _ => null
   };
 }
 
 public class HeroismBuff() : MaintainedBuff("spell_l3")
 {
+  public override string Id => "spb:heroism";
   internal static readonly HeroismBuff Instance = new();
   public override string? BuffName => "Heroism";
 

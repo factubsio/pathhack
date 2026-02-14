@@ -2,6 +2,7 @@ namespace Pathhack.Dat;
 
 public class SiegeEngineTracker(List<Pos> stairs) : LogicBrick
 {
+    public override string Id => "_siege_engine";
     int _remaining = stairs.Count;
 
     protected override void OnDeath(Fact fact, PHContext ctx)
@@ -25,6 +26,7 @@ public class SiegeEngineTracker(List<Pos> stairs) : LogicBrick
 
 public class SpawnOnDamage(MonsterDef[] pool, int chance = 50) : LogicBrick
 {
+    public override string Id => "_spawn_on_damage";
     protected override void OnDamageTaken(Fact fact, PHContext ctx)
     {
         if (g.Rn2(100) >= chance) return;

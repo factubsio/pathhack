@@ -73,4 +73,41 @@ public static class MonsterTable
         ItemClasses.Gold => "Gold",
         _ => "Other",
     };
+
+    public static void PrintSpells(string? filter)
+    {
+        var spells = MasonryYard.AllSpells
+            .Where(s => filter == null || s.Name.Contains(filter, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(s => s.Level)
+            .ThenBy(s => s.Name);
+
+        Console.WriteLine($"{"Name",-28} {"Lvl",3} {"Target",-10} {"Range",5} {"Maint",-6} {"Tags",-16} Description");
+        Console.WriteLine(new string('-', 130));
+
+        foreach (var s in spells)
+        {
+            string tags = s.Tags == AbilityTags.None ? "" : s.Tags.ToString();
+            string range = s.MaxRange < 0 ? "-" : s.MaxRange.ToString();
+            string desc = s.Description.ReplaceLineEndings(" ");
+            if (desc.Length > 50) desc = desc[..47] + "...";
+            Console.WriteLine($"{s.Name,-28} {s.Level,3} {s.Targeting,-10} {range,5} {(s.Maintained ? "Y" : ""),-6} {tags,-16} {desc}");
+        }
+
+        Console.WriteLine($"\n{spells.Count()} spells registered.");
+    }
+
+    public static void PrintBricks(string? filter)
+    {
+        var bricks = MasonryYard.AllBricks
+            .Where(kv => filter == null || kv.Key.Contains(filter, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(kv => kv.Key);
+
+        Console.WriteLine($"{"Id",-40} {"Type",-30} {"Buff?",-6} {"Active?",-8}");
+        Console.WriteLine(new string('-', 86));
+
+        foreach (var (id, brick) in bricks)
+            Console.WriteLine($"{id,-40} {brick.GetType().Name,-30} {(brick.IsBuff ? "Y" : ""),-6} {(brick.IsActive ? "Y" : ""),-8}");
+
+        Console.WriteLine($"\n{bricks.Count()} bricks registered.");
+    }
 }

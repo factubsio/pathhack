@@ -2,6 +2,7 @@ namespace Pathhack.Game.Bestiary;
 
 public class TKAttackBonus(int bonus) : LogicBrick
 {
+    public override string Id => "derro:tk_attack";
     public static readonly TKAttackBonus Instance = new(2);
 
     protected override void OnBeforeAttackRoll(Fact fact, PHContext ctx)
@@ -14,6 +15,7 @@ public class TKAttackBonus(int bonus) : LogicBrick
 public class DazeImmunity : LogicBrick
 {
     public static readonly DazeImmunity Instance = new();
+    public override string Id => "derro:daze_immune";
     public override string? PokedexDescription => "Immune to daze";
     public override bool IsActive => true;
     public override string? BuffName => "Daze Immunity";
@@ -22,6 +24,7 @@ public class DazeImmunity : LogicBrick
 public class DazedBuff : LogicBrick
 {
     public static readonly DazedBuff Instance = new();
+    public override string Id => "dazed";
     public override bool IsActive => true;
     public override string? BuffName => "Dazed";
 

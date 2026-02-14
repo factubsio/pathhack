@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Pathhack.Game;
 
@@ -93,6 +94,7 @@ public static class Log
     {
         Writer.WriteLine($"[R{g.CurrentRound}] {msg}");
         Writer.Flush();
+        PHMonitor.CaptureLog("general", msg);
     }
 
     public static void Write(string fmt, params object[] args) => Write(string.Format(fmt, args));
@@ -107,6 +109,14 @@ public static class Log
     }
 
     public static void Verbose(string tag, string fmt, params object[] args) => Verbose(tag, string.Format(fmt, args));
+
+    public static void Structured(string tag, [InterpolatedStringHandlerArgument] JsonBuilder builder)
+    {
+        string human = builder.ToString();
+        Writer.WriteLine($"[R{g.CurrentRound}] [{tag}] {human}");
+        Writer.Flush();
+        PHMonitor.CaptureLog(tag, human, builder.ToJson());
+    }
 }
 
 public class GameState
@@ -316,6 +326,11 @@ public class GameState
             string modStr = FormatMods(check.Modifiers);
             string advStr = hasAdv ? " adv" : hasDis ? " dis" : "";
             Log.Write($"{pm} {result} {check.Roll} ({check.RollStr}) vs {check.DC}: {label} {modStr}");
+
+            string key = check.Key ?? label;
+            int adv = check.Advantage;
+            int dis = check.Disadvantage;
+            Log.Structured("check", $"{key:key}{check.DC:dc}{check.Roll:roll}{check.BaseRoll:base_roll}{check.Modifiers:mods}{check.Result:result}{adv:advantage}{dis:disadvantage}{check.Tag:tag}");
         }
 
         return check.Result;
@@ -345,6 +360,7 @@ public class GameState
     {
         Draw.DrawMessage(msg);
         PlineLog?.WriteLine($"[{CurrentRound}] {msg}");
+        PHMonitor.CapturePline(msg);
     }
     internal void plineu(IUnit user, string msg)
     {
@@ -403,6 +419,8 @@ public class GameState
         Perf.StartRound();
         Draw.ResetRoundStats();
 
+        PHMonitor.WaitForStartRound();
+
         // === Player phase ===
         u.Energy += 12;
 
@@ -421,9 +439,12 @@ public class GameState
             Perf.Stop("Draw");
 
             Perf.Start();
-            Input.PlayerTurn();
+            PHMonitor.WaitForAction(u.Energy);
+            if (!PHMonitor.Active) Input.PlayerTurn();
             Perf.Stop("PlayerTurn");
         }
+
+        PHMonitor.WaitForEndPlayerTurn();
 
         // === Monster phase (runs on whatever level we're now on) ===
         lvl.SortUnitsByInitiative();
@@ -769,6 +790,8 @@ public class GameState
             string modStr = FormatMods(check.Modifiers);
             string dmgStr = FormatDamage(ctx);
             Log.Write($"{tag} {check.Roll} ({check.BaseRoll}) vs {check.DC}: {attacker} → {defender} {modStr} | {dmgStr} ({ctx.HpBefore}→{ctx.HpAfter})");
+
+            Log.Structured("attack", $"{attacker:attacker}{defender:defender}{with:weapon}{check.Roll:roll}{check.BaseRoll:base_roll}{check.DC:ac}{check.Modifiers:check_mods}{check.Advantage:advantage}{check.Disadvantage:disadvantage}{true:hit}{ctx.TotalDamageDealt:damage}{ctx.Damage:rolls}{ctx.HpBefore:hp_before}{ctx.HpAfter:hp_after}");
         }
         else
         {
@@ -778,6 +801,8 @@ public class GameState
             string tag = attacker == u ? "P ✗" : "M ✗";
             string modStr = FormatMods(check.Modifiers);
             Log.Write($"{tag} {check.Roll} ({check.BaseRoll}) vs {check.DC}: {attacker} → {defender} {modStr}");
+
+            Log.Structured("attack", $"{attacker:attacker}{defender:defender}{with:weapon}{check.Roll:roll}{check.BaseRoll:base_roll}{check.DC:ac}{check.Modifiers:check_mods}{check.Advantage:advantage}{check.Disadvantage:disadvantage}{false:hit}");
             
             if (thrown)
             {
@@ -841,17 +866,32 @@ public class GameState
         }
         
         // this can happen if all damage instances were negated
-        if (damage == 0) return;
+        if (damage == 0)
+        {
+            if (!ctx.SilentDamage)
+            {
+                bool saved = ctx.Check?.Result == true;
+                ctx.HpBefore = target.HP.Current;
+                ctx.HpAfter = target.HP.Current;
+                Log.Structured("damage", $"{source:source}{target:target}{damage:total}{ctx.Damage:rolls}{ctx.HpBefore:hp_before}{ctx.HpAfter:hp_after}{saved:saved}{0:temp_hp_absorbed}");
+            }
+            return;
+        }
 
         ctx.HpBefore = target.HP.Current;
         target.LastDamagedOnTurn = g.CurrentRound;
         target.HitsTaken++;
         target.DamageTaken += damage;
         
-        damage = target.AbsorbTempHp(damage);
+        damage = target.AbsorbTempHp(damage, out int absorbed);
         if (damage == 0)
         {
-            if (!ctx.SilentDamage) Log.Write($"  temp HP absorbed all damage");
+            if (!ctx.SilentDamage)
+            {
+                Log.Write($"  temp HP absorbed all damage");
+                bool saved = ctx.Check?.Result == true;
+                Log.Structured("damage", $"{source:source}{target:target}{damage:total}{ctx.Damage:rolls}{ctx.HpBefore:hp_before}{ctx.HpAfter:hp_after}{saved:saved}{absorbed:temp_hp_absorbed}");
+            }
             return;
         }
         
@@ -863,6 +903,9 @@ public class GameState
         {
             Log.Write($"  {target:The} takes {damage} total damage");
             Log.Write($"entity: {target.Id}: hit {damage} dmg hp: {ctx.HpBefore} -> {ctx.HpAfter}");
+
+            bool saved = ctx.Check?.Result == true;
+            Log.Structured("damage", $"{source:source}{target:target}{damage:total}{ctx.Damage:rolls}{ctx.HpBefore:hp_before}{ctx.HpAfter:hp_after}{saved:saved}{absorbed:temp_hp_absorbed}");
         }
 
         if (target is Monster mon && mon.IsAsleep && g.Rn2(100) != 0) mon.IsAsleep = false;
@@ -1065,6 +1108,59 @@ public class GameState
 
     public enum EquipResult { Ok, Cursed, NoSlot }
 
+    public static void DoMoveU(Pos dir)
+    {
+        if (dir == Pos.Zero)
+        {
+            u.Energy -= ActionCosts.OneAction.Value;
+        }
+        else
+        {
+            Pos next = upos + dir;
+            if (!lvl.InBounds(next)) return;
+
+            // Grabbed: moving toward grabber = attack, away = struggle
+            if (u.GrabbedBy is { } grabber)
+            {
+                if (next == grabber.Pos)
+                {
+                    DoWeaponAttack(u, grabber, u.GetWieldedItem());
+                }
+                else
+                {
+                    int dc = grabber.GetSpellDC();
+                    if (g.DoStruggle(u, dc) == StruggleResult.Escaped)
+                    {
+                        lvl.MoveUnit(u, next);
+                    }
+                }
+                u.Energy -= ActionCosts.OneAction.Value;
+                return;
+            }
+
+            var tgt = lvl.UnitAt(next);
+            if (tgt != null && (tgt is not Monster m || !m.Peaceful))
+            {
+                DoWeaponAttack(u, tgt, u.GetWieldedItem());
+                u.Energy -= ActionCosts.OneAction.Value;
+            }
+            else if (tgt != null)
+            {
+                // peaceful - can't walk through
+                g.pline($"{tgt:The} is in the way.");
+            }
+            else if (lvl.CanMoveTo(upos, next, u) || g.DebugMode)
+            {
+                lvl.MoveUnit(u, next);
+            }
+            else if (lvl.IsDoorClosed(next))
+            {
+                DoOpenDoor(next);
+            }
+        }
+
+    }
+
     public EquipResult DoEquip(IUnit unit, Item? item, EquipSlot? slotOverride = null)
     {
         if (item == null)
@@ -1189,4 +1285,27 @@ public class GameState
         unit.Energy -= unit.LandMove.Value;
     }
 
+    public static void DoOpenDoor(Pos target)
+    {
+        if (lvl.InBounds(target) && lvl[target].Type == TileType.Door)
+        {
+            if (lvl.OpenDoor(target))
+            {
+                u.Energy -= ActionCosts.OneAction.Value;
+            }
+            else
+            {
+                if (lvl.IsDoorOpen(target))
+                    g.pline("It's already open.");
+                else if (lvl.IsDoorBroken(target))
+                    g.pline("It's already broken beyond repair.");
+                else if (lvl.IsDoorLocked(target))
+                    g.pline("It's locked.");
+            }
+        }
+        else
+        {
+            g.pline("There is no door there.");
+        }
+    }
 }

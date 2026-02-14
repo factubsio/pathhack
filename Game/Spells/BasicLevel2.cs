@@ -149,23 +149,27 @@ public static class BasicLevel2Spells
 
 public class ResistEnergyBuff(string name, DamageType element) : MaintainedBuff("spell_l2")
 {
+  public override string Id => $"spb:resist+{element.SubCat}";
   public override string? BuffName => name;
 
-  protected override void OnBeforeDamageIncomingRoll(Fact fact, PHContext ctx)
+  protected override void OnFactAdded(Fact fact)
   {
-    if (fact.Entity is not IUnit unit) return;
-    int dr = 5 + unit.CasterLevel;
-    foreach (var roll in ctx.Damage)
-    {
-      if (roll.Type == element)
-        roll.ApplyDR(dr);
-    }
+    base.OnFactAdded(fact);
+    if (fact.Entity is IUnit unit)
+      unit.AddFact(EnergyResist.Dynamic(element));
   }
 
-  static readonly ResistEnergyBuff Fire = new("Resist Fire", DamageTypes.Fire);
-  static readonly ResistEnergyBuff Cold = new("Resist Cold", DamageTypes.Cold);
-  static readonly ResistEnergyBuff Shock = new("Resist Shock", DamageTypes.Shock);
-  static readonly ResistEnergyBuff Acid = new("Resist Acid", DamageTypes.Acid);
+  protected override void OnFactRemoved(Fact fact)
+  {
+    if (fact.Entity is IUnit unit)
+      unit.FindFact(EnergyResist.Dynamic(element))?.Remove();
+    base.OnFactRemoved(fact);
+  }
+
+  public static readonly ResistEnergyBuff Fire = new("Resist Fire", DamageTypes.Fire);
+  public static readonly ResistEnergyBuff Cold = new("Resist Cold", DamageTypes.Cold);
+  public static readonly ResistEnergyBuff Shock = new("Resist Shock", DamageTypes.Shock);
+  public static readonly ResistEnergyBuff Acid = new("Resist Acid", DamageTypes.Acid);
 
   public static ActivateMaintainedSpell MakeSpell(string label, DamageType type)
   {
@@ -179,6 +183,7 @@ public class ResistEnergyBuff(string name, DamageType element) : MaintainedBuff(
 
 public class DelayPoisonBuff() : MaintainedBuff("spell_l2")
 {
+  public override string Id => "spb:delay_poison";
   internal static readonly DelayPoisonBuff Instance = new();
   public override string? BuffName => "Delay Poison";
 

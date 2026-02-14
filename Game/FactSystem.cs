@@ -29,6 +29,7 @@ public record struct Glyph(char Value, ConsoleColor Color = ConsoleColor.White, 
 
 public interface IEntity
 {
+    static uint NextId;
     public uint Id { get; }
     public IEnumerable<Fact> LiveFacts { get; }
     public IEnumerable<Fact> GetAllFacts(PHContext? ctx);
@@ -103,6 +104,8 @@ public enum FactDisplayMode
 public abstract class LogicBrick
 {
     public static LogicBrick? GlobalHook;
+
+    public abstract string Id { get; }
 
     public virtual LogicBrick? MergeWith(LogicBrick other) => this == other ? this : null;
 
@@ -226,15 +229,6 @@ public abstract class LogicBrick<T> : LogicBrick where T : class, new()
   protected static T X(Fact fact) => (T)fact.Data!;
 }
 
-public class ApplyFactOnAttackHit(LogicBrick toApply, int? duration = null) : LogicBrick
-{
-    protected override void OnAfterAttackRoll(Fact fact, PHContext context)
-    {
-        if (context.Check!.Result)
-            context.Target?.Unit?.AddFact(toApply, duration);
-    }
-}
-
 public enum MergeStrategy { Replace, Max, Min, Sum, Or, And }
 
 public enum TargetingType { None, Direction, Unit, Pos }
@@ -354,46 +348,11 @@ public static class ActionHelpers
         unit.IsAdjacent(target) ? true : new ActionPlan(false, "not adjacent");
 }
 
-public static class LogicHelpers
-{
-    public static LogicBrick ModifierBrick(string key, ModifierCategory cat, int value, string why) =>
-        new QueryBrick(key, new Modifier(cat, value, why));
-}
-
-public class QueryBrick(string queryKey, object value) : LogicBrick
-{
-    protected override object? OnQuery(Fact fact, string key, string? arg) =>
-        key == queryKey ? value : null;
-}
-
-public class GrantProficiency(string skill, ProficiencyLevel level, bool requiresEquipped = false) : LogicBrick
-{
-    public override bool RequiresEquipped => requiresEquipped;
-    protected override object? OnQuery(Fact fact, string key, string? arg) =>
-        key == "proficiency" && arg == skill ? (int)level : null;
-}
-
 public static class EntityExts
 {
     public static bool IsEquipped(this Fact fact) => fact.Entity is Item item && item.Holder?.Equipped.ContainsValue(item) == true;
     public static bool IsKnown(this ItemDef def) => ItemDb.Instance.IsIdentified(def);
     public static void SetKnown(this ItemDef def) => ItemDb.Instance.Identify(def);
-}
-
-
-public class ArmorBrick(int acBonus, int dexCap) : LogicBrick
-{
-    protected override object? OnQuery(Fact fact, string key, string? arg)
-    {
-        if (!fact.IsEquipped()) return null;
-        var potency = (fact.Entity as Item)?.Potency ?? 0;
-        return key switch
-        {
-            "ac" => new Modifier(ModifierCategory.ItemBonus, acBonus + potency),
-            "dex_cap" => dexCap,
-            _ => null,
-        };
-    }
 }
 
 public class BaseDef
@@ -404,8 +363,7 @@ public class BaseDef
 
 public class Entity<DefT> : IEntity where DefT : BaseDef
 {
-    static uint _nextId;
-    private readonly uint _id = _nextId++;
+    private readonly uint _id = IEntity.NextId++;
     public uint Id => _id;
     public readonly DefT Def;
     public int ActiveFactCount;
@@ -750,7 +708,7 @@ public interface IUnit : IEntity
     int TempHp { get; }
     int LastDamagedOnTurn { get; set; }
     void GrantTempHp(int amount);
-    int AbsorbTempHp(int damage);
+    int AbsorbTempHp(int damage, out int absorbed);
     void TickTempHp();
 
     // for stat tracking
@@ -871,10 +829,10 @@ public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) :
         }
     }
 
-    public int AbsorbTempHp(int damage)
+    public int AbsorbTempHp(int damage, out int absorbed)
     {
-        if (_tempHp <= 0 || damage <= 0) return damage;
-        int absorbed = Math.Min(_tempHp, damage);
+        if (_tempHp <= 0 || damage <= 0) { absorbed = 0; return damage; }
+        absorbed = Math.Min(_tempHp, damage);
         _tempHp -= absorbed;
         return damage - absorbed;
     }
@@ -1051,6 +1009,7 @@ public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) :
 
 public class GrantAction(ActionBrick action) : LogicBrick
 {
+    public override string Id => $"grant_action+{action.Name}";
     public ActionBrick Action => action;
     public override AbilityTags Tags => action.Tags;
     protected override void OnFactAdded(Fact fact) => (fact.Entity as IUnit)?.AddAction(action);
@@ -1060,12 +1019,14 @@ public class GrantAction(ActionBrick action) : LogicBrick
 
 public class GrantSpell(SpellBrickBase spell) : LogicBrick
 {
+    public override string Id => $"grant_spell+{spell.Name}";
     public SpellBrickBase Spell => spell;
     protected override void OnFactAdded(Fact fact) => (fact.Entity as IUnit)?.AddSpell(spell);
 }
 
 public class GrantPool(string name, int max, DiceFormula regenRate) : LogicBrick
 {
+    public override string Id => $"grant_pool+{name}";
     protected override void OnFactAdded(Fact fact)
     {
         Log.Write($"on fact added pool {name} to {fact.Entity}");

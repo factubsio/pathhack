@@ -21,6 +21,7 @@ public class BlessingDef
 
 public class GrantBlessingBrick(BlessingDef blessing) : LogicBrick
 {
+    public override string Id => $"grant_blessing+{blessing.Name}";
     protected override void OnFactAdded(Fact fact)
     {
         if (fact.Entity is IUnit unit)
@@ -142,7 +143,8 @@ public enum WarBlessingState { Ready, Buffed, Cooldown }
 
 public class WarBlessingBuff : LogicBrick
 {
-    internal static WarBlessingBuff Instance = new();
+    public override string Id => "blessing:war";
+    internal static readonly WarBlessingBuff Instance = new();
 
     protected override void OnBeforeAttackRoll(Fact fact, PHContext context)
     {
@@ -173,6 +175,7 @@ public class StrengthBlessingMinor() : BlessingAction("Strength (minor)")
 
 public class StrengthBuff(int mod) : LogicBrick
 {
+    public override string Id => $"blessing:str+{mod}";
     public static readonly StrengthBuff Plus2 = new(2);
     public static readonly StrengthBuff Plus4 = new(4);
 
@@ -195,6 +198,7 @@ public class LawBlessingMinor() : BlessingAction("Law Blessing (minor)")
 public class LawBuff : LogicBrick
 {
     public static readonly LawBuff Instance = new();
+    public override string Id => "blessing:law";
     public override bool IsBuff => true;
     public override string? BuffName => "Law";
 
@@ -280,6 +284,7 @@ public class LuckBlessingData
 
 public class LuckBlessingPassive : LogicBrick<LuckBlessingData>
 {
+    public override string Id => "blessing:luck";
     public override bool IsBuff => true;
     public override string? BuffName => "Luck";
 
