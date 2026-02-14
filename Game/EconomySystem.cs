@@ -236,7 +236,7 @@ public class ShopState
         price += (int)(GetQualityPrice(item.Potency) * 0.4);
         foreach (var rune in item.PropertyRunes)
         {
-            price += (int)(GetQualityPrice(rune.Def.Quality) * 0.4);
+            price += (int)(GetQualityPrice(((RuneBrick)rune.Brick).Quality) * 0.4);
         }
         price = (int)(price * GetMaterialPriceMod(item.Material));
         return price;

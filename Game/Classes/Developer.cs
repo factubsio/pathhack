@@ -260,13 +260,13 @@ public static partial class ClassDefs
             // Test striking rune
             var strikingSword = Item.Create(MundaneArmory.Longsword);
             strikingSword.Potency = 1;
-            ItemGen.ApplyRune(strikingSword, Runes.Striking(1), fundamental: true);
+            ItemGen.ApplyRune(strikingSword, StrikingRune.Q1, fundamental: true);
             p.Inventory.Add(strikingSword);
             
             // Test bonus rune
             var bonusSword = Item.Create(MundaneArmory.Longsword);
             bonusSword.Potency = 1;
-            ItemGen.ApplyRune(bonusSword, Runes.Bonus(1), fundamental: true);
+            ItemGen.ApplyRune(bonusSword, BonusRune.Q1, fundamental: true);
             p.Inventory.Add(bonusSword);
 
             p.Gold = 2000;

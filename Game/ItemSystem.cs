@@ -171,21 +171,13 @@ public class ItemDef : BaseDef
 
 public enum RuneSlot { Fundamental, Property }
 
-public class RuneDef : BaseDef
+public abstract class RuneBrick(string displayName, int quality, RuneSlot slot) : LogicBrick
 {
-    public required RuneSlot Slot;
-    public required string DisplayName;
-    public required int Quality;
-    public required string Description;
-
-    public bool IsNull; // blocker rune
-
-}
-
-public class Rune(RuneDef def)
-{
-    public RuneDef Def => def;
-    public List<Fact> Facts = [];
+    public string DisplayName => displayName;
+    public int Quality => quality;
+    public RuneSlot Slot => slot;
+    public bool IsNull => this == NullFundamental.Instance;
+    public virtual string Description => "";
 }
 
 public enum WeaponCategory { Unarmed, Natural, Item }
@@ -252,8 +244,8 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
     
     // runes (weapons only for now)
     public int Potency;
-    public Rune? Fundamental;
-    public List<Rune> PropertyRunes = [];
+    public Fact? Fundamental;
+    public List<Fact> PropertyRunes = [];
     
     public int PropertySlots => Potency;
     public int EmptyPropertySlots => Potency - PropertyRunes.Count;
@@ -352,15 +344,15 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
             else if (Def is ArmorDef && Potency > 0)
                 parts.Add($"+{Potency}");
 
-            if (Fundamental != null && !Fundamental.Def.IsNull)
-                parts.Add($"{Fundamental.Def.DisplayName}/{Fundamental.Def.Quality}");
+            if (Fundamental?.Brick is RuneBrick { IsNull: false } fb)
+                parts.Add($"{fb.DisplayName}/{fb.Quality}");
             
             // property runes: "flaming shock"
             var props = PropertyRunes
-                .Where(r => !r.Def.IsNull)
-                .Select(r => r.Def.DisplayName);
-            if (props.Any())
-                parts.Add(string.Join(" ", props));
+                .Select(r => (RuneBrick)r.Brick)
+                .Where(r => !r.IsNull);
+            foreach (var r in props)
+                parts.Add(r.DisplayName);
         }
         
         parts.Add(count > 1 ? Def.Name.Plural() : Def.Name);
@@ -376,9 +368,9 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
             parts.Add(BUC == BUC.Blessed ? "blessed" : "cursed");
         if (Def is WeaponDef) parts.Add($"+{Potency}");
         else if (Def is ArmorDef && Potency > 0) parts.Add($"+{Potency}");
-        if (Fundamental != null && !Fundamental.Def.IsNull)
-            parts.Add($"{Fundamental.Def.DisplayName}/{Fundamental.Def.Quality}");
-        var props = PropertyRunes.Where(r => !r.Def.IsNull).Select(r => r.Def.DisplayName);
+        if (Fundamental?.Brick is RuneBrick { IsNull: false } fb)
+            parts.Add($"{fb.DisplayName}/{fb.Quality}");
+        var props = PropertyRunes.Select(r => (RuneBrick)r.Brick).Where(r => !r.IsNull).Select(r => r.DisplayName);
         if (props.Any()) parts.Add(string.Join(" ", props));
         parts.Add(count > 1 ? Def.Name.Plural() : Def.Name);
         return string.Join(" ", parts);
@@ -414,20 +406,19 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
 
     public bool CanMerge(Item other)
     {
-        if (!Def.Stackable) return false;
         if (other.Def != Def) return false;
-        if (other.Stolen != Stolen) return false;
-        if (other.Unpaid != Unpaid) return false;
-        if (other.UnitPrice != UnitPrice) return false;
+        if (!Def.Stackable) return false;
+        Log.Verbose("merging", $"merge check: {DisplayName} vs {other.DisplayName}");
+        if (other.Stolen != Stolen) { Log.Verbose("merging", "  fail: Stolen"); return false; }
+        if (other.Unpaid != Unpaid) { Log.Verbose("merging", "  fail: Unpaid"); return false; }
+        if (other.UnitPrice != UnitPrice) { Log.Verbose("merging", $"  fail: UnitPrice {UnitPrice} vs {other.UnitPrice}"); return false; }
         var mask = Def.RelevantKnowledge;
-        if ((other.Knowledge & mask) != (Knowledge & mask)) return false;
-        if (other.Potency != Potency) return false;
-        if (other.Fundamental != Fundamental) return false;
-        if (!PropertyRunes.SequenceEqual(other.PropertyRunes)) return false;
-        if (!FactsEquivalent(other)) return false;
-        // Don't stack partially eaten food
-        if (Eaten != 0 || other.Eaten != 0) return false;
-        if (CorpseOf != other.CorpseOf) return false;
+        if ((other.Knowledge & mask) != (Knowledge & mask)) { Log.Verbose("merging", $"  fail: Knowledge {Knowledge & mask} vs {other.Knowledge & mask}"); return false; }
+        if (other.Potency != Potency) { Log.Verbose("merging", $"  fail: Potency {Potency} vs {other.Potency}"); return false; }
+        if (!FactsEquivalent(other)) { Log.Verbose("merging", "  fail: FactsEquivalent"); return false; }
+        if (Eaten != 0 || other.Eaten != 0) { Log.Verbose("merging", "  fail: Eaten"); return false; }
+        if (CorpseOf != other.CorpseOf) { Log.Verbose("merging", "  fail: CorpseOf"); return false; }
+        Log.Verbose("merging", "  merge OK");
         return true;
     }
 

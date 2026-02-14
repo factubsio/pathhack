@@ -53,6 +53,7 @@ public static partial class Input
         ['D'] = new("multidrop", "Drop multiple items", ArgType.None, _ => DropItems()),
         [','] = new("pickup", "Pick up item", ArgType.None, _ => PickupItem()),
         ['.'] = new("wait", "Wait one turn", ArgType.None, _ => WaitTurn()),
+        ['s'] = new("wait", "Wait one turn", ArgType.None, _ => WaitTurn()),
         ['w'] = new("wield", "Wield weapon", ArgType.None, _ => WieldWeapon()),
         ['W'] = new("wear", "Wear armor", ArgType.None, _ => WearArmor()),
         ['P'] = new("puton", "Put on accessory", ArgType.None, _ => PutOnAccessory()),

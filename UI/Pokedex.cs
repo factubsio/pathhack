@@ -247,19 +247,19 @@ public static class Pokedex
             {
                 menu.Add($"Potency: {item.Potency}");
                 
-                if (item.Fundamental is { } fund)
+                if (item.Fundamental?.Brick is RuneBrick fund)
                 {
-                    if (fund.Def.IsNull)
+                    if (fund.IsNull)
                         menu.Add("Fundamental: [blocked]");
                     else
-                        menu.Add($"Fundamental: {fund.Def.DisplayName}, {fund.Def.Description}");
+                        menu.Add($"Fundamental: {fund.DisplayName}, {fund.Description}");
                 }
                 else
                     menu.Add("Fundamental: [empty]");
                 
                 menu.Add($"Property slots: {item.PropertyRunes.Count}/{item.Potency}");
                 foreach (var rune in item.PropertyRunes)
-                    menu.Add($"  - {rune.Def.DisplayName}, {rune.Def.Description}");
+                    menu.Add($"  - {((RuneBrick)rune.Brick).DisplayName}, {((RuneBrick)rune.Brick).Description}");
                 for (int i = item.PropertyRunes.Count; i < item.Potency; i++)
                     menu.Add("  - [empty]");
             }

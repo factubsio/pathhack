@@ -162,12 +162,12 @@ public static class ItemGen
         
         if (quality == 0)
         {
-            ApplyRune(item, Runes.NullFundamental, fundamental: true);
+            ApplyRune(item, NullFundamental.Instance, fundamental: true);
             return;
         }
         
         genLog.Add($"striking r{roll}={quality}");
-        ApplyRune(item, Runes.Striking(quality), fundamental: true);
+        ApplyRune(item, StrikingRune.Of(quality), fundamental: true);
     }
 
     private static void RollPropertyRunes(Item item, int depth, List<string> genLog)
@@ -189,11 +189,11 @@ public static class ItemGen
             string[] names = ["flaming", "frost", "shock"];
             genLog.Add($"{names[category]} f{fillRoll} q{qualRoll}={quality}");
             
-            RuneDef rune = category switch
+            RuneBrick rune = category switch
             {
-                0 => Runes.Flaming(quality),
-                1 => Runes.Frost(quality),
-                _ => Runes.Shock(quality),
+                0 => ElementalRune.Flaming(quality),
+                1 => ElementalRune.Frost(quality),
+                _ => ElementalRune.Shock(quality),
             };
             
             ApplyRune(item, rune, fundamental: false);
@@ -206,114 +206,81 @@ public static class ItemGen
         return ItemGenTables.Quality[d][g.Rn2(100)];
     }
 
-    public static void ApplyRune(Item item, RuneDef runeDef, bool fundamental)
+    public static void ApplyRune(Item item, RuneBrick rune, bool fundamental)
     {
-        var rune = new Rune(runeDef);
-        foreach (var c in runeDef.Components)
-            rune.Facts.Add(item.AddFact(c));
-
+        var fact = item.AddFact(rune);
         if (fundamental)
-            item.Fundamental = rune;
+            item.Fundamental = fact;
         else
-            item.PropertyRunes.Add(rune);
+            item.PropertyRunes.Add(fact);
     }
 }
 
-public static class Runes
+public class NullFundamental() : RuneBrick("null", -1, RuneSlot.Fundamental)
 {
-    public static readonly RuneDef NullFundamental = new()
-    {
-        Slot = RuneSlot.Fundamental,
-        IsNull = true,
-        DisplayName = "null",
-        Quality = -1,
-        Description = "broken",
-    };
-
-    public static RuneDef Bonus(int quality) => new()
-    {
-        Slot = RuneSlot.Fundamental,
-        Components = [new BonusRune(quality)],
-        DisplayName = "accurate",
-        Quality = quality,
-        Description = $"+{quality}d4 accuracy"
-    };
-
-    public static RuneDef Striking(int quality) => new()
-    {
-        Slot = RuneSlot.Fundamental,
-        Components = [new StrikingRune(quality)],
-        DisplayName = "striking",
-        Quality = quality,
-        Description = $"+{quality} dice damage"
-    };
-
-    public static RuneDef Flaming(int quality) => new()
-    {
-        Slot = RuneSlot.Property,
-        Components = [new ElementalRune(DamageTypes.Fire, quality)],
-        DisplayName = "flaming",
-        Quality = quality,
-        Description = $"+{quality}d6 fire damage"
-    };
-
-    public static RuneDef Frost(int quality) => new()
-    {
-        Slot = RuneSlot.Property,
-        Components = [new ElementalRune(DamageTypes.Cold, quality)],
-        DisplayName = "freezing",
-        Quality = quality,
-        Description = $"+{quality}d6 frost damage"
-    };
-
-    public static RuneDef Shock(int quality) => new()
-    {
-        Slot = RuneSlot.Property,
-        Components = [new ElementalRune(DamageTypes.Shock, quality)],
-        DisplayName = "shocking",
-        Quality = quality,
-        Description = $"+{quality}d6 shock damage"
-    };
+    public static readonly NullFundamental Instance = new();
 }
 
-public class BonusRune(int dice) : LogicBrick
+public class BonusRune(int quality) : RuneBrick("accurate", quality, RuneSlot.Fundamental)
 {
-    public int Dice => dice;
+    public override string Description => $"+{Quality}d4 accuracy";
 
     protected override void OnBeforeAttackRoll(Fact fact, PHContext context)
     {
         if (!fact.IsEquipped() || context.Weapon != fact.Entity) return;
-        context.Check!.Modifiers.AddModifier(new(ModifierCategory.ItemBonus, context.Weapon.Potency + d(dice, 4).Roll(), "bonus rune"));
+        context.Check!.Modifiers.AddModifier(new(ModifierCategory.ItemBonus, context.Weapon.Potency + d(Quality, 4).Roll(), "bonus rune"));
     }
+
+    public static readonly BonusRune Q1 = new(1), Q2 = new(2), Q3 = new(3), Q4 = new(4);
+    public static BonusRune Of(int quality) => quality switch { 1 => Q1, 2 => Q2, 3 => Q3, 4 => Q4, _ => Q1 };
 }
 
-public class StrikingRune(int extraDice) : LogicBrick
+public class StrikingRune(int quality) : RuneBrick("striking", quality, RuneSlot.Fundamental)
 {
-    public int ExtraDice => extraDice;
-    
+    public override string Description => $"+{Quality} dice damage";
+
     protected override void OnBeforeDamageRoll(Fact fact, PHContext context)
     {
         if (!fact.IsEquipped() || context.Weapon != fact.Entity) return;
         if (context.Weapon?.Def is not WeaponDef wdef) return;
         if (context.Damage.Count == 0 || context.Damage[0].Formula != wdef.BaseDamage) return;
-        context.Damage[0].ExtraDice = extraDice;
+        context.Damage[0].ExtraDice = Quality;
     }
+
+    public static readonly StrikingRune Q1 = new(1), Q2 = new(2), Q3 = new(3), Q4 = new(4);
+    public static StrikingRune Of(int quality) => quality switch { 1 => Q1, 2 => Q2, 3 => Q3, 4 => Q4, _ => Q1 };
 }
 
-public class ElementalRune(DamageType type, int quality) : LogicBrick
+public class ElementalRune : RuneBrick
 {
-    public DamageType Type => type;
-    public int Quality => quality;
+    readonly DamageType _type;
+
+    ElementalRune(string displayName, DamageType type, int quality) : base(displayName, quality, RuneSlot.Property)
+        => _type = type;
+
+    public override string Description => $"+{Quality}d6 {_type.SubCat} damage";
 
     protected override void OnBeforeDamageRoll(Fact fact, PHContext context)
     {
         if (!fact.IsEquipped()) return;
         if (context.Weapon != fact.Entity) return;
-        
+
         context.Damage.Add(new DamageRoll
         {
-            Formula = new Dice(quality, 6),
-            Type = type
+            Formula = new Dice(Quality, 6),
+            Type = _type
         });
     }
+
+    public static readonly ElementalRune
+        Flaming1 = new("flaming", DamageTypes.Fire, 1), Flaming2 = new("flaming", DamageTypes.Fire, 2),
+        Flaming3 = new("flaming", DamageTypes.Fire, 3), Flaming4 = new("flaming", DamageTypes.Fire, 4),
+        Frost1 = new("freezing", DamageTypes.Cold, 1), Frost2 = new("freezing", DamageTypes.Cold, 2),
+        Frost3 = new("freezing", DamageTypes.Cold, 3), Frost4 = new("freezing", DamageTypes.Cold, 4),
+        Shock1 = new("shocking", DamageTypes.Shock, 1), Shock2 = new("shocking", DamageTypes.Shock, 2),
+        Shock3 = new("shocking", DamageTypes.Shock, 3), Shock4 = new("shocking", DamageTypes.Shock, 4);
+
+    public static ElementalRune Flaming(int q) => q switch { 1 => Flaming1, 2 => Flaming2, 3 => Flaming3, 4 => Flaming4, _ => Flaming1 };
+    public static ElementalRune Frost(int q) => q switch { 1 => Frost1, 2 => Frost2, 3 => Frost3, 4 => Frost4, _ => Frost1 };
+    public static ElementalRune Shock(int q) => q switch { 1 => Shock1, 2 => Shock2, 3 => Shock3, 4 => Shock4, _ => Shock1 };
 }
