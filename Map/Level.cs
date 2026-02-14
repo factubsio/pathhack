@@ -396,7 +396,7 @@ public class Level(LevelId id, int width, int height)
         {
             if (!lvl.Traps.TryGetValue(n, out var trap) || trap.PlayerSeen) continue;
 
-            using var ctx = PHContext.Create(Monster.DM, Target.From(u));
+            using var ctx = PHContext.Create(DungeonMaster.Mook, Target.From(u));
             if (CreateAndDoCheck(ctx, "perception", trap.DetectDC, "trap"))
             {
                 g.pline("You find a trap.");
@@ -578,11 +578,11 @@ public class Level(LevelId id, int width, int height)
             if (InBounds(src) && func(src) is {} val) yield return val;
         }
     }
-    internal TileBitset CollectCircle(Pos src, int range, bool includeWalls)
+    internal TileBitset CollectCircle(Pos src, int range, bool includeWalls = false, bool andCenter = false)
     {
         using var tiles = TileBitset.GetPooled();
         FovCalculator.ScanShadowcast(this, tiles, src, range, includeWalls);
-        tiles[src] = false;
+        if (!andCenter) tiles[src] = false;
         return tiles;
     }
 

@@ -13,9 +13,11 @@ public static class ItemGen
         (16, GenerateScroll),
         (10, GenerateWeapon),
         (10, GenerateArmor),
-        (3, GenerateRing),
-        (2, GenerateBoots),
-        (2, GenerateGloves),
+        (4, GenerateWand),
+        (4, GenerateBottle),
+        (4, GenerateRing),
+        (4, GenerateBoots),
+        (4, GenerateGloves),
     ];
     
     static int TotalWeight => ClassWeights.Sum(x => x.weight);
@@ -47,14 +49,28 @@ public static class ItemGen
     public static Item? GeneratePotion(int depth)
     {
         if (Potions.All.Length == 0) return null;
-        var def = Potions.All[g.Rn2(Potions.All.Length)];
+        var def = Potions.All.Pick();
+        return GenerateItem(def, depth);
+    }
+
+    public static Item? GenerateWand(int depth)
+    {
+        if (Wands.All.Length == 0) return null;
+        var def = Wands.All.Pick();
+        return GenerateItem(def, depth);
+    }
+
+    public static Item? GenerateBottle(int depth)
+    {
+        if (Bottles.All.Length == 0) return null;
+        var def = Bottles.All.Pick();
         return GenerateItem(def, depth);
     }
 
     public static Item? GenerateScroll(int depth)
     {
         if (Scrolls.All.Length == 0) return null;
-        var def = Scrolls.All[g.Rn2(Scrolls.All.Length)];
+        var def = Scrolls.All.Pick();
         return GenerateItem(def, depth);
     }
 
@@ -73,21 +89,21 @@ public static class ItemGen
     static Item? GenerateRing(int depth)
     {
         if (MagicAccessories.AllRings.Length == 0) return null;
-        var def = MagicAccessories.AllRings[g.Rn2(MagicAccessories.AllRings.Length)];
+        var def = MagicAccessories.AllRings.Pick();
         return GenerateItem(def, depth);
     }
 
     static Item? GenerateBoots(int depth)
     {
         if (MagicAccessories.AllBoots.Length == 0) return null;
-        var def = MagicAccessories.AllBoots[g.Rn2(MagicAccessories.AllBoots.Length)];
+        var def = MagicAccessories.AllBoots.Pick();
         return GenerateItem(def, depth);
     }
 
     static Item? GenerateGloves(int depth)
     {
         if (MagicAccessories.AllGloves.Length == 0) return null;
-        var def = MagicAccessories.AllGloves[g.Rn2(MagicAccessories.AllGloves.Length)];
+        var def = MagicAccessories.AllGloves.Pick();
         return GenerateItem(def, depth);
     }
 
@@ -128,6 +144,10 @@ public static class ItemGen
         else if (def.CanHavePotency)
         {
             item.Potency = RollPotency(depth, genLog, maxPotency);
+        }
+        else if (def is WandDef wand)
+        {
+            item.Charges = g.RnRange(wand.MaxCharges / 2 - 1, wand.MaxCharges - 1);
         }
 
         if (genLog.Count > 0)

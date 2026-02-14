@@ -55,14 +55,14 @@ public class Activity
 {
     public string Type = "";
     public int Progress;
-    public Item? Target;
+    public Item? Food;
     public bool CanChoke;
     public bool FullWarned;
     public int StoredNutrition; // for quick cook (corpse destroyed on start)
     
     public int TotalTime => Type switch
     {
-        "eat" when Target?.CorpseOf is { } m => m.Size switch
+        "eat" when Food?.CorpseOf is { } m => m.Size switch
         {
             UnitSize.Tiny => 1,
             UnitSize.Small => 2,
@@ -72,13 +72,13 @@ public class Activity
             UnitSize.Gargantuan => 15,
             _ => 3
         },
-        "eat" => (Target?.Def as ConsumableDef)?.EatTime ?? 1,
+        "eat" => (Food?.Def as ConsumableDef)?.EatTime ?? 1,
         "cook_quick" => 4,
         "cook_careful" => CarefulCookTime,
         _ => 1
     };
     
-    int CarefulCookTime => Target?.CorpseOf?.Size switch
+    int CarefulCookTime => Food?.CorpseOf?.Size switch
     {
         UnitSize.Tiny => 10,
         UnitSize.Small => 15,
@@ -123,8 +123,8 @@ public class Activity
     {
         var msg = Type switch
         {
-            "eat" when Target != null => $"You stop eating {Grammar.DoNameOne(Target)}.",
-            "cook_careful" when Target != null => $"You stop cooking {Grammar.DoNameOne(Target)}.",
+            "eat" when Food != null => $"You stop eating {Grammar.DoNameOne(Food)}.",
+            "cook_careful" when Food != null => $"You stop cooking {Grammar.DoNameOne(Food)}.",
             _ => "You stop."
         };
         g.pline(msg);
@@ -158,14 +158,14 @@ public class Activity
 
     bool TickEat()
     {
-        if (Target == null) return false;
+        if (Food == null) return false;
         
         var beforeState = Hunger.GetState(u.Nutrition);
         
         Progress++;
         int remaining = TotalTime - Progress + 1;
-        int gained = Target.RemainingNutrition / Math.Max(1, remaining);
-        Target.Eaten += gained;
+        int gained = Food.RemainingNutrition / Math.Max(1, remaining);
+        Food.Eaten += gained;
         u.Nutrition += gained;
         
         var afterState = Hunger.GetState(u.Nutrition);
@@ -208,13 +208,13 @@ public class Activity
         
         if (Done)
         {
-            g.pline($"You finish eating {Grammar.DoNameOne(Target)}.");
+            g.pline($"You finish eating {Grammar.DoNameOne(Food)}.");
             
             // Flavor messages
-            var flavorMsg = (Target.Def as ConsumableDef)?.FlavorMessage;
+            var flavorMsg = (Food.Def as ConsumableDef)?.FlavorMessage;
             if (flavorMsg != null) g.pline(flavorMsg);
             
-            u.Inventory.Consume(Target);
+            u.Inventory.Consume(Food);
             return false;
         }
         
@@ -238,22 +238,22 @@ public class Activity
     bool TickCookCareful()
     {
         Progress++;
-        Target!.Eaten = Progress;
+        Food!.Eaten = Progress;
         CookingEffects(attractChance: 8, spawnChance: 50);
         
         if (Done)
         {
-            g.pline($"You finish cooking {Grammar.DoNameOne(Target)}.");
+            g.pline($"You finish cooking {Grammar.DoNameOne(Food)}.");
             
             // Food poisoning from rotten corpses
-            if (Foods.IsTainted(Target))
+            if (Foods.IsTainted(Food))
             {
                 u.AddFact(FoodPoisoning.Instance, count: 2);
                 g.pline("Your tummy starts rumbling.");
             }
-            else if (Foods.IsSpoiled(Target))
+            else if (Foods.IsSpoiled(Food))
             {
-                using var ctx = PHContext.Create(Monster.DM, Pathhack.Game.Target.From(u));
+                using var ctx = PHContext.Create(DungeonMaster.Mook, Target.From(u));
                 if (!CheckFort(ctx, 11, "food poisoning"))
                 {
                     u.AddFact(FoodPoisoning.Instance, count: 1);
@@ -261,9 +261,9 @@ public class Activity
                 }
             }
             
-            int nutrition = Target.CorpseOf!.Nutrition / 4;
+            int nutrition = Food.CorpseOf!.Nutrition / 4;
             u.Nutrition = Math.Min(Hunger.Max, u.Nutrition + nutrition);
-            lvl.RemoveItem(Target, upos);
+            lvl.RemoveItem(Food, upos);
             return false;
         }
         return true;
@@ -413,7 +413,7 @@ public class Activity
     public static Activity Eat(Item food, bool canChoke) => new()
     {
         Type = "eat",
-        Target = food,
+        Food = food,
         CanChoke = canChoke
     };
     
@@ -427,7 +427,7 @@ public class Activity
     public static Activity CookCareful(Item corpse) => new()
     {
         Type = "cook_careful",
-        Target = corpse,
+        Food = corpse,
         Progress = corpse.Eaten // resume from where we left off
     };
 }
@@ -489,7 +489,7 @@ public static class Foods
         if (corpseItem.CorpseOf == null) return false;
         
         // Don't rot while being cooked
-        if (u.CurrentActivity?.Target == corpseItem) return false;
+        if (u.CurrentActivity?.Food == corpseItem) return false;
         
         corpseItem.RotTimer++;
 

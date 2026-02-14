@@ -213,7 +213,7 @@ public abstract class AfflictionBrick(int dc, string? tag = null) : LogicBrick<A
     }
 
     // save
-    using var saveCtx = PHContext.Create(Monster.DM, Target.From(unit));
+    using var saveCtx = PHContext.Create(DungeonMaster.WithDC(DC), Target.From(unit));
     bool saved = CreateAndDoCheck(saveCtx, SaveKey, DC, AfflictionName);
     if (saved)
       unit.RemoveStack(this);

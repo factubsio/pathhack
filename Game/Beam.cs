@@ -22,7 +22,12 @@ public class Beam(Pos start, Pos dir, bool canBounce = false, int maxRange = 12)
             
             if (!lvl[next].IsPassable)
             {
-                if (!canBounce) yield break;
+                if (!canBounce)
+                {
+                    if (pos != start)
+                        yield return new BeamStep(segmentStart, pos, bounces, false, true);
+                    yield break;
+                }
                 
                 // Yield current pos with WillBounce before changing direction
                 yield return new BeamStep(segmentStart, pos, bounces, true, i == maxRange - 1);

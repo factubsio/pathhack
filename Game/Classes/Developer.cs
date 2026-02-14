@@ -275,7 +275,6 @@ public static partial class ClassDefs
             p.Inventory.Add(Item.Create(MundaneArmory.LeatherArmor));
             p.Inventory.Add(Item.Create(MagicAccessories.RingOfTheRam));
             MagicAccessories.RingOfTheRam.SetKnown();
-            p.Inventory.Add(Item.Create(Potions.FalseLife, 4)).Identify();
             p.Inventory.Add(Item.Create(Potions.LesserInvisibility, 4)).Identify();
             p.Inventory.Add(Item.Create(Scrolls.Identify, 10)).Identify();
             p.Inventory.Add(Item.Create(Scrolls.Teleportation, 4)).Identify();

@@ -5,7 +5,7 @@ public enum BUC { Cursed = -1, Uncursed = 0, Blessed = 1 }
 [Flags]
 public enum ItemKnowledge { None = 0, Seen = 1, Props = 2, BUC = 4 }
 
-public enum AppearanceCategory { Potion, Scroll, Amulet, Boots, Gloves, Cloak, Ring }
+public enum AppearanceCategory { Potion, Scroll, Amulet, Boots, Gloves, Cloak, Ring, Bottle, Wand }
 
 public record Appearance(string Name, ConsoleColor Color, string? Material = null);
 
@@ -24,6 +24,42 @@ public class ItemDb
             new("glowing potion", ConsoleColor.Magenta),
             new("viscous potion", ConsoleColor.DarkGreen),
             new("oily potion", ConsoleColor.DarkYellow),
+        ],
+        [AppearanceCategory.Bottle] = [
+            new("luminous bottle", ConsoleColor.Yellow),
+            new("cloudy bottle", ConsoleColor.Gray),
+            new("shimmering bottle", ConsoleColor.Cyan),
+            new("dark bottle", ConsoleColor.DarkMagenta),
+            new("warm bottle", ConsoleColor.DarkRed),
+            new("humming bottle", ConsoleColor.Green),
+            new("frosted bottle", ConsoleColor.White),
+            new("sparkling bottle", ConsoleColor.DarkYellow),
+        ],
+        [AppearanceCategory.Wand] = [
+            new("glass wand", ConsoleColor.White),
+            new("balsa wand", ConsoleColor.DarkYellow),
+            new("crystal wand", ConsoleColor.Cyan),
+            new("maple wand", ConsoleColor.DarkYellow),
+            new("oak wand", ConsoleColor.DarkYellow),
+            new("ebony wand", ConsoleColor.DarkGray),
+            new("marble wand", ConsoleColor.White),
+            new("tin wand", ConsoleColor.Gray),
+            new("brass wand", ConsoleColor.Yellow),
+            new("copper wand", ConsoleColor.DarkYellow),
+            new("silver wand", ConsoleColor.White),
+            new("platinum wand", ConsoleColor.White),
+            new("iridium wand", ConsoleColor.Cyan),
+            new("zinc wand", ConsoleColor.Gray),
+            new("iron wand", ConsoleColor.DarkGray),
+            new("steel wand", ConsoleColor.Gray),
+            new("hexagonal wand", ConsoleColor.DarkGray),
+            new("runed wand", ConsoleColor.DarkGray),
+            new("curved wand", ConsoleColor.DarkGray),
+            new("forked wand", ConsoleColor.DarkYellow),
+            new("jeweled wand", ConsoleColor.Magenta),
+            new("ceramic wand", ConsoleColor.DarkCyan),
+            new("pine wand", ConsoleColor.DarkYellow),
+            new("spiked wand", ConsoleColor.DarkGray),
         ],
         [AppearanceCategory.Scroll] = [
             new("scroll labelled ZELGO MOR", ConsoleColor.White),
@@ -225,6 +261,7 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
     public char InvLet;
     public IUnit? Holder;
     public int Count = 1;
+    public int Charges = 0;
     public ItemKnowledge Knowledge;
     public BUC BUC;
 
@@ -311,6 +348,7 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
                     ItemClasses.Scroll => "scroll",
                     ItemClasses.Ring => "ring",
                     ItemClasses.Amulet => "amulet",
+                    ItemClasses.Wand => "wand",
                     _ => "item"
                 };
                 return count > 1 ? $"{count} {className.Plural()}" : className;
@@ -356,6 +394,10 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
         }
         
         parts.Add(count > 1 ? Def.Name.Plural() : Def.Name);
+        
+        if (Def is WandDef && propsKnown)
+            parts.Add($"({Charges})");
+        
         return string.Join(" ", parts);
     }
 
@@ -395,6 +437,7 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
             Count = count,
             Potency = Potency,
             Fundamental = Fundamental,
+            Knowledge = Knowledge,
             Stolen = Stolen,
             Unpaid = Unpaid,
             UnitPrice = UnitPrice,

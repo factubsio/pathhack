@@ -18,10 +18,9 @@ public static class Potions
     public static readonly PotionDef Antivenom = new() { Name = "potion of antivenom", Price = 40 };
     public static readonly PotionDef Omen = new() { Name = "bottled omen", Price = 120 };
     public static readonly PotionDef Panacea = new() { Name = "panacea", Price = 500};
-    public static readonly PotionDef FalseLife = new() { Name = "potion of false life", Price = 40 };
     public static readonly PotionDef LesserInvisibility = new() { Name = "potion of lesser invisibility", Price = 120 };
 
-    public static readonly PotionDef[] All = [Healing, Speed, Paralysis, Antivenom, Omen, Panacea, FalseLife, LesserInvisibility];
+    public static readonly PotionDef[] All = [Healing, Speed, Paralysis, Antivenom, Omen, Panacea, LesserInvisibility];
 
     static Potions()
     {
@@ -77,12 +76,6 @@ public static class Potions
                 }
                 else
                     g.pline("You feel momentarily pure.");
-                break;
-            case var _ when def == FalseLife:
-                int amount = d(user.EffectiveLevel, 2, 5).Roll();
-                user.GrantTempHp(amount);
-                g.pline("You feel temporarily invigorated.");
-                def.SetKnown();
                 break;
             case var _ when def == LesserInvisibility:
                 user.AddFact(LesserInvisibilityBuff.Instance.Timed(), 20 + g.Rn2(20));

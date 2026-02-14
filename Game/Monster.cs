@@ -161,21 +161,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
     return false;
   }
 
-  public static readonly Monster DM = new(new()
-  {
-    Name = "DM",
-    Family = "dm",
-    CreatureType = "bubble",
-    Glyph = Glyph.Null,
-    HpPerLevel = 1,
-    AC = 1,
-    AttackBonus = 0,
-    Unarmed = NaturalWeapons.Fist,
-    MoralAxis = MoralAxis.Neutral,
-    EthicalAxis = EthicalAxis.Neutral,
-  }, []);
-
-  public override bool IsDM => this == DM;
+  public override bool IsDM => false;
 
   public override int NaturalRegen => 5;
   public override int StrMod => Def.StrMod;
@@ -288,7 +274,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
     return LevelDC + Def.AC.Combined + ItemBonusAC;
   }
 
-  private int LevelDC => 12 + (Def.BaseLevel + TemplateBonusLevels + 1) / 2;
+  private int LevelDC => DungeonMaster.DCForLevel(EffectiveLevel);
 
   // see tools/dc.md, this gives us what seems to be a reasonable curve
   private const int ATTACK_PENALTY_FUDGE = 5;

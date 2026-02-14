@@ -282,6 +282,77 @@ public static partial class Input
         u.Energy -= ActionCosts.OneAction.Value;
     }
 
+    static void ZapWand()
+    {
+        var wands = u.Inventory.Where(i => i.Def is WandDef).ToList();
+        if (wands.Count == 0)
+        {
+            g.pline("You have no wands.");
+            return;
+        }
+        var menu = new Menu<Item>();
+        menu.Add("Zap which wand?", LineStyle.Heading);
+        BuildItemList(menu, wands, u);
+        var picked = menu.Display(MenuMode.PickOne);
+        if (picked.Count == 0) return;
+
+        var wand = picked[0];
+        if (wand.Charges <= 0)
+        {
+            g.pline("Nothing happens.");
+            u.Energy -= ActionCosts.OneAction.Value;
+            return;
+        }
+
+        var def = (WandDef)wand.Def;
+        if (def.Spell.Targeting == TargetingType.None)
+        {
+            wand.Charges--;
+            Wands.DoEffect(def, u, Pos.Zero);
+        }
+        else
+        {
+            g.pline("In what direction?");
+            var dir = GetDirection(NextKey().Key);
+            if (dir == null) return;
+
+            wand.Charges--;
+            Wands.DoEffect(def, u, dir.Value);
+        }
+        u.Energy -= ActionCosts.OneAction.Value;
+    }
+
+    static void Throw()
+    {
+        var throwable = u.Inventory.Where(i => i.Def is PotionDef or BottleDef).ToList();
+        if (throwable.Count == 0)
+        {
+            g.pline("You have nothing to throw.");
+            return;
+        }
+        var menu = new Menu<Item>();
+        menu.Add("Throw what?", LineStyle.Heading);
+        BuildItemList(menu, throwable, u);
+        var picked = menu.Display(MenuMode.PickOne);
+        if (picked.Count == 0) return;
+
+        g.pline("In what direction?");
+        var dir = GetDirection(NextKey().Key);
+        if (dir == null) return;
+
+        var item = picked[0];
+        Item toThrow;
+        if (item.Count > 1)
+            toThrow = item.Split(1);
+        else
+        {
+            toThrow = item;
+            u.Inventory.Remove(toThrow);
+        }
+        DoThrow(u, toThrow, dir.Value);
+        u.Energy -= ActionCosts.OneAction.Value;
+    }
+
     static void SetQuiver()
     {
         var throwable = u.Inventory.Where(i => i.Def is WeaponDef w && (w.Range > 1 || w.Launcher != null)).ToList();
@@ -426,10 +497,10 @@ public static partial class Input
 
     static void Quaff()
     {
-        var potions = u.Inventory.Where(i => i.Def is PotionDef).ToList();
+        var potions = u.Inventory.Where(i => i.Def is PotionDef or BottleDef).ToList();
         if (potions.Count == 0)
         {
-            g.pline("You have no potions.");
+            g.pline("You have nothing to drink.");
             return;
         }
         var menu = new Menu<Item>();
@@ -439,10 +510,12 @@ public static partial class Input
         if (picked.Count == 0) return;
 
         var potion = picked[0];
-        var def = (PotionDef)potion.Def;
         
         g.pline($"You drink {potion.SingleName.An()}.");
-        Potions.DoEffect(def, u);
+        if (potion.Def is BottleDef bottle)
+            Bottles.DoEffect(bottle, u, upos);
+        else
+            Potions.DoEffect((PotionDef)potion.Def, u);
 
         u.Inventory.Consume(potion);
         u.Energy -= ActionCosts.OneAction.Value;
@@ -604,6 +677,8 @@ public static partial class Input
         bool any = false;
         foreach (var (cat, label) in new[] { 
             (AppearanceCategory.Potion, "Potions"),
+            (AppearanceCategory.Bottle, "Bottles"),
+            (AppearanceCategory.Wand, "Wands"),
             (AppearanceCategory.Scroll, "Scrolls"),
             (AppearanceCategory.Amulet, "Amulets"),
             (AppearanceCategory.Boots, "Boots"),
@@ -635,6 +710,8 @@ public static partial class Input
         var all = cat switch
         {
             AppearanceCategory.Potion => Potions.All.Cast<ItemDef>(),
+            AppearanceCategory.Bottle => Bottles.All.Cast<ItemDef>(),
+            AppearanceCategory.Wand => Wands.All.Cast<ItemDef>(),
             AppearanceCategory.Scroll => Scrolls.All.Cast<ItemDef>(),
             _ => []
         };

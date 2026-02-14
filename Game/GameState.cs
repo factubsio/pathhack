@@ -371,6 +371,7 @@ public class GameState
 
     public void YouObserveSelf(IUnit source, string ifSelf, string? ifSee, string? sound = null, int hearRadius = 6)
     {
+        if (source.IsDM) return;
         if (source.IsPlayer)
         {
             pline(ifSelf);
@@ -388,6 +389,8 @@ public class GameState
 
     public bool YouObserve(IUnit source, string? ifSee, string? sound = null, int hearRadius = 6)
     {
+        if (source.IsDM) return false;
+
         bool canSee = u.Allows("can_see") && lvl.IsVisible(source.Pos);
         bool canHear = sound != null && upos.ChebyshevDist(source.Pos) <= hearRadius;
 
@@ -1016,9 +1019,27 @@ public class GameState
             if (hit != null) break;
         }
         Draw.AnimateProjectile(from ?? thrower.Pos, last, item.Glyph);
-        if (hit != null)
-            DoWeaponAttack(thrower, hit, item, thrown: true);
-        lvl.PlaceItem(item, last);
+
+        if (item.Def is BottleDef bottle)
+        {
+            g.YouObserve(last, $"{item:The} shatters!", "glass breaking");
+            Bottles.DoEffect(bottle, thrower, last);
+        }
+        else if (item.Def is PotionDef potion)
+        {
+            g.YouObserve(last, hit != null
+                ? $"{item:The} shatters on {hit:the}!"
+                : $"{item:The} shatters!", "glass breaking");
+            if (hit != null)
+                Potions.DoEffect(potion, hit);
+        }
+        else
+        {
+            if (hit != null)
+                DoWeaponAttack(thrower, hit, item, thrown: true);
+            lvl.PlaceItem(item, last);
+        }
+
         return last;
     }
 
@@ -1182,7 +1203,7 @@ public class GameState
                     if (existing.Def is WeaponDef)
                         WeldMsg(unit);
                     else
-                        g.pline("You can't.  It is cursed.");
+                        g.pline(Grammar.IsPluralItem(existing) ? "You can't.  They are cursed." : "You can't.  It is cursed.");
                 }
                 return EquipResult.Cursed;
             }
@@ -1222,7 +1243,7 @@ public class GameState
                 if (item.Def is WeaponDef)
                     WeldMsg(unit);
                 else
-                    g.pline("You can't.  It is cursed.");
+                    g.pline(Grammar.IsPluralItem(item) ? "You can't.  They are cursed." : "You can't.  It is cursed.");
             }
             return false;
         }

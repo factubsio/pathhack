@@ -26,6 +26,10 @@ public static class Grammar
     {
         if (string.IsNullOrEmpty(s)) return s;
         
+        // Handle "bottled X" -> "bottles of X"
+        if (s.StartsWith("bottled "))
+            return "bottles of " + s[8..];
+        
         // Handle "X of Y" patterns - pluralize first word
         int ofIdx = s.IndexOf(" of ");
         if (ofIdx < 0)
@@ -58,4 +62,5 @@ public static class Grammar
 
     public static string DoName(Item item) => item.DisplayName.An();
     public static string DoNameOne(Item item) => item.SingleName.An();
+    public static bool IsPluralItem(Item item) => PluralWords.Any(p => item.Def.Name.Contains(p));
 }

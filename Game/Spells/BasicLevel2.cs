@@ -34,7 +34,7 @@ public static class BasicLevel2Spells
           }
           last = step.Pos;
           if (step.WillBounce || step.IsLast)
-            Draw.AnimateBeam(step.SegmentStart, step.Pos, new Glyph('*', ConsoleColor.Red));
+            Draw.AnimateBeam(step.SegmentStart, step.Pos, new Glyph('*', ConsoleColor.Red), pulse: true);
         }
       }, TargetingType.Direction);
 
@@ -47,18 +47,11 @@ public static class BasicLevel2Spells
 
         g.YouObserve(c, $"{c:The} {VTense(c, "unleash")} a burst of sound!", "a deafening boom");
 
-        List<Pos> tiles = [];
-        for (int dx = -1; dx <= 1; dx++)
-          for (int dy = -1; dy <= 1; dy++)
-          {
-            Pos p = center + new Pos(dx, dy);
-            if (lvl.InBounds(p)) tiles.Add(p);
-          }
-
-        Draw.AnimateFlash(tiles, new Glyph('*', ConsoleColor.Cyan));
+        var area = lvl.CollectCircle(center, 1, andCenter: true);
+        Draw.AnimateFlash(area, new Glyph('*', ConsoleColor.Cyan));
 
         int dc = c.GetSpellDC();
-        foreach (var pos in tiles)
+        foreach (var pos in area)
         {
           var victim = lvl.UnitAt(pos);
           if (victim.IsNullOrDead() || victim == c) continue;

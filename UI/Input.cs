@@ -65,6 +65,8 @@ public static partial class Input
         ['Z'] = new("cast", "Cast spell", ArgType.None, _ => ZapSpell()),
         ['q'] = new("quaff", "Drink potion", ArgType.None, _ => Quaff()),
         ['r'] = new("read", "Read scroll", ArgType.None, _ => ReadScroll()),
+        ['t'] = new("throw", "Throw item", ArgType.None, _ => Throw()),
+        ['z'] = new("zap", "Zap wand", ArgType.None, _ => ZapWand()),
         ['e'] = new("eat", "Eat food", ArgType.None, _ => Eat()),
         ['\\'] = new("discoveries", "Show discoveries", ArgType.None, _ => ShowDiscoveries()),
         ['C'] = new("call", "Name an item type", ArgType.None, _ => CallItem()),

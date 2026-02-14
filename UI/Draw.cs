@@ -149,7 +149,7 @@ public static class Draw
 
     public static void ClearOverlay() => Overlay.Clear();
 
-    public static void AnimateBeam(Pos from, Pos to, Glyph glyph, int delayMs = 30)
+    public static void AnimateBeam(Pos from, Pos to, Glyph glyph, int delayMs = 30, bool pulse = false)
     {
         // TODO: move visibility clipping to overlay layer instead of per-callsite
         var dir = (to - from).Signed;
@@ -164,15 +164,42 @@ public static class Draw
         };
 
         using var layer = Overlay.Activate();
-        
-        Pos p = from + dir;
-        while (p != to + dir)
+
+        if (pulse)
         {
-            if (lvl.IsVisible(p))
-                Overlay[p.X, p.Y + MapRow] = new Cell(beamChar, glyph.Color, Dec: dec);
+            // Draw entire beam at once
+            Pos p = from + dir;
+            while (p != to + dir)
+            {
+                if (lvl.IsVisible(p))
+                    Overlay[p.X, p.Y + MapRow] = new Cell(beamChar, glyph.Color, Dec: dec);
+                p += dir;
+            }
             Blit();
-            Thread.Sleep(delayMs);
-            p += dir;
+            Thread.Sleep(delayMs * 3);
+
+            // Erase from source to dest
+            p = from + dir;
+            while (p != to + dir)
+            {
+                if (lvl.IsVisible(p))
+                    Overlay[p.X, p.Y + MapRow] = Cell.Empty;
+                Blit();
+                Thread.Sleep(delayMs);
+                p += dir;
+            }
+        }
+        else
+        {
+            Pos p = from + dir;
+            while (p != to + dir)
+            {
+                if (lvl.IsVisible(p))
+                    Overlay[p.X, p.Y + MapRow] = new Cell(beamChar, glyph.Color, Dec: dec);
+                Blit();
+                Thread.Sleep(delayMs);
+                p += dir;
+            }
         }
 
         Thread.Sleep(delayMs);
@@ -181,6 +208,8 @@ public static class Draw
 
     public static void AnimateProjectile(Pos from, Pos to, Glyph glyph, int delayMs = -1, int total = 150)
     {
+        if (from.X < 0 || to.X < 0) return;
+
         if (delayMs < 0)
         {
             int frames = to.ChebyshevDist(from);

@@ -324,7 +324,7 @@ public static partial class ClassDefs
                 p.Equip(weapon);
                 p.AddFact(new GrantProficiency(p.Deity.FavoredWeapon, ProficiencyLevel.Trained));
             }
-            var armor = Item.Create(MundaneArmory.LeatherArmor);
+            var armor = ItemGen.GenerateItem(MundaneArmory.LeatherArmor);
             p.Inventory.Add(armor).Identify();
             p.Equip(armor);
             
@@ -332,6 +332,15 @@ public static partial class ClassDefs
             p.Inventory.Add(Item.Create(Potions.Healing, 2)).Identify();
             p.Inventory.Add(Item.Create(Potions.Speed)).Identify();
             p.Inventory.Add(Item.Create(Potions.Paralysis, 2)).Identify();
+            p.Inventory.Add(Item.Create(Bottles.Grease, 3)).Identify();
+            p.Inventory.Add(Item.Create(Bottles.Fireball, 2)).Identify();
+            p.Inventory.Add(Item.Create(Bottles.HoldPerson, 2)).Identify();
+            p.Inventory.Add(Item.Create(Bottles.SoundBurst, 2)).Identify();
+
+            p.Inventory.Add(ItemGen.GenerateItem(Wands.AcidArrow)).Identify();
+            p.Inventory.Add(ItemGen.GenerateItem(Wands.BurningHands)).Identify();
+            p.Inventory.Add(ItemGen.GenerateItem(Wands.MagicMissile)).Identify();
+            p.Inventory.Add(ItemGen.GenerateItem(Wands.ScorchingRay)).Identify();
             
             // Starting scrolls
             p.Inventory.Add(Item.Create(Scrolls.MagicMapping)).Identify();

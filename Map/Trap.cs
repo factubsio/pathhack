@@ -65,13 +65,13 @@ public class PitTrap(int depth) : Trap(TrapType.Pit, depth, 0, 0, 4)
         }
 
         g.YouObserve(unit, $"{unit:The} {VTense(unit, "fall")} into a {Name}!");
-        using var ctx = PHContext.Create(Monster.DM, Target.From(unit));
+        using var ctx = PHContext.Create(DungeonMaster.AsLevel(lvl.EffectiveDepth), Target.From(unit));
         ctx.Damage.Add(new DamageRoll { Formula = d(1, 6), Type = DamageTypes.Blunt, HalfOnSave = true });
         if (IsSpiked)
         {
             ctx.Damage.Add(new DamageRoll { Formula = d(1, 6), Type = DamageTypes.Piercing });
         }
-        CheckReflex(ctx, 15, "trap");
+        CheckReflex(ctx, EscapeDC, "trap");
         DoDamage(ctx);
         unit.TrappedIn = this;
         unit.EscapeAttempts = 0;
@@ -164,7 +164,7 @@ public class HoleTrap(TrapType type, int depth) : Trap(type, depth, 2, 0, 0)
 
         u.ObserveTrap(this);
 
-        using var ctx = PHContext.Create(Monster.DM, Target.From(unit));
+        using var ctx = PHContext.Create(DungeonMaster.AsLevel(lvl.EffectiveDepth), Target.From(unit));
         if (CheckReflex(ctx, DetectDC, "trap"))
         {
             g.YouObserveSelf(unit, $"You grab the edge of the {Name}!", $"{unit:The} grabs the edge of the {Name}!");

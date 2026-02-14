@@ -236,7 +236,10 @@ public class CastedShieldBuff() : MaintainedBuff("spell_l1")
   public override string? BuffName => "Shield";
 
   protected override object? OnQuery(Fact fact, string key, string? arg) =>
-    key == "ac" ? new Modifier(ModifierCategory.StatusBonus, Math.Clamp(((fact.Entity as IUnit)?.EffectiveLevel ?? 1) / 7, 1, 3), "shield spell") : null;
+    key == "ac" ? ShieldFormula(fact) : null;
+
+  internal static Modifier ShieldFormula(Fact fact) =>
+    new(ModifierCategory.StatusBonus, Math.Clamp(((fact.Entity as IUnit)?.EffectiveLevel ?? 1) / 7, 1, 3), "shield");
 }
 
 public class AcidBurnBuff : LogicBrick
@@ -257,7 +260,7 @@ public class AcidBurnBuff : LogicBrick
   protected override void OnRoundStart(Fact fact)
   {
     if (fact.Entity is not IUnit unit) return;
-    using var ctx = PHContext.Create(Monster.DM, Target.From(unit));
+    using var ctx = PHContext.Create(DungeonMaster.Mook, Target.From(unit));
     ctx.Damage.Add(AcidBurnDamage);
     g.YouObserve(unit, $"The acid on {unit:the} sizzles!");
     DoDamage(ctx);

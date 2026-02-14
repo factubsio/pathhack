@@ -13,18 +13,11 @@ public static class BasicLevel3Spells
 
         Draw.AnimateProjectile(c.Pos, center, new Glyph('*', ConsoleColor.Red));
 
-        List<Pos> tiles = [];
-        for (int dx = -2; dx <= 2; dx++)
-          for (int dy = -2; dy <= 2; dy++)
-          {
-            Pos p = center + new Pos(dx, dy);
-            if (lvl.InBounds(p) && p.ChebyshevDist(center) <= 2) tiles.Add(p);
-          }
-
-        Draw.AnimateFlash(tiles, new Glyph('≈', ConsoleColor.Red));
+        var area = lvl.CollectCircle(center, 2, andCenter: true);
+        Draw.AnimateFlash(area, new Glyph('≈', ConsoleColor.Red));
 
         int dc = c.GetSpellDC();
-        foreach (var pos in tiles)
+        foreach (var pos in area)
         {
           var victim = lvl.UnitAt(pos);
           if (victim.IsNullOrDead() || victim == c) continue;
