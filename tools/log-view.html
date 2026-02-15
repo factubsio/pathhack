@@ -23,6 +23,12 @@ body { background: #1a1a2e; color: #ccc; font-family: 'Consolas', 'Monaco', mono
 .panel td { color: #ccc; }
 .log-line { white-space: nowrap; }
 .log-line .round { color: #555; margin-right: 8px; }
+.tip { position: relative; display: inline; }
+.tip .tooltiptext { display: none; background: #1a1a1a; color: #ccc; padding: 6px 10px; border-radius: 4px; border: 1px solid #555; white-space: pre; width: max-content; max-width: 30em; position: absolute; z-index: 10; top: 1.4em; left: 0; font-size: 13px; line-height: 1.5; pointer-events: none; }
+.tip:hover .tooltiptext { display: block; }
+.mvm { color: rgba(204, 204, 204, 0.4); }
+.mvm .tooltiptext { color: #ccc; }
+.mvm-hidden .mvm { display: none; }
 .log-current { background: #0f3460; }
 #window-label { color: #e94560; font-weight: bold; }
 </style>
@@ -31,12 +37,15 @@ body { background: #1a1a2e; color: #ccc; font-family: 'Consolas', 'Monaco', mono
 <div id="chart-container"></div>
 <div id="controls">
   <label>Window: <input type="number" id="window-size" value="200" min="10" max="2000" step="10"></label>
+  <button id="window-max" style="background:#0f3460;color:#ccc;border:1px solid #444;padding:2px 8px;cursor:pointer">All</button>
+  <button id="toggle-mvm" style="background:#0f3460;color:#ccc;border:1px solid #444;padding:2px 8px;cursor:pointer">MvM</button>
   <span id="window-label"></span>
 </div>
 <div id="panels">
   <div class="panel" id="panel-events"><h3>Events</h3><div id="events-content"></div></div>
   <div class="panel" id="panel-attacks"><h3>Player Attacks</h3><div id="attacks-content"></div></div>
   <div class="panel" id="panel-saves"><h3>Saves</h3><div id="saves-content"></div></div>
+  <div class="panel" id="panel-buffs"><h3>Buffs</h3><div id="buffs-content"></div></div>
   <div class="panel" id="panel-ttk"><h3>TTK (attack rolls to kill)</h3><div id="ttk-content"></div></div>
 </div>
 <script type="module" src="app.js"></script>
@@ -45,7 +54,10 @@ body { background: #1a1a2e; color: #ccc; font-family: 'Consolas', 'Monaco', mono
   let ws;
   function connect() {
     ws = new WebSocket("ws://" + location.host + "/ws");
-    ws.onmessage = () => location.reload();
+    ws.onmessage = (e) => {
+      if (e.data === "reload") location.reload();
+      else if (e.data === "data") document.dispatchEvent(new Event("log-refresh"));
+    };
     ws.onclose = () => setTimeout(connect, 1000);
   }
   connect();

@@ -417,8 +417,8 @@ public class Monster : Unit<MonsterDef>, IFormattable
         if (!CanSee(this, other)) continue;
         _hatedTargets.Add((other, other.Pos));
       }
-      // player is also a valid target
-      if (TargetPos != null)
+      // player is also a valid target, when we don't like him
+      if (TargetPos != null && !Peaceful)
         _hatedTargets.Add((u, upos));
 
       Log.Verbose("ai", $"[AI] {this}: {_hatedTargets.Count} targets, goal={goal}");

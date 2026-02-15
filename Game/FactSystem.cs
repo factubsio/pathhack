@@ -85,6 +85,7 @@ public class Fact(IEntity entity, LogicBrick brick, object? data)
         Log.Write($"removing fact {Brick} (already? {MarkedForRemoval})");
         if (MarkedForRemoval) return;
         MarkedForRemoval = true;
+        if (Entity is not Item) Log.Structured("buff", $"{Entity:unit}{Brick.Id:name}{"remove":action}");
         LogicBrick.FireOnFactRemoved(Brick, this);
         if (Brick.IsActive)
             Entity.DecrementActiveFact();
@@ -441,7 +442,7 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
             if (duration.HasValue)
                 fact.ExpiresAt = g.CurrentRound + duration.Value;
             Facts.Add(fact);
-            if (this is not Item) Log.Write($"add fact {fact.Brick} => {this}");
+            if (this is not Item) Log.Structured("buff", $"{this:unit}{brick.Id:name}{"add":action}{duration:duration}{fact.Stacks:stacks}");
             if (brick.IsActive)
             {
                 if (ActiveFactCount++ == 0 && this is not IUnit)
@@ -936,7 +937,7 @@ public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) :
 
     public Item GetWieldedItem()
     {
-        if (Equipped.TryGetValue(ItemSlots.HandSlot, out var item) && item.Def is WeaponDef)
+        if (Equipped.TryGetValue(ItemSlots.MainHandSlot, out var item) && item.Def is WeaponDef)
             return item;
         return _unarmedItem ??= new(GetUnarmedDef());
     }

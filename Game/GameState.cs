@@ -320,7 +320,7 @@ public class GameState
             string key = check.Key ?? label;
             int adv = check.Advantage;
             int dis = check.Disadvantage;
-            Log.Structured("check", $"{key:key}{check.DC:dc}{check.Roll:roll}{check.BaseRoll:base_roll}{check.Modifiers:mods}{check.Result:result}{adv:advantage}{dis:disadvantage}{check.Tag:tag}");
+            Log.Structured("check", $"{key:key}{check.DC:dc}{check.Roll:roll}{check.BaseRoll:base_roll}{check.Modifiers:mods}{check.Result:result}{adv:advantage}{dis:disadvantage}{check.Tag:tag}{ctx.Source:source}{ctx.Target.Unit:target}");
         }
 
         return check.Result;
@@ -1173,7 +1173,7 @@ public class GameState
     {
         if (item == null)
         {
-            if (unit.Unequip(ItemSlots.HandSlot) == UnequipResult.Cursed)
+            if (unit.Unequip(ItemSlots.MainHandSlot) == UnequipResult.Cursed)
             {
                 if (unit.IsPlayer) WeldMsg(unit);
                 return EquipResult.Cursed;
@@ -1190,7 +1190,7 @@ public class GameState
                     if (existing.Def is WeaponDef)
                         WeldMsg(unit);
                     else
-                        g.pline(Grammar.IsPluralItem(existing) ? "You can't.  They are cursed." : "You can't.  It is cursed.");
+                        g.pline(IsPluralItem(existing) ? "You can't.  They are cursed." : "You can't.  It is cursed.");
                 }
                 return EquipResult.Cursed;
             }

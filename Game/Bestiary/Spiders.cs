@@ -128,7 +128,7 @@ public class SpiderVenom(int dc) : AfflictionBrick(dc, "poison")
         {
             int duration = (stage - 3) / 2;
             unit.AddFact(ParalyzedBuff.Instance.Timed(), duration);
-            g.pline($"{unit:The} {VTense(unit, "seize")} up!");
+            g.YouObserve(unit, $"{unit:The} {VTense(unit, "seize")} up!");
         }
     }
 
@@ -148,10 +148,12 @@ public class PhaseShift : LogicBrick
 
     protected override void OnBeforeDefendRoll(Fact fact, PHContext ctx)
     {
+        if (fact.Entity is not IUnit x) return;
+
         if (g.Rn2(100) < 50)
         {
             ctx.Check!.ForcedResult = false;
-            g.pline($"{fact.Entity:The} wasn't there!");
+            g.YouObserve(x, $"{x:The} wasn't there!");
         }
     }
 }

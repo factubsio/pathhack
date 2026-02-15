@@ -37,7 +37,7 @@ public class Beam(Pos start, Pos dir, bool canBounce = false, int maxRange = 12)
                 segmentStart = pos;
                 next = pos + d;
                 
-                Log.Write($"After bounce: pos={pos} d={d} next={next} passable={lvl.InBounds(next) && lvl[next].IsPassable}");
+                // Log.Write($"After bounce: pos={pos} d={d} next={next} passable={lvl.InBounds(next) && lvl[next].IsPassable}");
                 
                 if (!lvl.InBounds(next) || !lvl[next].IsPassable) yield break;
             }
@@ -66,7 +66,7 @@ public class Beam(Pos start, Pos dir, bool canBounce = false, int maxRange = 12)
         bool hClear = lvl.InBounds(hCheck) && lvl[hCheck].IsPassable;
         bool vClear = lvl.InBounds(vCheck) && lvl[vCheck].IsPassable;
         
-        Log.Write($"Bounce: lastPos={lastPos} wallPos={wallPos} dir={dir} hCheck={hCheck}({hClear}) vCheck={vCheck}({vClear})");
+        // Log.Write($"Bounce: lastPos={lastPos} wallPos={wallPos} dir={dir} hCheck={hCheck}({hClear}) vCheck={vCheck}({vClear})");
         
         // If X is clear, keep X (flip Y). If Y is clear, keep Y (flip X).
         if (hClear && !vClear) return flipY;

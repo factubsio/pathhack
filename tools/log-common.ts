@@ -10,7 +10,8 @@ export interface Equip { round: number; item: string; }
 export interface Cast { round: number; spell: string; targeting: string; }
 export interface Action { round: number; unit: string; action: string; spell: boolean; }
 export interface Use { round: number; action: string; item: string; type: string; }
-export interface GameEvent { round: number; text: string; }
+export interface GameEvent { round: number; text: string; tip?: string; cls?: string; }
+export interface Buff { round: number; unit: string; name: string; action: string; duration?: number; stacks?: number; }
 
 export interface TimeSeries { round: number; hp?: number; xp?: number; dl?: number; xl?: number; }
 
@@ -30,6 +31,7 @@ export interface LogData {
   uses: Use[];
   events: GameEvent[];
   timeSeries: TimeSeries[];
+  buffs: Buff[];
 }
 
 const structured = /^\[R(\d+)\] \[(\w+)\] (.+)$/;
@@ -49,11 +51,13 @@ export function parseLog(content: string): LogData {
   const casts: Cast[] = [];
   const actions: Action[] = [];
   const uses: Use[] = [];
+  const buffs: Buff[] = [];
   const events: GameEvent[] = [];
 
   // track player HP over time
   let hp: number | undefined;
   let xp = 0, dl = 0, xl = 0;
+  let lastRound = 0;
   const tsMap = new Map<number, TimeSeries>();
 
   function ts(round: number): TimeSeries {
@@ -67,28 +71,55 @@ export function parseLog(content: string): LogData {
     if (!m) continue;
     const [, roundStr, tag, json] = m;
     const round = parseInt(roundStr);
+    if (round > lastRound) lastRound = round;
     try {
       const d = JSON.parse(json);
       switch (tag) {
         case "attack":
           attacks.push({ round, attacker: d.attacker, defender: d.defender, weapon: d.weapon, roll: d.roll, base_roll: d.base_roll, ac: d.ac, hit: d.hit, damage: d.damage, hp_before: d.hp_before, hp_after: d.hp_after });
-          if (d.attacker === "you")
-            events.push({ round, text: d.hit ? `⚔️ You hit ${d.defender} for ${d.damage} (rolled ${d.roll}(${d.base_roll}) vs AC ${d.ac}, ${d.hp_before}→${d.hp_after})` : `⚔️ You miss ${d.defender} (rolled ${d.roll}(${d.base_roll}) vs AC ${d.ac})` });
+          {
+            const mods = (d.check_mods ?? []).map((m: any) => `${m.value >= 0 ? "+" : ""}${m.value} ${m.why || m.cat}`).join(", ");
+            const rolls = (d.rolls ?? []).map((r: any) => `${r.formula}=${r.rolled} ${r.type}${r.dr ? ` (DR ${r.dr})` : ""}`).join(", ");
+            const tip = `${d.weapon}\nBase roll: ${d.base_roll}\nMods: ${mods || "none"}\nTotal: ${d.roll} vs AC ${d.ac}` + (d.hit ? `\nDamage: ${rolls}` : "");
+            const isPlayer = d.attacker === "you" || d.defender === "you";
+            const atk = d.attacker === "you" ? "You" : d.attacker;
+            const def = d.defender === "you" ? "you" : d.defender;
+            const verb = atk === "You" ? (d.hit ? "hit" : "miss") : (d.hit ? "hits" : "misses");
+            const text = d.hit
+              ? `⚔️ ${atk} ${verb} ${def} for ${d.damage} (${d.roll}(${d.base_roll}) vs AC ${d.ac}, ${d.hp_before}→${d.hp_after})`
+              : `⚔️ ${atk} ${verb} ${def} (${d.roll}(${d.base_roll}) vs AC ${d.ac})`;
+            events.push({ round, tip, text, cls: isPlayer ? undefined : "mvm" });
+          }
           if (d.defender === "you" && d.hit) { hp = d.hp_after; ts(round).hp = hp; }
           break;
         case "check":
           checks.push({ round, key: d.key, dc: d.dc, roll: d.roll, base_roll: d.base_roll, result: d.result, tag: d.tag });
-          if (!d.result && d.key.endsWith("_save"))
-            events.push({ round, text: `❌ Failed ${d.tag} save (rolled ${d.base_roll}, needed ${d.dc - (d.roll - d.base_roll)}+)` });
+          if (d.key.endsWith("_save")) {
+            const icon = d.result ? "✅" : "❌";
+            const who = d.target === "you" ? "You" : (d.target ?? "?");
+            const vb = who === "You" ? (d.result ? "pass" : "fail") : (d.result ? "passes" : "fails");
+            const mods = (d.mods ?? []).map((m: any) => `${m.value >= 0 ? "+" : ""}${m.value} ${m.why || m.cat}`).join(", ");
+            const tip = `${d.key} DC ${d.dc}\nBase roll: ${d.base_roll}\nMods: ${mods || "none"}\nTotal: ${d.roll}`;
+            events.push({ round, tip, text: `${icon} ${who} ${vb} ${d.tag} save (rolled ${d.base_roll}, needed ${d.dc - (d.roll - d.base_roll)}+)` });
+          }
           break;
         case "damage":
           damages.push({ round, source: d.source, target: d.target, total: d.total, hp_before: d.hp_before, hp_after: d.hp_after });
+          const dmgTip = (d.rolls ?? []).map((r: any) => {
+            let s = `${r.formula}=${r.rolled} ${r.type}`;
+            if (r.dr) s += ` DR:${r.dr}`;
+            if (r.prot) s += ` Prot:${r.prot}`;
+            if (r.halved) s += ` (halved)`;
+            return s;
+          }).join("\n") + (d.saved ? "\nSaved" : "") + (d.temp_hp_absorbed ? `\nTemp HP absorbed: ${d.temp_hp_absorbed}` : "");
           if (d.target === "you") {
             hp = d.hp_after;
             ts(round).hp = hp;
-            events.push({ round, text: `💥 ${d.source} hits you for ${d.total} (${d.hp_before}→${d.hp_after})` });
-          } else if (d.total >= 15) {
-            events.push({ round, text: `💥 ${d.source} hits ${d.target} for ${d.total} (${d.hp_before}→${d.hp_after})` });
+            events.push({ round, tip: dmgTip, text: `💥 ${d.source === "you" ? "You take" : `${d.source} hits you for`} ${d.total} (${d.hp_before}→${d.hp_after})` });
+          } else {
+            const isPlayer = d.source === "you" || d.target === "you";
+            const src = d.source === "you" ? "You hit" : d.source + " hits";
+            events.push({ round, tip: dmgTip, cls: isPlayer ? undefined : "mvm", text: `💥 ${src} ${d.target} for ${d.total} (${d.hp_before}→${d.hp_after})` });
           }
           break;
         case "spawn":
@@ -137,13 +168,21 @@ export function parseLog(content: string): LogData {
           const typeIcons: Record<string, string> = { potion: "🧪", scroll: "📜", bottle: "🍾" };
           events.push({ round, text: `${actIcons[d.action] ?? "❓"}${typeIcons[d.type] ?? "📦"} ${d.action} ${d.item}` });
           break;
+        case "buff":
+          buffs.push({ round, unit: d.unit, name: d.name, action: d.action, duration: d.duration, stacks: d.stacks });
+          if (d.unit === "you") {
+            const icon = d.action === "add" ? "🟢" : "🔴";
+            const dur = d.duration ? ` (${d.duration}r)` : "";
+            events.push({ round, text: `${icon} ${d.action} ${d.name}${dur}` });
+          }
+          break;
       }
     } catch {}
   }
 
   // build sorted time series, forward-fill gaps
   const timeSeries: TimeSeries[] = [];
-  const maxRound = Math.max(...[...tsMap.keys()], 0);
+  const maxRound = lastRound;
   let lastHp = hp, lastXp = 0, lastDl = 0, lastXl = 0;
 
   // first pass: collect all rounds that have data
@@ -156,7 +195,11 @@ export function parseLog(content: string): LogData {
     timeSeries.push({ round, hp: lastHp, xp: lastXp, dl: lastDl, xl: lastXl });
   }
 
+  // ensure graph extends to current round
+  if (timeSeries.length === 0 || timeSeries[timeSeries.length - 1].round < maxRound)
+    timeSeries.push({ round: maxRound, hp: lastHp, xp: lastXp, dl: lastDl, xl: lastXl });
+
   events.sort((a, b) => a.round - b.round);
 
-  return { maxRound, attacks, checks, damages, spawns, deaths, levelups, exps, heals, equips, casts, actions, uses, events, timeSeries };
+  return { maxRound, attacks, checks, damages, spawns, deaths, levelups, exps, heals, equips, casts, actions, uses, events, timeSeries, buffs };
 }

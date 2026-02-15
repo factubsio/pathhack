@@ -510,47 +510,18 @@ public static class LevelGen
     {
         merged = [];
         var existing = ctx.Stamps[existingIdx];
-        
-        Rect? existingBounds = existing.Bounds;
-        if (existingBounds == null && existing.Tiles != null)
-        {
-            int minX = existing.Tiles.Min(p => p.X);
-            int minY = existing.Tiles.Min(p => p.Y);
-            int maxX = existing.Tiles.Max(p => p.X);
-            int maxY = existing.Tiles.Max(p => p.Y);
-            existingBounds = new Rect(minX, minY, maxX - minX + 1, maxY - minY + 1);
-        }
-        if (existingBounds == null) return false;
-        
-        var a = existingBounds.Value;
-        var b = newBounds;
-        
-        bool xAdj = a.X + a.W == b.X || b.X + b.W == a.X;
-        bool yAdj = a.Y + a.H == b.Y || b.Y + b.H == a.Y;
-        
-        int overlapMin, overlapMax;
-        
-        if (xAdj && !yAdj)
-        {
-            overlapMin = Math.Max(a.Y, b.Y);
-            overlapMax = Math.Min(a.Y + a.H - 1, b.Y + b.H - 1);
-            if (overlapMax - overlapMin < 2) return false;
-        }
-        else if (yAdj && !xAdj)
-        {
-            overlapMin = Math.Max(a.X, b.X);
-            overlapMax = Math.Min(a.X + a.W - 1, b.X + b.W - 1);
-            if (overlapMax - overlapMin < 2) return false;
-        }
-        else return false;
-        
-        if (existing.Tiles != null)
-            foreach (var p in existing.Tiles) merged.Add(p);
-        else
-            foreach (var p in a.All()) merged.Add(p);
-        
-        foreach (var p in b.All()) merged.Add(p);
-        
+        HashSet<Pos> existingTiles = existing.Tiles ?? [..existing.Bounds!.Value.All()];
+        HashSet<Pos> newBorder = [..newBounds.Border()];
+
+        int touching = 0;
+        foreach (var p in newBorder)
+            foreach (var dir in Pos.CardinalDirs)
+                if (existingTiles.Contains(p + dir)) { touching++; break; }
+
+        if (touching < 3) return false;
+
+        foreach (var p in existingTiles) merged.Add(p);
+        foreach (var p in newBounds.All()) merged.Add(p);
         return true;
     }
 

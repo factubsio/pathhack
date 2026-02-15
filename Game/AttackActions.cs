@@ -13,9 +13,11 @@ public class AttackWithWeapon() : ActionBrick("attack_with_weapon")
         int dist = unit.Pos.ChebyshevDist(target.Unit.Pos);
 
         // fast path: adjacent + wielding a weapon
-        var wielded = unit.Equipped.GetValueOrDefault(ItemSlots.HandSlot);
+        var wielded = unit.Equipped.GetValueOrDefault(ItemSlots.MainHandSlot);
         if (dist == 1 && wielded != null)
             return new(true, Plan: new Decision(Act.Melee));
+        
+        bool canSwapMelee = wielded == null || wielded.BUC != BUC.Cursed;
 
         // pre-check throw geometry
         bool canThrow = dist is >= 2 and <= 10
@@ -34,7 +36,7 @@ public class AttackWithWeapon() : ActionBrick("attack_with_weapon")
                 if (bestThrow == null || bestThrow == wielded)
                     bestThrow = item;
 
-            if (bestEquip == null || wep.BaseDamage.Average() > ((WeaponDef)bestEquip.Def).BaseDamage.Average())
+            if (canSwapMelee && (bestEquip == null || wep.BaseDamage.Average() > ((WeaponDef)bestEquip.Def).BaseDamage.Average()))
                 bestEquip = item;
         }
 
@@ -83,6 +85,8 @@ public class AttackWithWeapon() : ActionBrick("attack_with_weapon")
             }
 
             case Act.Equip:
+                unit.Unequip(ItemSlots.MainHandSlot);
+                unit.Unequip(ItemSlots.OffHandSlot);
                 unit.Equip(d.Item!);
                 break;
         }

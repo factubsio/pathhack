@@ -5,6 +5,7 @@ declare const uPlot: any;
 let data: LogData;
 let cursorRound = 0;
 let windowSize = 200;
+let plot: any = null;
 
 async function main() {
   data = await (await fetch("/data.json")).json();
@@ -16,8 +17,41 @@ async function main() {
     updatePanels();
   });
 
+  let savedWindowSize = 0;
+  const maxBtn = document.getElementById("window-max") as HTMLButtonElement;
+  maxBtn.addEventListener("click", () => {
+    if (savedWindowSize === 0) {
+      savedWindowSize = windowSize;
+      windowSize = data.maxRound;
+      maxBtn.textContent = "Win";
+    } else {
+      windowSize = savedWindowSize;
+      savedWindowSize = 0;
+      maxBtn.textContent = "All";
+    }
+    windowInput.value = String(windowSize);
+    document.getElementById("chart-container")!.innerHTML = "";
+    buildChart();
+    updatePanels();
+  });
+
+  const mvmBtn = document.getElementById("toggle-mvm") as HTMLButtonElement;
+  mvmBtn.addEventListener("click", () => {
+    const hidden = document.getElementById("panel-events")!.classList.toggle("mvm-hidden");
+    mvmBtn.style.opacity = hidden ? "0.4" : "1";
+  });
+
   buildChart();
   updatePanels();
+
+  document.addEventListener("log-refresh", async () => {
+    data = await (await fetch("/data.json")).json();
+    cursorRound = data.maxRound;
+    if (savedWindowSize !== 0) windowSize = data.maxRound;
+    document.getElementById("chart-container")!.innerHTML = "";
+    buildChart();
+    updatePanels();
+  });
 }
 
 function buildChart() {
@@ -40,10 +74,10 @@ function buildChart() {
     select: { show: false },
     scales: {
       x: { time: false },
-      hp: { auto: true, range: (u: any, min: number, max: number) => [0, max * 1.1] },
-      xp: { auto: true },
-      dl: { auto: true, range: (u: any, min: number, max: number) => [0, Math.max(max, 1)] },
-      xl: { auto: true, range: (u: any, min: number, max: number) => [0, Math.max(max, 1)] },
+      hp: { auto: false, range: [0, Math.max(...hp.filter((v): v is number => v != null)) * 1.1] },
+      xp: { auto: false, range: [0, Math.max(...xp.filter((v): v is number => v != null), 1)] },
+      dl: { auto: false, range: [0, Math.max(...dl.filter((v): v is number => v != null), 1)] },
+      xl: { auto: false, range: [0, Math.max(...xl.filter((v): v is number => v != null), 1)] },
     },
     axes: [
       { label: "Round", stroke: "#888", grid: { stroke: "#2a2a4a" } },
@@ -62,8 +96,8 @@ function buildChart() {
     hooks: {
       draw: [(u: any) => {
         const ctx = u.ctx;
-        const left = u.valToPos(cursorRound - windowSize, "x", true);
-        const right = u.valToPos(cursorRound, "x", true);
+        const left = Math.max(u.bbox.left, u.valToPos(cursorRound - windowSize, "x", true));
+        const right = Math.min(u.bbox.left + u.bbox.width, u.valToPos(cursorRound, "x", true));
         const top = u.bbox.top;
         const height = u.bbox.height;
 
@@ -94,7 +128,7 @@ function buildChart() {
   };
 
   const plotData = [rounds, hp, xp, dl, xl];
-  const plot = new uPlot(opts, plotData, container);
+  plot = new uPlot(opts, plotData, container);
 
   // click/drag to scrub cursor
   const over = plot.over;
@@ -104,14 +138,7 @@ function buildChart() {
     const rect = over.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const round = plot.posToVal(x, "x");
-    // snap to nearest data point
-    let best = 0;
-    let bestDist = Infinity;
-    for (let i = 0; i < rounds.length; i++) {
-      const dist = Math.abs(rounds[i] - round);
-      if (dist < bestDist) { bestDist = dist; best = i; }
-    }
-    cursorRound = rounds[best];
+    cursorRound = Math.max(0, Math.min(data.maxRound, Math.round(round)));
     plot.redraw();
     updatePanels();
   }
@@ -123,6 +150,22 @@ function buildChart() {
   // handle resize
   window.addEventListener("resize", () => {
     plot.setSize({ width: container.clientWidth - 24, height: 250 });
+  });
+
+  // WASD zoom/pan
+  window.addEventListener("keydown", (e: KeyboardEvent) => {
+    if (!plot) return;
+    const [xMin, xMax] = plot.scales.x.min != null ? [plot.scales.x.min, plot.scales.x.max] : [0, data.maxRound];
+    const span = xMax - xMin;
+    const step = Math.max(1, Math.round(span * 0.2));
+    switch (e.key) {
+      case "w": plot.setScale("x", { min: xMin + step, max: xMax - step }); break;
+      case "s": plot.setScale("x", { min: Math.max(0, xMin - step), max: xMax + step }); break;
+      case "a": plot.setScale("x", { min: Math.max(0, xMin - step), max: xMax - step }); break;
+      case "d": plot.setScale("x", { min: xMin + step, max: xMax + step }); break;
+      default: return;
+    }
+    e.preventDefault();
   });
 }
 
@@ -166,17 +209,20 @@ function updatePanels() {
   updateEvents();
   updateAttacks();
   updateSaves();
+  updateBuffs();
   updateTTK();
 }
 
 function updateEvents() {
   const el = document.getElementById("events-content")!;
   const filtered = data.events.filter(e => inWindow(e.round));
-  // show most recent at top
   const reversed = [...filtered].reverse();
-  el.innerHTML = reversed.map(e =>
-    `<div class="log-line"><span class="round">R${e.round}</span>${e.text}</div>`
-  ).join("");
+  el.innerHTML = reversed.map(e => {
+    const body = e.tip
+      ? `<span class="tip">${e.text}<span class="tooltiptext">${e.tip}</span></span>`
+      : e.text;
+    return `<div class="log-line${e.cls ? ` ${e.cls}` : ""}"><span class="round">R${e.round}</span>${body}</div>`;
+  }).join("");
 }
 
 function updateAttacks() {
@@ -222,6 +268,45 @@ function updateSaves() {
     }
     const avgBase = svs.reduce((s, c) => s + c.base_roll, 0) / svs.length;
     html += `<tr><td>${tag}</td><td>${svs.length}</td><td>${(passes.length / svs.length * 100).toFixed(1)}%</td><td>${(expected / svs.length * 100).toFixed(1)}%</td><td>${avgBase.toFixed(1)}</td></tr>`;
+  }
+  html += "</table>";
+  el.innerHTML = html;
+}
+
+function updateBuffs() {
+  const el = document.getElementById("buffs-content")!;
+
+  // names that ever get removed are "real" buffs; also anything with a duration
+  const transient = new Set<string>();
+  for (const b of data.buffs) {
+    if (b.unit !== "you") continue;
+    if (b.action === "remove" || (b.duration && b.duration !== "")) transient.add(b.name);
+  }
+
+  // compute active buffs at cursor round (not window-gated)
+  const active = new Map<string, { added: number; duration?: number; stacks: number }>();
+  for (const b of data.buffs) {
+    if (b.unit !== "you" || b.round > cursorRound) continue;
+    if (!transient.has(b.name)) continue;
+    if (b.action === "add") {
+      const existing = active.get(b.name);
+      if (existing) {
+        existing.stacks = b.stacks ?? existing.stacks + 1;
+        if (b.duration) existing.duration = b.duration;
+      } else {
+        active.set(b.name, { added: b.round, duration: b.duration, stacks: b.stacks ?? 1 });
+      }
+    } else {
+      active.delete(b.name);
+    }
+  }
+
+  if (active.size === 0) { el.innerHTML = "<em>No buffs</em>"; return; }
+
+  let html = "<table><tr><th>Buff</th><th>Since</th><th>Dur</th><th>Stk</th></tr>";
+  for (const [name, info] of active) {
+    const remaining = info.duration ? Math.max(0, info.duration - (cursorRound - info.added)) : "∞";
+    html += `<tr><td>${name}</td><td>R${info.added}</td><td>${remaining}</td><td>${info.stacks}</td></tr>`;
   }
   html += "</table>";
   el.innerHTML = html;

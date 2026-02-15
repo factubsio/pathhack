@@ -306,6 +306,7 @@ public class Activity
         if (g.Rn2(500) < u.HippoCounter)
         {
             SpawnHippos();
+            u.HippoCounter /= 3;
             return;
         }
 

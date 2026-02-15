@@ -1,13 +1,14 @@
-import { readFileSync, watch } from "fs";
+import { readFileSync, watch, watchFile } from "fs";
+import { resolve } from "path";
 import { parseLog } from "./log-common";
 
 const toolsDir = import.meta.dir;
-const rootDir = toolsDir + "/..";
+const rootDir = resolve(toolsDir, "..");
 const logFile = process.argv[2] ?? "game.log";
 
 const reloadSockets = new Set<any>();
 
-// watch tool files for changes
+// watch tool files for changes → full reload
 const watchFiles = ["log-view.ts", "log-view.html", "log-common.ts"];
 const watchSet = new Set(watchFiles);
 watch(toolsDir, (event, filename) => {
@@ -15,6 +16,18 @@ watch(toolsDir, (event, filename) => {
   console.log(`[reload] ${filename} changed, notifying ${reloadSockets.size} client(s)`);
   for (const ws of reloadSockets) ws.send("reload");
 });
+
+// watch log file for changes → data refresh (debounced)
+let dataTimer: ReturnType<typeof setTimeout> | null = null;
+const logPath = `${rootDir}/${logFile}`;
+watchFile(logPath, { interval: 500 }, () => {
+  if (dataTimer) return;
+  dataTimer = setTimeout(() => {
+    dataTimer = null;
+    for (const ws of reloadSockets) ws.send("data");
+  }, 500);
+});
+console.log(`[data-watch] watching ${logPath}`);
 
 Bun.serve({
   port: 3001,

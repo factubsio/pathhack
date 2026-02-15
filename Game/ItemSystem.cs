@@ -533,7 +533,8 @@ public static class ItemSlots
 
     public static readonly EquipSlot BodySlot = new(Body, "_");
     public static readonly EquipSlot FaceSlot = new(Face, "_");
-    public static readonly EquipSlot HandSlot = new(Hand, "_");
+    public static readonly EquipSlot MainHandSlot = new(Hand, "_");
+    public static readonly EquipSlot OffHandSlot = new(Hand, "off");
     public static readonly EquipSlot FeetSlot = new(Feet, "_");
     public static readonly EquipSlot HandsSlot = new(Hands, "_");
 }
