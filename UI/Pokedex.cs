@@ -221,7 +221,9 @@ public static class Pokedex
     {
         var def = item.Def;
         var menu = new Menu();
-        bool propsKnown = item.Knowledge.HasFlag(ItemKnowledge.Props);
+        bool runesKnown = item.Knowledge.HasFlag(ItemKnowledge.PropRunes);
+        bool qualityKnown = item.Knowledge.HasFlag(ItemKnowledge.PropQuality);
+        bool potencyKnown = item.Knowledge.HasFlag(ItemKnowledge.PropPotency);
 
         string equipped = item.Holder?.Equipped.ContainsValue(item) == true
             ? (def is ArmorDef ? " (being worn)" : " (weapon in hand)")
@@ -243,10 +245,13 @@ public static class Pokedex
             menu.Add($"{hands} {wpn.DamageType.SubCat} weapon.");
             menu.Add($"Base damage: {wpn.BaseDamage}");
 
-            if (propsKnown)
+            if (potencyKnown)
             {
                 menu.Add($"Potency: {item.Potency}");
-                
+            }
+
+            if (qualityKnown)
+            {
                 if (item.Fundamental?.Brick is RuneBrick fund)
                 {
                     if (fund.IsNull)
@@ -256,12 +261,21 @@ public static class Pokedex
                 }
                 else
                     menu.Add("Fundamental: [empty]");
-                
-                menu.Add($"Property slots: {item.PropertyRunes.Count}/{item.Potency}");
+            }
+
+            if (runesKnown)
+            {
+                if (potencyKnown)
+                    menu.Add($"Property slots: {item.PropertyRunes.Count}/{item.Potency}");
                 foreach (var rune in item.PropertyRunes)
                     menu.Add($"  - {((RuneBrick)rune.Brick).DisplayName}, {((RuneBrick)rune.Brick).Description}");
-                for (int i = item.PropertyRunes.Count; i < item.Potency; i++)
-                    menu.Add("  - [empty]");
+                if (potencyKnown)
+                    for (int i = item.PropertyRunes.Count; i < item.Potency; i++)
+                        menu.Add("  - [empty]");
+            }
+            else if (item.HasEnchantments)
+            {
+                menu.Add("Enchanted — properties unknown.", color: ConsoleColor.DarkYellow);
             }
         }
         else if (def is ArmorDef armor)
@@ -271,18 +285,15 @@ public static class Pokedex
             menu.Add($"Proficiency: {prof} ({armor.Proficiency})", color: profColor);
             menu.Add($"Armor. AC bonus: {armor.ACBonus}");
 
-            if (propsKnown)
-            {
-                if (armor.DexCap < 99)
-                    menu.Add($"Dex cap: {armor.DexCap}");
-            }
+            if (armor.DexCap < 99)
+                menu.Add($"Dex cap: {armor.DexCap}");
         }
 
         menu.Add("");
         menu.Add($"Weighs {def.Weight}. Made of {item.Material}.");
 
         // Description: only show when identified
-        if (!propsKnown)
+        if (!runesKnown && item.HasEnchantments)
         {
             menu.Add("Properties not identified.", color: ConsoleColor.DarkYellow);
         }

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>pathhack log viewer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uplot@1.6.32/dist/uPlot.min.css">
+<script src="https://cdn.jsdelivr.net/npm/uplot@1.6.32/dist/uPlot.iife.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { overscroll-behavior: none; overflow: hidden; height: 100%; }
+body { background: #1a1a2e; color: #ccc; font-family: 'Consolas', 'Monaco', monospace; font-size: 13px; }
+#chart-container { padding: 12px; border-bottom: 1px solid #333; }
+#controls { padding: 8px 12px; display: flex; gap: 12px; align-items: center; border-bottom: 1px solid #333; background: #16213e; }
+#controls label { color: #888; }
+#controls input[type=number] { width: 60px; background: #0f3460; color: #ccc; border: 1px solid #444; padding: 2px 6px; }
+#panels { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #333; }
+.panel { background: #1a1a2e; padding: 10px; min-height: 200px; max-height: 400px; overflow-y: auto; }
+.panel h3 { color: #e94560; margin-bottom: 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+.panel table { width: 100%; border-collapse: collapse; }
+.panel th, .panel td { padding: 2px 6px; text-align: right; border-bottom: 1px solid #222; }
+.panel th { color: #888; font-weight: normal; }
+.panel td { color: #ccc; }
+.log-line { white-space: nowrap; }
+.log-line .round { color: #555; margin-right: 8px; }
+.log-current { background: #0f3460; }
+#window-label { color: #e94560; font-weight: bold; }
+</style>
+</head>
+<body>
+<div id="chart-container"></div>
+<div id="controls">
+  <label>Window: <input type="number" id="window-size" value="200" min="10" max="2000" step="10"></label>
+  <span id="window-label"></span>
+</div>
+<div id="panels">
+  <div class="panel" id="panel-events"><h3>Events</h3><div id="events-content"></div></div>
+  <div class="panel" id="panel-attacks"><h3>Player Attacks</h3><div id="attacks-content"></div></div>
+  <div class="panel" id="panel-saves"><h3>Saves</h3><div id="saves-content"></div></div>
+  <div class="panel" id="panel-ttk"><h3>TTK (attack rolls to kill)</h3><div id="ttk-content"></div></div>
+</div>
+<script type="module" src="app.js"></script>
+<script>
+(function() {
+  let ws;
+  function connect() {
+    ws = new WebSocket("ws://" + location.host + "/ws");
+    ws.onmessage = () => location.reload();
+    ws.onclose = () => setTimeout(connect, 1000);
+  }
+  connect();
+})();
+</script>
+</body>
+</html>

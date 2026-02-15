@@ -163,7 +163,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
 
   public override bool IsDM => false;
 
-  public override int NaturalRegen => 5;
+  public override int NaturalRegen => 3 + EffectiveLevel;
   public override int StrMod => Def.StrMod;
 
   // These are copied from def by default but we modify them if we need (typically through the template)
@@ -310,7 +310,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
 
   public override string ToString() => RealName;
 
-  public string ToString(string? format, IFormatProvider? provider) => format switch
+  public override string ToString(string? format, IFormatProvider? provider) => format switch
   {
     "the" => ProperName ?? (Def.IsUnique ? RealName : RealName.The()),
     "The" => ProperName ?? (Def.IsUnique ? RealName : RealName.The().Capitalize()),

@@ -1,25 +1,38 @@
+using System.Runtime.InteropServices;
+
 namespace Pathhack.Game;
 
-/// <summary>
-/// The Dungeon Master — a sourceless IUnit used as the origin for environmental effects,
-/// traps, bottles, and anything else that isn't cast by a real unit.
-/// Has infinite charge pools so spells execute without consuming resources.
-/// </summary>
-public class DungeonMaster : Entity<BaseDef>, IUnit
+public class DungeonMaster : Entity<BaseDef>, IUnit, IFormattable
 {
-    public static DungeonMaster WithDC(int dc) => new(dc);
     // intentional clamp to 30 to allow bosses and shit
     public static int DCForLevel(int level) => 12 + (Math.Clamp(level, 1, 30) + 1) / 2;
-    public static DungeonMaster AsLevel(int level) => new(DCForLevel(level));
 
-    readonly int _dc;
-    internal static readonly DungeonMaster Mook = AsLevel(1);
+    public static DungeonMaster WithDC(int dc) => new() { _dc = dc };
+    public static DungeonMaster AsLevel(int level) => WithDC(DCForLevel(level));
+    public static DungeonMaster Mook => AsLevel(1);
 
-    DungeonMaster(int dc = 15) : base(new BaseDef { id = "dm" }, [])
+    public static DungeonMaster As(IUnit unit, int dc = 0)
     {
-        _dc = dc;
+        return new()
+        {
+            represents = unit,
+            Pos = unit.Pos,
+            _dc = unit.GetSpellDC() + dc,
+        };
     }
 
+    public IUnit At(Pos pos)
+    {
+        Pos = pos;
+        return this;
+    }
+
+    private DungeonMaster() : base(new BaseDef { id = "dm" }, []) { }
+
+    private int _dc = 15;
+    private IUnit? represents;
+
+    // IUnit impl
     public bool IsPlayer => false;
     public bool IsDead { get; set; }
     public bool IsDM => true;
@@ -53,10 +66,10 @@ public class DungeonMaster : Entity<BaseDef>, IUnit
     public int LastDamagedOnTurn { get; set; }
 
     public bool IsCreature(string? type = null, string? subtype = null) => false;
-    public int GetAC() => 0;
-    public int GetAttackBonus(WeaponDef weapon) => 0;
-    public int GetSpellAttackBonus(SpellBrickBase spell) => 0;
-    public int GetDamageBonus() => 0;
+    public int GetAC() => 100;
+    public int GetAttackBonus(WeaponDef weapon) => represents?.GetAttackBonus(weapon) ?? 0;
+    public int GetSpellAttackBonus(SpellBrickBase spell) => represents?.GetSpellAttackBonus(spell) ?? 0;
+    public int GetDamageBonus() => represents?.GetDamageBonus() ?? 0;
     public int GetSpellDC() => _dc;
     public Item GetWieldedItem() => new(NaturalWeapons.Fist);
 
@@ -87,11 +100,8 @@ public class DungeonMaster : Entity<BaseDef>, IUnit
     IEnumerable<Fact> IEntity.GetOwnFacts() => [];
     IEnumerable<Fact> IUnit.Facts => [];
 
-    public override string ToString() => "the dungeon";
+    public override string ToString() => represents?.ToString() ?? "the dungeon";
 
-    internal IUnit At(Pos pos)
-    {
-        Pos = pos;
-        return this;
-    }
+    public string ToString(string? format, IFormatProvider? provider) => represents?.ToString(format, provider) ?? "the dungeon";
+
 }

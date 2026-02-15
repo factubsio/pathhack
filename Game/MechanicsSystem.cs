@@ -48,6 +48,10 @@ public sealed class PHContext : IDisposable
 
     public bool IsCheckingOwnerOf(Fact fact) => fact.Entity == Target.Unit;
 
+    public CheckResult CheckDegree => Check!.DegreeOfSuccess;
+    public bool IsCritSuccess => CheckDegree.Degree == Degree.CriticalSuccess;
+    public bool IsCritFail => CheckDegree.Degree == Degree.CriticalFail;
+
     public static PHContext? Current { get; private set; }
 
     public void Dispose() => Current = Parent;
@@ -200,6 +204,14 @@ public enum Degree
     CriticalFail,
 }
 
+public readonly struct CheckResult(Degree degree)
+{
+    public Degree Degree => degree;
+    public bool Passed => degree is Degree.Success or Degree.CriticalSuccess;
+    public bool IsCrit => degree is Degree.CriticalSuccess or Degree.CriticalFail;
+    public static implicit operator bool(CheckResult r) => r.Passed;
+}
+
 public class Check
 {
     public int Roll;
@@ -219,6 +231,23 @@ public class Check
     public void ForceFailure() => ForcedResult = false;
 
     public bool Result => ForcedResult ?? (Roll >= DC);
+
+    public CheckResult DegreeOfSuccess
+    {
+        get
+        {
+            if (ForcedResult == true) return new(Degree.Success);
+            if (ForcedResult == false) return new(Degree.Fail);
+            int delta = Roll - DC;
+            return new(delta switch
+            {
+                >= 10 => Degree.CriticalSuccess,
+                >= 0 => Degree.Success,
+                >= -10 => Degree.Fail,
+                _ => Degree.CriticalFail,
+            });
+        }
+    }
 
     public bool IsSave => Key == Fort || Key == Reflex || Key == Will;
 

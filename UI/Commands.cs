@@ -511,7 +511,9 @@ public static partial class Input
 
         var potion = picked[0];
         
+        string useType = potion.Def is BottleDef ? "bottle" : "potion";
         g.pline($"You drink {potion.SingleName.An()}.");
+        Log.Structured("use", $"{"quaff":action}{potion.Def.Name:item}{useType:type}");
         if (potion.Def is BottleDef bottle)
             Bottles.DoEffect(bottle, u, upos);
         else
@@ -646,6 +648,7 @@ public static partial class Input
             ? "As you pronounce the formula on it, the scroll disappears."
             : "As you read the scroll, it disappears.");
         u.Inventory.Consume(scroll);
+        Log.Structured("use", $"{"read":action}{def.Name:item}{"scroll":type}");
         Scrolls.DoEffect(def, u, PickItemToIdentify, scroll.BUC);
 
         u.Energy -= ActionCosts.OneAction.Value;

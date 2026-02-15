@@ -54,7 +54,7 @@ public static class Wands
 
     public static void DoEffect(WandDef def, IUnit user, Pos dir)
     {
-        def.Spell.Execute(DungeonMaster.AsLevel(user.EffectiveLevel - 4).At(user.Pos), null, Target.From(dir));
+        def.Spell.Execute(DungeonMaster.As(user, -4), null, Target.From(dir));
         def.SetKnown();
     }
 }

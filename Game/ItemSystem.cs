@@ -3,7 +3,7 @@ namespace Pathhack.Game;
 public enum BUC { Cursed = -1, Uncursed = 0, Blessed = 1 }
 
 [Flags]
-public enum ItemKnowledge { None = 0, Seen = 1, Props = 2, BUC = 4 }
+public enum ItemKnowledge { None = 0, Seen = 1, BUC = 4, PropRunes = 8, PropQuality = 16, PropPotency = 32, Props = PropRunes | PropQuality | PropPotency }
 
 public enum AppearanceCategory { Potion, Scroll, Amulet, Boots, Gloves, Cloak, Ring, Bottle, Wand }
 
@@ -287,6 +287,7 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
     public int PropertySlots => Potency;
     public int EmptyPropertySlots => Potency - PropertyRunes.Count;
     public bool HasEmptyPropertySlot => PropertyRunes.Count < Potency;
+    public bool HasEnchantments => Potency > 0 || PropertyRunes.Any(r => r.Brick is RuneBrick { IsNull: false });
 
     public int UnitPrice;
     public bool Unpaid;
@@ -334,7 +335,9 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
             return $"{CorpseOf.Name} corpse";
 
         var seen = Knowledge.HasFlag(ItemKnowledge.Seen);
-        var propsKnown = Knowledge.HasFlag(ItemKnowledge.Props);
+        var runesKnown = Knowledge.HasFlag(ItemKnowledge.PropRunes);
+        var qualityKnown = Knowledge.HasFlag(ItemKnowledge.PropQuality);
+        var potencyKnown = Knowledge.HasFlag(ItemKnowledge.PropPotency);
 
         // Items with appearances (potions, scrolls, rings, etc.)
         if (ItemDb.Instance.GetAppearance(Def) is { } app)
@@ -374,28 +377,36 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
         if (bucKnown)
             parts.Add(BUC switch { BUC.Blessed => "blessed", BUC.Cursed => "cursed", _ => "uncursed" });
         
-        if (propsKnown)
+        if (potencyKnown)
         {
-            // Show potency for weapons (always) and armor (when > 0)
             if (Def is WeaponDef)
                 parts.Add($"+{Potency}");
             else if (Def is ArmorDef && Potency > 0)
                 parts.Add($"+{Potency}");
+        }
 
+        if (qualityKnown)
+        {
             if (Fundamental?.Brick is RuneBrick { IsNull: false } fb)
                 parts.Add($"{fb.DisplayName}/{fb.Quality}");
-            
-            // property runes: "flaming shock"
+        }
+
+        if (runesKnown)
+        {
             var props = PropertyRunes
                 .Select(r => (RuneBrick)r.Brick)
                 .Where(r => !r.IsNull);
             foreach (var r in props)
                 parts.Add(r.DisplayName);
         }
+        else if (HasEnchantments)
+        {
+            parts.Add("enchanted");
+        }
         
         parts.Add(count > 1 ? Def.Name.Plural() : Def.Name);
         
-        if (Def is WandDef && propsKnown)
+        if (Def is WandDef && potencyKnown)
             parts.Add($"({Charges})");
         
         return string.Join(" ", parts);

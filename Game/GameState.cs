@@ -546,7 +546,6 @@ public class GameState
                     unit.HP += 1;
                 regen -= 30;
             }
-
         }
 
         Perf.Start();
@@ -990,6 +989,11 @@ public class GameState
             if (hit != null) break;
         }
         Draw.AnimateProjectile(from ?? thrower.Pos, last, item.Glyph);
+        if (thrower.IsPlayer)
+        {
+            string throwType = item.Def switch { PotionDef => "potion", BottleDef => "bottle", ScrollDef => "scroll", _ => "item" };
+            Log.Structured("use", $"{"throw":action}{item.Def.Name:item}{throwType:type}");
+        }
 
         if (item.Def is BottleDef bottle)
         {
@@ -1034,9 +1038,22 @@ public class GameState
         {
             unit.Inventory.Add(item);
             Log.Structured("pickup", $"{item.Def.Name:item}");
+            if (unit.IsPlayer && item.HasEnchantments && !item.Knowledge.HasFlag(ItemKnowledge.PropRunes))
+                TryIdentifyProps(item);
         }
 
         return price;
+    }
+
+    static void TryIdentifyProps(Item item)
+    {
+        int dc = 12;
+        using var ctx = PHContext.Create(DungeonMaster.Mook, Target.From(u));
+        bool passed = CreateAndDoCheck(ctx, "perception", dc, "identify");
+        if (!passed) return;
+        item.Knowledge |= ItemKnowledge.PropRunes;
+        if (ctx.IsCritSuccess)
+            item.Knowledge |= ItemKnowledge.PropQuality;
     }
 
     const double XpMultiplier = 2.4;
@@ -1057,7 +1074,7 @@ public class GameState
         bool wasPending = Progression.HasPendingLevelUp(u);
         amount = (int)(amount * XpMultiplier);
         u.XP += amount;
-        Log.Structured("exp", $"{amount:amount}{u.XP:total}{u.CharacterLevel:xl}{lvl.Id.Depth:dl}{source ?? "?":src}");        if (!wasPending && Progression.HasPendingLevelUp(u))
+        Log.Structured("exp", $"{amount:amount}{u.XP:total}{u.CharacterLevel:xl}{lvl.EffectiveDepth:dl}{source ?? "?":src}");        if (!wasPending && Progression.HasPendingLevelUp(u))
             pline(LevelUpNags.Pick());
     }
 

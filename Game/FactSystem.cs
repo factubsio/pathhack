@@ -657,7 +657,7 @@ public static class UnitExts
     public static bool IsNullOrDead([NotNullWhen(false)] this IUnit? unit) => unit == null || unit.IsDead;
 }
 
-public interface IUnit : IEntity
+public interface IUnit : IEntity, IFormattable
 {
     bool IsPlayer { get; }
     bool IsDead { get; set; }
@@ -1012,6 +1012,7 @@ public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) :
         Log.Structured("unequip", $"{item.Def.Name:item}");
         return UnequipResult.Ok;
     }
+    public abstract string ToString(string? format, IFormatProvider? provider);
 }
 
 public class GrantAction(ActionBrick action) : LogicBrick

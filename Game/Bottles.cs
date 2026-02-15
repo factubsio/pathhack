@@ -52,17 +52,18 @@ public static class Bottles
 
     public static void DoEffect(BottleDef def, IUnit user, Pos pos)
     {
+        var dm = DungeonMaster.As(user, dc: -4);
         if (def.Spell.Targeting is TargetingType.Unit or TargetingType.None)
         {
             if (lvl.UnitAt(pos) is { } tgt)
             {
-                def.Spell.Execute(DungeonMaster.AsLevel(user.EffectiveLevel - 4), null, Target.From(tgt));
+                def.Spell.Execute(dm, null, Target.From(tgt));
                 def.SetKnown();
             }
         }
         else
         {
-            def.Spell.Execute(DungeonMaster.AsLevel(user.EffectiveLevel - 4), null, Target.From(pos));
+            def.Spell.Execute(dm, null, Target.From(pos));
             def.SetKnown();
         }
     }

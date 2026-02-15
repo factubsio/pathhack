@@ -532,15 +532,15 @@ public static class LevelGen
         
         if (xAdj && !yAdj)
         {
-            overlapMin = Math.Max(a.Y + 1, b.Y + 1);
-            overlapMax = Math.Min(a.Y + a.H - 2, b.Y + b.H - 2);
-            if (overlapMax < overlapMin) return false;
+            overlapMin = Math.Max(a.Y, b.Y);
+            overlapMax = Math.Min(a.Y + a.H - 1, b.Y + b.H - 1);
+            if (overlapMax - overlapMin < 2) return false;
         }
         else if (yAdj && !xAdj)
         {
-            overlapMin = Math.Max(a.X + 1, b.X + 1);
-            overlapMax = Math.Min(a.X + a.W - 2, b.X + b.W - 2);
-            if (overlapMax < overlapMin) return false;
+            overlapMin = Math.Max(a.X, b.X);
+            overlapMax = Math.Min(a.X + a.W - 1, b.X + b.W - 1);
+            if (overlapMax - overlapMin < 2) return false;
         }
         else return false;
         

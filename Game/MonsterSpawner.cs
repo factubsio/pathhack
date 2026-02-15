@@ -73,16 +73,17 @@ public static class MonsterSpawner
         mon.IsAsleep = asleep;
         level.PlaceUnit(mon, pos.Value);
 
-        TrySpawnGroup(level, def, template, pos.Value, asleep);
+        TrySpawnGroup(level, mon, template, pos.Value, asleep);
         return true;
     }
 
-    public static void TrySpawnGroup(Level level, MonsterDef leader, MonsterTemplate? template, Pos origin, bool asleep)
+    public static void TrySpawnGroup(Level level, Monster initiator, MonsterTemplate? template, Pos origin, bool asleep)
     {
-        if (leader.GroupSize == GroupSize.None) return;
+        MonsterDef initDef = initiator.Def;
+        if (initDef.GroupSize == GroupSize.None) return;
 
         // dNH: SGROUP 50% chance, LGROUP 66% large / 33% small
-        bool isLarge = leader.GroupSize >= GroupSize.Large;
+        bool isLarge = initDef.GroupSize >= GroupSize.Large;
         int max;
         if (isLarge)
         {
@@ -104,9 +105,10 @@ public static class MonsterSpawner
             _ => count
         };
 
-        bool mixed = leader.GroupSize is GroupSize.SmallMixed or GroupSize.LargeMixed;
-        var familyCandidates = mixed && leader.Family != null
-            ? AllMonsters.All.Where(m => m.Family == leader.Family && Math.Abs(m.BaseLevel - leader.BaseLevel) <= 2).ToList()
+        bool mixed = initDef.GroupSize is GroupSize.SmallMixed or GroupSize.LargeMixed;
+        int levelSpread = Math.Clamp((int)Math.Round(initDef.BaseLevel / 4.0), 1, 3);
+        var familyCandidates = mixed && initDef.Family != null
+            ? AllMonsters.All.Where(m => m.Family == initDef.Family && Math.Abs(m.BaseLevel - initDef.BaseLevel) <= levelSpread).ToList()
             : null;
 
         for (int i = 0; i < count; i++)
@@ -114,7 +116,7 @@ public static class MonsterSpawner
             var adj = FindAdjacentEmpty(level, origin);
             if (adj == null) break;
 
-            var def = familyCandidates != null ? familyCandidates[g.Rn2(familyCandidates.Count)] : leader;
+            var def = familyCandidates != null ? familyCandidates[g.Rn2(familyCandidates.Count)] : initDef;
             var mon = Monster.Spawn(def, "group", template);
             mon.IsAsleep = asleep;
             level.PlaceUnit(mon, adj.Value);
