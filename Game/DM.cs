@@ -24,7 +24,7 @@ public class DungeonMaster : Entity<BaseDef>, IUnit
     public bool IsDead { get; set; }
     public bool IsDM => true;
     public string? ProperName { get; set; } = "DM";
-    public Hitpoints HP { get; set; } = new();
+    public Hitpoints HP { get; set; } = new() { BaseMax = 1000, Current = 1000, Max = 1000 };
     public Pos Pos { get; set; } = new(-100, -100);
     public int Energy { get; set; }
     public int Initiative { get; set; }
@@ -84,6 +84,7 @@ public class DungeonMaster : Entity<BaseDef>, IUnit
     public void TickTempHp() { }
 
     IEnumerable<Fact> IEntity.LiveFacts => [];
+    IEnumerable<Fact> IEntity.GetOwnFacts() => [];
     IEnumerable<Fact> IUnit.Facts => [];
 
     public override string ToString() => "the dungeon";

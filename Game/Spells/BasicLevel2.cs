@@ -137,7 +137,7 @@ public static class BasicLevel2Spells
             $"{c:The} vanishes!",
             "a pop of displaced air");
         lvl.MoveUnit(c, landing, free: true);
-      }, TargetingType.Pos, maxRange: 8);
+      }, TargetingType.Pos, maxRange: 4);
 }
 
 public class ResistEnergyBuff(string name, DamageType element) : MaintainedBuff("spell_l2")

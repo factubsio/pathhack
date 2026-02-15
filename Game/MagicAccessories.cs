@@ -78,12 +78,12 @@ public class FastHealingBuff : LogicBrick
     public static readonly FastHealingBuff Instance = new();
     public override string Id => "fast_healing";
     public override bool IsActive => true;
-    public override bool RequiresEquipped => true;
+    public override StackMode StackMode => StackMode.Stack;
 
     protected override void OnRoundStart(Fact fact)
     {
-        if (fact.Entity is Item { Holder: { } unit })
-            g.DoHeal(unit, unit, 1);
+        if (fact.Entity is not IUnit unit) return;
+        g.DoHeal(unit, unit, 1);
     }
 }
 
@@ -92,11 +92,11 @@ public class TeleportationCurseBuff : LogicBrick
     public static readonly TeleportationCurseBuff Instance = new();
     public override string Id => "teleport_curse";
     public override bool IsActive => true;
-    public override bool RequiresEquipped => true;
+    public override StackMode StackMode => StackMode.Stack;
 
     protected override void OnRoundStart(Fact fact)
     {
-        if (fact.Entity is not Item { Holder: { } unit }) return;
+        if (fact.Entity is not IUnit unit) return;
         if (g.Rn2(50) != 0) return;
 
         var dest = lvl.FindLocation(p => lvl[p].IsPassable && lvl.NoUnit(p));
@@ -151,11 +151,11 @@ public class FumbleBuff : LogicBrick
     public static readonly FumbleBuff Instance = new();
     public override string Id => "fumble";
     public override bool IsActive => true;
-    public override bool RequiresEquipped => true;
+    public override StackMode StackMode => StackMode.Stack;
 
     protected override void OnRoundStart(Fact fact)
     {
-        if (fact.Entity is not Item { Holder: { } unit }) return;
+        if (fact.Entity is not IUnit unit) return;
         if (g.Rn2(10) != 0) return;
         g.YouObserveSelf(unit, "You stumble!", $"{unit:The} stumbles!");
         unit.Energy -= unit.LandMove.Value;
@@ -372,7 +372,7 @@ public static class MagicAccessories
         DefaultEquipSlot = ItemSlots.Ring,
         AppearanceCategory = AppearanceCategory.Ring,
         PokedexDescription = "A simple band that wards the wearer from harm.",
-        Components = [PotencyACBuff.Instance.WhenEquipped()],
+        Components = [PotencyACBuff.Instance],
         Price = 200,
         CanHavePotency = true,
     };
@@ -385,7 +385,7 @@ public static class MagicAccessories
         DefaultEquipSlot = ItemSlots.Ring,
         AppearanceCategory = AppearanceCategory.Ring,
         PokedexDescription = "The wearer can perceive creatures and objects that are invisible.",
-        Components = [new QueryBrick("see_invisible", true).WhenEquipped()],
+        Components = [new QueryBrickWhenEquipped("see_invisible", true)],
         Price = 300,
     };
 
@@ -397,7 +397,7 @@ public static class MagicAccessories
         DefaultEquipSlot = ItemSlots.Ring,
         AppearanceCategory = AppearanceCategory.Ring,
         PokedexDescription = "Muffles the wearer's presence, making it harder to wake sleeping creatures.",
-        Components = [new QueryBrick("stealth", true).WhenEquipped()],
+        Components = [new QueryBrickWhenEquipped("stealth", true)],
         Price = 200,
     };
 
@@ -409,7 +409,7 @@ public static class MagicAccessories
         DefaultEquipSlot = ItemSlots.Ring,
         AppearanceCategory = AppearanceCategory.Ring,
         PokedexDescription = "Warm to the touch. Protects the wearer from fire.",
-        Components = [PotencyEnergyResist.Fire.WhenEquipped()],
+        Components = [PotencyEnergyResist.Fire, new IdentifyOnEquip("The ring feels cool!")],
         Price = 300,
         CanHavePotency = true,
     };
@@ -422,7 +422,7 @@ public static class MagicAccessories
         DefaultEquipSlot = ItemSlots.Ring,
         AppearanceCategory = AppearanceCategory.Ring,
         PokedexDescription = "Cool to the touch. Protects the wearer from cold.",
-        Components = [PotencyEnergyResist.Cold.WhenEquipped()],
+        Components = [PotencyEnergyResist.Cold, new IdentifyOnEquip("The ring feels warm!")],
         Price = 300,
         CanHavePotency = true,
     };
@@ -435,7 +435,7 @@ public static class MagicAccessories
         DefaultEquipSlot = ItemSlots.Ring,
         AppearanceCategory = AppearanceCategory.Ring,
         PokedexDescription = "Tingles faintly. Protects the wearer from electricity.",
-        Components = [PotencyEnergyResist.Shock.WhenEquipped()],
+        Components = [PotencyEnergyResist.Shock, new IdentifyOnEquip("Your finger feels numb!")],
         Price = 300,
         CanHavePotency = true,
     };
@@ -448,7 +448,7 @@ public static class MagicAccessories
         DefaultEquipSlot = ItemSlots.Ring,
         AppearanceCategory = AppearanceCategory.Ring,
         PokedexDescription = "Slightly pitted on the surface. Protects the wearer from acid.",
-        Components = [PotencyEnergyResist.Acid.WhenEquipped()],
+        Components = [PotencyEnergyResist.Acid, new IdentifyOnEquip("The ring stings briefly!")],
         Price = 300,
         CanHavePotency = true,
     };
@@ -461,7 +461,7 @@ public static class MagicAccessories
         DefaultEquipSlot = ItemSlots.Ring,
         AppearanceCategory = AppearanceCategory.Ring,
         PokedexDescription = "The wearer cannot be paralyzed, slowed, or webbed.",
-        Components = [FreeActionBuff.Instance.WhenEquipped()],
+        Components = [FreeActionBuff.Instance],
         Price = 500,
     };
 
@@ -473,7 +473,7 @@ public static class MagicAccessories
         DefaultEquipSlot = ItemSlots.Ring,
         AppearanceCategory = AppearanceCategory.Ring,
         PokedexDescription = "Quickens the wearer's reactions.",
-        Components = [SaveAdvantageBuff.Reflex.WhenEquipped()],
+        Components = [SaveAdvantageBuff.Reflex],
         Price = 300,
     };
 
@@ -485,7 +485,7 @@ public static class MagicAccessories
         DefaultEquipSlot = ItemSlots.Ring,
         AppearanceCategory = AppearanceCategory.Ring,
         PokedexDescription = "Bolsters the wearer's constitution.",
-        Components = [SaveAdvantageBuff.Fortitude.WhenEquipped()],
+        Components = [SaveAdvantageBuff.Fortitude],
         Price = 300,
     };
 
@@ -497,7 +497,7 @@ public static class MagicAccessories
         DefaultEquipSlot = ItemSlots.Ring,
         AppearanceCategory = AppearanceCategory.Ring,
         PokedexDescription = "Steels the wearer's mind against intrusion.",
-        Components = [SaveAdvantageBuff.Will.WhenEquipped()],
+        Components = [SaveAdvantageBuff.Will],
         Price = 300,
     };
 
@@ -521,7 +521,7 @@ public static class MagicAccessories
         DefaultEquipSlot = ItemSlots.Ring,
         AppearanceCategory = AppearanceCategory.Ring,
         PokedexDescription = "Guides the wearer's hand in combat.",
-        Components = [PotencyAttackBuff.Instance.WhenEquipped()],
+        Components = [PotencyAttackBuff.Instance],
         Price = 300,
         CanHavePotency = true,
     };
@@ -534,7 +534,7 @@ public static class MagicAccessories
         DefaultEquipSlot = ItemSlots.Ring,
         AppearanceCategory = AppearanceCategory.Ring,
         PokedexDescription = "Allows the wearer to choose their destination when teleported.",
-        Components = [new QueryBrick("teleport_control", true).WhenEquipped()],
+        Components = [new QueryBrickWhenEquipped("teleport_control", true)],
         Price = 400,
     };
 
@@ -559,7 +559,7 @@ public static class MagicAccessories
         DefaultEquipSlot = ItemSlots.Ring,
         AppearanceCategory = AppearanceCategory.Ring,
         PokedexDescription = "Renders the wearer invisible. Attacking breaks the effect until unseen again.",
-        Components = [InvisibilityRingBuff.Instance.WhenEquipped()],
+        Components = [InvisibilityRingBuff.Instance, new IdentifyOnEquip("You vanish!")],
         Price = 500,
     };
 
@@ -571,7 +571,7 @@ public static class MagicAccessories
         DefaultEquipSlot = ItemSlots.Ring,
         AppearanceCategory = AppearanceCategory.Ring,
         PokedexDescription = "Monsters always know where the wearer is.",
-        Components = [new QueryBrick("aggravate_monster", true).WhenEquipped()],
+        Components = [new QueryBrickWhenEquipped("aggravate_monster", true)],
         Price = 50,
         BUCBias = -1,
     };
@@ -584,7 +584,7 @@ public static class MagicAccessories
         DefaultEquipSlot = ItemSlots.Ring,
         AppearanceCategory = AppearanceCategory.Ring,
         PokedexDescription = "The wearer feels constantly famished.",
-        Components = [new QueryBrick("hunger_rate", 2).WhenEquipped()],
+        Components = [new QueryBrickWhenEquipped("hunger_rate", 2)],
         Price = 50,
         BUCBias = -1,
     };
@@ -599,7 +599,7 @@ public static class MagicAccessories
         DefaultEquipSlot = ItemSlots.Feet,
         AppearanceCategory = AppearanceCategory.Boots,
         PokedexDescription = "The wearer moves with unnatural swiftness.",
-        Components = [BootsOfSpeedBuff.Instance.WhenEquipped()],
+        Components = [BootsOfSpeedBuff.Instance, new IdentifyOnEquip("You feel yourself speed up.")],
         Price = 400,
     };
 
@@ -611,7 +611,7 @@ public static class MagicAccessories
         DefaultEquipSlot = ItemSlots.Feet,
         AppearanceCategory = AppearanceCategory.Boots,
         PokedexDescription = "Soft-soled boots that muffle the wearer's footsteps.",
-        Components = [new QueryBrick("stealth", true).WhenEquipped()],
+        Components = [new QueryBrickWhenEquipped("stealth", true)],
         Price = 200,
     };
 
@@ -623,7 +623,7 @@ public static class MagicAccessories
         DefaultEquipSlot = ItemSlots.Feet,
         AppearanceCategory = AppearanceCategory.Boots,
         PokedexDescription = "Winged boots that grant the wearer flight.",
-        Components = [new QueryBrick(CreatureTags.Flying, true).WhenEquipped()],
+        Components = [new QueryBrickWhenEquipped(CreatureTags.Flying, true), new IdentifyOnEquip("You start to float in the air!")],
         Price = 500,
     };
 
@@ -652,7 +652,7 @@ public static class MagicAccessories
         DefaultEquipSlot = ItemSlots.Hands,
         AppearanceCategory = AppearanceCategory.Gloves,
         PokedexDescription = "Heavy gauntlets that grant the wearer tremendous striking power.",
-        Components = [PotencyStrBuff.Instance.WhenEquipped()],
+        Components = [PotencyStrBuff.Instance],
         Price = 400,
     };
 
@@ -664,7 +664,7 @@ public static class MagicAccessories
         DefaultEquipSlot = ItemSlots.Hands,
         AppearanceCategory = AppearanceCategory.Gloves,
         PokedexDescription = "Light gloves that sharpen the wearer's reflexes.",
-        Components = [PotencyDexBuff.Instance.WhenEquipped()],
+        Components = [PotencyDexBuff.Instance],
         Price = 300,
         CanHavePotency = true,
     };
@@ -689,7 +689,7 @@ public static class MagicAccessories
         DefaultEquipSlot = ItemSlots.Hands,
         AppearanceCategory = AppearanceCategory.Gloves,
         PokedexDescription = "The wearer can pluck projectiles from the air.",
-        Components = [MissileSnaring.Instance.WhenEquipped()],
+        Components = [MissileSnaring.Instance],
         Price = 400,
     };
 

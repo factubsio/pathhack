@@ -7,6 +7,7 @@ public class BrickStatsHook : LogicBrick
     public override string Id => "_brick_stats";
     public static readonly BrickStatsHook Instance = new();
     readonly ConcurrentDictionary<string, int> _counts = new();
+    public override bool IsActive => true;
 
     void Inc(string name) => _counts.AddOrUpdate(name, 1, (_, v) => v + 1);
 

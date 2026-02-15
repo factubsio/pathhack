@@ -97,6 +97,7 @@ public class RecklessAttackBuff : LogicBrick<DataFlag>
     public static readonly RecklessAttackBuff Instance = new();
     public override string Id => "reckless_attack";
     public override StackMode StackMode => StackMode.Stack;
+    public override bool IsActive => true;
 
     protected override void OnRoundEnd(Fact fact) => X(fact).On = false;
 

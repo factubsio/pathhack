@@ -212,8 +212,7 @@ public static partial class Input
             stage.Apply();
 
         u.CharacterLevel = newLevel;
-        Log.Write("exp: level up to {0} (xp={1})", newLevel, u.XP);
-        Log.Write($"exp: combat {u.HitsTaken} hits, {u.MissesTaken} misses, {u.DamageTaken} dmg taken");
+        Log.Structured("levelup", $"{newLevel:level}{u.XP:xp}{u.HitsTaken:hits}{u.MissesTaken:misses}{u.DamageTaken:dmg_taken}");
 
         // Apply hp gains (after level set!)
         int hpGain = u.Class!.HpPerLevel;
@@ -331,7 +330,7 @@ public static partial class Input
         }
         var picked = menu.Display(MenuMode.PickOne);
         if (picked.Count == 0) return;
-        Log.Write($"zapping spell: {picked[0]}, {picked[0].Targeting}");
+        Log.Structured("cast", $"{picked[0].Name:spell}{picked[0].Targeting.ToString():targeting}");
         ResolveTargetAndExecute(picked[0]);
     }
 
@@ -599,7 +598,7 @@ public static partial class Input
                 g.pline($"The list price of {item:the,noprice} is {price.Crests()}.");
                 item.UnitPrice = price;
             }
-            g.pline($"{item.InvLet} - {item}.");
+            g.pline($"{(item.Def.Class == '$' ? '$' : item.InvLet)} - {item}.");
         }
 
         u.Energy -= ActionCosts.OneAction.Value;

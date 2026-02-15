@@ -108,6 +108,7 @@ public record DragonAge(
 public class AlignmentPeaceful(EthicalAxis ethical, MoralAxis moral) : LogicBrick
 {
     public override string Id => $"dragon:peaceful+{ethical}/{moral}";
+    public override AbilityTags Tags => AbilityTags.Mental;
     protected override void OnSpawn(Fact fact, PHContext ctx)
     {
         if (ctx.Source is not Monster m) return;

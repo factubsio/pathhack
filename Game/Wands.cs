@@ -20,7 +20,7 @@ public static class Wands
     // Put the spell a box, a rod shaped box
     private static WandDef Crate(SpellBrickBase spell)
     {
-        if (spell.Targeting is TargetingType.Pos or TargetingType.Unit) throw new NotSupportedException("cannot create a non-directional/none wand");
+        if (spell.Targeting is TargetingType.Pos or TargetingType.Unit) throw new NotSupportedException("cannot create pos/unit wand");
 
         return new(spell)
         {
@@ -54,7 +54,7 @@ public static class Wands
 
     public static void DoEffect(WandDef def, IUnit user, Pos dir)
     {
-        def.Spell.Execute(DungeonMaster.AsLevel(user.EffectiveLevel - 4).At(upos), null, Target.From(dir));
+        def.Spell.Execute(DungeonMaster.AsLevel(user.EffectiveLevel - 4).At(user.Pos), null, Target.From(dir));
         def.SetKnown();
     }
 }

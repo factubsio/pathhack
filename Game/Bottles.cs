@@ -50,16 +50,15 @@ public static class Bottles
             All[i].AppearanceIndex = i;
     }
 
-    /// <summary>
-    /// Execute the bottle's spell at the given position.
-    /// Used for both quaff (pos = user's tile) and throw (pos = impact tile).
-    /// </summary>
     public static void DoEffect(BottleDef def, IUnit user, Pos pos)
     {
-        if ((def.Spell.Targeting is TargetingType.Unit or TargetingType.None) && lvl.UnitAt(pos) is { } tgt)
+        if (def.Spell.Targeting is TargetingType.Unit or TargetingType.None)
         {
-            def.Spell.Execute(DungeonMaster.AsLevel(user.EffectiveLevel - 4), null, Target.From(tgt));
-            def.SetKnown();
+            if (lvl.UnitAt(pos) is { } tgt)
+            {
+                def.Spell.Execute(DungeonMaster.AsLevel(user.EffectiveLevel - 4), null, Target.From(tgt));
+                def.SetKnown();
+            }
         }
         else
         {

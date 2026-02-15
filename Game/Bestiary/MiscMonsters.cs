@@ -2,19 +2,28 @@ namespace Pathhack.Game.Bestiary;
 
 public class Thorns(Dice damage, DamageType type) : LogicBrick
 {
-    public override string Id => "thorns";
+    public static readonly Thorns Piercing_1d2 = new(d(2), DamageTypes.Piercing);
+    public static readonly Thorns Fire_1d4 = new(d(4), DamageTypes.Fire);
+    public static readonly Thorns Cold_1d4 = new(d(4), DamageTypes.Cold);
+
+    public override string Id => $"thorns+{type.SubCat}/{damage.Serialize()}";
     public override string? PokedexDescription => $"Thorns ({damage} {type.SubCat} when hit)";
 
     protected override void OnDamageTaken(Fact fact, PHContext context)
     {
-        if (context.Source is not IUnit attacker) return;
+        if (context.Source is not IUnit attacker || attacker.IsDM) return;
         var defender = context.Target.Unit!;
 
         Target target = new(attacker, attacker.Pos);
         using var ctx = PHContext.Create(defender, target);
         ctx.Damage.Add(new() { Formula = damage, Type = type });
 
-        g.pline($"The thorns pierce you!");
+        g.YouObserve(attacker, type.SubCat switch
+        {
+            "fire" => $"{attacker:The} {VTense(attacker, "get")} burned!",
+            "cold" => $"{attacker:The} {VTense(attacker, "get")} frozen!",
+            _ => $"{attacker:The} {VTense(attacker, "get")} pierced by thorns!",
+        });
         DoDamage(ctx);
     }
 }
@@ -65,7 +74,7 @@ public static class MiscMonsters
         CreatureType = CreatureTypes.Plant,
         EthicalAxis = EthicalAxis.Neutral,
         Components = [
-            new Thorns(d(2), DamageTypes.Piercing),
+            Thorns.Piercing_1d2,
         ],
     };
 

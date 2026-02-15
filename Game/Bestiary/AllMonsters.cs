@@ -12,6 +12,7 @@ public static class AllMonsters
         .. Spiders.All,
         .. Dragons.All,
         .. Trolls.All,
+        .. Elementals.All,
     ];
 
     public static readonly MonsterDef[] ActuallyAll = [

@@ -210,6 +210,8 @@ public class Monster : Unit<MonsterDef>, IFormattable
     _trackIdx = (_trackIdx + 1) % _track.Length;
   }
 
+  public Pos PrevPos => _track[(_trackIdx - 1 + _track.Length) % _track.Length];
+
   bool WasRecentlyAt(Pos p) => _track.Any(x => x == p);
 
   public bool CanSeeYou => CanSee(this, u);
@@ -294,7 +296,15 @@ public class Monster : Unit<MonsterDef>, IFormattable
   public override int GetDamageBonus() => Def.DamageBonus + TemplateBonusLevels + DamageFudge;
   public override int GetSpellDC() => LevelDC;
   protected override WeaponDef GetUnarmedDef() => Def.Unarmed;
-  public override Glyph Glyph => OwnGlyph ?? Def.Glyph;
+  public override Glyph Glyph
+  {
+      get
+      {
+          var g = OwnGlyph ?? Def.Glyph;
+          if (Peaceful) g = g with { Background = ConsoleColor.DarkYellow };
+          return g;
+      }
+  }
 
   public string RealName => ProperName ?? TemplatedName ?? Def.Name;
 
@@ -318,6 +328,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
   {
     IEnumerable<LogicBrick> components = template?.GetComponents(def) ?? def.Components;
     if (!firstTimeSpawn) components = components.Where(c => !c.Tags.HasFlag(AbilityTags.FirstSpawnOnly));
+    Log.Muted = true;
     Monster m = new(def, components);
     m.Peaceful = def.Peaceful;
     m.TemplateBonusLevels = (template?.LevelBonus(def, m.EffectiveLevel) ?? 0) + depthBonus;
@@ -331,7 +342,10 @@ public class Monster : Unit<MonsterDef>, IFormattable
     LogicBrick.FireOnSpawn(m, ctx);
     if (g.DebugMode)
       m.HP.Current = m.HP.Current / 4;
-    Log.Write($"entity: {m.Id}: spawn {def.Name} L{m.EffectiveLevel} ({reason})");
+    Log.Muted = false;
+    string[] facts = m.LiveFacts.Select(f => f.Brick.Id).ToArray();
+    string[] equip = m.Equipped.Values.Select(i => i.ToString()).ToArray();
+    Log.Structured("spawn", $"{m.Id:id}{def.Name:name}{m.EffectiveLevel:level}{reason:reason}{facts:facts}{equip:equip}");
     return m;
   }
 
@@ -516,7 +530,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
     if (!plan) return false;
 
     bool isSpell = action is SpellBrickBase;
-    Log.Write($"{this} {(isSpell ? "casts" : "uses")} {action.Name}");
+    Log.Structured("action", $"{this:unit}{action.Name:action}{isSpell:spell}");
     if (isSpell) g.YouObserve(this, $"{this:The} casts {action.Name}!", SpellChants.Pick());
 
     action.Execute(this, data, target, plan.Plan);

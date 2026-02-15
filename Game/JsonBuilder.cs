@@ -21,6 +21,10 @@ public ref struct JsonBuilder
     public void AppendFormatted(double value, string? format = null) => Append(format, value.ToString());
     public void AppendFormatted(bool value, string? format = null) => Append(format, value ? "true" : "false");
     public void AppendFormatted(string? value, string? format = null) => Append(format, $"\"{Escape(value)}\"");
+    public void AppendFormatted(IEnumerable<string> values, string? format = null) =>
+        Append(format, $"[{string.Join(",", values.Select(v => $"\"{Escape(v)}\""))}]");
+    public void AppendFormatted(string[] values, string? format = null) =>
+        Append(format, $"[{string.Join(",", values.Select(v => $"\"{Escape(v)}\""))}]");
 
     // --- Domain types ---
     public void AppendFormatted(Modifiers mods, string? format = null)

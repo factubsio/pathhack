@@ -51,7 +51,7 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
         get
         {
             int cost = ActionCosts.StandardLandMove.Value - QueryModifiers("speed_bonus").Calculate();
-            double mult = Query<double>("speed_mult", null, MergeStrategy.Replace, 1.0);
+            double mult = Query("speed_mult", null, MergeStrategy.Replace, 1.0);
             return (int)(cost / mult);
         }
     }

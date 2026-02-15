@@ -11,7 +11,7 @@ public static class DummyThings
         Name = "blindfold",
         Glyph = new(ItemClasses.Amulet, ConsoleColor.DarkGray),
         DefaultEquipSlot = ItemSlots.Face,
-        Components = [ApplyWhenEquipped.For(BlindBuff.Instance)],
+        Components = [BlindBuff.Instance.WhenEquipped()],
         Price = 2,
     };
 

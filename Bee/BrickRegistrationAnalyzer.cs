@@ -13,6 +13,7 @@ public class BrickRegistrationAnalyzer : DiagnosticAnalyzer
 {
     public const string DiagnosticId = "BEE001";
     public const string RampDiagnosticId = "BEE002";
+    public const string RoundHookDiagnosticId = "BEE003";
 
     static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -30,7 +31,15 @@ public class BrickRegistrationAnalyzer : DiagnosticAnalyzer
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, RampRule);
+    static readonly DiagnosticDescriptor RoundHookRule = new(
+        RoundHookDiagnosticId,
+        "LogicBrick overrides OnRoundStart/OnRoundEnd without IsActive",
+        "'{0}' overrides {1} but does not override IsActive — round hooks only fire on active bricks",
+        "MasonryYard",
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, RampRule, RoundHookRule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -39,6 +48,7 @@ public class BrickRegistrationAnalyzer : DiagnosticAnalyzer
         context.RegisterSyntaxNodeAction(AnalyzeObjectCreation, SyntaxKind.ObjectCreationExpression);
         context.RegisterSyntaxNodeAction(AnalyzeImplicitCreation, SyntaxKind.ImplicitObjectCreationExpression);
         context.RegisterSyntaxNodeAction(AnalyzeFieldDeclaration, SyntaxKind.FieldDeclaration);
+        context.RegisterSyntaxNodeAction(AnalyzeClassForRoundHooks, SyntaxKind.ClassDeclaration);
     }
 
     void AnalyzeObjectCreation(SyntaxNodeAnalysisContext ctx)
@@ -107,5 +117,36 @@ public class BrickRegistrationAnalyzer : DiagnosticAnalyzer
             if (!symbol.Type.GetAttributes().Any(a => a.AttributeClass?.Name == "BrickInstancesAttribute")) continue;
             ctx.ReportDiagnostic(Diagnostic.Create(RampRule, variable.GetLocation(), symbol.Name));
         }
+    }
+
+    void AnalyzeClassForRoundHooks(SyntaxNodeAnalysisContext ctx)
+    {
+        var classDecl = (ClassDeclarationSyntax)ctx.Node;
+        var symbol = ctx.SemanticModel.GetDeclaredSymbol(classDecl);
+        if (symbol == null || !DerivesFrom(symbol, "LogicBrick")) return;
+
+        bool hasRoundHook = false;
+        string? hookName = null;
+        bool hasIsActive = false;
+
+        foreach (var member in classDecl.Members)
+        {
+            if (member is not MethodDeclarationSyntax method) continue;
+            if (!method.Modifiers.Any(SyntaxKind.OverrideKeyword)) continue;
+            var name = method.Identifier.Text;
+            if (name is "OnRoundStart" or "OnRoundEnd") { hasRoundHook = true; hookName = name; }
+        }
+
+        if (!hasRoundHook) return;
+
+        foreach (var member in classDecl.Members)
+        {
+            if (member is not PropertyDeclarationSyntax prop) continue;
+            if (prop.Modifiers.Any(SyntaxKind.OverrideKeyword) && prop.Identifier.Text == "IsActive")
+            { hasIsActive = true; break; }
+        }
+
+        if (!hasIsActive)
+            ctx.ReportDiagnostic(Diagnostic.Create(RoundHookRule, classDecl.Identifier.GetLocation(), symbol.Name, hookName));
     }
 }

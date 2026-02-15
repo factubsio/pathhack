@@ -636,11 +636,12 @@ public static class LevelGen
 
         // Shop: depth > 1, rn2(depth) < 4, one door only
         int depth = level.EffectiveDepth;
-        if (true) //depth > 1 && Rn2(depth) < 4)
+        if (depth > 1 && Rn2(depth) < 4)
         {
             var ordinary = level.Rooms.Where(r =>
                 r.Type == RoomType.Ordinary && 
                 !r.HasStairs &&
+                r.Interior.Count < 64 &&
                 r.Border.Count(p => level[p].Type == TileType.Door) == 1
             ).ToList();
             if (ordinary.Count > 0)
@@ -1089,8 +1090,10 @@ public static class LevelGen
                 if (!placedDoorA)
                 {
                     if (level[doorA].Type != TileType.Door && CanPlaceDoor(level, doorA))
+                    {
                         level.PlaceDoor(doorA, RollDoorState());
-                    placedDoorA = true;
+                        placedDoorA = true;
+                    }
                 }
             }
             else if (!t.IsPassable)

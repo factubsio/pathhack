@@ -188,8 +188,10 @@ public static class BasicLevel1Spells
       (c, t) =>
       {
         if (t.Unit is not IUnit target) return;
+        // TODO: check can_hear when deafness exists
         if (target.IsPlayer) { g.pline("It has no effect on you."); return; }
-        if (target.Has("mindless")) { g.pline($"{target:The} is mindless."); return; }
+        if (target.Has("mindless")) { g.YouObserve(target, $"{target:The} doesn't seem to react."); return; }
+        if (target.IsCreature(CreatureTypes.Undead)) { g.YouObserve(target, $"{target:The} is beyond mortal commands."); return; }
 
         g.YouObserve(c, $"{c:The} {VTense(c, "command")} {target:the} to flee!", "a commanding shout");
         using var ctx = PHContext.Create(c, t);

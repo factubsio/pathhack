@@ -263,6 +263,42 @@ public static class NaturalWeapons
         MeleeVerb = "swings",
         Price = -1,
     };
+
+    public static readonly WeaponDef Slam_1d4 = new()
+    {
+        id = "slam_1d4",
+        Name = "slam",
+        BaseDamage = d(4),
+        DamageType = DamageTypes.Blunt,
+        Profiency = Proficiencies.Unarmed,
+        Category = WeaponCategory.Natural,
+        MeleeVerb = "slams",
+        Price = -1,
+    };
+
+    public static readonly WeaponDef Slam_1d6 = new()
+    {
+        id = "slam_1d6",
+        Name = "slam",
+        BaseDamage = d(6),
+        DamageType = DamageTypes.Blunt,
+        Profiency = Proficiencies.Unarmed,
+        Category = WeaponCategory.Natural,
+        MeleeVerb = "slams",
+        Price = -1,
+    };
+
+    public static readonly WeaponDef Slam_2d6 = new()
+    {
+        id = "slam_2d6",
+        Name = "slam",
+        BaseDamage = d(2, 6),
+        DamageType = DamageTypes.Blunt,
+        Profiency = Proficiencies.Unarmed,
+        Category = WeaponCategory.Natural,
+        MeleeVerb = "slams",
+        Price = -1,
+    };
 }
 
 public class SayOnDeath(string message) : LogicBrick

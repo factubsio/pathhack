@@ -384,6 +384,17 @@ public class Level(LevelId id, int width, int height)
             }
 
         }
+        if (Config.AutoPickup && room?.Type != RoomType.Shop)
+        {
+            foreach (var item in items.ToList())
+            {
+                if (!Config.AutoPickupClasses.Contains(item.Def.Class)) continue;
+                g.DoPickup(u, item);
+                g.pline($"{(item.Def.Class == '$' ? '$' : item.InvLet)} - {item}.");
+            }
+            items = lvl.ItemsAt(upos); // refresh after pickup
+        }
+
         if (items.Count == 0) {}
         else if (items.Count == 1)
             g.pline($"You see here {items[0]:an}.");
@@ -446,7 +457,6 @@ public class Level(LevelId id, int width, int height)
             bool fromDoor = from.IsValid && IsDoor(from) && !IsDoorBroken(from);
             if ((t.Type == TileType.Door && !IsDoorBroken(to)) || fromDoor)
             {
-                Log.Write($"blocking movement: {from} -> {to}: fd:{fromDoor}, td:{t.Type == TileType.Door}");
                 return false;
             }
         }
@@ -633,6 +643,7 @@ public class Level(LevelId id, int width, int height)
 
     internal void CreateArea(Area area)
     {
+        // TODO: same-type areas can overlap — should only apply effects once per type per tile per round
         Areas.Add(area);
         foreach (var m in area.Tiles.Select(UnitAt))
         {

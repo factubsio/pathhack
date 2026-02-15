@@ -9,7 +9,7 @@ public static class CryptLevels
         Family = "undead",
         CreatureType = CreatureTypes.Undead,
         Glyph = new('Z', ConsoleColor.Magenta),
-        HpPerLevel = 10,
+        HpPerLevel = 8,
         AC = 2,
         AttackBonus = 1,
         DamageBonus = 1,

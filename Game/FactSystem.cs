@@ -33,6 +33,7 @@ public interface IEntity
     public uint Id { get; }
     public IEnumerable<Fact> LiveFacts { get; }
     public IEnumerable<Fact> GetAllFacts(PHContext? ctx);
+    public IEnumerable<Fact> GetOwnFacts();
     public void CleanupMarkedFacts();
     public Fact AddFact(LogicBrick brick, int? duration = null, int count = 1);
     public Fact? FindFact(LogicBrick brick);
@@ -189,8 +190,8 @@ public abstract class LogicBrick
     public static void FireOnBeforeSpellCast(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnBeforeSpellCast(f, c); b.OnBeforeSpellCast(f, c); }
 
     // IEntity overloads - fire on all facts via GetAllFacts (null-safe)
-    public static void FireOnRoundStart(IEntity? e) { if (e == null) return; foreach (var f in e.GetAllFacts(null)) FireOnRoundStart(f.Brick, f); }
-    public static void FireOnRoundEnd(IEntity? e) { if (e == null) return; foreach (var f in e.GetAllFacts(null)) FireOnRoundEnd(f.Brick, f); }
+    public static void FireOnRoundStart(IEntity? e) { if (e == null) return; foreach (var f in e.GetOwnFacts()) FireOnRoundStart(f.Brick, f); }
+    public static void FireOnRoundEnd(IEntity? e) { if (e == null) return; foreach (var f in e.GetOwnFacts()) FireOnRoundEnd(f.Brick, f); }
     public static void FireOnBeforeCheck(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnBeforeCheck(f.Brick, f, c); }
     public static void FireOnBeforeDamageRoll(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnBeforeDamageRoll(f.Brick, f, c); }
     public static void FireOnBeforeDamageIncomingRoll(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnBeforeDamageIncomingRoll(f.Brick, f, c); }
@@ -383,6 +384,12 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
 
     public virtual IEnumerable<Fact> GetAllFacts(PHContext? ctx) => LiveFacts;
 
+    public IEnumerable<Fact> GetOwnFacts()
+    {
+        for (int i = 0; i < FactCount; i++)
+            if (!FactAt(i).MarkedForRemoval) yield return FactAt(i);
+    }
+
     public void ShareFactsFrom(Entity<DefT> other)
     {
         foreach (var fact in other.LiveFacts)
@@ -434,7 +441,7 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
             if (duration.HasValue)
                 fact.ExpiresAt = g.CurrentRound + duration.Value;
             Facts.Add(fact);
-            Log.Write($"add fact {fact.Brick} => {this}");
+            if (this is not Item) Log.Write($"add fact {fact.Brick} => {this}");
             if (brick.IsActive)
             {
                 if (ActiveFactCount++ == 0 && this is not IUnit)
@@ -979,7 +986,7 @@ public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) :
 
         using var ctx = PHContext.Create(this, Target.None);
         LogicBrick.FireOnEquip(item, ctx);
-        Log.Write("equip: {0}", item.Def.Name);
+        Log.Structured("equip", $"{item.Def.Name:item}");
         return resultSlot;
     }
 
@@ -1002,7 +1009,7 @@ public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) :
 
         using var ctx = PHContext.Create(this, Target.None);
         LogicBrick.FireOnUnequip(item, ctx);
-        Log.Write("unequip: {0}", item.Def.Name);
+        Log.Structured("unequip", $"{item.Def.Name:item}");
         return UnequipResult.Ok;
     }
 }

@@ -90,8 +90,11 @@ public static class Log
     static StreamWriter? _writer;
     static StreamWriter Writer => _writer ??= new("game.log", append: false);
 
+    public static bool Muted;
+
     public static void Write(string msg)
     {
+        if (Muted) return;
         Writer.WriteLine($"[R{g.CurrentRound}] {msg}");
         Writer.Flush();
         PHMonitor.CaptureLog("general", msg);
@@ -112,10 +115,10 @@ public static class Log
 
     public static void Structured(string tag, [InterpolatedStringHandlerArgument] JsonBuilder builder)
     {
-        string human = builder.ToString();
-        Writer.WriteLine($"[R{g.CurrentRound}] [{tag}] {human}");
+        string json = builder.ToJson();
+        Writer.WriteLine($"[R{g.CurrentRound}] [{tag}] {json}");
         Writer.Flush();
-        PHMonitor.CaptureLog(tag, human, builder.ToJson());
+        PHMonitor.CaptureLog(tag, json, json);
     }
 }
 
@@ -266,14 +269,7 @@ public class GameState
     public int Rne(int n) => _rng.Rne(n);
     public void Shuffle<T>(Span<T> values) => _rng.Shuffle(values);
 
-    public static int DoRoll(DiceFormula dice, Modifiers mods, string label)
-    {
-        int baseRoll = dice.Roll();
-        int modValue = mods.Calculate();
-        int total = baseRoll + modValue;
-        Log.Write($"{label}: {dice}:{baseRoll} + {mods}:{modValue} = {total}");
-        return total;
-    }
+
 
     public static string FormatMods(Modifiers mods)
     {
@@ -321,12 +317,6 @@ public class GameState
 
         if (!ctx.SilentCheck)
         {
-            string pm = ctx.Target.Unit?.IsPlayer == true ? "P" : "M";
-            string result = check.Result ? "✓" : "✗";
-            string modStr = FormatMods(check.Modifiers);
-            string advStr = hasAdv ? " adv" : hasDis ? " dis" : "";
-            Log.Write($"{pm} {result} {check.Roll} ({check.RollStr}) vs {check.DC}: {label} {modStr}");
-
             string key = check.Key ?? label;
             int adv = check.Advantage;
             int dis = check.Disadvantage;
@@ -346,7 +336,7 @@ public class GameState
         Check check = new() { DC = dc, Tag = label, Key = modifierKey };
         ctx.Check = check;
 
-        Log.Write($"check from:{ctx.Source} to:{ctx.Target}");
+        // structured [check] line follows
         check.Modifiers.AddAll(target.QueryModifiers(modifierKey));
 
         bool didSave = DoCheck(ctx, label);
@@ -659,7 +649,7 @@ public class GameState
 
         LogicBrick.FireOnAfterHealReceived(target, ctx);
 
-        Log.Write("{0} heals {1} for {2} ({3} actual)", source, target, roll, actual);
+        Log.Structured("heal", $"{source:source}{target:target}{roll:roll}{actual:actual}");
     }
 
     public void DoMapLevel()
@@ -789,11 +779,6 @@ public class GameState
             DoDamage(ctx);
 
             // Combined attack log
-            string tag = attacker.IsPlayer ? "P ✓" : "M ✓";
-            string modStr = FormatMods(check.Modifiers);
-            string dmgStr = FormatDamage(ctx);
-            Log.Write($"{tag} {check.Roll} ({check.BaseRoll}) vs {check.DC}: {attacker} → {defender} {modStr} | {dmgStr} ({ctx.HpBefore}→{ctx.HpAfter})");
-
             Log.Structured("attack", $"{attacker:attacker}{defender:defender}{with:weapon}{check.Roll:roll}{check.BaseRoll:base_roll}{check.DC:ac}{check.Modifiers:check_mods}{check.Advantage:advantage}{check.Disadvantage:disadvantage}{true:hit}{ctx.TotalDamageDealt:damage}{ctx.Damage:rolls}{ctx.HpBefore:hp_before}{ctx.HpAfter:hp_after}");
         }
         else
@@ -801,10 +786,6 @@ public class GameState
             defender.MissesTaken++;
             
             // Combined miss log
-            string tag = attacker == u ? "P ✗" : "M ✗";
-            string modStr = FormatMods(check.Modifiers);
-            Log.Write($"{tag} {check.Roll} ({check.BaseRoll}) vs {check.DC}: {attacker} → {defender} {modStr}");
-
             Log.Structured("attack", $"{attacker:attacker}{defender:defender}{with:weapon}{check.Roll:roll}{check.BaseRoll:base_roll}{check.DC:ac}{check.Modifiers:check_mods}{check.Advantage:advantage}{check.Disadvantage:disadvantage}{false:hit}");
             
             if (thrown)
@@ -858,14 +839,8 @@ public class GameState
             if (dmg.HalfOnSave && ctx.Check?.Result == true) dmg.Halve();
             if (dmg.DoubleOnFail && ctx.Check?.Result == false) dmg.Double();
 
-            int rolled = DoRoll(dmg.Formula.WithExtra(dmg.ExtraDice), dmg.Modifiers, $"  {dmg} damage");
+            int rolled = dmg.Formula.WithExtra(dmg.ExtraDice).Roll();
             damage += dmg.Resolve(rolled);
-
-            if (!ctx.SilentDamage)
-            {
-                var tags = dmg.Tags.Count > 0 ? string.Join(",", dmg.Tags) : "none";
-                Log.Write($"    tags=[{tags}] dr={dmg.DR} prot={dmg.Protection} used={dmg.ProtectionUsed}");
-            }
         }
         
         // this can happen if all damage instances were negated
@@ -891,7 +866,6 @@ public class GameState
         {
             if (!ctx.SilentDamage)
             {
-                Log.Write($"  temp HP absorbed all damage");
                 bool saved = ctx.Check?.Result == true;
                 Log.Structured("damage", $"{source:source}{target:target}{damage:total}{ctx.Damage:rolls}{ctx.HpBefore:hp_before}{ctx.HpAfter:hp_after}{saved:saved}{absorbed:temp_hp_absorbed}");
             }
@@ -904,9 +878,6 @@ public class GameState
 
         if (!ctx.SilentDamage)
         {
-            Log.Write($"  {target:The} takes {damage} total damage");
-            Log.Write($"entity: {target.Id}: hit {damage} dmg hp: {ctx.HpBefore} -> {ctx.HpAfter}");
-
             bool saved = ctx.Check?.Result == true;
             Log.Structured("damage", $"{source:source}{target:target}{damage:total}{ctx.Damage:rolls}{ctx.HpBefore:hp_before}{ctx.HpAfter:hp_after}{saved:saved}{absorbed:temp_hp_absorbed}");
         }
@@ -948,7 +919,7 @@ public class GameState
                 using (var death = PHContext.Create(source, Target.From(target)))
                     LogicBrick.FireOnDeath(target, death);
 
-                Log.Write($"entity: {target.Id}: death ({target.HitsTaken} hits, {target.MissesTaken} misses, {target.DamageTaken} dmg)");
+                Log.Structured("death", $"{target.Id:id}{target:name}{target.HitsTaken:hits}{target.MissesTaken:misses}{target.DamageTaken:dmg}");
 
                 // drop inventory
                 foreach (var item in target.Inventory.ToList())
@@ -1001,7 +972,7 @@ public class GameState
             room.Resident?.FindFact(ShopkeeperBrick.Instance)?.As<ShopState>()?.Give(item);
         }
 
-        Log.Write("drop: {0}", item.Def.Name);
+        Log.Structured("drop", $"{item.Def.Name:item}");
     }
 
     public static Pos DoThrow(IUnit thrower, Item item, Pos dir, Pos? from = null)
@@ -1062,7 +1033,7 @@ public class GameState
         else
         {
             unit.Inventory.Add(item);
-            Log.Write("pickup: {0}", item.Def.Name);
+            Log.Structured("pickup", $"{item.Def.Name:item}");
         }
 
         return price;
@@ -1086,8 +1057,7 @@ public class GameState
         bool wasPending = Progression.HasPendingLevelUp(u);
         amount = (int)(amount * XpMultiplier);
         u.XP += amount;
-        Log.Write($"exp: +{amount} (total {u.XP}) XL={u.CharacterLevel} DL={lvl.Id.Depth} src={source ?? "?"}");
-        if (!wasPending && Progression.HasPendingLevelUp(u))
+        Log.Structured("exp", $"{amount:amount}{u.XP:total}{u.CharacterLevel:xl}{lvl.Id.Depth:dl}{source ?? "?":src}");        if (!wasPending && Progression.HasPendingLevelUp(u))
             pline(LevelUpNags.Pick());
     }
 

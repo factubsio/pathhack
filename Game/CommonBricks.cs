@@ -144,7 +144,7 @@ public class EnergyResist(DamageType type, int amount) : LogicBrick
   public static EnergyResist Dynamic(DamageType type) =>
       RampFor(type).Dynamic;
 
-  static Ramp RampFor(DamageType type) => type.SubCat switch
+  public static Ramp RampFor(DamageType type) => type.SubCat switch
   {
     DamageTypes.E_Fire => Fire,
     DamageTypes.E_Cold => Cold,
@@ -254,11 +254,64 @@ public class ApplyFactOnAttackHit(LogicBrick toApply, int? duration = null) : Lo
     }
 }
 
+/// <summary>Extra typed damage on all melee hits (not weapon-specific).</summary>
+public class MeleeDamageRider(string name, DamageType type, Dice dice) : LogicBrick
+{
+    public static readonly MeleeDamageRider Shock_1d4 = new("shock", DamageTypes.Shock, d(4));
+
+    public override string Id => $"melee_rider+{type.SubCat}/{dice.Serialize()}";
+    public override string? PokedexDescription => $"{name} ({dice} {type.SubCat} on hit)";
+
+    protected override void OnBeforeDamageRoll(Fact fact, PHContext ctx)
+    {
+        if (!ctx.Melee) return;
+        ctx.Damage.Add(new DamageRoll { Formula = dice, Type = type });
+    }
+}
+
+/// <summary>Flat DR, no bypass (all physical damage reduced).</summary>
+public class FlatDR(int amount) : LogicBrick
+{
+    public static readonly FlatDR DR2 = new(2);
+    public static readonly FlatDR DR5 = new(5);
+    public static readonly FlatDR DR10 = new(10);
+
+    public override string Id => $"flat_dr/{amount}";
+    public override string? PokedexDescription => $"DR {amount}";
+
+    protected override void OnBeforeDamageIncomingRoll(Fact fact, PHContext ctx)
+    {
+        foreach (var roll in ctx.Damage)
+            if (roll.Type.Category == "phys") roll.ApplyDR(amount);
+    }
+}
+
 public class QueryBrick(string queryKey, object value) : LogicBrick
 {
     public override string Id => $"query+{queryKey}";
     protected override object? OnQuery(Fact fact, string key, string? arg) =>
         key == queryKey ? value : null;
+}
+
+public class QueryBrickWhenEquipped(string queryKey, object value) : LogicBrick
+{
+    public override string Id => $"equery+{queryKey}";
+    public override bool RequiresEquipped => true;
+    protected override object? OnQuery(Fact fact, string key, string? arg) =>
+        key == queryKey ? value : null;
+}
+
+public class IdentifyOnEquip(string message) : LogicBrick
+{
+    public override string Id => $"id_equip+{message}";
+    protected override void OnEquip(Fact fact, PHContext ctx)
+    {
+        if (fact.Entity is Item item && item.Holder != null)
+        {
+            if (g.YouObserve(item.Holder, message))
+                item.Def.SetKnown();
+        }
+    }
 }
 
 public class GrantProficiency(string skill, ProficiencyLevel level, bool requiresEquipped = false) : LogicBrick

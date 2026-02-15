@@ -41,7 +41,7 @@ public class AttackWithWeapon() : ActionBrick("attack_with_weapon")
         if (bestThrow != null) return new(true, Plan: new Decision(Act.Throw, bestThrow));
         if (bestEquip != null && bestEquip != wielded)
         {
-            Log.Write($"[AWW] {unit}: will equip {bestEquip.Def.Name}");
+            Log.Verbose("aww", $"[AWW] {unit}: will equip {bestEquip.Def.Name}");
             return new(true, Plan: new Decision(Act.Equip, bestEquip));
         }
         
@@ -54,11 +54,11 @@ public class AttackWithWeapon() : ActionBrick("attack_with_weapon")
     {
         if (plan is not Decision d)
         {
-            Log.Write($"[AWW] {unit}: no decision plan!");
+            Log.Verbose("aww", $"[AWW] {unit}: no decision plan!");
             return;
         }
 
-        Log.Write($"[AWW] {unit}: {d.Act} {d.Item?.Def.Name ?? "none"}");
+        Log.Verbose("aww", $"[AWW] {unit}: {d.Act} {d.Item?.Def.Name ?? "none"}");
 
         switch (d.Act)
         {

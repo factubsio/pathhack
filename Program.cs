@@ -247,6 +247,7 @@ while (true)
     }
 
     Log.Write($"Game seed: {g.Seed}");
+    Config.Load();
     ItemDb.Reset(g.Seed);
     g.Branches = DungeonResolver.Resolve(templates, g.Seed);
     var dungeon = g.Branches["dungeon"];
