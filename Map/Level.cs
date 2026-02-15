@@ -335,7 +335,7 @@ public class Level(LevelId id, int width, int height)
 
         foreach (var area in Areas)
         {
-            if (unit.Has("ignore_difficult_terrain") && area.IsDifficultTerrain) continue;
+            if (area.IsDifficultTerrain && unit.Has(CommonImmunities.DifficultTerrain)) continue;
             bool wasIn = area.Contains(from);
             bool nowIn = area.Contains(to);
             if (nowIn) area.HandleMove(unit);
@@ -653,6 +653,8 @@ public class Level(LevelId id, int width, int height)
     }
 
     internal void CleanupAreas() => Areas.RemoveAll(x => g.CurrentRound >= x.ExpiresAt);
+
+    internal bool HasHole(Pos pos) => Traps.TryGetValue(pos, out var trap) && trap.Type is TrapType.Hole or TrapType.Trapdoor;
 }
 
 

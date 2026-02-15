@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+
 namespace Pathhack.Game.Bestiary;
 
 /// <summary>Immune to bleed, paralyzed, poison, sleep.</summary>
@@ -9,10 +11,10 @@ public class ElementalTraits : LogicBrick
 
     protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
     {
-        "poison_immune" => true,
-        "sleep_immune" => true,
-        "bleed_immune" => true,
-        "paralyzed" => false, // blocks paralysis via And merge
+        CommonImmunities.Poison => true,
+        CommonImmunities.Bleed => true,
+        CommonImmunities.Sleep => true,
+        CommonImmunities.Paralysis => true,
         _ => null
     };
 }
@@ -24,11 +26,7 @@ public class ElementalFlight : LogicBrick
     public override string Id => "elemental_flight";
     public override string? PokedexDescription => "Flying";
 
-    protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
-    {
-        CreatureTags.Flying => true,
-        _ => null
-    };
+    protected override object? OnQuery(Fact fact, string key, string? arg) => key.TrueWhen(CreatureTags.Flying);
 }
 
 /// <summary>Tremorsense at range 6.</summary>
@@ -38,11 +36,7 @@ public class ElementalTremorsense : LogicBrick
     public override string Id => "elemental_tremorsense";
     public override string? PokedexDescription => "Tremorsense 6";
 
-    protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
-    {
-        "tremorsense" => 6,
-        _ => null
-    };
+    protected override object? OnQuery(Fact fact, string key, string? arg) => key.IntWhen("tremorsense", 6);
 }
 
 /// <summary>Persistent fire damage per round (like AcidBurnBuff).</summary>
@@ -74,11 +68,7 @@ public class NumbingColdDebuff : LogicBrick
     public override string? BuffName => "Numbing cold";
     public override StackMode StackMode => StackMode.ExtendDuration;
 
-    protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
-    {
-        "speed_mult" => 0.5,
-        _ => null
-    };
+    protected override object? OnQuery(Fact fact, string key, string? arg) => key.NumWhen("speed_mult", 0.7);
 }
 
 /// <summary>Bonus to attack vs units wearing metal armor.</summary>

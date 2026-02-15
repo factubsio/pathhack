@@ -1,3 +1,6 @@
+using System.Runtime.InteropServices;
+using System.Transactions;
+
 namespace Pathhack.Game;
 
 public class PotencyACBuff : LogicBrick
@@ -52,7 +55,7 @@ public class FreeActionBuff : LogicBrick
 
     protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
     {
-        "paralyzed" or "slowed" or "webbed" => false,
+        CommonImmunities.Paralysis or CommonImmunities.Stun or CommonImmunities.Web => true,
         _ => null
     };
 }

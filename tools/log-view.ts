@@ -6,6 +6,7 @@ let data: LogData;
 let cursorRound = 0;
 let windowSize = 200;
 let plot: any = null;
+let spawnSort: "count" | "level" = "count";
 
 async function main() {
   data = await (await fetch("/data.json")).json();
@@ -40,6 +41,16 @@ async function main() {
     const hidden = document.getElementById("panel-events")!.classList.toggle("mvm-hidden");
     mvmBtn.style.opacity = hidden ? "0.4" : "1";
   });
+
+  // maximize buttons
+  for (const btn of document.querySelectorAll<HTMLButtonElement>(".max-btn")) {
+    btn.addEventListener("click", () => {
+      const panel = btn.closest(".panel")!;
+      const wasMax = panel.classList.contains("maximized");
+      document.querySelectorAll(".panel").forEach(p => p.classList.remove("maximized"));
+      if (!wasMax) panel.classList.add("maximized");
+    });
+  }
 
   buildChart();
   updatePanels();
@@ -89,7 +100,7 @@ function buildChart() {
     series: [
       { label: "Round" },
       { label: "HP", stroke: "#e94560", width: 2, scale: "hp", fill: "rgba(233,69,96,0.1)" },
-      { label: "XP", stroke: "#4ecdc4", width: 1, scale: "xp" },
+      { label: "XP", stroke: "#4ecdc4", width: 1, scale: "xp", show: false },
       { label: "DL", stroke: "#f9a825", width: 1, scale: "dl", paths: (u: any, si: number) => stepPath(u, si) },
       { label: "CL", stroke: "#a29bfe", width: 1, scale: "xl", paths: (u: any, si: number) => stepPath(u, si) },
     ],
@@ -211,6 +222,7 @@ function updatePanels() {
   updateSaves();
   updateBuffs();
   updateTTK();
+  updateSpawns();
 }
 
 function updateEvents() {
@@ -348,6 +360,45 @@ function updateTTK() {
   }
   html += "</table>";
   el.innerHTML = html;
+}
+
+function updateSpawns() {
+  const el = document.getElementById("spawns-content")!;
+  const windowSpawns = data.spawns.filter(s => inWindow(s.round));
+  if (windowSpawns.length === 0) { el.innerHTML = "<em>No spawns</em>"; return; }
+
+  const byName = new Map<string, { count: number; levels: number[] }>();
+  for (const s of windowSpawns) {
+    let entry = byName.get(s.name);
+    if (!entry) { entry = { count: 0, levels: [] }; byName.set(s.name, entry); }
+    entry.count++;
+    entry.levels.push(s.level);
+  }
+
+  const entries = [...byName.entries()].map(([name, info]) => ({
+    name, count: info.count, avgL: info.levels.reduce((a, b) => a + b, 0) / info.levels.length
+  }));
+
+  if (spawnSort === "level") entries.sort((a, b) => b.avgL - a.avgL || b.count - a.count);
+  else entries.sort((a, b) => b.count - a.count || b.avgL - a.avgL);
+
+  const maxCount = Math.max(...entries.map(e => e.count), 1);
+  const other = spawnSort === "count" ? "level" : "count";
+
+  let html = `<div style="color:#888;margin-bottom:6px">${windowSpawns.length} total · <a href="#" id="spawn-sort-toggle" style="color:#4ecdc4">sort by ${other}</a></div>`;
+  html += "<table><tr><th style='text-align:left'>Monster</th><th>n</th><th>avg L</th><th></th></tr>";
+  for (const e of entries) {
+    const barW = Math.max(1, Math.round(e.count / maxCount * 100));
+    html += `<tr><td style="text-align:left">${e.name}</td><td>${e.count}</td><td>${e.avgL.toFixed(1)}</td><td><div style="background:#4ecdc4;height:10px;width:${barW}px"></div></td></tr>`;
+  }
+  html += "</table>";
+  el.innerHTML = html;
+
+  document.getElementById("spawn-sort-toggle")!.addEventListener("click", (ev) => {
+    ev.preventDefault();
+    spawnSort = spawnSort === "count" ? "level" : "count";
+    updateSpawns();
+  });
 }
 
 main();

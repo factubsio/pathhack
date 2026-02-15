@@ -9,14 +9,18 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { overscroll-behavior: none; overflow: hidden; height: 100%; }
-body { background: #1a1a2e; color: #ccc; font-family: 'Consolas', 'Monaco', monospace; font-size: 13px; }
+body { background: #1a1a2e; color: #ccc; font-family: 'Consolas', 'Monaco', monospace; font-size: 13px; display: flex; flex-direction: column; }
 #chart-container { padding: 12px; border-bottom: 1px solid #333; }
 #controls { padding: 8px 12px; display: flex; gap: 12px; align-items: center; border-bottom: 1px solid #333; background: #16213e; }
 #controls label { color: #888; }
 #controls input[type=number] { width: 60px; background: #0f3460; color: #ccc; border: 1px solid #444; padding: 2px 6px; }
-#panels { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #333; }
-.panel { background: #1a1a2e; padding: 10px; min-height: 200px; max-height: 400px; overflow-y: auto; }
-.panel h3 { color: #e94560; margin-bottom: 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+#panels { display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 1fr; gap: 1px; background: #333; flex: 1; min-height: 0; overflow: hidden; }
+.panel { background: #1a1a2e; padding: 10px; overflow-y: auto; min-height: 0; }
+.panel h3 { color: #e94560; margin-bottom: 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
+.panel h3 .max-btn { margin-left: auto; cursor: pointer; background: #0f3460; color: #888; border: 1px solid #444; padding: 0 5px; font-size: 11px; line-height: 1.4; }
+.panel h3 .max-btn:hover { color: #ccc; }
+.panel.maximized { grid-column: 1 / -1; grid-row: 1 / -1; z-index: 1; }
+#panels:has(.maximized) .panel:not(.maximized) { display: none; }
 .panel table { width: 100%; border-collapse: collapse; }
 .panel th, .panel td { padding: 2px 6px; text-align: right; border-bottom: 1px solid #222; }
 .panel th { color: #888; font-weight: normal; }
@@ -42,11 +46,12 @@ body { background: #1a1a2e; color: #ccc; font-family: 'Consolas', 'Monaco', mono
   <span id="window-label"></span>
 </div>
 <div id="panels">
-  <div class="panel" id="panel-events"><h3>Events</h3><div id="events-content"></div></div>
-  <div class="panel" id="panel-attacks"><h3>Player Attacks</h3><div id="attacks-content"></div></div>
-  <div class="panel" id="panel-saves"><h3>Saves</h3><div id="saves-content"></div></div>
-  <div class="panel" id="panel-buffs"><h3>Buffs</h3><div id="buffs-content"></div></div>
-  <div class="panel" id="panel-ttk"><h3>TTK (attack rolls to kill)</h3><div id="ttk-content"></div></div>
+  <div class="panel" id="panel-events"><h3>Events<button class="max-btn">⤢</button></h3><div id="events-content"></div></div>
+  <div class="panel" id="panel-attacks"><h3>Player Attacks<button class="max-btn">⤢</button></h3><div id="attacks-content"></div></div>
+  <div class="panel" id="panel-saves"><h3>Saves<button class="max-btn">⤢</button></h3><div id="saves-content"></div></div>
+  <div class="panel" id="panel-buffs"><h3>Buffs<button class="max-btn">⤢</button></h3><div id="buffs-content"></div></div>
+  <div class="panel" id="panel-ttk"><h3>TTK (attack rolls to kill)<button class="max-btn">⤢</button></h3><div id="ttk-content"></div></div>
+  <div class="panel" id="panel-spawns"><h3>Spawn Distribution<button class="max-btn">⤢</button></h3><div id="spawns-content"></div></div>
 </div>
 <script type="module" src="app.js"></script>
 <script>

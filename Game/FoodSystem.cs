@@ -51,133 +51,70 @@ public static class Hunger
     }
 }
 
-public class Activity
+public abstract class Activity(string name, Item? targetItem = null)
 {
-    public string Type = "";
+    public string Name => name;
+    public Item? TargetItem => targetItem;
     public int Progress;
-    public Item? Food;
-    public bool CanChoke;
-    public bool FullWarned;
-    public int StoredNutrition; // for quick cook (corpse destroyed on start)
-    
-    public int TotalTime => Type switch
-    {
-        "eat" when Food?.CorpseOf is { } m => m.Size switch
-        {
-            UnitSize.Tiny => 1,
-            UnitSize.Small => 2,
-            UnitSize.Medium => 4,
-            UnitSize.Large => 6,
-            UnitSize.Huge => 10,
-            UnitSize.Gargantuan => 15,
-            _ => 3
-        },
-        "eat" => (Food?.Def as ConsumableDef)?.EatTime ?? 1,
-        "cook_quick" => 4,
-        "cook_careful" => CarefulCookTime,
-        _ => 1
-    };
-    
-    int CarefulCookTime => Food?.CorpseOf?.Size switch
-    {
-        UnitSize.Tiny => 10,
-        UnitSize.Small => 15,
-        UnitSize.Medium => 20,
-        UnitSize.Large => 30,
-        UnitSize.Huge => 40,
-        UnitSize.Gargantuan => 50,
-        _ => 20
-    };
-    
-    public bool Interruptible => Type switch
-    {
-        "eat" => true,
-        "cook_careful" => IsInCookPhase,
-        _ => false
-    };
-    
-    // Careful cook: 2 cycles of (40% prep + 60% cook)
-    // e.g. 20 turns: 0-3 prep, 4-9 cook, 10-13 prep, 14-19 cook
-    bool IsInCookPhase
-    {
-        get
-        {
-            int cycleLen = CarefulCookTime / 2;
-            int prepLen = cycleLen * 2 / 5; // 40% prep
-            int inCycle = Progress % cycleLen;
-            return inCycle >= prepLen;
-        }
-    }
-    
+
+    public abstract int TotalTime { get; }
+    public virtual bool Interruptible => false;
     public bool Done => Progress >= TotalTime;
-    
-    public bool Tick() => Type switch
+
+    public abstract bool Tick();
+
+    public virtual void OnInterrupt()
     {
-        "eat" => TickEat(),
-        "cook_quick" => TickCookQuick(),
-        "cook_careful" => TickCookCareful(),
-        _ => false
-    };
-    
-    public void OnInterrupt()
+        g.pline("You stop.");
+    }
+}
+
+public class EatActivity : Activity
+{
+    readonly Item _food;
+    readonly bool _canChoke;
+    bool _fullWarned;
+
+    public EatActivity(Item food, bool canChoke) : base("eat", food)
     {
-        var msg = Type switch
-        {
-            "eat" when Food != null => $"You stop eating {Grammar.DoNameOne(Food)}.",
-            "cook_careful" when Food != null => $"You stop cooking {Grammar.DoNameOne(Food)}.",
-            _ => "You stop."
-        };
-        g.pline(msg);
+        _food = food;
+        _canChoke = canChoke;
     }
 
-    public static void SpillVomit(IUnit? unit, Pos pos)
+    public override int TotalTime => _food.CorpseOf is { } m ? m.Size switch
     {
-        var area = new GreaseArea("vomit", unit, 12, 8) { Tiles = [pos] };
-        lvl.CreateArea(area);
-    }
+        UnitSize.Tiny => 1,
+        UnitSize.Small => 2,
+        UnitSize.Medium => 4,
+        UnitSize.Large => 6,
+        UnitSize.Huge => 10,
+        UnitSize.Gargantuan => 15,
+        _ => 3
+    } : (_food.Def as ConsumableDef)?.EatTime ?? 1;
 
-    public static void DoVomit(IUnit unit, string self, string? see = null, string? hear = null)
-    {
-        g.YouObserveSelf(unit, self, see, hear);
-        
-        bool vomited = false;
-        // 1 in 3 to try to vomit on a neighbour
-        if (g.Rn2(3) == 0)
-        {
-            foreach (var pos in unit.Pos.Neighbours().Where(p => lvl.InBounds(p) && lvl[p].IsPassable))
-            {
-                if (g.Rn2(5) > 0) continue;
-                SpillVomit(unit, pos);
-                vomited = true;
-            }
-        }
-        // Oops, you made a mess!
-        if (!vomited)
-            SpillVomit(unit, unit.Pos);
-    }
+    public override bool Interruptible => true;
 
-    bool TickEat()
+    public override void OnInterrupt() =>
+        g.pline($"You stop eating {Grammar.DoNameOne(_food)}.");
+
+    public override bool Tick()
     {
-        if (Food == null) return false;
-        
         var beforeState = Hunger.GetState(u.Nutrition);
-        
+
         Progress++;
         int remaining = TotalTime - Progress + 1;
-        int gained = Food.RemainingNutrition / Math.Max(1, remaining);
-        Food.Eaten += gained;
+        int gained = _food.RemainingNutrition / Math.Max(1, remaining);
+        _food.Eaten += gained;
         u.Nutrition += gained;
-        
+
         var afterState = Hunger.GetState(u.Nutrition);
-        
-        // Announce satiation when we cross the threshold
+
         if (afterState == HungerState.Satiated && beforeState != HungerState.Satiated)
             g.pline("You feel satiated.");
-        
-        // Warn at 75% (once)
-        if (!FullWarned && u.Nutrition >= Hunger.FullWarning && !Done)
+
+        if (!_fullWarned && u.Nutrition >= Hunger.FullWarning && !Done)
         {
-            FullWarned = true;
+            _fullWarned = true;
             g.pline("You're having a hard time getting all of it down.");
             if (!Input.YesNo("Continue eating?"))
             {
@@ -185,9 +122,8 @@ public class Activity
                 return false;
             }
         }
-        
-        // Choke check
-        if (CanChoke && u.Nutrition >= Hunger.Max)
+
+        if (_canChoke && u.Nutrition >= Hunger.Max)
         {
             if (g.Rn2(20) == 0)
             {
@@ -199,59 +135,100 @@ public class Activity
         else
             {
                 u.Nutrition = Math.Max(0, u.Nutrition - 1000);
-                DoVomit(u, "You stuff yourself and then vomit voluminously.",
+                CookingUtil.DoVomit(u, "You stuff yourself and then vomit voluminously.",
                     $"{u:The} stuffs {u:own} face and vomits!", "You hear someone retching.");
             }
         }
-        
+
         u.Nutrition = Math.Min(Hunger.Max, u.Nutrition);
-        
+
         if (Done)
         {
-            g.pline($"You finish eating {Grammar.DoNameOne(Food)}.");
-            
-            // Flavor messages
-            var flavorMsg = (Food.Def as ConsumableDef)?.FlavorMessage;
+            g.pline($"You finish eating {Grammar.DoNameOne(_food)}.");
+            var flavorMsg = (_food.Def as ConsumableDef)?.FlavorMessage;
             if (flavorMsg != null) g.pline(flavorMsg);
-            
-            u.Inventory.Consume(Food);
+            u.Inventory.Consume(_food);
             return false;
         }
-        
+
         return true;
     }
-    
-    bool TickCookQuick()
+}
+
+public class CookQuickActivity(Item corpse) : Activity("cook_quick")
+{
+    readonly int _nutrition = corpse.CorpseOf!.Nutrition / 10;
+    // TODO: remember rot timer for food poisoning check
+
+    public override int TotalTime => 4;
+
+    public override bool Tick()
     {
         Progress++;
-        CookingEffects(attractChance: 20, spawnChance: 100);
-        
+        CookingUtil.CookingEffects(attractChance: 20, spawnChance: 100);
+
         if (Done)
         {
             g.pline("You finish cooking.");
-            u.Nutrition = Math.Min(Hunger.Max, u.Nutrition + StoredNutrition);
+            u.Nutrition = Math.Min(Hunger.Max, u.Nutrition + _nutrition);
             return false;
         }
         return true;
     }
-    
-    bool TickCookCareful()
+}
+
+public class CookCarefulActivity : Activity
+{
+    readonly Item _corpse;
+
+    public CookCarefulActivity(Item corpse) : base("cook_careful", corpse)
+    {
+        _corpse = corpse;
+        Progress = corpse.Eaten; // resume from where we left off
+    }
+
+    public override int TotalTime => _corpse.CorpseOf?.Size switch
+    {
+        UnitSize.Tiny => 10,
+        UnitSize.Small => 15,
+        UnitSize.Medium => 20,
+        UnitSize.Large => 30,
+        UnitSize.Huge => 40,
+        UnitSize.Gargantuan => 50,
+        _ => 20
+    };
+
+    // Careful cook: 2 cycles of (40% prep + 60% cook)
+    public override bool Interruptible
+    {
+        get
+        {
+            int cycleLen = TotalTime / 2;
+            int prepLen = cycleLen * 2 / 5;
+            int inCycle = Progress % cycleLen;
+            return inCycle >= prepLen;
+        }
+    }
+
+    public override void OnInterrupt() =>
+        g.pline($"You stop cooking {Grammar.DoNameOne(_corpse)}.");
+
+    public override bool Tick()
     {
         Progress++;
-        Food!.Eaten = Progress;
-        CookingEffects(attractChance: 8, spawnChance: 50);
-        
+        _corpse.Eaten = Progress;
+        CookingUtil.CookingEffects(attractChance: 8, spawnChance: 50);
+
         if (Done)
         {
-            g.pline($"You finish cooking {Grammar.DoNameOne(Food)}.");
-            
-            // Food poisoning from rotten corpses
-            if (Foods.IsTainted(Food))
+            g.pline($"You finish cooking {Grammar.DoNameOne(_corpse)}.");
+
+            if (Foods.IsTainted(_corpse))
             {
                 u.AddFact(FoodPoisoning.Instance, count: 2);
                 g.pline("Your tummy starts rumbling.");
             }
-            else if (Foods.IsSpoiled(Food))
+            else if (Foods.IsSpoiled(_corpse))
             {
                 using var ctx = PHContext.Create(DungeonMaster.Mook, Target.From(u));
                 if (!CheckFort(ctx, 11, "food poisoning"))
@@ -260,32 +237,56 @@ public class Activity
                     g.pline("You are not sure that was a great idea.");
                 }
             }
-            
-            int nutrition = Food.CorpseOf!.Nutrition / 4;
+
+            int nutrition = _corpse.CorpseOf!.Nutrition / 4;
             u.Nutrition = Math.Min(Hunger.Max, u.Nutrition + nutrition);
-            lvl.RemoveItem(Food, upos);
+            lvl.RemoveItem(_corpse, upos);
             return false;
         }
         return true;
     }
-    
-    static void CookingEffects(int attractChance, int spawnChance)
+}
+
+public static class CookingUtil
+{
+    public static void SpillVomit(IUnit? unit, Pos pos)
     {
-        // Attract nearby monsters
+        var area = new GreaseArea("vomit", unit, 12, 8) { Tiles = [pos] };
+        lvl.CreateArea(area);
+    }
+
+    public static void DoVomit(IUnit unit, string self, string? see = null, string? hear = null)
+    {
+        g.YouObserveSelf(unit, self, see, hear);
+
+        bool vomited = false;
+        if (g.Rn2(3) == 0)
+        {
+            foreach (var pos in unit.Pos.Neighbours().Where(p => lvl.InBounds(p) && lvl[p].IsPassable))
+            {
+                if (g.Rn2(5) > 0) continue;
+                SpillVomit(unit, pos);
+                vomited = true;
+            }
+        }
+        if (!vomited)
+            SpillVomit(unit, unit.Pos);
+    }
+
+    public static void CookingEffects(int attractChance, int spawnChance)
+    {
         if (g.Rn2(attractChance) == 0)
         {
             AttractMonsters(10);
             return;
         }
-        
-        // Spawn threat
         if (g.Rn2(spawnChance) == 0)
         {
             SpawnCookingThreat();
             return;
         }
     }
-    
+
     static void AttractMonsters(int radius)
     {
         foreach (var mon in lvl.LiveUnits.OfType<Monster>())
@@ -299,10 +300,9 @@ public class Activity
             }
         }
     }
-    
+
     static void SpawnCookingThreat()
     {
-        // Hippo check first
         if (g.Rn2(500) < u.HippoCounter)
         {
             SpawnHippos();
@@ -310,10 +310,10 @@ public class Activity
             return;
         }
 
-        var pos = lvl.FindLocation(p => 
+        var pos = lvl.FindLocation(p =>
             lvl.NoUnit(p) && p.ChebyshevDist(upos) is >= 5 and <= 10 && lvl[p].IsPassable);
         if (pos == null) return;
-        
+
         var def = CookingThreats[g.Rn2(CookingThreats.Length)];
         var spawnPos = pos.Value;
         Log.Write($"SpawnCookingThreat: {def.Name} at {spawnPos}");
@@ -333,10 +333,8 @@ public class Activity
         int tier = Math.Min(g.Rne(3), maxTier + 1) - 1;
         var def = Hippos.All[tier];
 
-        // THERE CAN BE ONLY ONE (could check for TheHungriest but this might be nicer?)
         if (def.IsUnique) count = 1;
 
-        // Urgathoa loves it when you stuff yourself
         bool friends = u.Deity == Pantheon.Urgathoa;
 
         int spawned = 0;
@@ -388,15 +386,9 @@ public class Activity
 
     static Pos? FindHippoSpawn(Pos dir)
     {
-        // They need a free adjacent square `_`: you are cooking on `@`
-        // the hippo `q` spawns 2..4 away, but he needs an unblocked path to his yums
-        // 
-        //      @_..q
-
         var adjacent = upos + dir;
         if (!lvl.InBounds(adjacent) || !lvl[adjacent].IsPassable || !lvl.NoUnit(adjacent)) return null;
 
-        // Hippos charge from cardinal directions like in the game
         for (int dist = 4; dist >= 2; dist--)
         {
             var pos = upos + dir * dist;
@@ -405,32 +397,11 @@ public class Activity
         }
         return null;
     }
-    
+
     static readonly MonsterDef[] CookingThreats = [
         MiscMonsters.Rat,
         Cats.Cheetah,
     ];
-    
-    public static Activity Eat(Item food, bool canChoke) => new()
-    {
-        Type = "eat",
-        Food = food,
-        CanChoke = canChoke
-    };
-    
-    public static Activity CookQuick(Item corpse) => new()
-    {
-        Type = "cook_quick",
-        StoredNutrition = corpse.CorpseOf!.Nutrition / 10
-        // TODO: remember rot timer for food poisoning check
-    };
-    
-    public static Activity CookCareful(Item corpse) => new()
-    {
-        Type = "cook_careful",
-        Food = corpse,
-        Progress = corpse.Eaten // resume from where we left off
-    };
 }
 
 public class ConsumableDef : ItemDef
@@ -490,7 +461,7 @@ public static class Foods
         if (corpseItem.CorpseOf == null) return false;
         
         // Don't rot while being cooked
-        if (u.CurrentActivity?.Food == corpseItem) return false;
+        if (u.CurrentActivity?.TargetItem == corpseItem) return false;
         
         corpseItem.RotTimer++;
 
@@ -598,7 +569,7 @@ public class FoodPoisoning() : AfflictionBrick(11, "fortitude")
 
         if (fact.Entity is Player p)
             p.Nutrition = Math.Max(0, p.Nutrition - 100);
-        Activity.DoVomit((fact.Entity as IUnit)!,
+        CookingUtil.DoVomit((fact.Entity as IUnit)!,
             "You vomit!",
             $"{unit:The} {VTense(unit, "vomit")}!",
             "You hear retching.");

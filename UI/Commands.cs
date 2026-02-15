@@ -568,7 +568,7 @@ public static partial class Input
             {
                 g.pline($"You start cooking {DoNameOne(corpse)}.");
                 u.HippoCounter++;
-                u.CurrentActivity = Activity.CookQuick(corpse);
+                u.CurrentActivity = new CookQuickActivity(corpse);
                 lvl.RemoveItem(corpse, upos);
             }
             else
@@ -582,7 +582,7 @@ public static partial class Input
                     g.pline($"You start carefully cooking {DoNameOne(corpse)}.");
                     u.HippoCounter++;
                 }
-                u.CurrentActivity = Activity.CookCareful(corpse);
+                u.CurrentActivity = new CookCarefulActivity(corpse);
             }
             u.Energy -= ActionCosts.OneAction.Value;
             return;
@@ -611,7 +611,7 @@ public static partial class Input
         if (resuming)
             g.pline($"You continue eating {DoNameOne(food)}.");
         
-        u.CurrentActivity = Activity.Eat(food, canchoke);
+        u.CurrentActivity = new EatActivity(food, canchoke);
         u.Energy -= ActionCosts.OneAction.Value;
     }
 

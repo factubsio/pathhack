@@ -13,7 +13,7 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
         set => u.Pos = value;
     }
 
-    public override int NaturalRegen => 10 + 8 * CharacterLevel;
+    public override int NaturalRegen => 10 + 3 * CharacterLevel;
 
     public int GetAttribute(AbilityStat stat) => BaseAttributes.Get(stat) + QueryModifiers($"stat/{stat}").Calculate();
     public int Str => BaseAttributes.Str + QueryModifiers("stat/Str").Calculate();

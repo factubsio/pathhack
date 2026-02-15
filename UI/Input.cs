@@ -94,6 +94,7 @@ public static partial class Input
         _extCommands["exp"] = new("exp", "", ArgType.None, _ => DebugExp(), Hidden: true);
         _extCommands["dumplog"] = new("dumplog", "Dump screen to JSON", ArgType.None, _ => Dump.DumpLog(), Hidden: true);
         _extCommands["spawn"] = new("spawn", "Spawn a monster", ArgType.String("What monster?"), DoSpawn, Hidden: true);
+        _extCommands["place"] = new("place", "Place a trap", ArgType.String("What trap?"), DoPlace, Hidden: true);
         _extCommands["brickstats"] = new("brickstats", "Dump brick hook stats", ArgType.None, _ => BrickStatsHook.Instance.Dump(), Hidden: true);
         _specialCommands.Add(new(ConsoleKey.T, ConsoleModifiers.Control, "Teleport (debug)", DebugTeleport));
         LogicBrick.GlobalHook = BrickStatsHook.Instance;
@@ -127,6 +128,28 @@ public static partial class Input
         if (!MonsterSpawner.SpawnAndPlace(lvl, "debug", def, false, pos: pos))
         { g.pline("Couldn't place monster."); return; }
         g.pline($"A {def.Name} appears!");
+    }
+
+    static void DoPlace(CommandArg arg)
+    {
+        if (arg is not StringArg s || string.IsNullOrWhiteSpace(s.Value)) return;
+        int depth = lvl.Id.Depth;
+        Trap? trap = s.Value.Trim().ToLowerInvariant() switch
+        {
+            "pit" => new PitTrap(depth),
+            "web" => new WebTrap(depth),
+            "hole" => new HoleTrap(TrapType.Hole, depth),
+            "trapdoor" => new HoleTrap(TrapType.Trapdoor, depth),
+            _ => null
+        };
+        if (trap == null) { g.pline("Unknown trap. Try: pit, web, hole, trapdoor."); return; }
+        g.pline("Place where?");
+        var pos = PickPosition();
+        if (pos == null) return;
+        lvl.Traps[pos.Value] = trap;
+        trap.PlayerSeen = true;
+        g.pline("Trap placed.");
+        Draw.DrawCurrent();
     }
 
     public static void DoLevelUp()
@@ -879,7 +902,7 @@ public static partial class Input
         }
         else if (key.KeyChar == '>')
         {
-            if (lvl[upos].Type == TileType.StairsDown || lvl[upos].Type == TileType.BranchDown)
+            if (lvl[upos].Type == TileType.StairsDown || lvl[upos].Type == TileType.BranchDown || lvl.HasHole(upos))
                 g.Portal(u);
             else if (lvl[upos].IsStairs)
                 g.pline("These stairs don't go down.");

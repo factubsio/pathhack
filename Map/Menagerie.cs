@@ -5,11 +5,7 @@ public class StasisBuff : LogicBrick
     public static readonly StasisBuff Instance = new();
     public override string Id => "stasis";
 
-    protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
-    {
-        "paralyzed" => true,
-        _ => null,
-    };
+    protected override object? OnQuery(Fact fact, string key, string? arg) => key.FalseWhen("can_act");
 }
 
 /// Scans cardinal directions only — place the stasis monster on a cardinal from the trap.

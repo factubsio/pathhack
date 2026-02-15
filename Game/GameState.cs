@@ -431,6 +431,8 @@ public class GameState
             Draw.DrawCurrent();
             Perf.Stop("Draw");
 
+            if (!u.Allows("can_act")) break;
+
             Perf.Start();
             PHMonitor.WaitForAction(u.Energy);
             if (!PHMonitor.Active) Input.PlayerTurn();
@@ -454,11 +456,7 @@ public class GameState
             if (unit.IsPlayer) continue;
             while (unit.Energy > 1 && !unit.IsDead)
             {
-                if (unit.Query("paralyzed", null, MergeStrategy.And, false))
-                {
-                    unit.Energy -= ActionCosts.OneAction.Value;
-                    continue;
-                }
+                if (!unit.Allows("can_act")) break;
 
                 Perf.Start();
                 MonsterTurn(unit);
@@ -1056,7 +1054,7 @@ public class GameState
             item.Knowledge |= ItemKnowledge.PropQuality;
     }
 
-    const double XpMultiplier = 2.4;
+    const double ExpMultiplier = 2.0;
 
     static readonly string[] LevelUpNags = [
         "9 out of 10 dentists recommend levelling up. (#levelup)",
@@ -1072,7 +1070,7 @@ public class GameState
     public void GainExp(int amount, string? source = null)
     {
         bool wasPending = Progression.HasPendingLevelUp(u);
-        amount = (int)(amount * XpMultiplier);
+        amount = (int)(amount * ExpMultiplier);
         u.XP += amount;
         Log.Structured("exp", $"{amount:amount}{u.XP:total}{u.CharacterLevel:xl}{lvl.EffectiveDepth:dl}{source ?? "?":src}");        if (!wasPending && Progression.HasPendingLevelUp(u))
             pline(LevelUpNags.Pick());
@@ -1278,11 +1276,12 @@ public class GameState
                     var below = HoleTrap.LevelBelow(u.Level);
                     if (below != null)
                     {
+                        g.YouObserveSelf(unit, "You jump down a hole", $"{unit:The} jumps down a hole!");
                         GoToLevel(below.Value, SpawnAt.RandomLegal);
                     }
                     else
                     {
-                        pline("The floor vibrates ominously, but holds.");
+                        g.YouObserve(unit, "The floor vibrates ominously, but holds.", "a faint twang.");
                         return;
                     }
                 }

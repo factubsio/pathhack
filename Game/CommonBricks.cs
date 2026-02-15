@@ -51,7 +51,7 @@ public class WeaponDamageRider(string name, DamageType type, Dice dice) : LogicB
   public override string? BuffName => name;
   public override bool IsActive => true;
 
-  protected override object? OnQuery(Fact fact, string key, string? arg) => key == Key ? true : null;
+  protected override object? OnQuery(Fact fact, string key, string? arg) => key.TrueWhen(Key);
 
   protected override void OnFactAdded(Fact fact)
   {

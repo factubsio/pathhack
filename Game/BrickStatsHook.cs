@@ -35,6 +35,7 @@ public class BrickStatsHook : LogicBrick
     protected override void OnSpawn(Fact fact, PHContext c) => Inc("OnSpawn");
     protected override void OnDeath(Fact fact, PHContext c) => Inc("OnDeath");
     protected override void OnBeforeSpellCast(Fact fact, PHContext c) => Inc("OnBeforeSpellCast");
+    protected override void OnTurnStart(Fact fact) => Inc("OnTurnStart");
 
     public void Dump()
     {

@@ -49,8 +49,7 @@ public class TrapSense : LogicBrick
 {
     public static readonly TrapSense Instance = new();
     public override string Id => "trap_sense";
-    protected override object? OnQuery(Fact fact, string key, string? arg) =>
-      key == "trap_sense" ? true : null;
+    protected override object? OnQuery(Fact fact, string key, string? arg) => key.TrueWhen("trap_sense");
 
     protected override void OnBeforeCheck(Fact fact, PHContext context)
     {
@@ -65,8 +64,7 @@ public class FeatherStepBuff : LogicBrick
     public override string Id => "featherstep";
     public override StackMode StackMode => StackMode.Stack;
 
-    protected override object? OnQuery(Fact fact, string key, string? arg) =>
-      key == "ignore_difficult_terrain" ? true : null;
+    protected override object? OnQuery(Fact fact, string key, string? arg) => key.TrueWhen(CommonImmunities.DifficultTerrain);
 }
 public class Toughness : LogicBrick
 {

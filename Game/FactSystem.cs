@@ -132,8 +132,8 @@ public abstract class LogicBrick
     protected virtual void OnRoundStart(Fact fact) { }
     protected virtual void OnRoundEnd(Fact fact) { }
 
-    protected virtual void OnTurnStart(Fact fact, PHContext context) { }
-    protected virtual void OnTurnEnd(Fact fact, PHContext context) { }
+    protected virtual void OnTurnStart(Fact fact) { }
+    protected virtual void OnTurnEnd(Fact fact) { }
 
     protected virtual void OnBeforeDamageRoll(Fact fact, PHContext context) { }
     protected virtual void OnBeforeDamageIncomingRoll(Fact fact, PHContext context) { }
@@ -170,8 +170,8 @@ public abstract class LogicBrick
     public static void FireOnStackRemoved(LogicBrick b, Fact f) { GlobalHook?.OnStackRemoved(f); b.OnStackRemoved(f); }
     public static void FireOnRoundStart(LogicBrick b, Fact f) { if (Skip(b, f)) return; GlobalHook?.OnRoundStart(f); b.OnRoundStart(f); }
     public static void FireOnRoundEnd(LogicBrick b, Fact f) { if (Skip(b, f)) return; GlobalHook?.OnRoundEnd(f); b.OnRoundEnd(f); }
-    public static void FireOnTurnStart(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnTurnStart(f, c); b.OnTurnStart(f, c); }
-    public static void FireOnTurnEnd(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnTurnEnd(f, c); b.OnTurnEnd(f, c); }
+    public static void FireOnTurnStart(LogicBrick b, Fact f) { if (Skip(b, f)) return; GlobalHook?.OnTurnStart(f); b.OnTurnStart(f); }
+    public static void FireOnTurnEnd(LogicBrick b, Fact f) { if (Skip(b, f)) return; GlobalHook?.OnTurnEnd(f); b.OnTurnEnd(f); }
     public static void FireOnBeforeDamageRoll(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnBeforeDamageRoll(f, c); b.OnBeforeDamageRoll(f, c); }
     public static void FireOnBeforeDamageIncomingRoll(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnBeforeDamageIncomingRoll(f, c); b.OnBeforeDamageIncomingRoll(f, c); }
     public static void FireOnDamageTaken(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnDamageTaken(f, c); b.OnDamageTaken(f, c); }
@@ -193,6 +193,8 @@ public abstract class LogicBrick
     // IEntity overloads - fire on all facts via GetAllFacts (null-safe)
     public static void FireOnRoundStart(IEntity? e) { if (e == null) return; foreach (var f in e.GetOwnFacts()) FireOnRoundStart(f.Brick, f); }
     public static void FireOnRoundEnd(IEntity? e) { if (e == null) return; foreach (var f in e.GetOwnFacts()) FireOnRoundEnd(f.Brick, f); }
+    public static void FireOnTurnStart(IEntity? e) { if (e == null) return; foreach (var f in e.GetOwnFacts()) FireOnTurnStart(f.Brick, f); }
+    public static void FireOnTurnEnd(IEntity? e) { if (e == null) return; foreach (var f in e.GetOwnFacts()) FireOnTurnEnd(f.Brick, f); }
     public static void FireOnBeforeCheck(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnBeforeCheck(f.Brick, f, c); }
     public static void FireOnBeforeDamageRoll(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnBeforeDamageRoll(f.Brick, f, c); }
     public static void FireOnBeforeDamageIncomingRoll(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnBeforeDamageIncomingRoll(f.Brick, f, c); }
@@ -355,6 +357,11 @@ public static class EntityExts
     public static bool IsEquipped(this Fact fact) => fact.Entity is Item item && item.Holder?.Equipped.ContainsValue(item) == true;
     public static bool IsKnown(this ItemDef def) => ItemDb.Instance.IsIdentified(def);
     public static void SetKnown(this ItemDef def) => ItemDb.Instance.Identify(def);
+
+    public static object? FalseWhen(this string key, string match) => key == match ? false : null;
+    public static object? TrueWhen(this string key, string match) => key == match ? true : null;
+    public static object? IntWhen(this string key, string match, int val) => key == match ? val : null;
+    public static object? NumWhen(this string key, string match, double val) => key == match ? val : null;
 }
 
 public class BaseDef

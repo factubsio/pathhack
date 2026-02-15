@@ -61,32 +61,20 @@ public class SilencedBuff : LogicBrick
 
 public class ParalyzedBuff : LogicBrick
 {
-  public static readonly ParalyzedBuff Instance = new();
-  public override string Id => "paralyzed";
-  public override bool IsBuff => true;
-  public override bool IsActive => true;
-  public override string? BuffName => "Paralyzed";
-  public override StackMode StackMode => StackMode.Stack;
+    public static readonly ParalyzedBuff Instance = new();
+    public override string Id => "paralyzed";
+    public override bool IsBuff => true;
+    public override bool IsActive => true;
+    public override string? BuffName => "Paralyzed";
+    public override StackMode StackMode => StackMode.Stack;
 
-  protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
-  {
-    "paralyzed" => true,
-    "helpless" => true,
-    _ => null
-  };
+    protected override object? OnQuery(Fact fact, string key, string? arg) => key == "can_act" && !fact.Entity.Has("paralysis_immunity") ? false : null;
 
-  protected override void OnRoundStart(Fact fact)
-  {
-    if (fact.Entity is not IUnit unit) return;
-    unit.Energy = 0;
-  }
-
-  protected override void OnStackRemoved(Fact fact)
-  {
-    if (fact.Entity is not IUnit { IsPlayer: true }) return;
-    if (fact.Stacks == 0)
-      g.pline("You can move again!");
-  }
+    protected override void OnFactRemoved(Fact fact)
+    {
+        if (fact.Entity is IUnit { IsPlayer: true } _)
+            g.pline("You can move again!");
+    }
 }
 
 public class NauseatedBuff : LogicBrick
@@ -129,17 +117,18 @@ public class StunnedBuff : LogicBrick
   public override bool IsActive => true;
   public override string? BuffName => "Stunned";
 
-  protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
-  {
-    "helpless" => true,
-    _ => null
-  };
+  protected override object? OnQuery(Fact fact, string key, string? arg) => key == "can_act" && !fact.Entity.Has("stun_immunity") ? false : null;
+}
 
-  protected override void OnRoundStart(Fact fact)
-  {
-    if (fact.Entity is not IUnit unit) return;
-    unit.Energy = 0;
-  }
+public static class CommonImmunities
+{
+    public const string Stun = "stun_immunity";
+    public const string Paralysis = "paralysis_immunity";
+    public const string Web = "web_immunity";
+    public const string Sleep = "sleep_immunity";
+    public const string Bleed = "bleed_immunity";
+    public const string Poison = "poison_immunity";
+    public const string DifficultTerrain = "difficult_terrain";
 }
 
 public class AfflictionData
