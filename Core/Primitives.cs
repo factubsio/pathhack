@@ -6,6 +6,8 @@ public readonly record struct Pos(int X, int Y) : IFormattable
 {
     public static readonly Pos Zero = new(0, 0);
     public static readonly Pos Invalid = new(-1, -1);
+    public static readonly Pos Down = new(0, int.MinValue);
+    public static readonly Pos Up = new(0, int.MaxValue);
 
     public static readonly Pos N = new(0, -1);
     public static readonly Pos S = new(0, 1);

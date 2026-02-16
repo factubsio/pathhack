@@ -1,3 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Text;
+
 namespace Pathhack.UI;
 
 public static partial class Input
@@ -134,6 +137,101 @@ public static partial class Input
         Pokedex.ShowItemEntry(picked[0]);
     }
 
+    static string CompressRuns(ReadOnlySpan<char> chars)
+    {
+        if (chars.Length == 0) return "";
+        StringBuilder sb = new();
+        int i = 0;
+        while (i < chars.Length)
+        {
+            int run = 1;
+            while (i + run < chars.Length && chars[i + run] == chars[i] + run)
+                run++;
+            if (run > 3)
+            {
+                sb.Append(chars[i]);
+                sb.Append('-');
+                sb.Append(chars[i + run - 1]);
+            }
+            else
+            {
+                for (int j = 0; j < run; j++)
+                    sb.Append(chars[i + j]);
+            }
+            i += run;
+        }
+        return sb.ToString();
+    }
+
+
+    static bool PickItem(string verb, Func<Item, bool> filter, [NotNullWhen(true)] out Item? item)
+    {
+        string prompt = $"What do you want to {verb}?";
+        string ifNone = $"You don't have anything to {verb}.";
+        string ifWrong = $"That's a silly thing to {verb}";
+        var valid = u.Inventory.Where(filter).ToList();
+        item = null;
+        if (valid.Count == 0)
+        {
+            g.pline(ifNone);
+            return false;
+        }
+
+        var letters = CompressRuns(valid.Select(i => i.InvLet).OrderBy(c => c).ToArray());
+        var fullPrompt = $"{prompt} [{letters} or ?*]";
+
+        while (true)
+        {
+            g.pline(fullPrompt);
+            var key = NextKey();
+            Draw.ClearTopLine();
+
+            if (key.Key == ConsoleKey.Escape)
+            {
+                return false;
+            }
+            if (key.KeyChar == '?')
+            {
+                var menu = new Menu<Item>();
+                menu.Add(prompt, LineStyle.Heading);
+                BuildItemList(menu, valid, u);
+                item = menu.Display(MenuMode.PickOne).FirstOrDefault();
+                break;
+            }
+            else if (key.KeyChar == '*')
+            {
+                var menu = new Menu<Item>();
+                menu.Add(prompt, LineStyle.Heading);
+                BuildItemList(menu, u.Inventory, u);
+                item = menu.Display(MenuMode.PickOne).FirstOrDefault();
+                break;
+            }
+            else
+            {
+                if (!u.Inventory.TryGet(key.KeyChar, out item))
+                {
+                    Draw.ClearTopLine();
+                    const string notExist = "You don't have that object.";
+                    g.pline(notExist);
+                    Draw.More(false, notExist.Length, 0);
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+        Draw.ClearTopLine();
+
+        if (item != null)
+        {
+            if (filter(item)) return true;
+            g.pline(ifWrong);
+        }
+
+        return false;
+    }
+
     static void BuildItemList(Menu<Item> menu, IEnumerable<Item> items, IUnit? unit = null, bool useInvLet = true)
     {
         var sorted = items
@@ -143,7 +241,7 @@ public static partial class Input
 
         char? lastClass = null;
         char autoLet = 'a';
-        var canSee = unit?.Allows("can_see") == true && unit.IsPlayer;
+        var canSee = unit?.IsPlayer == true && unit.CanSee;
         foreach (var item in sorted)
         {
             if (!item.Knowledge.HasFlag(ItemKnowledge.Seen) && canSee)
@@ -186,22 +284,17 @@ public static partial class Input
 
     static void DropItem()
     {
-        if (!u.Inventory.Any()) return;
-        var menu = new Menu<Item>();
-        menu.Add("Drop what?", LineStyle.Heading);
-        BuildItemList(menu, u.Inventory);
-        var picked = menu.Display(MenuMode.PickOne);
-        if (picked.Count == 0) return;
+        if (!PickItem("drop", _ => true, out var item)) return;
         _sellResponse = null;
-        g.pline($"You drop {picked[0].InvLet} - {picked[0]}.");
-        DoDrop(u, picked[0]);
-        TrySellToShop(picked[0]);
+        g.pline($"You drop {item.InvLet} - {item}.");
+        DoDrop(u, item);
+        TrySellToShop(item);
         u.Energy -= ActionCosts.OneAction.Value;
     }
 
     static void DropItems()
     {
-        if (!u.Inventory.Any()) return;
+        if (u.Inventory.Count == 0) return;
         var menu = new Menu<Item>();
         menu.Add("Drop what?", LineStyle.Heading);
         BuildItemList(menu, u.Inventory);
@@ -284,19 +377,8 @@ public static partial class Input
 
     static void ZapWand()
     {
-        var wands = u.Inventory.Where(i => i.Def is WandDef).ToList();
-        if (wands.Count == 0)
-        {
-            g.pline("You have no wands.");
-            return;
-        }
-        var menu = new Menu<Item>();
-        menu.Add("Zap which wand?", LineStyle.Heading);
-        BuildItemList(menu, wands, u);
-        var picked = menu.Display(MenuMode.PickOne);
-        if (picked.Count == 0) return;
+        if (!PickItem("zap", IsZappable, out var wand)) return;
 
-        var wand = picked[0];
         if (wand.Charges <= 0)
         {
             g.pline("Nothing happens.");
@@ -324,23 +406,13 @@ public static partial class Input
 
     static void Throw()
     {
-        var throwable = u.Inventory.Where(i => i.Def is PotionDef or BottleDef).ToList();
-        if (throwable.Count == 0)
-        {
-            g.pline("You have nothing to throw.");
-            return;
-        }
-        var menu = new Menu<Item>();
-        menu.Add("Throw what?", LineStyle.Heading);
-        BuildItemList(menu, throwable, u);
-        var picked = menu.Display(MenuMode.PickOne);
-        if (picked.Count == 0) return;
+        // TODO: throw things that aren't potions!!!
+        if (!PickItem("throw", IsQuaffable, out var item)) return;
 
         g.pline("In what direction?");
         var dir = GetDirection(NextKey().Key);
         if (dir == null) return;
 
-        var item = picked[0];
         Item toThrow;
         if (item.Count > 1)
             toThrow = item.Split(1);
@@ -495,29 +567,43 @@ public static partial class Input
             g.pline("You remove {0}.", DoName(picked[0]));
     }
 
+    // Like GetDirection but supports </>, slightly odd?
+    public static Pos? PickDirection()
+    {
+        var key = NextKey();
+        if (key.KeyChar == '>') return Pos.Down;
+        if (key.KeyChar == '<') return Pos.Up;
+        return GetDirection(key.Key);
+    }
+
+    static void Apply()
+    {
+        if (!PickItem("use or apply", IsApplyable, out var item)) return;
+
+        LogicBrick.FireOnVerb(item, ItemVerb.Apply);
+    }
+
     static void Quaff()
     {
-        var potions = u.Inventory.Where(i => i.Def is PotionDef or BottleDef).ToList();
-        if (potions.Count == 0)
+        if (!PickItem("drink", IsQuaffable, out var potion))
         {
-            g.pline("You have nothing to drink.");
             return;
         }
-        var menu = new Menu<Item>();
-        menu.Add("Quaff what?", LineStyle.Heading);
-        BuildItemList(menu, potions, u);
-        var picked = menu.Display(MenuMode.PickOne);
-        if (picked.Count == 0) return;
 
-        var potion = picked[0];
-        
-        string useType = potion.Def is BottleDef ? "bottle" : "potion";
-        g.pline($"You drink {potion.SingleName.An()}.");
-        Log.Structured("use", $"{"quaff":action}{potion.Def.Name:item}{useType:type}");
-        if (potion.Def is BottleDef bottle)
-            Bottles.DoEffect(bottle, u, upos);
+        if (potion.Def is BottleDef or PotionDef)
+        {
+            string useType = potion.Def is BottleDef ? "bottle" : "potion";
+            g.pline($"You drink {potion.SingleName.An()}.");
+            Log.Structured("use", $"{"quaff":action}{potion.Def.Name:item}{useType:type}");
+            if (potion.Def is BottleDef bottle)
+                Bottles.DoEffect(bottle, u, upos);
+            else
+                Potions.DoEffect((PotionDef)potion.Def, u);
+        }
         else
-            Potions.DoEffect((PotionDef)potion.Def, u);
+        {
+            LogicBrick.FireOnVerb(potion, ItemVerb.Quaff);
+        }
 
         u.Inventory.Consume(potion);
         u.Energy -= ActionCosts.OneAction.Value;
@@ -531,14 +617,7 @@ public static partial class Input
             return;
         }
         
-        var foods = u.Inventory.Where(i => i.IsFood).ToList();
         var corpses = lvl.ItemsAt(upos).Where(i => i.CorpseOf != null).ToList();
-        
-        if (foods.Count == 0 && corpses.Count == 0)
-        {
-            g.pline("You have nothing to eat.");
-            return;
-        }
         
         // If corpses on ground, offer cooking
         if (corpses.Count > 0)
@@ -588,14 +667,7 @@ public static partial class Input
             return;
         }
         
-        var menu = new Menu<Item>();
-        menu.Add("Eat what?", LineStyle.Heading);
-        foreach (var item in foods)
-            menu.Add(item.InvLet, DoName(item), item);
-        var foodPicked = menu.Display(MenuMode.PickOne);
-        if (foodPicked.Count == 0) return;
-
-        var food = foodPicked[0];
+        if (!PickItem("eat", IsEdible, out var food)) return;
         
         // Split off one if it's a stack (unless already partially eaten)
         if (food.Count > 1 && food.Eaten == 0)
@@ -617,39 +689,30 @@ public static partial class Input
 
     static void ReadScroll()
     {
-        var scrolls = u.Inventory.Where(i => i.Def is ScrollDef).ToList();
-        bool blind = !u.Allows("can_see");
+        bool blind = !u.CanSee;
 
+        Func<Item, bool> filter = IsReadable;
         if (blind)
         {
-            scrolls = scrolls.Where(i => i.Def.IsKnown()).ToList();
-            if (scrolls.Count == 0)
-            {
-                g.pline("You don't know any of the formulas!");
-                return;
-            }
+            filter = item => IsReadable(item) && item.Def.IsKnown();
         }
 
-        if (scrolls.Count == 0)
+        if (!PickItem("read", filter, out var item))
         {
-            g.pline("You have no scrolls.");
             return;
         }
-        var menu = new Menu<Item>();
-        menu.Add("Read what?", LineStyle.Heading);
-        BuildItemList(menu, scrolls, u);
-        var picked = menu.Display(MenuMode.PickOne);
-        if (picked.Count == 0) return;
 
-        var scroll = picked[0];
-        var def = (ScrollDef)scroll.Def;
+        // FIXME: not always a scroll
+        Log.Structured("use", $"{"read":action}{item.Def.Name:item}{"scroll":type}");
 
-        g.pline(blind
-            ? "As you pronounce the formula on it, the scroll disappears."
-            : "As you read the scroll, it disappears.");
-        u.Inventory.Consume(scroll);
-        Log.Structured("use", $"{"read":action}{def.Name:item}{"scroll":type}");
-        Scrolls.DoEffect(def, u, PickItemToIdentify, scroll.BUC);
+        if (item.Def is ScrollDef scroll)
+        {
+            g.pline(blind
+                ? "As you pronounce the formula on it, the scroll disappears."
+                : "As you read the scroll, it disappears.");
+            u.Inventory.Consume(item);
+            Scrolls.DoEffect(scroll, u, PickItemToIdentify, item.BUC);
+        }
 
         u.Energy -= ActionCosts.OneAction.Value;
     }
@@ -780,4 +843,13 @@ public static partial class Input
         else
             g.pline("Noted.");
     }
+
+    // Note: IsSubjectOf is null safe
+    static bool IsReadable(Item item) => (item.Def is ScrollDef or BookDef) || item.FindBrickOfType<VerbResponder>().IsSubjectOf(ItemVerb.Read);
+    static bool IsQuaffable(Item item) => (item.Def is PotionDef or BottleDef) || item.FindBrickOfType<VerbResponder>().IsSubjectOf(ItemVerb.Quaff);
+    static bool IsZappable(Item item) => item.Def is WandDef || item.FindBrickOfType<VerbResponder>().IsSubjectOf(ItemVerb.Zap);
+    // Eatable???
+    static bool IsEdible(Item item) => item.Def is ConsumableDef || item.FindBrickOfType<VerbResponder>().IsSubjectOf(ItemVerb.Eat);
+
+    static bool IsApplyable(Item item) => item.FindBrickOfType<VerbResponder>().IsSubjectOf(ItemVerb.Apply);
 }

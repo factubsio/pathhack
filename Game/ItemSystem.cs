@@ -2,187 +2,6 @@ namespace Pathhack.Game;
 
 public enum BUC { Cursed = -1, Uncursed = 0, Blessed = 1 }
 
-[Flags]
-public enum ItemKnowledge { None = 0, Seen = 1, BUC = 4, PropRunes = 8, PropQuality = 16, PropPotency = 32, Props = PropRunes | PropQuality | PropPotency }
-
-public enum AppearanceCategory { Potion, Scroll, Amulet, Boots, Gloves, Cloak, Ring, Bottle, Wand }
-
-public record Appearance(string Name, ConsoleColor Color, string? Material = null);
-
-public class ItemDb
-{
-    public static ItemDb Instance { get; private set; } = new();
-
-    static readonly Dictionary<AppearanceCategory, Appearance[]> Pools = new()
-    {
-        [AppearanceCategory.Potion] = [
-            new("milky potion", ConsoleColor.White),
-            new("fizzy potion", ConsoleColor.Yellow),
-            new("murky potion", ConsoleColor.DarkGray),
-            new("bubbly potion", ConsoleColor.Cyan),
-            new("smoky potion", ConsoleColor.Gray),
-            new("glowing potion", ConsoleColor.Magenta),
-            new("viscous potion", ConsoleColor.DarkGreen),
-            new("oily potion", ConsoleColor.DarkYellow),
-        ],
-        [AppearanceCategory.Bottle] = [
-            new("luminous bottle", ConsoleColor.Yellow),
-            new("cloudy bottle", ConsoleColor.Gray),
-            new("shimmering bottle", ConsoleColor.Cyan),
-            new("dark bottle", ConsoleColor.DarkMagenta),
-            new("warm bottle", ConsoleColor.DarkRed),
-            new("humming bottle", ConsoleColor.Green),
-            new("frosted bottle", ConsoleColor.White),
-            new("sparkling bottle", ConsoleColor.DarkYellow),
-        ],
-        [AppearanceCategory.Wand] = [
-            new("glass wand", ConsoleColor.White),
-            new("balsa wand", ConsoleColor.DarkYellow),
-            new("crystal wand", ConsoleColor.Cyan),
-            new("maple wand", ConsoleColor.DarkYellow),
-            new("oak wand", ConsoleColor.DarkYellow),
-            new("ebony wand", ConsoleColor.DarkGray),
-            new("marble wand", ConsoleColor.White),
-            new("tin wand", ConsoleColor.Gray),
-            new("brass wand", ConsoleColor.Yellow),
-            new("copper wand", ConsoleColor.DarkYellow),
-            new("silver wand", ConsoleColor.White),
-            new("platinum wand", ConsoleColor.White),
-            new("iridium wand", ConsoleColor.Cyan),
-            new("zinc wand", ConsoleColor.Gray),
-            new("iron wand", ConsoleColor.DarkGray),
-            new("steel wand", ConsoleColor.Gray),
-            new("hexagonal wand", ConsoleColor.DarkGray),
-            new("runed wand", ConsoleColor.DarkGray),
-            new("curved wand", ConsoleColor.DarkGray),
-            new("forked wand", ConsoleColor.DarkYellow),
-            new("jeweled wand", ConsoleColor.Magenta),
-            new("ceramic wand", ConsoleColor.DarkCyan),
-            new("pine wand", ConsoleColor.DarkYellow),
-            new("spiked wand", ConsoleColor.DarkGray),
-        ],
-        [AppearanceCategory.Scroll] = [
-            new("scroll labelled ZELGO MOR", ConsoleColor.White),
-            new("scroll labelled FOOBIE BLETCH", ConsoleColor.White),
-            new("scroll labelled TEMOV", ConsoleColor.White),
-            new("scroll labelled GARVEN DEH", ConsoleColor.White),
-            new("scroll labelled READ ME", ConsoleColor.White),
-            new("scroll labelled XIXAXA XOXAXA", ConsoleColor.White),
-            new("scroll labelled PRATYAVAYAH", ConsoleColor.White),
-            new("scroll labelled ELBIB YLOH", ConsoleColor.White),
-        ],
-        [AppearanceCategory.Amulet] = [
-            new("circular amulet", ConsoleColor.Gray),
-            new("jade amulet", ConsoleColor.Green),
-            new("spherical amulet", ConsoleColor.Cyan),
-            new("triangular amulet", ConsoleColor.Yellow),
-            new("copper amulet", ConsoleColor.DarkYellow),
-            new("silver amulet", ConsoleColor.White),
-        ],
-        [AppearanceCategory.Boots] = [
-            new("leather boots", ConsoleColor.DarkYellow),
-            new("riding boots", ConsoleColor.Gray),
-            new("fur-lined boots", ConsoleColor.White),
-            new("combat boots", ConsoleColor.DarkGray),
-            new("mud boots", ConsoleColor.DarkYellow),
-            new("jackboots", ConsoleColor.DarkRed),
-            new("hiking boots", ConsoleColor.Green),
-            new("iron-shod boots", ConsoleColor.DarkGray, "iron"),
-        ],
-        [AppearanceCategory.Gloves] = [
-            new("leather gloves", ConsoleColor.DarkYellow),
-            new("padded gloves", ConsoleColor.Gray),
-            new("riding gloves", ConsoleColor.White),
-            new("gauntlets", ConsoleColor.DarkGray),
-            new("fencing gloves", ConsoleColor.DarkCyan),
-            new("iron gauntlets", ConsoleColor.DarkGray, "iron"),
-            new("silk gloves", ConsoleColor.Magenta),
-            new("fingerless gloves", ConsoleColor.DarkYellow),
-        ],
-        [AppearanceCategory.Cloak] = [
-            new("tattered cloak", ConsoleColor.DarkGray),
-            new("opera cloak", ConsoleColor.Red),
-            new("ornate cloak", ConsoleColor.Magenta),
-            new("faded cloak", ConsoleColor.Gray),
-        ],
-        [AppearanceCategory.Ring] = [
-            new("iron ring", ConsoleColor.DarkGray, "iron"),
-            new("silver ring", ConsoleColor.White, "silver"),
-            new("gold ring", ConsoleColor.Yellow, "gold"),
-            new("copper ring", ConsoleColor.DarkYellow, "copper"),
-            new("jade ring", ConsoleColor.Green, "jade"),
-            new("ruby ring", ConsoleColor.Red, "ruby"),
-            new("sapphire ring", ConsoleColor.Blue, "sapphire"),
-            new("opal ring", ConsoleColor.Cyan, "opal"),
-            new("obsidian ring", ConsoleColor.DarkGray, "obsidian"),
-            new("pearl ring", ConsoleColor.White, "pearl"),
-            new("amethyst ring", ConsoleColor.Magenta, "amethyst"),
-            new("onyx ring", ConsoleColor.DarkGray, "onyx"),
-            new("topaz ring", ConsoleColor.Yellow, "topaz"),
-            new("emerald ring", ConsoleColor.Green, "emerald"),
-            new("bone ring", ConsoleColor.White, "bone"),
-            new("bronze ring", ConsoleColor.DarkYellow, "bronze"),
-            new("moonstone ring", ConsoleColor.Cyan, "moonstone"),
-            new("granite ring", ConsoleColor.Gray, "granite"),
-            new("coral ring", ConsoleColor.Red, "coral"),
-            new("ivory ring", ConsoleColor.White, "ivory"),
-            new("tin ring", ConsoleColor.Gray, "tin"),
-            new("brass ring", ConsoleColor.DarkYellow, "brass"),
-            new("wooden ring", ConsoleColor.DarkYellow, "wood"),
-            new("agate ring", ConsoleColor.DarkRed, "agate"),
-        ],
-    };
-
-    readonly Dictionary<AppearanceCategory, int[]> _shuffled = [];
-    readonly HashSet<ItemDef> _identified = [];
-    readonly Dictionary<ItemDef, string> _called = [];
-
-    public void Initialize(int gameSeed)
-    {
-        byte[] bytes = System.Security.Cryptography.SHA256.HashData(
-            System.Text.Encoding.UTF8.GetBytes($"{gameSeed}:appearances"));
-        var rng = new Random(BitConverter.ToInt32(bytes, 0));
-        _shuffled.Clear();
-        _identified.Clear();
-        _called.Clear();
-        foreach (var (cat, pool) in Pools)
-        {
-            var indices = Enumerable.Range(0, pool.Length).ToArray();
-            rng.Shuffle(indices);
-            _shuffled[cat] = indices;
-        }
-    }
-
-    public Appearance? GetAppearance(ItemDef def)
-    {
-        if (def.AppearanceCategory is not { } cat) return null;
-        if (def.AppearanceIndex < 0) return null;
-        if (!_shuffled.TryGetValue(cat, out var indices)) return null;
-        var pool = Pools[cat];
-        var idx = indices[def.AppearanceIndex % indices.Length];
-        return pool[idx];
-    }
-
-    public bool IsIdentified(ItemDef def) => def.AppearanceCategory == null || _identified.Contains(def);
-    public void Identify(ItemDef def) => _identified.Add(def);
-    public IEnumerable<ItemDef> IdentifiedDefs => _identified;
-    
-    public string? GetCalledName(ItemDef def) => _called.GetValueOrDefault(def);
-    public void SetCalledName(ItemDef def, string? name)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-            _called.Remove(def);
-        else
-            _called[def] = name;
-    }
-
-    public static void Reset(int seed)
-    {
-        Instance = new ItemDb();
-        Instance.Initialize(seed);
-    }
-}
-
 public class ItemDef : BaseDef
 {
     public string Name = "";
@@ -271,19 +90,19 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
     public bool IsBlessed => BUC == BUC.Blessed;
 
     public bool IsUnique => IsNamedUnique || Def.IsUnique;
-    
+
     string? _material;
     public string Material
     {
         get => _material ?? ItemDb.Instance.GetAppearance(Def)?.Material ?? Def.Material;
         set => _material = value;
     }
-    
+
     // runes (weapons only for now)
     public int Potency;
     public Fact? Fundamental;
     public List<Fact> PropertyRunes = [];
-    
+
     public int PropertySlots => Potency;
     public int EmptyPropertySlots => Potency - PropertyRunes.Count;
     public bool HasEmptyPropertySlot => PropertyRunes.Count < Potency;
@@ -369,14 +188,14 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
 
         // Def known (or no appearance) - show base name, maybe props
         var parts = new List<string>();
-        
+
         if (count > 1)
             parts.Add($"{count}");
 
         var bucKnown = Knowledge.HasFlag(ItemKnowledge.BUC);
         if (bucKnown)
             parts.Add(BUC switch { BUC.Blessed => "blessed", BUC.Cursed => "cursed", _ => "uncursed" });
-        
+
         if (potencyKnown)
         {
             if (Def is WeaponDef)
@@ -403,12 +222,12 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
         {
             parts.Add("enchanted");
         }
-        
+
         parts.Add(count > 1 ? Def.Name.Plural() : Def.Name);
-        
+
         if (Def is WandDef && potencyKnown)
             parts.Add($"({Charges})");
-        
+
         return string.Join(" ", parts);
     }
 
@@ -568,4 +387,30 @@ public static class MiscItems
         Weight = 0,
         Price = 1,
     };
+}
+
+// only for special stuff, equip/wield/put-on etc is handled separately
+[Flags]
+public enum ItemVerb
+{
+    None = 0,
+
+    Read = 1,
+    Quaff = 2,
+    Apply = 4,
+    Zap = 8,
+    Eat = 16,
+
+    Throw = 32, //?
+}
+
+public abstract class VerbResponder(ItemVerb subjectOf) : LogicBrick
+{
+    public ItemVerb SubjectOf => subjectOf;
+
+}
+
+public static class VerbExts
+{
+    public static bool IsSubjectOf(this VerbResponder? verbResponder, ItemVerb verb) => verbResponder?.SubjectOf.HasFlag(verb) == true;
 }

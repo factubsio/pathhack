@@ -327,7 +327,9 @@ public static partial class ClassDefs
             var armor = ItemGen.GenerateItem(MundaneArmory.LeatherArmor);
             p.Inventory.Add(armor).Identify();
             p.Equip(armor);
-            
+
+            p.Inventory.Add(ItemGen.GenerateItem(MundaneArmory.Pickaxe)).Identify();
+
             // Starting potions
             p.Inventory.Add(Item.Create(Potions.Healing, 2)).Identify();
             p.Inventory.Add(Item.Create(Potions.Speed)).Identify();

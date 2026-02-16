@@ -98,7 +98,7 @@ public static class FovCalculator
         Perf.Start();
         const int maxRange = 66;
 
-        int losRange = u.Allows("can_see") ? maxRange : 0;
+        int losRange = u.CanSee ? maxRange : 0;
 
         bool losDirty =
                 lastLosPov != origin

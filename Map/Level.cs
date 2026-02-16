@@ -34,7 +34,7 @@ public static class TileInfo
     {
         TileType.Rock => TileFlags.Diggable,
         TileType.Floor => TileFlags.Passable,
-        TileType.Wall => TileFlags.None | TileFlags.Structural,
+        TileType.Wall => TileFlags.Diggable | TileFlags.Structural,
         TileType.Corridor => TileFlags.Passable,
         TileType.Door => TileFlags.Passable | TileFlags.Structural,
         TileType.StairsUp => TileFlags.Passable | TileFlags.Structural,
@@ -70,10 +70,11 @@ public class CellState
     public Room? Room;
     public List<Item>? Items;
     public string? Message;
+    public bool Undiggable;
     internal TileFeature? Feature;
 }
 
-public readonly record struct Tile(TileType Type, TileFlags Flags)
+public readonly record struct Tile(TileType Type, TileFlags Flags, char WallCh = '\0')
 {
     public bool IsPassable => (Flags & TileFlags.Passable) != 0;
     public bool IsDiggable => (Flags & TileFlags.Diggable) != 0;
@@ -335,7 +336,7 @@ public class Level(LevelId id, int width, int height)
 
         foreach (var area in Areas)
         {
-            if (area.IsDifficultTerrain && unit.Has(CommonImmunities.DifficultTerrain)) continue;
+            if (area.IsDifficultTerrain && unit.Has(CommonQueries.DifficultTerrain)) continue;
             bool wasIn = area.Contains(from);
             bool nowIn = area.Contains(to);
             if (nowIn) area.HandleMove(unit);
@@ -374,7 +375,7 @@ public class Level(LevelId id, int width, int height)
         u.CurrentRoom = room;
 
         var items = lvl.ItemsAt(upos);
-        if (u.Allows("can_see"))
+        if (u.CanSee)
         {
             foreach (var item in items)
             {
@@ -441,12 +442,20 @@ public class Level(LevelId id, int width, int height)
 
     public bool CanMoveTo(Pos from, Pos to, IUnit? who = null, bool forced = false)
     {
+        if (!InBounds(to)) return false;
+
         Tile t = this[to];
         if (IsDoor(to) && IsDoorClosed(to)) return false;
 
+        bool phasing = who != null && who.Has(CreatureTags.Phasing);
         bool flying = who != null && who.Has(CreatureTags.Flying);
+        bool swimming = who != null && who.Has(CreatureTags.Swimming);
 
-        if (!t.IsPassable && !(flying && t.Type == TileType.Water))
+        bool canPassBase = phasing || t.IsPassable;
+        bool canFlyOver = flying && t.Type == TileType.Water;
+        bool canSwimThrough = swimming && t.Type == TileType.Water;
+
+        if (!canPassBase && !canFlyOver && !canSwimThrough)
             return false;
 
         // diagonal movement through doors blocked
@@ -460,8 +469,6 @@ public class Level(LevelId id, int width, int height)
                 return false;
             }
         }
-
-        // TODO: phasing, swimming
 
         return true;
     }
@@ -655,6 +662,47 @@ public class Level(LevelId id, int width, int height)
     internal void CleanupAreas() => Areas.RemoveAll(x => g.CurrentRound >= x.ExpiresAt);
 
     internal bool HasHole(Pos pos) => Traps.TryGetValue(pos, out var trap) && trap.Type is TrapType.Hole or TrapType.Trapdoor;
+
+    internal bool IsDiggable(Pos pos) => this[pos].IsDiggable && GetState(pos)?.Undiggable != true;
+
+    public void BakeWallChars()
+    {
+        for (int y = 0; y < Height; y++)
+        for (int x = 0; x < Width; x++)
+        {
+            Pos p = new(x, y);
+            if (this[p].Type != TileType.Wall) continue;
+            this[p] = this[p] with { WallCh = ComputeWallChar(p) };
+        }
+    }
+
+    char ComputeWallChar(Pos p)
+    {
+        bool n = InBounds(p + Pos.N) && this[p + Pos.N].Type is TileType.Wall or TileType.Door;
+        bool s = InBounds(p + Pos.S) && this[p + Pos.S].Type is TileType.Wall or TileType.Door;
+        bool e = InBounds(p + Pos.E) && this[p + Pos.E].Type is TileType.Wall or TileType.Door;
+        bool w = InBounds(p + Pos.W) && this[p + Pos.W].Type is TileType.Wall or TileType.Door;
+
+        return (n, s, e, w) switch
+        {
+            (false, false, false, false) => '0',
+            (true,  true,  false, false) => 'x',
+            (false, false, true,  true)  => 'q',
+            (false, true,  true,  false) => 'l',
+            (false, true,  false, true)  => 'k',
+            (true,  false, true,  false) => 'm',
+            (true,  false, false, true)  => 'j',
+            (true,  true,  true,  false) => 't',
+            (true,  true,  false, true)  => 'u',
+            (false, true,  true,  true)  => 'w',
+            (true,  false, true,  true)  => 'v',
+            (true,  true,  true,  true)  => 'n',
+            (true,  false, false, false) => 'x',
+            (false, true,  false, false) => 'x',
+            (false, false, true,  false) => 'q',
+            (false, false, false, true)  => 'q',
+        };
+    }
 }
 
 

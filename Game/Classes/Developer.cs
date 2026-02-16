@@ -188,6 +188,17 @@ public class SleepTarget() : ActionBrick("Sleep Target", TargetingType.Unit)
     }
 }
 
+public class TogglePhasing() : SimpleToggleAction("Phasing", PhasingBuff.Instance);
+
+public class PhasingBuff : LogicBrick
+{
+    public static readonly PhasingBuff Instance = new();
+    public override string Id => "phasing";
+    public override bool IsBuff => true;
+    public override string? BuffName => "Phasing";
+    protected override object? OnQuery(Fact fact, string key, string? arg) => key.TrueWhen(CreatureTags.Phasing);
+}
+
 public class CurseInventory() : ActionBrick("Curse Inventory")
 {
     public override ActionPlan CanExecute(IUnit unit, object? data, Target target) => true;
@@ -299,6 +310,7 @@ public static partial class ClassDefs
             p.AddAction(new SleepTarget());
             p.AddAction(new CurseInventory());
             p.AddAction(new UncurseInventory());
+            p.AddAction(new TogglePhasing());
             foreach (var blessing in Blessings.All)
                 blessing.ApplyMinor(p);
         },

@@ -37,6 +37,8 @@ public static class CreatureTags
   public const string Swarm = "swarm";
   public const string Aquatic = "aquatic";
   public const string Flying = "flying";
+  public const string Swimming = "swimming";
+  public const string Phasing = "phasing";
   public const string Mindless = "mindless";
 }
 

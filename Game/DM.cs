@@ -102,4 +102,6 @@ public class DungeonMaster : Entity<BaseDef>, IUnit, IFormattable
 
     public string ToString(string? format, IFormatProvider? provider) => represents?.ToString(format, provider) ?? "the dungeon";
 
+    public bool CanSee => true;
+
 }

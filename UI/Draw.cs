@@ -379,44 +379,6 @@ public static class Draw
     }
 
 
-    static bool IsWall(Level level, Pos p)
-    {
-        if (!level.InBounds(p)) return false;
-        return level[p].Type is TileType.Wall or TileType.Door;
-        // TODO: perf - room border iteration too slow
-        // if (level[p].Type == TileType.Door) return true;
-        // foreach (var room in level.Rooms)
-        //     if (room.Border.Contains(p)) return true;
-        // return false;
-    }
-
-    static char WallChar(Level level, Pos p)
-    {
-        bool n = IsWall(level, p + Pos.N);
-        bool s = IsWall(level, p + Pos.S);
-        bool e = IsWall(level, p + Pos.E);
-        bool w = IsWall(level, p + Pos.W);
-
-        return (n, s, e, w) switch
-        {
-            (false, false, false, false) => '0', // solid block (DEC)
-            (true,  true,  false, false) => 'x', // vertical
-            (false, false, true,  true)  => 'q', // horizontal
-            (false, true,  true,  false) => 'l', // top-left
-            (false, true,  false, true)  => 'k', // top-right
-            (true,  false, true,  false) => 'm', // bottom-left
-            (true,  false, false, true)  => 'j', // bottom-right
-            (true,  true,  true,  false) => 't', // T-right
-            (true,  true,  false, true)  => 'u', // T-left
-            (false, true,  true,  true)  => 'w', // T-down
-            (true,  false, true,  true)  => 'v', // T-up
-            (true,  true,  true,  true)  => 'n', // cross
-            (true,  false, false, false) => 'x',
-            (false, true,  false, false) => 'x',
-            (false, false, true,  false) => 'q',
-            (false, false, false, true)  => 'q',
-        };
-    }
 
     public static void DrawLevel(Level level)
     {
@@ -584,7 +546,7 @@ public static class Draw
         char ch = t switch
         {
             TileType.Floor => '~',          //dec
-            TileType.Wall => WallChar(level, p),
+            TileType.Wall => level[p].WallCh != '\0' ? level[p].WallCh : '0',
             TileType.Rock => ' ',
             TileType.Corridor => '#',
             TileType.Door => door switch
@@ -608,7 +570,7 @@ public static class Draw
     private static string TopLine = "";
     private static TopLineState TopLineState = TopLineState.Empty;
 
-    private static bool More(bool save, int col, int row)
+    public static bool More(bool save, int col, int row)
     {
         if (save) SaveTopLine();
         if (!PHMonitor.Active)

@@ -84,6 +84,7 @@ public record struct Dice(int D, int F, int Flat = 0)
     internal readonly Dice WithExtra(int extraDice) => new(D * (1 + extraDice), F, Flat);
 
     internal readonly string Serialize() => $"{D},{F},{Flat}";
+    public override readonly string ToString() => $"{(D == 1 ? "" : D)}d{F}{(Flat == 0 ? "" : $"+{Flat}")}";
 }
 
 public record struct DiceFormula(Dice[] Dice)

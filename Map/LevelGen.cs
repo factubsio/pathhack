@@ -143,6 +143,8 @@ public static class LevelGen
             }
             Log("Resolved commands done");
 
+            ctx.level.BakeWallChars();
+
             if (!ctx.NoRoomAssignment)
             {
                 Log("AssignRoomTypes...");
@@ -775,6 +777,10 @@ public static class LevelGen
             }
 
             room.Resident = shk;
+
+            // Shop walls are undiggable
+            foreach (var p in room.Border)
+                level.GetOrCreateState(p).Undiggable = true;
         }
     }
     
@@ -889,7 +895,7 @@ public static class LevelGen
             {
                 var neighbor = p + dir;
                 var tile = level[neighbor];
-                if (tile.IsDiggable || tile.Type == TileType.Corridor)
+                if (tile.Type is TileType.Rock or TileType.Corridor)
                     candidates.Add((p, dir));
             }
         }
@@ -1034,7 +1040,7 @@ public static class LevelGen
         Pos dest = new(doorB.X - dx, doorB.Y - dy);
         
         // If dest is inside a room, adjust
-        if (!level[dest].IsDiggable && level[dest].Type != TileType.Corridor)
+        if (level[dest].Type is not TileType.Rock && level[dest].Type != TileType.Corridor)
             dest = doorB;
 
         List<Pos> dug = [];
@@ -1052,7 +1058,7 @@ public static class LevelGen
             }
 
             Tile t = level[new(x, y)];
-            if (t.IsDiggable)
+            if (t.Type == TileType.Rock)
             {
                 level.Set(new(x, y), TileType.Corridor);
                 dug.Add(new(x, y));
@@ -1179,7 +1185,7 @@ public static class LevelGen
         if (x <= 0 || x >= level.Width - 1 || y <= 0 || y >= level.Height - 1)
             return false;
         Tile t = level[new(x, y)];
-        return t.IsDiggable || t.Type == TileType.Corridor;
+        return t.Type is TileType.Rock or TileType.Corridor;
     }
 }
 

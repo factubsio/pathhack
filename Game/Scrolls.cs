@@ -1,5 +1,15 @@
 namespace Pathhack.Game;
 
+public class BookDef : ItemDef
+{
+    public BookDef()
+    {
+        Glyph = new(ItemClasses.Spellbook, ConsoleColor.White);
+        AppearanceCategory = Game.AppearanceCategory.Spellbook;
+    }
+
+}
+
 public class ScrollDef : ItemDef
 {
     public ScrollDef()

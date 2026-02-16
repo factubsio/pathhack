@@ -139,7 +139,7 @@ public class GameState
         if (!viewer.IsPlayer && !target.IsPlayer)
         {
             bool adjacent = viewer.Pos.ChebyshevDist(target.Pos) <= 1;
-            bool mBlind = !viewer.Allows("can_see");
+            bool mBlind = !viewer.Allows(CommonQueries.See);
             bool mTargetInvis = target.Has("invisible");
             bool mTargetInDark = !lvl.IsLit(target.Pos) && !viewer.Has("darkvision");
             bool mLOS = adjacent || FovCalculator.IsPathClear(lvl, viewer.Pos, target.Pos);
@@ -152,7 +152,7 @@ public class GameState
         int tremor = viewer.Query<int>("tremorsense", null, MergeStrategy.Max, 0);
         bool hasTremor = tremor > 0 && viewer.Pos.ChebyshevDist(target.Pos) <= tremor;
 
-        bool blind = !viewer.Allows("can_see");
+        bool blind = !viewer.CanSee;
         bool targetInvis = target.Has("invisible") && !viewer.Has("see_invisible");
         bool targetInDark = !lvl.IsLit(target.Pos) && !viewer.Has("darkvision");
 
@@ -381,7 +381,7 @@ public class GameState
     {
         if (source.IsDM) return false;
 
-        bool canSee = u.Allows("can_see") && lvl.IsVisible(source.Pos);
+        bool canSee = u.CanSee && lvl.IsVisible(source.Pos);
         bool canHear = sound != null && upos.ChebyshevDist(source.Pos) <= hearRadius;
 
         if (canSee && ifSee != null)
@@ -431,7 +431,7 @@ public class GameState
             Draw.DrawCurrent();
             Perf.Stop("Draw");
 
-            if (!u.Allows("can_act")) break;
+            if (!u.Allows("can_act")) { u.Energy = 0; break; }
 
             Perf.Start();
             PHMonitor.WaitForAction(u.Energy);
@@ -456,7 +456,7 @@ public class GameState
             if (unit.IsPlayer) continue;
             while (unit.Energy > 1 && !unit.IsDead)
             {
-                if (!unit.Allows("can_act")) break;
+                if (!unit.Allows("can_act")) { unit.Energy = 0; break; }
 
                 Perf.Start();
                 MonsterTurn(unit);
@@ -882,7 +882,14 @@ public class GameState
         if (target is Monster mon && mon.IsAsleep && g.Rn2(100) != 0) mon.IsAsleep = false;
 
         if (target.IsPlayer)
+        {
             Movement.Stop();
+            if (u.CurrentActivity is { Interruptible: true } act)
+            {
+                act.OnInterrupt();
+                u.CurrentActivity = null;
+            }
+        }
 
         LogicBrick.FireOnDamageDone(source, ctx);
         LogicBrick.FireOnDamageTaken(target, ctx);
@@ -1155,13 +1162,17 @@ public class GameState
                 // peaceful - can't walk through
                 g.pline($"{tgt:The} is in the way.");
             }
-            else if (lvl.CanMoveTo(upos, next, u) || g.DebugMode)
+            else if (lvl.CanMoveTo(upos, next, u))
             {
                 lvl.MoveUnit(u, next);
             }
             else if (lvl.IsDoorClosed(next))
             {
                 DoOpenDoor(next);
+            }
+            else if (Config.AutoDig && lvl.IsDiggable(next) && u.GetWieldedItem().Has(DiggerIdentity.Q))
+            {
+                DiggingUtil.DoDig(u.GetWieldedItem(), dir);
             }
         }
 

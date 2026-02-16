@@ -11,11 +11,7 @@ public class BlindBuff : LogicBrick
   public override string? BuffName => "Blind";
   public override StackMode StackMode => StackMode.Stack;
 
-  protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
-  {
-    "can_see" => false,
-    _ => null,
-  };
+  protected override object? OnQuery(Fact fact, string key, string? arg) => key.FalseWhen(CommonQueries.See);
 
   protected override void OnStackRemoved(Fact fact)
   {
@@ -120,7 +116,7 @@ public class StunnedBuff : LogicBrick
   protected override object? OnQuery(Fact fact, string key, string? arg) => key == "can_act" && !fact.Entity.Has("stun_immunity") ? false : null;
 }
 
-public static class CommonImmunities
+public static class CommonQueries
 {
     public const string Stun = "stun_immunity";
     public const string Paralysis = "paralysis_immunity";
@@ -129,6 +125,7 @@ public static class CommonImmunities
     public const string Bleed = "bleed_immunity";
     public const string Poison = "poison_immunity";
     public const string DifficultTerrain = "difficult_terrain";
+    public const string See = "can_see";
 }
 
 public class AfflictionData

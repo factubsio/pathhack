@@ -64,7 +64,7 @@ public class FeatherStepBuff : LogicBrick
     public override string Id => "featherstep";
     public override StackMode StackMode => StackMode.Stack;
 
-    protected override object? OnQuery(Fact fact, string key, string? arg) => key.TrueWhen(CommonImmunities.DifficultTerrain);
+    protected override object? OnQuery(Fact fact, string key, string? arg) => key.TrueWhen(CommonQueries.DifficultTerrain);
 }
 public class Toughness : LogicBrick
 {
@@ -131,8 +131,8 @@ public class PowerAttackBuff : LogicBrick
     }
 }
 
-public class PowerAttackToggle() : SimpleToggleAction<PowerAttackBuff>("Power Attack", PowerAttackBuff.Instance);
-public class RecklessAttackToggle() : SimpleToggleAction<RecklessAttackBuff>("Reckless Attack", RecklessAttackBuff.Instance);
+public class PowerAttackToggle() : SimpleToggleAction("Power Attack", PowerAttackBuff.Instance);
+public class RecklessAttackToggle() : SimpleToggleAction("Reckless Attack", RecklessAttackBuff.Instance);
 
 public static class GeneralFeats
 {

@@ -311,6 +311,20 @@ public static class MundaneArmory
         Price = 20,
     };
 
+    public static readonly WeaponDef Pickaxe = new()
+    {
+        id = "pickaxe",
+        Name = "pickaxe",
+        BaseDamage = d(6),
+        Profiency = Proficiencies.Axe,
+        WeaponType = WeaponTypes.Pick,
+        DamageType = DamageTypes.Piercing,
+        MeleeVerb = "strikes",
+        Glyph = new(ItemClasses.Weapon, ConsoleColor.Gray),
+        Price = 14,
+        Components = [DiggerIdentity.Instance, DiggerVerb.Instance],
+    };
+
     public static readonly WeaponDef Gandasa = new()
     {
         id = "gandasa",
@@ -411,6 +425,6 @@ public static class MundaneArmory
         Price = 400,
     };
 
-    public static readonly WeaponDef[] AllWeapons = [Dagger, Shortsword, Longsword, Scimitar, Rapier, Falchion, Club, SpikedClub, Greatclub, Mace, Flail, Quarterstaff, BoStaff, Spear, Scythe, Whip, SpikedChain, Longbow, Dart, Bola, Hatchet, Battleaxe, DwarvenWaraxe, Greataxe, Gandasa];
+    public static readonly WeaponDef[] AllWeapons = [Dagger, Shortsword, Longsword, Scimitar, Rapier, Falchion, Club, SpikedClub, Greatclub, Mace, Flail, Quarterstaff, BoStaff, Spear, Scythe, Whip, SpikedChain, Longbow, Dart, Bola, Hatchet, Battleaxe, DwarvenWaraxe, Greataxe, Gandasa, Pickaxe];
     public static readonly ArmorDef[] AllArmors = [LeatherArmor, ChainShirt, HideArmor, Breastplate, SplintMail, FullPlate];
 }

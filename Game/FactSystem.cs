@@ -161,6 +161,8 @@ public abstract class LogicBrick
 
     protected virtual void OnBeforeSpellCast(Fact fact, PHContext context) { }
 
+    protected virtual void OnVerb(Fact fact, ItemVerb verb) { }
+
     // Static dispatch methods - call these instead of instance methods directly
     static bool Skip(LogicBrick b, Fact f) => b.RequiresEquipped && !f.IsEquipped();
     public static object? FireOnQuery(LogicBrick b, Fact f, string key, string? arg) { if (Skip(b, f)) return null; GlobalHook?.OnQuery(f, key, arg); return b.OnQuery(f, key, arg); }
@@ -189,6 +191,7 @@ public abstract class LogicBrick
     public static void FireOnSpawn(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnSpawn(f, c); b.OnSpawn(f, c); }
     public static void FireOnDeath(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnDeath(f, c); b.OnDeath(f, c); }
     public static void FireOnBeforeSpellCast(LogicBrick b, Fact f, PHContext c) { if (Skip(b, f)) return; GlobalHook?.OnBeforeSpellCast(f, c); b.OnBeforeSpellCast(f, c); }
+    public static void FireOnVerb(LogicBrick b, Fact f, ItemVerb verb) { if (Skip(b, f)) return; GlobalHook?.OnVerb(f, verb); b.OnVerb(f, verb); }
 
     // IEntity overloads - fire on all facts via GetAllFacts (null-safe)
     public static void FireOnRoundStart(IEntity? e) { if (e == null) return; foreach (var f in e.GetOwnFacts()) FireOnRoundStart(f.Brick, f); }
@@ -211,6 +214,7 @@ public abstract class LogicBrick
     public static void FireOnUnequip(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnUnequip(f.Brick, f, c); }
     public static void FireOnSpawn(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnSpawn(f.Brick, f, c); }
     public static void FireOnDeath(IEntity? e, PHContext c) { if (e == null) return; foreach (var f in e.GetAllFacts(c)) FireOnDeath(f.Brick, f, c); }
+    public static void FireOnVerb(IEntity? e, ItemVerb verb) { if (e == null) return; foreach (var f in e.GetOwnFacts()) FireOnVerb(f.Brick, f, verb); }
 }
 
 public class DataFlag
@@ -325,7 +329,7 @@ public abstract class CooldownAction(string name, TargetingType target, Func<IUn
     protected abstract void Execute(IUnit unit, Target target);
 }
 
-public abstract class SimpleToggleAction<T>(string name, T fact) : ActionBrick(name, TargetingType.None) where T : LogicBrick
+public abstract class SimpleToggleAction(string name, LogicBrick fact) : ActionBrick(name, TargetingType.None)
 {
     public override ToggleState IsToggleOn(object? data) => ((DataFlag)data!).On ? ToggleState.On : ToggleState.Off;
 
@@ -387,6 +391,8 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
     public int FactCount => Facts.Count;
     public Fact FactAt(int i) => Facts[i];
     public Fact? FindFact(LogicBrick brick) => LiveFacts.FirstOrDefault(x => x.Brick == brick);
+    public Fact? FindFactOfType<T>() => LiveFacts.FirstOrDefault(x => x.Brick is T);
+    public T? FindBrickOfType<T>() where T : LogicBrick => LiveFacts.FirstOrDefault(x => x.Brick is T)?.Brick as T;
 
     public IEnumerable<Fact> LiveFacts => Facts.Where(x => !x.MarkedForRemoval);
 
@@ -621,6 +627,17 @@ public class Inventory(IUnit owner) : IEnumerable<Item>
     };
 
     static char IndexToLetter(int i) => i < 26 ? (char)('a' + i) : (char)('A' + i - 26);
+
+    internal bool TryGet(char ch, [NotNullWhen(true)] out Item? item)
+    {
+        item = null;
+        int idx = LetterToIndex(ch);
+        if (idx < 0) return false;
+        bool hasKey = (inUse & (1u << idx)) != 0;
+        if (!hasKey) return false;
+        item = Items.First(i => i.InvLet == ch);
+        return true;
+    }
 }
 
 public class Hitpoints
@@ -726,6 +743,8 @@ public interface IUnit : IEntity, IFormattable
     int AbsorbTempHp(int damage, out int absorbed);
     void TickTempHp();
 
+    public bool CanSee { get; }
+
     // for stat tracking
     public int HitsTaken { get; set; }
     public int MissesTaken { get; set; }
@@ -773,6 +792,8 @@ public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) :
     public List<ActionBrick> Actions { get; } = [];
     public List<SpellBrickBase> Spells { get; } = [];
     public Dictionary<ActionBrick, object?> ActionData { get; } = [];
+
+    public bool CanSee => Allows(CommonQueries.See);
 
     public override IEnumerable<Fact> GetAllFacts(PHContext? ctx)
     {

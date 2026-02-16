@@ -68,6 +68,7 @@ public static partial class Input
         ['t'] = new("throw", "Throw item", ArgType.None, _ => Throw()),
         ['z'] = new("zap", "Zap wand", ArgType.None, _ => ZapWand()),
         ['e'] = new("eat", "Eat food", ArgType.None, _ => Eat()),
+        ['a'] = new("apply", "Apply item", ArgType.None, _ => Apply()),
         ['\\'] = new("discoveries", "Show discoveries", ArgType.None, _ => ShowDiscoveries()),
         ['C'] = new("call", "Name an item type", ArgType.None, _ => CallItem()),
         ['?'] = new("help", "Show help", ArgType.None, _ => ShowHelp()),
@@ -597,7 +598,7 @@ public static partial class Input
     {
         var items = lvl.ItemsAt(upos);
         if (items.Count == 0) return;
-        if (u.Allows("can_see"))
+        if (u.CanSee)
             foreach (var item in items)
                 item.Knowledge |= ItemKnowledge.Seen;
         List<Item> toPickup;
@@ -788,10 +789,11 @@ public static partial class Input
     {
         List<char> chars = [];
         int autoCompleteLen = 0; // how many chars were auto-filled
+        bool suppressAutoComplete = false;
         while (true)
         {
             // auto-complete if unambiguous
-            if (completions != null && chars.Count > 0 && autoCompleteLen == 0)
+            if (completions != null && chars.Count > 0 && autoCompleteLen == 0 && !suppressAutoComplete)
             {
                 string prefix = new([.. chars]);
                 var matches = completions.Where(c => c.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)).ToList();
@@ -803,15 +805,59 @@ public static partial class Input
                     autoCompleteLen = suffix.Length;
                 }
             }
+            suppressAutoComplete = false;
 
             ConsoleKeyInfo k = NextKey();
             if (k.Key == ConsoleKey.Enter) return new string([.. chars]);
             if (k.Key == ConsoleKey.Escape) return null;
             if (k.Key == ConsoleKey.Backspace && chars.Count > 0)
             {
-                chars.RemoveAt(chars.Count - 1);
-                Console.Write("\b \b");
-                autoCompleteLen = Math.Max(0, autoCompleteLen - 1);
+                if (autoCompleteLen > 0)
+                {
+                    // clear entire autocomplete suffix
+                    for (int i = 0; i < autoCompleteLen; i++)
+                    {
+                        chars.RemoveAt(chars.Count - 1);
+                        Console.Write("\b \b");
+                    }
+                    autoCompleteLen = 0;
+                }
+                else
+                {
+                    chars.RemoveAt(chars.Count - 1);
+                    Console.Write("\b \b");
+                }
+                suppressAutoComplete = true;
+            }
+            else if (k.Key == ConsoleKey.U && k.Modifiers.HasFlag(ConsoleModifiers.Control))
+            {
+                for (int i = chars.Count - 1; i >= 0; i--)
+                    Console.Write("\b \b");
+                chars.Clear();
+                autoCompleteLen = 0;
+            }
+            else if (k.Key == ConsoleKey.W && k.Modifiers.HasFlag(ConsoleModifiers.Control))
+            {
+                if (autoCompleteLen > 0)
+                {
+                    for (int i = 0; i < autoCompleteLen; i++)
+                    {
+                        chars.RemoveAt(chars.Count - 1);
+                        Console.Write("\b \b");
+                    }
+                    autoCompleteLen = 0;
+                }
+                // delete back to previous space
+                while (chars.Count > 0 && chars[^1] == ' ')
+                {
+                    chars.RemoveAt(chars.Count - 1);
+                    Console.Write("\b \b");
+                }
+                while (chars.Count > 0 && chars[^1] != ' ')
+                {
+                    chars.RemoveAt(chars.Count - 1);
+                    Console.Write("\b \b");
+                }
             }
             else if (k.Key == ConsoleKey.Tab && completions != null)
             {

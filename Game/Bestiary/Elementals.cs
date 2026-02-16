@@ -1,5 +1,3 @@
-using System.Runtime.InteropServices;
-
 namespace Pathhack.Game.Bestiary;
 
 /// <summary>Immune to bleed, paralyzed, poison, sleep.</summary>
@@ -11,10 +9,10 @@ public class ElementalTraits : LogicBrick
 
     protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
     {
-        CommonImmunities.Poison => true,
-        CommonImmunities.Bleed => true,
-        CommonImmunities.Sleep => true,
-        CommonImmunities.Paralysis => true,
+        CommonQueries.Poison => true,
+        CommonQueries.Bleed => true,
+        CommonQueries.Sleep => true,
+        CommonQueries.Paralysis => true,
         _ => null
     };
 }

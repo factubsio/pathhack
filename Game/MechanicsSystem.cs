@@ -123,6 +123,7 @@ public static class WeaponTypes
     public const string Axe = "axe";
     public const string Greataxe = "greataxe";
     public const string Rock = "rock";
+    public const string Pick = "pick";
 }
 
 public enum ProficiencyLevel
