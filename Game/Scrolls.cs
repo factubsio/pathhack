@@ -20,21 +20,14 @@ public class ScrollDef : ItemDef
     }
 }
 
-public static class Scrolls
+[GenerateAll("All", typeof(ScrollDef))]
+public static partial class Scrolls
 {
     public static readonly ScrollDef MagicMapping = new() { Name = "scroll of magic mapping", Price = 300 };
     public static readonly ScrollDef Identify = new() { Name = "scroll of identify", Price = 40 };
     public static readonly ScrollDef Teleportation = new() { Name = "scroll of teleportation", Price = 120 };
     public static readonly ScrollDef Fire = new() { Name = "scroll of fire", Price = 120 };
     public static readonly ScrollDef RemoveCurse = new() { Name = "scroll of remove curse", Price = 200 };
-
-    public static readonly ScrollDef[] All = [MagicMapping, Identify, Teleportation, Fire, RemoveCurse];
-
-    static Scrolls()
-    {
-        for (int i = 0; i < All.Length; i++)
-            All[i].AppearanceIndex = i;
-    }
 
     public static void DoEffect(ScrollDef def, IUnit user, Func<Item?> pickItemToIdentify, BUC buc = BUC.Uncursed)
     {

@@ -153,211 +153,6 @@ public static partial class Input
         Draw.DrawCurrent();
     }
 
-    public static void DoLevelUp()
-    {
-        if (!Progression.HasPendingLevelUp(u))
-        {
-            g.pline("No level up available.");
-            return;
-        }
-
-        int newLevel = u.CharacterLevel + 1;
-
-        // Build stages
-        List<LevelUpStage> stages = [];
-
-        // Class-specific selections
-        var classEntry = u.Class?.Progression.ElementAtOrDefault(newLevel - 1);
-
-        if (classEntry != null)
-            foreach (var brick in classEntry.Grants)
-                u.AddFact(brick);
-
-        if (classEntry?.Selections != null)
-        {
-            foreach (var sel in classEntry.Selections)
-            {
-                var options = sel.Options
-                    .Where(f => !u.TakenFeats.Contains(f.id))
-                    .Where(f => f.WhyNot != "")
-                    .OrderBy(f => f.WhyNot)
-                    .ToList();
-                if (options.Count > 0)
-                    stages.Add(new FeatStage(sel.Label, options, sel.Count));
-            }
-        }
-
-        // Shared schedule feats
-        foreach (var featType in Progression.FeatsAtLevel(newLevel))
-        {
-            var (label, pool) = featType switch
-            {
-                FeatType.Class => ("Choose a class feat", u.Class?.ClassFeats ?? []),
-                FeatType.General => ("Choose a general feat", GeneralFeats.All),
-                FeatType.Ancestry => ("Choose an ancestry feat", u.Ancestry?.Feats ?? []),
-                _ => (null, null)
-            };
-            
-            if (pool != null && label != null)
-            {
-                foreach (var f in pool)
-                    Log.Write($"DEBUG: feat={f?.Name ?? "NULL"} id={f?.id ?? "NULL"} level={f?.Level}");
-                var available = pool
-                    .Where(f => f.Level <= newLevel)
-                    .Where(f => !u.TakenFeats.Contains(f.id))
-                    .Where(f => f.WhyNot != "")
-                    .OrderBy(f => f.WhyNot)
-                    .ToList();
-                if (available.Count > 0)
-                    stages.Add(new FeatStage(label, available, 1));
-            }
-            else if (featType == FeatType.AttributeBoost)
-            {
-                stages.Add(new AttributeBoostStage());
-            }
-        }
-
-        // Run stages with back navigation
-        int step = 0;
-        while (step < stages.Count)
-        {
-            bool? result = stages[step].Run();
-            if (result == null)
-            {
-                // HOW DO WE CANCEL: because we need pre-reqs
-                // Can we UNDO grants? snapshot stuff? seems so hard?
-                if (step > 0)
-                    step--;
-            }
-            else
-                step++;
-        }
-        foreach (var stage in stages)
-            stage.Apply();
-
-        u.CharacterLevel = newLevel;
-        Log.Structured("levelup", $"{newLevel:level}{u.XP:xp}{u.HitsTaken:hits}{u.MissesTaken:misses}{u.DamageTaken:dmg_taken}");
-
-        // Apply hp gains (after level set!)
-        int hpGain = u.Class!.HpPerLevel;
-        u.HP.BaseMax += hpGain;
-        u.HP.Current += hpGain;
-
-        u.RecalculateMaxHp();
-
-        g.pline($"Welcome to level {newLevel}!");
-    }
-
-    interface LevelUpStage
-    {
-        public abstract bool? Run();
-        public abstract void Apply();
-    }
-
-    class FeatStage(string label, List<FeatDef> options, int count) : LevelUpStage
-    {
-        List<FeatDef> _picked = [];
-
-        public bool? Run()
-        {
-            if (count == 1)
-            {
-                var picked = ListPicker.Pick(options, label);
-                if (picked == null) return null;
-                _picked = [picked];
-            }
-            else
-            {
-                var picked = ListPicker.PickMultiple(options, label, count);
-                if (picked == null) return null;
-                _picked = picked;
-            }
-            return true;
-        }
-
-        public void Apply()
-        {
-            foreach (var feat in _picked)
-            {
-                u.TakenFeats.Add(feat.id);
-                foreach (var brick in feat.Components)
-                    u.AddFact(brick);
-            }
-        }
-    }
-
-    class AttributeBoostStage : LevelUpStage
-    {
-        static readonly SimpleSelectable[] StatSelectables = [
-            new("Strength", "Physical power and carrying capacity."),
-            new("Dexterity", "Agility, reflexes, and balance."),
-            new("Constitution", "Health and stamina."),
-            new("Intelligence", "Reasoning and memory."),
-            new("Wisdom", "Perception and insight."),
-            new("Charisma", "Force of personality."),
-        ];
-
-        List<SimpleSelectable>? _picked;
-
-        public bool? Run()
-        {
-            _picked = ListPicker.PickMultiple(StatSelectables, "Choose 4 attribute boosts:", 4);
-            return _picked != null ? true : null;
-        }
-
-        public void Apply()
-        {
-            if (_picked == null) return;
-            foreach (var stat in _picked)
-            {
-                AbilityStat ability = stat.Name switch
-                {
-                    "Strength" => AbilityStat.Str,
-                    "Dexterity" => AbilityStat.Dex,
-                    "Constitution" => AbilityStat.Con,
-                    "Intelligence" => AbilityStat.Int,
-                    "Wisdom" => AbilityStat.Wis,
-                    "Charisma" => AbilityStat.Cha,
-                    _ => throw new Exception(),
-                };
-                u.BaseAttributes.Modify(ability, x => x + (x >= 18 ? 1 : 2));
-            }
-        }
-    }
-
-    static void ZapSpell()
-    {
-        if (!u.Allows("can_speak"))
-        {
-            g.pline($"You are currently silenced!");
-            return;
-        }
-
-        if (u.Spells.Count == 0)
-        {
-            g.pline("You don't know any spells right now.");
-            return;
-        }
-        var menu = new Menu<ActionBrick>();
-        menu.Add("Choose which spell to cast", LineStyle.Heading);
-        char let = 'a';
-        foreach (var level in u.Spells.GroupBy(s => s.Level))
-        {
-            menu.Add($"Level {level.Key}:", LineStyle.SubHeading);
-            foreach (var spell in level)
-            {
-                var data = u.ActionData.GetValueOrDefault(spell);
-                var spellPlan = spell.CanExecute(u, data, Target.None);
-                string status = spellPlan ? "" : $" ({spellPlan.WhyNot})";
-                menu.Add(let++, spell.Name + status, spell);
-            }
-        }
-        var picked = menu.Display(MenuMode.PickOne);
-        if (picked.Count == 0) return;
-        Log.Structured("cast", $"{picked[0].Name:spell}{picked[0].Targeting.ToString():targeting}");
-        ResolveTargetAndExecute(picked[0]);
-    }
-
     static void ResolveTargetAndExecute(ActionBrick ability)
     {
         var data = u.ActionData.GetValueOrDefault(ability);
@@ -445,38 +240,6 @@ public static partial class Input
         u.Energy -= ability.GetCost(u, data, target).Value;
     }
 
-
-    static void ShowAbilities()
-    {
-        if (u.Actions.Count == 0)
-        {
-            g.pline("You have no abilities.");
-            return;
-        }
-        var menu = new Menu<ActionBrick>();
-        menu.Add("Use which ability?", LineStyle.Heading);
-        char let = 'a';
-        foreach (var action in u.Actions.Distinct())
-        {
-            var data = u.ActionData.GetValueOrDefault(action);
-            var result = action.CanExecute(u, data, Target.None);
-            bool ready = result;
-            string whyNot = result.WhyNot;
-            var toggle = action.IsToggleOn(data);
-            string status = toggle switch
-            {
-              ToggleState.NotAToggle => "",
-              ToggleState.Off => " [off]",
-              ToggleState.On => " [on]",
-              _ => "???",
-            };
-            status += ready ? "" : $" ({whyNot})";
-            menu.Add(let++, action.Name + status, action);
-        }
-        var picked = menu.Display(MenuMode.PickOne);
-        if (picked.Count == 0) return;
-        ResolveTargetAndExecute(picked[0]);
-    }
 
     static void ShowCharacterInfo()
     {
@@ -593,40 +356,6 @@ public static partial class Input
     }
 
     static void ResetMessageHistory() => _msgHistoryIdx = -1;
-
-    static void PickupItem()
-    {
-        var items = lvl.ItemsAt(upos);
-        if (items.Count == 0) return;
-        if (u.CanSee)
-            foreach (var item in items)
-                item.Knowledge |= ItemKnowledge.Seen;
-        List<Item> toPickup;
-        if (items.Count == 1)
-        {
-            toPickup = [items[0]];
-        }
-        else
-        {
-            var menu = new Menu<Item>();
-            menu.Add("Pick up what?", LineStyle.Heading);
-            BuildItemList(menu, items, useInvLet: false);
-            toPickup = menu.Display(MenuMode.PickAny);
-            if (toPickup.Count == 0) return;
-        }
-        foreach (var item in toPickup)
-        {
-            int price = g.DoPickup(u, item);
-            if (price > 0)
-            {
-                g.pline($"The list price of {item:the,noprice} is {price.Crests()}.");
-                item.UnitPrice = price;
-            }
-            g.pline($"{(item.Def.Class == '$' ? '$' : item.InvLet)} - {item}.");
-        }
-
-        u.Energy -= ActionCosts.OneAction.Value;
-    }
 
     static void DoTravel()
     {
@@ -747,6 +476,20 @@ public static partial class Input
             var key = NextKey();
             if (key.KeyChar is 'y' or 'Y') return true;
             if (key.KeyChar is 'n' or 'N' or (char)27) return false; // ESC = no
+        }
+    }
+
+    static char? Ynaq(string prompt)
+    {
+        g.pline($"{prompt} [ynaq]");
+        while (true)
+        {
+            var key = NextKey();
+            if (key.KeyChar is 'y' or 'Y') return 'y';
+            if (key.KeyChar is 'n' or 'N') return 'n';
+            if (key.KeyChar is 'a' or 'A') return 'a';
+            if (key.KeyChar is 'q' or 'Q') return 'q';
+            if (key.Key == ConsoleKey.Escape) return 'q';
         }
     }
 

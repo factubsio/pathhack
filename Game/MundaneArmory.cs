@@ -1,6 +1,8 @@
 namespace Pathhack.Game;
 
-public static class MundaneArmory
+[GenerateAll("AllWeapons", typeof(WeaponDef))]
+[GenerateAll("AllArmors", typeof(ArmorDef))]
+public static partial class MundaneArmory
 {
     public static readonly WeaponDef Dagger = new()
     {
@@ -311,6 +313,7 @@ public static class MundaneArmory
         Price = 20,
     };
 
+    [NotRandomlyGenerated]
     public static readonly WeaponDef Pickaxe = new()
     {
         id = "pickaxe",
@@ -424,7 +427,4 @@ public static class MundaneArmory
         Components = [new GrantProficiency(Proficiencies.LightBlade, ProficiencyLevel.Trained, requiresEquipped: true)],
         Price = 400,
     };
-
-    public static readonly WeaponDef[] AllWeapons = [Dagger, Shortsword, Longsword, Scimitar, Rapier, Falchion, Club, SpikedClub, Greatclub, Mace, Flail, Quarterstaff, BoStaff, Spear, Scythe, Whip, SpikedChain, Longbow, Dart, Bola, Hatchet, Battleaxe, DwarvenWaraxe, Greataxe, Gandasa, Pickaxe];
-    public static readonly ArmorDef[] AllArmors = [LeatherArmor, ChainShirt, HideArmor, Breastplate, SplintMail, FullPlate];
 }

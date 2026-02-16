@@ -7,20 +7,6 @@ public static partial class Input
 {
     static char? _sellResponse;
 
-    static char? Ynaq(string prompt)
-    {
-        g.pline($"{prompt} [ynaq]");
-        while (true)
-        {
-            var key = NextKey();
-            if (key.KeyChar is 'y' or 'Y') return 'y';
-            if (key.KeyChar is 'n' or 'N') return 'n';
-            if (key.KeyChar is 'a' or 'A') return 'a';
-            if (key.KeyChar is 'q' or 'Q') return 'q';
-            if (key.Key == ConsoleKey.Escape) return 'q';
-        }
-    }
-
     static void PayShopkeeper()
     {
         var room = lvl.RoomAt(upos);
@@ -852,4 +838,103 @@ public static partial class Input
     static bool IsEdible(Item item) => item.Def is ConsumableDef || item.FindBrickOfType<VerbResponder>().IsSubjectOf(ItemVerb.Eat);
 
     static bool IsApplyable(Item item) => item.FindBrickOfType<VerbResponder>().IsSubjectOf(ItemVerb.Apply);
+
+    static void ZapSpell()
+    {
+        if (!u.Allows("can_speak"))
+        {
+            g.pline($"You are currently silenced!");
+            return;
+        }
+
+        if (u.Spells.Count == 0)
+        {
+            g.pline("You don't know any spells right now.");
+            return;
+        }
+        var menu = new Menu<ActionBrick>();
+        menu.Add("Choose which spell to cast", LineStyle.Heading);
+        char let = 'a';
+        foreach (var level in u.Spells.GroupBy(s => s.Level))
+        {
+            menu.Add($"Level {level.Key}:", LineStyle.SubHeading);
+            foreach (var spell in level)
+            {
+                var data = u.ActionData.GetValueOrDefault(spell);
+                var spellPlan = spell.CanExecute(u, data, Target.None);
+                string status = spellPlan ? "" : $" ({spellPlan.WhyNot})";
+                menu.Add(let++, spell.Name + status, spell);
+            }
+        }
+        var picked = menu.Display(MenuMode.PickOne);
+        if (picked.Count == 0) return;
+        Log.Structured("cast", $"{picked[0].Name:spell}{picked[0].Targeting.ToString():targeting}");
+        ResolveTargetAndExecute(picked[0]);
+    }
+
+    static void ShowAbilities()
+    {
+        if (u.Actions.Count == 0)
+        {
+            g.pline("You have no abilities.");
+            return;
+        }
+        var menu = new Menu<ActionBrick>();
+        menu.Add("Use which ability?", LineStyle.Heading);
+        char let = 'a';
+        foreach (var action in u.Actions.Distinct())
+        {
+            var data = u.ActionData.GetValueOrDefault(action);
+            var result = action.CanExecute(u, data, Target.None);
+            bool ready = result;
+            string whyNot = result.WhyNot;
+            var toggle = action.IsToggleOn(data);
+            string status = toggle switch
+            {
+              ToggleState.NotAToggle => "",
+              ToggleState.Off => " [off]",
+              ToggleState.On => " [on]",
+              _ => "???",
+            };
+            status += ready ? "" : $" ({whyNot})";
+            menu.Add(let++, action.Name + status, action);
+        }
+        var picked = menu.Display(MenuMode.PickOne);
+        if (picked.Count == 0) return;
+        ResolveTargetAndExecute(picked[0]);
+    }
+
+    static void PickupItem()
+    {
+        var items = lvl.ItemsAt(upos);
+        if (items.Count == 0) return;
+        if (u.CanSee)
+            foreach (var item in items)
+                item.Knowledge |= ItemKnowledge.Seen;
+        List<Item> toPickup;
+        if (items.Count == 1)
+        {
+            toPickup = [items[0]];
+        }
+        else
+        {
+            var menu = new Menu<Item>();
+            menu.Add("Pick up what?", LineStyle.Heading);
+            BuildItemList(menu, items, useInvLet: false);
+            toPickup = menu.Display(MenuMode.PickAny);
+            if (toPickup.Count == 0) return;
+        }
+        foreach (var item in toPickup)
+        {
+            int price = g.DoPickup(u, item);
+            if (price > 0)
+            {
+                g.pline($"The list price of {item:the,noprice} is {price.Crests()}.");
+                item.UnitPrice = price;
+            }
+            g.pline($"{(item.Def.Class == '$' ? '$' : item.InvLet)} - {item}.");
+        }
+
+        u.Energy -= ActionCosts.OneAction.Value;
+    }
 }

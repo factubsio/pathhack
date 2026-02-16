@@ -14,6 +14,8 @@ public class BrickRegistrationAnalyzer : DiagnosticAnalyzer
     public const string DiagnosticId = "BEE001";
     public const string RampDiagnosticId = "BEE002";
     public const string RoundHookDiagnosticId = "BEE003";
+    public const string UnsupportedHookDiagnosticId = "BEE004";
+    public const string DeprecatedHookDiagnosticId = "BEE005";
 
     static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -39,7 +41,24 @@ public class BrickRegistrationAnalyzer : DiagnosticAnalyzer
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, RampRule, RoundHookRule);
+    static readonly DiagnosticDescriptor UnsupportedHookRule = new(
+        UnsupportedHookDiagnosticId,
+        "LogicBrick overrides unsupported hook",
+        "'{0}' overrides {1} which is not currently called by the game loop",
+        "MasonryYard",
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    static readonly DiagnosticDescriptor DeprecatedHookRule = new(
+        DeprecatedHookDiagnosticId,
+        "LogicBrick overrides deprecated hook",
+        "'{0}' overrides {1} which is deprecated — {2}",
+        "MasonryYard",
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => 
+        ImmutableArray.Create(Rule, RampRule, RoundHookRule, UnsupportedHookRule, DeprecatedHookRule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -49,6 +68,7 @@ public class BrickRegistrationAnalyzer : DiagnosticAnalyzer
         context.RegisterSyntaxNodeAction(AnalyzeImplicitCreation, SyntaxKind.ImplicitObjectCreationExpression);
         context.RegisterSyntaxNodeAction(AnalyzeFieldDeclaration, SyntaxKind.FieldDeclaration);
         context.RegisterSyntaxNodeAction(AnalyzeClassForRoundHooks, SyntaxKind.ClassDeclaration);
+        context.RegisterSyntaxNodeAction(AnalyzeClassForUnsupportedHooks, SyntaxKind.ClassDeclaration);
     }
 
     void AnalyzeObjectCreation(SyntaxNodeAnalysisContext ctx)
@@ -148,5 +168,29 @@ public class BrickRegistrationAnalyzer : DiagnosticAnalyzer
 
         if (!hasIsActive)
             ctx.ReportDiagnostic(Diagnostic.Create(RoundHookRule, classDecl.Identifier.GetLocation(), symbol.Name, hookName));
+    }
+
+    void AnalyzeClassForUnsupportedHooks(SyntaxNodeAnalysisContext ctx)
+    {
+        var classDecl = (ClassDeclarationSyntax)ctx.Node;
+        var symbol = ctx.SemanticModel.GetDeclaredSymbol(classDecl);
+        if (symbol == null || !DerivesFrom(symbol, "LogicBrick")) return;
+        if (BrickAllowList.HookOverrideAllowList.Contains(symbol.Name)) return;
+
+        foreach (var member in classDecl.Members)
+        {
+            if (member is not MethodDeclarationSyntax method) continue;
+            if (!method.Modifiers.Any(SyntaxKind.OverrideKeyword)) continue;
+            var name = method.Identifier.Text;
+
+            if (BrickAllowList.UnsupportedHooks.Contains(name))
+            {
+                ctx.ReportDiagnostic(Diagnostic.Create(UnsupportedHookRule, method.Identifier.GetLocation(), symbol.Name, name));
+            }
+            else if (BrickAllowList.DeprecatedHooks.TryGetValue(name, out var reason))
+            {
+                ctx.ReportDiagnostic(Diagnostic.Create(DeprecatedHookRule, method.Identifier.GetLocation(), symbol.Name, name, reason));
+            }
+        }
     }
 }

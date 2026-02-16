@@ -302,7 +302,8 @@ public class RamBlast() : CooldownAction("Ram Blast", TargetingType.Unit, _ => 4
     }
 }
 
-public static class MagicAccessories
+[GenerateAll("All", typeof(ItemDef))]
+public static partial class MagicRings
 {
     public static readonly ItemDef RingOfFeatherstep = new()
     {
@@ -588,9 +589,11 @@ public static class MagicAccessories
         Price = 50,
         BUCBias = -1,
     };
+}
 
-    // === Boots ===
-
+[GenerateAll("All", typeof(ItemDef))]
+public static partial class MagicBoots
+{
     public static readonly ItemDef BootsOfSpeed = new()
     {
         id = "boots_of_speed",
@@ -639,11 +642,11 @@ public static class MagicAccessories
         Price = 50,
         BUCBias = -1,
     };
+}
 
-    public static readonly ItemDef[] AllBoots = [BootsOfSpeed, BootsOfElvenkind, BootsOfFlying, FumbleBoots];
-
-    // === Gloves ===
-
+[GenerateAll("All", typeof(ItemDef))]
+public static partial class MagicGloves
+{
     public static readonly ItemDef GauntletsOfPower = new()
     {
         id = "gauntlets_of_power",
@@ -705,27 +708,4 @@ public static class MagicAccessories
         Price = 50,
         BUCBias = -1,
     };
-
-    public static readonly ItemDef[] AllGloves = [GauntletsOfPower, GauntletsOfDexterity, GlovesOfThievery, GlovesOfMissileSnaring, FumbleGloves];
-
-    public static readonly ItemDef[] AllRings =
-    [
-        RingOfFeatherstep, SpiritsightRing, GrimRing, RingOfTheWild, RingOfTheRam,
-        RingOfProtection, RingOfSeeInvisible, RingOfStealth,
-        RingOfFireResistance, RingOfColdResistance, RingOfShockResistance, RingOfAcidResistance,
-        RingOfFreeAction, RingOfReflex, RingOfFortitude, RingOfWill,
-        RingOfFastHealing, RingOfAccurateStrikes,
-        RingOfTeleportControl, RingOfTeleportation,
-        RingOfInvisibility, RingOfAggravation, RingOfHunger,
-    ];
-
-    static MagicAccessories()
-    {
-        for (int i = 0; i < AllRings.Length; i++)
-            AllRings[i].AppearanceIndex = i;
-        for (int i = 0; i < AllBoots.Length; i++)
-            AllBoots[i].AppearanceIndex = i;
-        for (int i = 0; i < AllGloves.Length; i++)
-            AllGloves[i].AppearanceIndex = i;
-    }
 }

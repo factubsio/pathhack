@@ -12,7 +12,8 @@ public class BottleDef : ItemDef
     }
 }
 
-public static class Bottles
+[GenerateAll("All", typeof(BottleDef))]
+public static partial class Bottles
 {
     private static BottleDef Brew(SpellBrickBase spell)
     {
@@ -41,14 +42,6 @@ public static class Bottles
 
     public static readonly BottleDef Fireball = Brew(BasicLevel3Spells.Fireball);
     public static readonly BottleDef FalseLife = Brew(BasicLevel3Spells.FalseLife);
-
-    public static readonly BottleDef[] All = [Grease, SoundBurst, HoldPerson, Fireball, FalseLife, FalseLifeLesser];
-
-    static Bottles()
-    {
-        for (int i = 0; i < All.Length; i++)
-            All[i].AppearanceIndex = i;
-    }
 
     public static void DoEffect(BottleDef def, IUnit user, Pos pos)
     {

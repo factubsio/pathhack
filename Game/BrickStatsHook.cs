@@ -44,3 +44,4 @@ public class BrickStatsHook : LogicBrick
         g.pline($"Wrote brick_stats.txt ({_counts.Count} hooks, {_counts.Values.Sum()} total calls)");
     }
 }
+

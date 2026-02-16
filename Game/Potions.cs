@@ -10,7 +10,8 @@ public class PotionDef : ItemDef
     }
 }
 
-public static class Potions
+[GenerateAll("All", typeof(PotionDef))]
+public static partial class Potions
 {
     public static readonly PotionDef Healing = new() { Name = "potion of healing", Price = 40 };
     public static readonly PotionDef Speed = new() { Name = "potion of speed", Price = 120 };
@@ -19,14 +20,6 @@ public static class Potions
     public static readonly PotionDef Omen = new() { Name = "bottled omen", Price = 120 };
     public static readonly PotionDef Panacea = new() { Name = "panacea", Price = 500};
     public static readonly PotionDef LesserInvisibility = new() { Name = "potion of lesser invisibility", Price = 120 };
-
-    public static readonly PotionDef[] All = [Healing, Speed, Paralysis, Antivenom, Omen, Panacea, LesserInvisibility];
-
-    static Potions()
-    {
-        for (int i = 0; i < All.Length; i++)
-            All[i].AppearanceIndex = i;
-    }
 
     public static void DoEffect(PotionDef def, IUnit user)
     {

@@ -2,13 +2,7 @@ namespace Pathhack.Wish;
 
 public static class WishParser
 {
-    static readonly Lazy<ItemDef[]> AllDefs = new(() => [
-        .. MundaneArmory.AllWeapons,
-        .. MundaneArmory.AllArmors,
-        .. Potions.All,
-        .. Scrolls.All,
-        .. MagicAccessories.AllRings,
-    ]);
+    static ItemDef[] AllDefs => AllItems.All;
 
     public static MonsterDef? ParseMonster(string input)
     {
@@ -50,13 +44,13 @@ public static class WishParser
         if (normalized.Length == 0) return null;
 
         // Exact match
-        foreach (var def in AllDefs.Value)
+        foreach (var def in AllDefs)
             if (def.Name.Equals(normalized, StringComparison.OrdinalIgnoreCase))
                 return def;
 
         // Substring match
         List<ItemDef> matches = [];
-        foreach (var def in AllDefs.Value)
+        foreach (var def in AllDefs)
             if (def.Name.Contains(normalized, StringComparison.OrdinalIgnoreCase))
                 matches.Add(def);
 
@@ -69,7 +63,7 @@ public static class WishParser
 
         // Token match — all input words must appear in name
         string[] tokens = normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        foreach (var def in AllDefs.Value)
+        foreach (var def in AllDefs)
         {
             string name = def.Name.ToLowerInvariant();
             if (tokens.All(t => name.Contains(t)))

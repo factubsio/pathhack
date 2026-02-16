@@ -22,7 +22,7 @@ public static class ItemGen
     
     static int TotalWeight => ClassWeights.Sum(x => x.weight);
 
-    static readonly ItemDef[] ArmorShopPool = [..MundaneArmory.AllArmors, ..MagicAccessories.AllBoots, ..MagicAccessories.AllGloves];
+    static readonly ItemDef[] ArmorShopPool = [..MundaneArmory.RandomAllArmors, ..MagicBoots.RandomAll, ..MagicGloves.RandomAll];
 
     public static Item? GenerateForShop(ShopType type, int depth) => type switch
     {
@@ -46,66 +46,18 @@ public static class ItemGen
         return null;
     }
 
-    public static Item? GeneratePotion(int depth)
-    {
-        if (Potions.All.Length == 0) return null;
-        var def = Potions.All.Pick();
-        return GenerateItem(def, depth);
-    }
+    static Item? PickFrom(ItemDef[] pool, int depth) =>
+        pool.Length == 0 ? null : GenerateItem(pool.Pick(), depth);
 
-    public static Item? GenerateWand(int depth)
-    {
-        if (Wands.All.Length == 0) return null;
-        var def = Wands.All.Pick();
-        return GenerateItem(def, depth);
-    }
-
-    public static Item? GenerateBottle(int depth)
-    {
-        if (Bottles.All.Length == 0) return null;
-        var def = Bottles.All.Pick();
-        return GenerateItem(def, depth);
-    }
-
-    public static Item? GenerateScroll(int depth)
-    {
-        if (Scrolls.All.Length == 0) return null;
-        var def = Scrolls.All.Pick();
-        return GenerateItem(def, depth);
-    }
-
-    public static Item? GenerateWeapon(int depth)
-    {
-        var def = PickWeaponDef(depth);
-        return GenerateItem(def, depth);
-    }
-
-    public static Item? GenerateArmor(int depth)
-    {
-        var def = MundaneArmory.AllArmors.Pick();
-        return GenerateItem(def, depth);
-    }
-
-    static Item? GenerateRing(int depth)
-    {
-        if (MagicAccessories.AllRings.Length == 0) return null;
-        var def = MagicAccessories.AllRings.Pick();
-        return GenerateItem(def, depth);
-    }
-
-    static Item? GenerateBoots(int depth)
-    {
-        if (MagicAccessories.AllBoots.Length == 0) return null;
-        var def = MagicAccessories.AllBoots.Pick();
-        return GenerateItem(def, depth);
-    }
-
-    static Item? GenerateGloves(int depth)
-    {
-        if (MagicAccessories.AllGloves.Length == 0) return null;
-        var def = MagicAccessories.AllGloves.Pick();
-        return GenerateItem(def, depth);
-    }
+    public static Item? GeneratePotion(int depth) => PickFrom(Potions.RandomAll, depth);
+    public static Item? GenerateWand(int depth) => PickFrom(Wands.RandomAll, depth);
+    public static Item? GenerateBottle(int depth) => PickFrom(Bottles.RandomAll, depth);
+    public static Item? GenerateScroll(int depth) => PickFrom(Scrolls.RandomAll, depth);
+    public static Item? GenerateWeapon(int depth) => PickFrom(MundaneArmory.RandomAllWeapons, depth);
+    public static Item? GenerateArmor(int depth) => PickFrom(MundaneArmory.RandomAllArmors, depth);
+    static Item? GenerateRing(int depth) => PickFrom(MagicRings.RandomAll, depth);
+    static Item? GenerateBoots(int depth) => PickFrom(MagicBoots.RandomAll, depth);
+    static Item? GenerateGloves(int depth) => PickFrom(MagicGloves.RandomAll, depth);
 
     public static BUC RollBUC(int chance = 10, int bias = 0)
     {
@@ -155,11 +107,6 @@ public static class ItemGen
 
         LogicBrick.FireOnSpawn(item, PHContext.Create(null, Target.None));
         return item;
-    }
-
-    public static WeaponDef PickWeaponDef(int depth)
-    {
-        return MundaneArmory.AllWeapons.Pick();
     }
 
     public static int RollPotency(int depth, List<string>? genLog, int? force = null)

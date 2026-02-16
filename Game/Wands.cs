@@ -15,7 +15,8 @@ public class WandDef : ItemDef
     }
 }
 
-public static class Wands
+[GenerateAll("All", typeof(WandDef))]
+public static partial class Wands
 {
     // Put the spell a box, a rod shaped box
     private static WandDef Crate(SpellBrickBase spell)
@@ -43,14 +44,6 @@ public static class Wands
     public static readonly WandDef CureLightWounds = Crate(BasicLevel1Spells.CureLightWounds);
     public static readonly WandDef AcidArrow = Crate(BasicLevel1Spells.AcidArrow);
     public static readonly WandDef ScorchingRay = Crate(BasicLevel2Spells.ScorchingRay);
-
-    public static readonly WandDef[] All = [MagicMissile, BurningHands, CureLightWounds, AcidArrow, ScorchingRay];
-
-    static Wands()
-    {
-        for (int i = 0; i < All.Length; i++)
-            All[i].AppearanceIndex = i;
-    }
 
     public static void DoEffect(WandDef def, IUnit user, Pos dir)
     {
