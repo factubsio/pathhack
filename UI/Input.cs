@@ -141,9 +141,10 @@ public static partial class Input
             "web" => new WebTrap(depth),
             "hole" => new HoleTrap(TrapType.Hole, depth),
             "trapdoor" => new HoleTrap(TrapType.Trapdoor, depth),
+            "ambush" => new AmbushTrap(depth),
             _ => null
         };
-        if (trap == null) { g.pline("Unknown trap. Try: pit, web, hole, trapdoor."); return; }
+        if (trap == null) { g.pline("Unknown trap. Try: pit, web, hole, trapdoor, ambush."); return; }
         g.pline("Place where?");
         var pos = PickPosition();
         if (pos == null) return;

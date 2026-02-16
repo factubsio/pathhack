@@ -9,10 +9,10 @@ public class ElementalTraits : LogicBrick
 
     protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
     {
-        CommonQueries.Poison => true,
-        CommonQueries.Bleed => true,
-        CommonQueries.Sleep => true,
-        CommonQueries.Paralysis => true,
+        CommonQueries.PoisonImmune => true,
+        CommonQueries.BleedImmune => true,
+        CommonQueries.SleepImmune => true,
+        CommonQueries.ParalysisImmune => true,
         _ => null
     };
 }
@@ -197,7 +197,7 @@ public class BullRush(int distance) : CooldownAction("bull rush", TargetingType.
         return true;
     }
 
-    protected override void Execute(IUnit unit, Target target)
+    protected override void Execute(IUnit unit, Target target, object? plan = null)
     {
         var tgt = target.Unit!;
         Pos dir = (tgt.Pos - unit.Pos).Signed;
@@ -228,7 +228,7 @@ public class WaterCone() : CooldownAction("water blast", TargetingType.Direction
 {
     public static readonly WaterCone Instance = new();
 
-    protected override void Execute(IUnit unit, Target target)
+    protected override void Execute(IUnit unit, Target target, object? plan = null)
     {
         Pos dir = target.Pos!.Value;
         using var cone = lvl.CollectCone(unit.Pos, dir, 3);
@@ -255,7 +255,7 @@ public class NumbingCold() : CooldownAction("numbing cold", TargetingType.None, 
 {
     public static readonly NumbingCold Instance = new();
 
-    protected override void Execute(IUnit unit, Target target)
+    protected override void Execute(IUnit unit, Target target, object? plan = null)
     {
         g.YouObserve(unit, $"A wave of numbing cold radiates from {unit:the}!", "a bone-chilling cold");
         int dc = unit.GetSpellDC();
@@ -280,7 +280,7 @@ public class SparkZap() : CooldownAction("spark zap", TargetingType.Direction, _
 {
     public static readonly SparkZap Instance = new();
 
-    protected override void Execute(IUnit unit, Target target)
+    protected override void Execute(IUnit unit, Target target, object? plan = null)
     {
         Pos dir = target.Pos!.Value;
         List<Pos> line = [];
@@ -312,7 +312,7 @@ public class MudPool() : CooldownAction("mud pool", TargetingType.None, _ => 12)
 {
     public static readonly MudPool Instance = new();
 
-    protected override void Execute(IUnit unit, Target target)
+    protected override void Execute(IUnit unit, Target target, object? plan = null)
     {
         g.YouObserve(unit, $"{unit:The} {VTense(unit, "ooze")} mud everywhere!", "a squelching sound");
         using var tiles = lvl.CollectCircle(unit.Pos, 1, andCenter: true);
@@ -327,7 +327,7 @@ public class LavaPuddle(int radius) : CooldownAction("lava puddle", TargetingTyp
     public static readonly LavaPuddle Small = new(1);
     public static readonly LavaPuddle Large = new(2);
 
-    protected override void Execute(IUnit unit, Target target)
+    protected override void Execute(IUnit unit, Target target, object? plan = null)
     {
         g.YouObserve(unit, $"{unit:The} {VTense(unit, "spew")} molten rock!", "a hiss of lava");
         using var tiles = lvl.CollectCircle(unit.Pos, radius, andCenter: true);

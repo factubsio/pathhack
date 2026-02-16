@@ -444,6 +444,8 @@ public class GameState
         // === Monster phase (runs on whatever level we're now on) ===
         lvl.SortUnitsByInitiative();
 
+        Draw.DrawCurrent();
+
         foreach (var unit in lvl.LiveUnits)
         {
             if (unit.IsPlayer) continue;
@@ -951,6 +953,13 @@ public class GameState
                 // drop inventory
                 foreach (var item in target.Inventory.ToList())
                     DoDrop(target, item);
+
+                // drop gold
+                if (target is Monster { Gold: > 0 } gm)
+                {
+                    Item.Create(MiscItems.SilverCrest, (int)gm.Gold)
+                        .PlaceAt(target.Pos);
+                }
 
                 // drop corpse
                 if (target is Monster m2 && !m2.NoCorpse && ShouldGenerateCorpse(m2, out var doRespawn))

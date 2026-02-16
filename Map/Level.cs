@@ -336,7 +336,7 @@ public class Level(LevelId id, int width, int height)
 
         foreach (var area in Areas)
         {
-            if (area.IsDifficultTerrain && unit.Has(CommonQueries.DifficultTerrain)) continue;
+            if (area.IsDifficultTerrain && unit.Has(CommonQueries.DifficultTerrainImmune)) continue;
             bool wasIn = area.Contains(from);
             bool nowIn = area.Contains(to);
             if (nowIn) area.HandleMove(unit);

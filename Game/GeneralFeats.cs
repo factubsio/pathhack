@@ -64,7 +64,7 @@ public class FeatherStepBuff : LogicBrick
     public override string Id => "featherstep";
     public override StackMode StackMode => StackMode.Stack;
 
-    protected override object? OnQuery(Fact fact, string key, string? arg) => key.TrueWhen(CommonQueries.DifficultTerrain);
+    protected override object? OnQuery(Fact fact, string key, string? arg) => key.TrueWhen(CommonQueries.DifficultTerrainImmune);
 }
 public class Toughness : LogicBrick
 {

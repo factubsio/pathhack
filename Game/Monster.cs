@@ -175,6 +175,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
   public EthicalAxis? OwnEthicalAxis;
   public Glyph? OwnGlyph;
   public MonFlags? OwnBrainFlags;
+  public long Gold;
 
   public MonFlags EffectiveBrainFlags => OwnBrainFlags ?? Def.BrainFlags;
   public bool HasBrainFlag(MonFlags flag) => (EffectiveBrainFlags & flag) != 0;

@@ -12,31 +12,6 @@ public class TKAttackBonus(int bonus) : LogicBrick
     }
 }
 
-public class DazeImmunity : LogicBrick
-{
-    public static readonly DazeImmunity Instance = new();
-    public override string Id => "derro:daze_immune";
-    public override string? PokedexDescription => "Immune to daze";
-    public override bool IsActive => true;
-    public override string? BuffName => "Daze Immunity";
-}
-
-public class DazedBuff : LogicBrick
-{
-    public static readonly DazedBuff Instance = new();
-    public override string Id => "dazed";
-    public override bool IsActive => true;
-    public override string? BuffName => "Dazed";
-
-    protected override void OnRoundStart(Fact fact)
-    {
-        if (fact.Entity is not IUnit unit) return;
-        unit.Energy = 0;
-        g.pline($"{unit:The} {VTense(unit, "is")} dazed!");
-        fact.Remove();
-    }
-}
-
 public class DazeAction(int range, int dc, string pool) : ActionBrick("Daze")
 {
     public const string Resource = "daze";
@@ -46,7 +21,7 @@ public class DazeAction(int range, int dc, string pool) : ActionBrick("Daze")
         if (!unit.HasCharge(pool, out var whyNot)) return new(false, whyNot);
         if (unit is not Monster m || !m.CanSeeYou) return new(false, "can't see target");
         if (unit.Pos.ChebyshevDist(upos) > range) return new(false, "out of range");
-        if (u.HasFact(DazeImmunity.Instance)) return new(false, "target immune");
+        if (u.HasFact(DazeImmunity.Instance)) return "target immune";
         return true;
     }
 
@@ -56,9 +31,6 @@ public class DazeAction(int range, int dc, string pool) : ActionBrick("Daze")
 
         unit.TryUseCharge(pool);
         string msg = $"{unit:The} dazes {tgt:the}";
-
-        // You are immune even regardless of save, otherwise it's a bit overly painful
-        u.AddFact(DazeImmunity.Instance, 4);
 
         using var ctx = PHContext.Create(unit, Target.From(u));
         if (CheckWill(ctx, dc, "daze"))
@@ -70,7 +42,7 @@ public class DazeAction(int range, int dc, string pool) : ActionBrick("Daze")
         {
             g.pline($"{msg}!");
         }
-        u.AddFact(DazedBuff.Instance);
+        u.AddFact(DazedBuff.Instance, 1);
     }
 }
 

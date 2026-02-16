@@ -131,7 +131,7 @@ public abstract class BlessingAction(string name, TargetingType target = Targeti
 
 public class FireBlessingMinor() : BlessingAction("Fire Blessing")
 {
-    protected override void Execute(IUnit unit, Target target)
+    protected override void Execute(IUnit unit, Target target, object? plan = null)
     {
         int duration = (unit is Player p ? p.CharacterLevel : 1) + 5 + g.Rn1(1, 10);
         var weapon = unit.GetWieldedItem();
@@ -157,7 +157,7 @@ public class WarBlessingBuff : LogicBrick
 
 public class WarBlessingAction() : BlessingAction("War Blessing")
 {
-    protected override void Execute(IUnit unit, Target target)
+    protected override void Execute(IUnit unit, Target target, object? plan = null)
     {
         unit.AddFact(WarBlessingBuff.Instance, 20);
         g.pline("To war!");
@@ -166,7 +166,7 @@ public class WarBlessingAction() : BlessingAction("War Blessing")
 
 public class StrengthBlessingMinor() : BlessingAction("Strength (minor)")
 {
-    protected override void Execute(IUnit unit, Target target)
+    protected override void Execute(IUnit unit, Target target, object? plan = null)
     {
         g.pline("Divine might surges through you!");
         unit.AddFact(StrengthBuff.Plus4.Timed(), duration: d(10).Roll() + 10);
@@ -188,7 +188,7 @@ public class StrengthBuff(int mod) : LogicBrick
 
 public class LawBlessingMinor() : BlessingAction("Law Blessing (minor)")
 {
-    protected override void Execute(IUnit unit, Target target)
+    protected override void Execute(IUnit unit, Target target, object? plan = null)
     {
         g.pline("Law buff on");
         unit.AddFact(LawBuff.Instance, duration: 10);
@@ -218,7 +218,7 @@ public class LawBuff : LogicBrick
 // Healing Blessing - heal 1d6+level
 public class HealingBlessingMinor() : BlessingAction("Healing Blessing", TargetingType.None, Cooldown(150))
 {
-    protected override void Execute(IUnit unit, Target target)
+    protected override void Execute(IUnit unit, Target target, object? plan = null)
     {
         int level = unit is Player p ? p.CharacterLevel : 1;
         g.DoHeal(unit, unit, d(6) + level);
@@ -230,7 +230,7 @@ public class HealingBlessingMinor() : BlessingAction("Healing Blessing", Targeti
 
 public class MagicBlessingMinor() : BlessingAction("Magic Blessing", TargetingType.Direction, Cooldown(100))
 {
-    protected override void Execute(IUnit unit, Target target)
+    protected override void Execute(IUnit unit, Target target, object? plan = null)
     {
         var range = g.RnRange(3, 6);
 
@@ -251,7 +251,7 @@ public class SunBlessingMinor() : BlessingAction("Sun Blessing")
 {
     const int radius = 4;
 
-    protected override void Execute(IUnit unit, Target target)
+    protected override void Execute(IUnit unit, Target target, object? plan = null)
     {
         Log.Verbose("sun", "Sun blessing radius={0} from {1}", radius, unit.Pos);
 
@@ -305,7 +305,7 @@ public class DarknessBlessingMinor() : BlessingAction("Darkness Blessing", Targe
     const int Radius = 4;
     const int BlindDuration = 10;
 
-    protected override void Execute(IUnit unit, Target target)
+    protected override void Execute(IUnit unit, Target target, object? plan = null)
     {
         using var cone = lvl.CollectCone(unit.Pos, target.Pos!.Value, Radius);
 

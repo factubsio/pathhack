@@ -13,6 +13,7 @@ public enum TrapType
     Trapdoor = 1 << 6,
     Hole = 1 << 7,
     Release = 1 << 8,
+    Ambush = 1 << 9,
 }
 
 [Flags]

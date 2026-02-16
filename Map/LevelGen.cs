@@ -691,10 +691,11 @@ public static class LevelGen
             var pos = ctx.FindLocationInRoom(room, p => level[p].IsPassable && !level[p].IsStairs && !level.Traps.ContainsKey(p));
             if (pos == null) break;
             
-            Trap trap = Rn2(4) switch
+            Trap trap = Rn2(5) switch
             {
                 0 => new WebTrap(level.EffectiveDepth),
                 1 => new HoleTrap(TrapType.Trapdoor, level.EffectiveDepth),
+                2 => new AmbushTrap(level.EffectiveDepth),
                 _ => new PitTrap(level.EffectiveDepth),
             };
             level.Traps[pos.Value] = trap;

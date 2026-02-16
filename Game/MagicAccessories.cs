@@ -52,7 +52,7 @@ public class FreeActionBuff : LogicBrick
 
     protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
     {
-        CommonQueries.Paralysis or CommonQueries.Stun or CommonQueries.Web => true,
+        CommonQueries.ParalysisImmune or CommonQueries.StunImmune or CommonQueries.WebImmune => true,
         _ => null
     };
 }
@@ -247,7 +247,7 @@ public class RamBlast() : CooldownAction("Ram Blast", TargetingType.Unit, _ => 4
         Type = DamageTypes.Blunt,
     };
 
-    protected override void Execute(IUnit unit, Target target)
+    protected override void Execute(IUnit unit, Target target, object? plan = null)
     {
         var defender = target.Unit!;
         using var ctx = PHContext.Create(unit, target);

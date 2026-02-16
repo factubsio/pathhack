@@ -41,12 +41,12 @@ public static class MonsterSpawner
         }
     }
 
-    public static bool SpawnAndPlace(Level level, string reason, MonsterDef? def, bool allowTemplate, Pos? pos = null, bool asleep = false)
+    public static bool SpawnAndPlace(Level level, string reason, MonsterDef? def, bool allowTemplate, Pos? pos = null, bool asleep = false, Func<MonsterDef, bool>? filter = null, bool noGroup = false)
     {
         int depth = level.EffectiveDepth;
         int playerLevel = u?.CharacterLevel ?? 1;
         
-        def ??= PickMonster(depth, playerLevel);
+        def ??= PickMonster(depth, playerLevel, filter);
         if (def == null) return false;
 
         // Grow up if effective level reaches grown form's base level
@@ -73,7 +73,8 @@ public static class MonsterSpawner
         mon.IsAsleep = asleep;
         level.PlaceUnit(mon, pos.Value);
 
-        TrySpawnGroup(level, mon, template, pos.Value, asleep);
+        if (!noGroup)
+            TrySpawnGroup(level, mon, template, pos.Value, asleep);
         return true;
     }
 
@@ -131,13 +132,14 @@ public static class MonsterSpawner
         return candidates.Count > 0 ? candidates[g.Rn2(candidates.Count)] : null;
     }
 
-    public static MonsterDef? PickMonster(int depth, int playerLevel)
+    public static MonsterDef? PickMonster(int depth, int playerLevel, Func<MonsterDef, bool>? filter = null)
     {
         int minLevel = depth / 6;
         int maxLevel = (depth + playerLevel) / 2;
 
         var candidates = AllMonsters.All
-            .Where(m => depth >= m.MinDepth && m.BaseLevel >= minLevel && m.BaseLevel <= maxLevel)
+            .Where(m => depth >= m.MinDepth && m.BaseLevel >= minLevel && m.BaseLevel <= maxLevel
+                && (filter == null || filter(m)))
             .ToList();
 
         return PickWeighted(candidates);

@@ -370,6 +370,8 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
         if (BUC == BUC.Cursed) BUC = BUC.Uncursed;
         return this;
     }
+
+    internal void PlaceAt(Pos pos) => lvl.PlaceItem(this, pos);
 }
 
 public record struct EquipSlot(string Type, string Slot);

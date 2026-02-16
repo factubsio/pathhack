@@ -62,12 +62,12 @@ public class ApplyAfflictionOnHit(AfflictionBrick affliction) : LogicBrick
 
 public class TimedFact(LogicBrick brick) : LogicBrick
 {
-  public override string Id => $"timed+{brick.Id}";
-  public static TimedFact For(LogicBrick brick) => WrapperHelper<TimedFact, LogicBrick>.For(brick, brick => new(brick));
+    public override string Id => $"timed+{brick.Id}";
+    public static TimedFact For(LogicBrick brick) => WrapperHelper<TimedFact, LogicBrick>.For(brick, brick => new(brick));
 
-  protected override void OnFactAdded(Fact fact) => fact.Entity.AddFact(brick);
+    protected override void OnFactAdded(Fact fact) => fact.Entity.AddFact(brick);
 
-  protected override void OnFactRemoved(Fact fact) => fact.Entity.RemoveStack(brick);
+    protected override void OnFactRemoved(Fact fact) => fact.Entity.RemoveStack(brick);
 }
 
 public static class LogicBrickExts

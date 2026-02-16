@@ -93,7 +93,7 @@ public class Fact(IEntity entity, LogicBrick brick, object? data)
     }
 }
 
-public enum StackMode { Independent, Stack, ExtendDuration, ExtendStacks }
+public enum StackMode { Independent, Stack, ExtendDuration, ExtendStacks, Reject }
 
 [Flags]
 public enum FactDisplayMode
@@ -286,7 +286,7 @@ public abstract class ActionBrick(string name, TargetingType targeting = Targeti
     protected static ActionPlan Always() => true;
 }
 
-public abstract class CooldownAction(string name, TargetingType target, Func<IUnit, int> cooldown, int maxRange = -1) : ActionBrick(name, target, maxRange)
+public abstract class CooldownAction(string name, TargetingType target, Func<IUnit, int> cooldown, int maxRange = -1, AbilityTags tags = AbilityTags.None) : ActionBrick(name, target, maxRange, tags)
 {
     public class CooldownTracker(Func<IUnit, int> cd)
     {
@@ -317,7 +317,7 @@ public abstract class CooldownAction(string name, TargetingType target, Func<IUn
     public sealed override void Execute(IUnit unit, object? data, Target target, object? plan = null)
     {
         ((CooldownTracker)data!).OnActivate(unit);
-        Execute(unit, target);
+        Execute(unit, target, plan);
     }
 
     public static void SetCooldownMax(IUnit unit, object? data)
@@ -326,7 +326,7 @@ public abstract class CooldownAction(string name, TargetingType target, Func<IUn
 
     }
 
-    protected abstract void Execute(IUnit unit, Target target);
+    protected abstract void Execute(IUnit unit, Target target, object? plan = null);
 }
 
 public abstract class SimpleToggleAction(string name, LogicBrick fact) : ActionBrick(name, TargetingType.None)
@@ -438,6 +438,8 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
     public Fact AddFact(LogicBrick brick, int? duration = null, int count = 1)
     {
         var existing = GetFact(brick, true);
+        if (existing != null && brick.StackMode == StackMode.Reject)
+            return existing;
         if (brick.StackMode == StackMode.Stack)
         {
             if (existing != null)

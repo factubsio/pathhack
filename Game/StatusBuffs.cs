@@ -64,7 +64,7 @@ public class ParalyzedBuff : LogicBrick
     public override string? BuffName => "Paralyzed";
     public override StackMode StackMode => StackMode.Stack;
 
-    protected override object? OnQuery(Fact fact, string key, string? arg) => key == "can_act" && !fact.Entity.Has("paralysis_immunity") ? false : null;
+    protected override object? OnQuery(Fact fact, string key, string? arg) => key == "can_act" && !fact.Entity.Has(CommonQueries.ParalysisImmune) ? false : null;
 
     protected override void OnFactRemoved(Fact fact)
     {
@@ -113,18 +113,19 @@ public class StunnedBuff : LogicBrick
   public override bool IsActive => true;
   public override string? BuffName => "Stunned";
 
-  protected override object? OnQuery(Fact fact, string key, string? arg) => key == "can_act" && !fact.Entity.Has("stun_immunity") ? false : null;
+  protected override object? OnQuery(Fact fact, string key, string? arg) => key == "can_act" && !fact.Entity.Has(CommonQueries.StunImmune) ? false : null;
 }
 
 public static class CommonQueries
 {
-    public const string Stun = "stun_immunity";
-    public const string Paralysis = "paralysis_immunity";
-    public const string Web = "web_immunity";
-    public const string Sleep = "sleep_immunity";
-    public const string Bleed = "bleed_immunity";
-    public const string Poison = "poison_immunity";
-    public const string DifficultTerrain = "difficult_terrain";
+    public const string StunImmune = "stun_immunity";
+    public const string DazeImmune = "daze_immune";
+    public const string ParalysisImmune = "paralysis_immunity";
+    public const string WebImmune = "web_immunity";
+    public const string SleepImmune = "sleep_immunity";
+    public const string BleedImmune = "bleed_immunity";
+    public const string PoisonImmune = "poison_immunity";
+    public const string DifficultTerrainImmune = "difficult_terrain_immunity";
     public const string See = "can_see";
 }
 
@@ -257,4 +258,32 @@ public class RegenBrick(params DamageType[] suppressedBy) : LogicBrick<RegenBric
 
   protected override object? OnQuery(Fact fact, string key, string? arg) =>
       key == "respawn_from_corpse" && !X(fact).IsSuppressed ? true : null;
+}
+
+public class DazeImmunity : LogicBrick
+{
+    public static readonly DazeImmunity Instance = new();
+    public override string Id => "daze_immune";
+    public override string? BuffName => "Daze Immunity";
+    public override StackMode StackMode => StackMode.Reject;
+
+    protected override object? OnQuery(Fact fact, string key, string? arg) => key.TrueWhen(CommonQueries.DazeImmune);
+}
+
+public class DazedBuff : LogicBrick
+{
+    public static readonly DazedBuff Instance = new();
+    public override string Id => "dazed";
+    public override bool IsBuff => true;
+    public override string? BuffName => "Dazed";
+    public override StackMode StackMode => StackMode.Reject;
+
+    protected override object? OnQuery(Fact fact, string key, string? arg) =>
+        key == "can_act" && !fact.Entity.Has(CommonQueries.DazeImmune) ? false : null;
+
+    protected override void OnFactRemoved(Fact fact)
+    {
+        if (fact.Entity is IUnit unit)
+            g.Defer(() => unit.AddFact(DazeImmunity.Instance, 4));
+    }
 }

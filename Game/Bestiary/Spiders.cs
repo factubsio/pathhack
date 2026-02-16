@@ -40,7 +40,7 @@ public class WebSpit(int cooldown = 120) : CooldownAction("spit web", TargetingT
         return true;
     }
 
-    protected override void Execute(IUnit unit, Target target)
+    protected override void Execute(IUnit unit, Target target, object? plan = null)
     {
         Pos dir = (target.Pos!.Value - unit.Pos).Signed;
         Pos pos = unit.Pos;
