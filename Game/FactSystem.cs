@@ -407,7 +407,18 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
     public void ShareFactsFrom(Entity<DefT> other)
     {
         foreach (var fact in other.LiveFacts)
-            Facts.Add(fact);
+        {
+            // Eep? How is this supposed to work??
+            // Sometimes we do want this behaviour, the facts on BOTH entities share the same data, i.e. for timers.
+            // Otherwiser we need make every brick support `OnSplit` and that would be sooo painful?
+            // The alternative is some Bee stuff, but I dunno if we can say
+            // "don't put a brick that can't be split (mutable entity data?) on a stackable item"
+            // Note, some mutable data is maybe correct, like "number of dudes
+            // killed with this weapon", if it's like an artifact stack of
+            // spears?
+            // regardles,s this is ... a bit of an edge case that we at least can worry about when we find it?
+            Facts.Add(new(this, fact.Brick, fact.Data));
+        }
     }
 
     private Fact? GetFact(LogicBrick brick, bool doMerge)
@@ -720,7 +731,7 @@ public interface IUnit : IEntity, IFormattable
     int GetAC();
     int GetAttackBonus(WeaponDef weapon);
     int GetSpellAttackBonus(SpellBrickBase spell);
-    int GetDamageBonus();
+    int GetStrDamageBonus();
     int GetSpellDC();
     Item GetWieldedItem();
     EquipSlot? Equip(Item item);
@@ -959,7 +970,7 @@ public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) :
     public abstract int GetAC();
     public abstract int GetAttackBonus(WeaponDef weapon);
     public abstract int GetSpellAttackBonus(SpellBrickBase spell);
-    public abstract int GetDamageBonus();
+    public abstract int GetStrDamageBonus();
     public abstract int GetSpellDC();
     protected abstract WeaponDef GetUnarmedDef();
 

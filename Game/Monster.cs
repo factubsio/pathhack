@@ -295,7 +295,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
   public override int GetAttackBonus(WeaponDef weapon) => LevelDC - ATTACK_PENALTY_FUDGE + Def.AttackBonus;
   public override int GetSpellAttackBonus(SpellBrickBase brick) => LevelDC - ATTACK_PENALTY_FUDGE + Def.AttackBonus;
   const int DamageFudge = 2;
-  public override int GetDamageBonus() => Def.DamageBonus + TemplateBonusLevels + DamageFudge;
+  public override int GetStrDamageBonus() => Def.DamageBonus + TemplateBonusLevels + DamageFudge;
   public override int GetSpellDC() => LevelDC;
   protected override WeaponDef GetUnarmedDef() => Def.Unarmed;
   public override Glyph Glyph

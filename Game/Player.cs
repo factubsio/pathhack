@@ -220,7 +220,7 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
     public override int GetAttackBonus(WeaponDef weapon) => StrMod + (int)GetProficiency(weapon).Level;
     public override int GetSpellAttackBonus(SpellBrickBase brick) => DexMod + ProfBonus("spell_attack");
 
-    public override int GetDamageBonus() => StrMod;
+    public override int GetStrDamageBonus() => StrMod;
 
     public override int GetSpellDC() => 10 + CasterLevel + Mod(KeyAttribute);
 

@@ -80,7 +80,7 @@ public class AttackWithWeapon() : ActionBrick("attack_with_weapon")
                     toThrow = item;
                     unit.Inventory.Remove(item);
                 }
-                DoThrow(unit, toThrow, dir);
+                DoThrow(unit, toThrow, dir, AttackType.Thrown);
                 break;
             }
 

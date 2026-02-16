@@ -268,6 +268,7 @@ public static partial class ClassDefs
                     new GrantProficiency(Proficiencies.Unarmed, ProficiencyLevel.Trained),
                     new GrantProficiency(Proficiencies.LightArmor, ProficiencyLevel.Trained),
                     new GrantProficiency(Proficiencies.MediumArmor, ProficiencyLevel.Trained),
+                    new GrantProficiency(Proficiencies.Bow, ProficiencyLevel.Trained),
                     new GrantProficiency("spell_attack", ProficiencyLevel.Trained),
                     new SacredWeapon(),
                     new GrantPool("spell_l1", 2, 20),
@@ -315,6 +316,8 @@ public static partial class ClassDefs
         ClassFeats = [WarpriestFeats.SwiftBlessing, WarpriestFeats.TrulyBlessed, WarpriestFeats.SacredStrike, WarpriestFeats.DivineFortitude, WarpriestFeats.SacredArmor],
         GrantStartingEquipment = p =>
         {
+            using var _ = ItemGen.LockNoCursed();
+
             // Deity's favored weapon
             var weaponDef = GetWeaponForType(p.Deity!.FavoredWeapon);
             if (weaponDef != null)
@@ -329,6 +332,9 @@ public static partial class ClassDefs
             p.Equip(armor);
 
             p.Inventory.Add(ItemGen.GenerateItem(MundaneArmory.Pickaxe)).Identify();
+
+            p.Inventory.Add(ItemGen.GenerateItem(MundaneArmory.Longbow)).Identify();
+            p.Inventory.Add(ItemGen.GenerateItem(MundaneQuivers.BasicArrows)).Identify();
 
             // Starting potions
             p.Inventory.Add(Item.Create(Potions.Healing, 2)).Identify();

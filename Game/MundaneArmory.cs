@@ -160,7 +160,7 @@ public static partial class MundaneArmory
         WeaponType = WeaponTypes.BoStaff,
         DamageType = DamageTypes.Blunt,
         Hands = 2,
-        Range = 2,
+        Reach = 2,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
         Price = 2,
     };
@@ -176,7 +176,6 @@ public static partial class MundaneArmory
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
         Launcher = "hand",
         MeleeVerb = "thrusts",
-        Range = 4,
         Price = 1,
     };
 
@@ -201,7 +200,7 @@ public static partial class MundaneArmory
         Profiency = Proficiencies.Whip,
         WeaponType = WeaponTypes.Whip,
         DamageType = DamageTypes.Slashing,
-        Range = 2,
+        Reach = 2,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
         Price = 1,
     };
@@ -214,7 +213,7 @@ public static partial class MundaneArmory
         Profiency = Proficiencies.Whip,
         WeaponType = WeaponTypes.SpikedChain,
         DamageType = DamageTypes.Piercing,
-        Range = 2,
+        Reach = 2,
         Hands = 2,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkGray),
         Price = 30,
@@ -227,11 +226,11 @@ public static partial class MundaneArmory
         BaseDamage = d(8),
         Profiency = Proficiencies.Bow,
         WeaponType = WeaponTypes.Longbow,
-        DamageType = DamageTypes.Piercing,
+        DamageType = DamageTypes.Blunt, //for whacking!
         Hands = 2,
-        Range = 10,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
         Price = 60,
+        NotForWhacking = true,
     };
 
     public static readonly WeaponDef Dart = new()
@@ -242,13 +241,14 @@ public static partial class MundaneArmory
         Profiency = Proficiencies.Thrown,
         WeaponType = WeaponTypes.Dart,
         DamageType = DamageTypes.Piercing,
-        Range = 4,
         Stackable = true,
         Launcher = "hand",
         Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
         Price = 1,
+        NotForWhacking = true,
     };
 
+    // Is this for whacking?
     public static readonly WeaponDef Bola = new()
     {
         id = "bola",

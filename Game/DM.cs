@@ -67,7 +67,7 @@ public class DungeonMaster : Entity<BaseDef>, IUnit, IFormattable
     public int GetAC() => 100;
     public int GetAttackBonus(WeaponDef weapon) => represents?.GetAttackBonus(weapon) ?? 0;
     public int GetSpellAttackBonus(SpellBrickBase spell) => represents?.GetSpellAttackBonus(spell) ?? 0;
-    public int GetDamageBonus() => represents?.GetDamageBonus() ?? 0;
+    public int GetStrDamageBonus() => represents?.GetStrDamageBonus() ?? 0;
     public int GetSpellDC() => _dc;
     public Item GetWieldedItem() => new(NaturalWeapons.Fist);
 

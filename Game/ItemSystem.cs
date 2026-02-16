@@ -2,7 +2,7 @@ namespace Pathhack.Game;
 
 public enum BUC { Cursed = -1, Uncursed = 0, Blessed = 1 }
 
-public class ItemDef : BaseDef
+public class ItemDef : BaseDef, IFormattable
 {
     public string Name = "";
     public Glyph Glyph = new(']', ConsoleColor.White);
@@ -13,6 +13,8 @@ public class ItemDef : BaseDef
     public bool IsUnique = false;
     public string? PokedexDescription;
 
+    public bool IsEphemeral => Weight < 0;
+
     // ID system - set for magical consumables/accessories
     public AppearanceCategory? AppearanceCategory;
     public int AppearanceIndex = -1;
@@ -22,6 +24,55 @@ public class ItemDef : BaseDef
 
     public char Class => Glyph.Value;
     public virtual ItemKnowledge RelevantKnowledge => ItemKnowledge.Seen;
+
+    public string ResolveName(bool seen, int count = 1)
+    {
+        if (ItemDb.Instance.GetAppearance(this) is { } app)
+        {
+            if (!seen)
+            {
+                var className = Class switch
+                {
+                    ItemClasses.Potion => "potion",
+                    ItemClasses.Scroll => "scroll",
+                    ItemClasses.Ring => "ring",
+                    ItemClasses.Amulet => "amulet",
+                    ItemClasses.Wand => "wand",
+                    _ => "item"
+                };
+                return count > 1 ? $"{count} {className.Plural()}" : className;
+            }
+
+            if (!this.IsKnown())
+            {
+                var called = ItemDb.Instance.GetCalledName(this);
+                var appName = count > 1 ? app.Name.Plural() : app.Name;
+                var name = called != null ? $"{appName} called {called}" : appName;
+                return count > 1 ? $"{count} {name}" : name;
+            }
+        }
+
+        return count > 1 ? $"{count} {Name.Plural()}" : Name;
+    }
+
+    public string ToString(string? format, IFormatProvider? provider)
+    {
+        // format: "the", "an", etc. Append ",noseen" to suppress seen knowledge.
+        bool seen = format?.Contains("noseen") != true;
+        var name = ResolveName(seen);
+        var fmt = format?.Replace(",noseen", "");
+
+        return fmt switch
+        {
+            "the" => name.The(),
+            "The" => name.The().Capitalize(),
+            "an" when IsUnique => name.The(),
+            "An" when IsUnique => name.The().Capitalize(),
+            "an" => name.An(),
+            "An" => name.An().Capitalize(),
+            _ => name
+        };
+    }
 }
 
 public enum RuneSlot { Fundamental, Property }
@@ -43,7 +94,7 @@ public class WeaponDef : ItemDef
     public required string Profiency; // weapon group
     public required DamageType DamageType;
     public string? WeaponType; // specific weapon type for feats/sacred weapon
-    public int Range = 1; // TODO: unused for attack resolution, only quiver filter. Remove and use Launcher instead.
+    public int Reach = 1;
     public int Hands = 1;
     public ActionCost Cost = 12;
     public string[]? AltProficiencies;
@@ -51,6 +102,8 @@ public class WeaponDef : ItemDef
     public string? MeleeVerb; // "thrusts", "swings", etc.
     public WeaponCategory Category = WeaponCategory.Item;
     public override ItemKnowledge RelevantKnowledge => ItemKnowledge.Seen | ItemKnowledge.Props | ItemKnowledge.BUC;
+    public bool NotForWhacking = false;
+    public int StrBonus = 1;
 
     public WeaponDef()
     {
@@ -81,6 +134,7 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
     public IUnit? Holder;
     public int Count = 1;
     public int Charges = 0;
+    public int MaxCharges = -1;
     public ItemKnowledge Knowledge;
     public BUC BUC;
 
@@ -158,33 +212,9 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
         var qualityKnown = Knowledge.HasFlag(ItemKnowledge.PropQuality);
         var potencyKnown = Knowledge.HasFlag(ItemKnowledge.PropPotency);
 
-        // Items with appearances (potions, scrolls, rings, etc.)
-        if (ItemDb.Instance.GetAppearance(Def) is { } app)
-        {
-            // Not seen - class name only
-            if (!seen)
-            {
-                var className = Def.Class switch
-                {
-                    ItemClasses.Potion => "potion",
-                    ItemClasses.Scroll => "scroll",
-                    ItemClasses.Ring => "ring",
-                    ItemClasses.Amulet => "amulet",
-                    ItemClasses.Wand => "wand",
-                    _ => "item"
-                };
-                return count > 1 ? $"{count} {className.Plural()}" : className;
-            }
-
-            // Seen but def not known - appearance + called
-            if (!Def.IsKnown())
-            {
-                var called = ItemDb.Instance.GetCalledName(Def);
-                var appName = count > 1 ? app.Name.Plural() : app.Name;
-                var name = called != null ? $"{appName} called {called}" : appName;
-                return count > 1 ? $"{count} {name}" : name;
-            }
-        }
+        // Items with appearances that aren't fully identified yet
+        if (ItemDb.Instance.GetAppearance(Def) is not null && (!seen || !Def.IsKnown()))
+            return Def.ResolveName(seen, count);
 
         // Def known (or no appearance) - show base name, maybe props
         var parts = new List<string>();
@@ -225,7 +255,7 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
 
         parts.Add(count > 1 ? Def.Name.Plural() : Def.Name);
 
-        if (Def is WandDef && potencyKnown)
+        if (Def is WandDef or QuiverDef && potencyKnown)
             parts.Add($"({Charges})");
 
         return string.Join(" ", parts);
@@ -326,6 +356,20 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
         "An" => Count > 1 ? DisplayName.Capitalize() : DisplayName.An().Capitalize(),
         _ => DisplayName
     };
+
+    internal void Charge(int by)
+    {
+        if (MaxCharges != -1)
+        {
+            Charges = Math.Min(Charges + by, MaxCharges);
+        }
+    }
+
+    internal Item Uncurse()
+    {
+        if (BUC == BUC.Cursed) BUC = BUC.Uncursed;
+        return this;
+    }
 }
 
 public record struct EquipSlot(string Type, string Slot);
@@ -337,6 +381,8 @@ public static class Materials
     public const string Gold = "gold";
     public const string ColdIron = "cold_iron";
     public const string Adamantine = "adamantine";
+
+    public const string Leather = "leather";
 }
 
 public static class ItemSlots
@@ -349,6 +395,7 @@ public static class ItemSlots
     public const string Face = "face";
     public const string Feet = "feet";
     public const string Hands = "hands";
+    public const string Quiver = "quiver";
 
     public static readonly EquipSlot BodySlot = new(Body, "_");
     public static readonly EquipSlot FaceSlot = new(Face, "_");
@@ -356,6 +403,7 @@ public static class ItemSlots
     public static readonly EquipSlot OffHandSlot = new(Hand, "off");
     public static readonly EquipSlot FeetSlot = new(Feet, "_");
     public static readonly EquipSlot HandsSlot = new(Hands, "_");
+    public static readonly EquipSlot QuiverSlot = new(Quiver, "_");
 }
 
 public static class ItemClasses

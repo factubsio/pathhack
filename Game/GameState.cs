@@ -663,17 +663,20 @@ public class GameState
         pline("A map coalesces in your mind.");
     }
 
-    public static bool DoAttackRoll(PHContext ctx, int attackBonus = 0)
+    public static bool DoAttackRoll(PHContext ctx, int attackBonus = 0) => DoAttackRoll(ctx, out var _, attackBonus);
+
+    public static bool DoAttackRoll(PHContext ctx, out bool improvised, int attackBonus = 0)
     {
         IUnit attacker = ctx.Source!;
         IUnit defender = ctx.Target.Unit!;
 
         Check check = new() { DC = defender.GetAC(), Tag = "attack" };
         ctx.Check = check;
+        improvised = false;
 
         if (ctx.Weapon?.Def is WeaponDef weapon)
         {
-            bool improvised = !ctx.Melee && weapon.Launcher == null;
+            improvised = (ctx.AttackType == AttackType.Thrown && weapon.Launcher == null) || (ctx.Melee && weapon.NotForWhacking);
             if (improvised)
                 check.Modifiers.Untyped(-2, "improvised");
             else
@@ -715,21 +718,29 @@ public class GameState
         return hit;
     }
 
-    public static bool DoWeaponAttack(IUnit attacker, IUnit defender, Item with, bool thrown = false, int attackBonus = 0)
+    public static bool DoWeaponAttack(IUnit attacker, IUnit defender, Item with, AttackType type = AttackType.Melee, int attackBonus = 0)
     {
         var weapon = with.Def as WeaponDef;
         using var ctx = PHContext.Create(attacker, Target.From(defender));
         ctx.Weapon = with;
-        ctx.Melee = !thrown;
+        ctx.AttackType = type;
         ctx.SilentCheck = true;
         ctx.SilentDamage = true;
 
-        var hit = DoAttackRoll(ctx, attackBonus);
+        var hit = DoAttackRoll(ctx, out bool improvised, attackBonus);
         var check = ctx.Check!;
 
-        string verb = thrown
-            ? "throws"
-            : weapon?.MeleeVerb ?? "attacks with";
+        string verb = type switch
+        {
+            AttackType.None => "yeets?",
+            AttackType.Melee => weapon?.MeleeVerb ?? "attacks with",
+            AttackType.Thrown => "throws",
+            AttackType.Ammo => "fires",
+            AttackType.Spell => "casts",
+            _ => "bubbles???",
+        };
+
+        bool isProjectile = type is AttackType.Ammo or AttackType.Thrown;
 
         if (hit)
         {
@@ -738,7 +749,14 @@ public class GameState
                 Formula = weapon?.BaseDamage ?? d(2),
                 Type = weapon?.DamageType ?? DamageTypes.Blunt
             };
-            dmg.Modifiers.Untyped(attacker.GetDamageBonus(), "str_inherent");
+
+            if (!improvised)
+            {
+                // Hmm, should we e.g. pass weapon?.Stat[s] to GetStrDamageBonus?
+                int strBonus = with.Query("str_bonus", null, MergeStrategy.Max, weapon?.StrBonus ?? 0);
+                dmg.Modifiers.Untyped(attacker.GetStrDamageBonus() * strBonus, "str_inherent");
+            }
+
             ctx.Damage.Add(dmg);
             if (weapon != null)
             {
@@ -746,7 +764,7 @@ public class GameState
                 dmg.Tags.Add(weapon.DamageType.SubCat);
             }
 
-            if (thrown)
+            if (isProjectile)
             {
                 if (defender.IsPlayer)
                     g.pline($"{with:The} hits you!");
@@ -757,7 +775,7 @@ public class GameState
             }
             else if (attacker.IsPlayer)
             {
-                g.pline($"You hit the {defender}.");
+                g.pline($"You bash the {defender}.");
             }
             else if (defender.IsPlayer)
             {
@@ -785,7 +803,7 @@ public class GameState
             // Combined miss log
             Log.Structured("attack", $"{attacker:attacker}{defender:defender}{with:weapon}{check.Roll:roll}{check.BaseRoll:base_roll}{check.DC:ac}{check.Modifiers:check_mods}{check.Advantage:advantage}{check.Disadvantage:disadvantage}{false:hit}");
             
-            if (thrown)
+            if (isProjectile)
             {
                 if (defender.IsPlayer)
                     g.pline($"{with:The} misses you.");
@@ -795,7 +813,12 @@ public class GameState
                     g.YouObserve(attacker, $"{with:The} misses {defender:the}.");
             }
             else if (attacker.IsPlayer)
-                g.pline($"You miss the {defender}.");
+            {
+                if (improvised)
+                    g.pline($"You clumsily miss the {defender}.");
+                else
+                    g.pline($"You miss the {defender}.");
+            }
             else if (defender.IsPlayer)
             {
                 if (weapon?.Category == WeaponCategory.Item)
@@ -979,12 +1002,12 @@ public class GameState
         Log.Structured("drop", $"{item.Def.Name:item}");
     }
 
-    public static Pos DoThrow(IUnit thrower, Item item, Pos dir, Pos? from = null)
+    public static Pos DoThrow(IUnit thrower, Item item, Pos dir, AttackType type, Pos? from = null, int? range = null)
     {
         Pos pos = from ?? thrower.Pos;
         Pos last = pos;
         IUnit? hit = null;
-        int range = Math.Max(1, 4 + thrower.StrMod - item.Def.Weight / 40);
+        range ??= Math.Max(1, 4 + thrower.StrMod - item.Def.Weight / 40);
         for (int i = 0; i < range; i++)
         {
             pos += dir;
@@ -1016,8 +1039,10 @@ public class GameState
         else
         {
             if (hit != null)
-                DoWeaponAttack(thrower, hit, item, thrown: true);
-            lvl.PlaceItem(item, last);
+                DoWeaponAttack(thrower, hit, item, type);
+            
+            if (!item.Def.IsEphemeral)
+                lvl.PlaceItem(item, last);
         }
 
         return last;
@@ -1126,6 +1151,7 @@ public class GameState
         if (dir == Pos.Zero)
         {
             u.Energy -= ActionCosts.OneAction.Value;
+            ArcherySystem.TryReload(u.Quiver, true);
         }
         else
         {
@@ -1219,7 +1245,7 @@ public class GameState
         return EquipResult.Ok;
     }
 
-    static string HandStr(Item item) =>
+    public static string HandStr(Item item) =>
         item.Def is WeaponDef { Hands: > 1 } ? "hands" : "hand";
 
     static void WeldMsg(IUnit unit)

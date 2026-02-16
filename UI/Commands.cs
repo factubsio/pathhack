@@ -340,24 +340,52 @@ public static partial class Input
 
     static void WaitTurn() => u.Energy -= ActionCosts.OneAction.Value;
 
-    static void Fire(CommandArg arg)
+    static void Fire()
     {
-        if (arg is not DirArg(var dir)) return;
         if (u.Quiver == null)
         {
             g.pline("You have nothing readied.");
             return;
         }
         Item toThrow;
-        if (u.Quiver.Count > 1)
-            toThrow = u.Quiver.Split(1);
+        int? range = null;
+
+        AttackType type = AttackType.Thrown;
+
+        var weapon = u.GetWieldedItem();
+        var quiver = u.Quiver.Def as QuiverDef;
+        if (quiver != null && quiver.Launcher != (weapon.Def as WeaponDef)?.Profiency)
+        {
+            g.pline($"That is a silly way to fire {u.Quiver:an}.");
+            return;
+        }
+        if (!PromptDirection(out var dir)) return;
+
+        if (quiver != null)
+        {
+            if (u.Quiver.Charges == 0)
+            {
+                g.pline($"Your {u.Quiver} is empty!");
+                return;
+            }
+            toThrow = Item.Create(quiver.Ammo);
+            u.Quiver.Charges--;
+            range = 8; // from quiver, from weapon?
+            type = AttackType.Ammo;
+        }
         else
         {
-            toThrow = u.Quiver;
-            u.Inventory.Remove(toThrow);
-            u.Quiver = null;
+            if (u.Quiver.Count > 1)
+                toThrow = u.Quiver.Split(1);
+            else
+            {
+                toThrow = u.Quiver;
+                u.Inventory.Remove(toThrow);
+                u.Quiver = null;
+            }
         }
-    DoThrow(u, toThrow, dir);
+
+        DoThrow(u, toThrow, dir, type, range: range);
         u.Energy -= ActionCosts.OneAction.Value;
     }
 
@@ -380,12 +408,10 @@ public static partial class Input
         }
         else
         {
-            g.pline("In what direction?");
-            var dir = GetDirection(NextKey().Key);
-            if (dir == null) return;
+            if (!PromptDirection(out var dir)) return;
 
             wand.Charges--;
-            Wands.DoEffect(def, u, dir.Value);
+            Wands.DoEffect(def, u, dir);
         }
         u.Energy -= ActionCosts.OneAction.Value;
     }
@@ -395,9 +421,7 @@ public static partial class Input
         // TODO: throw things that aren't potions!!!
         if (!PickItem("throw", IsQuaffable, out var item)) return;
 
-        g.pline("In what direction?");
-        var dir = GetDirection(NextKey().Key);
-        if (dir == null) return;
+        if (!PromptDirection(out var dir)) return;
 
         Item toThrow;
         if (item.Count > 1)
@@ -407,35 +431,55 @@ public static partial class Input
             toThrow = item;
             u.Inventory.Remove(toThrow);
         }
-        DoThrow(u, toThrow, dir.Value);
+        DoThrow(u, toThrow, dir, AttackType.Thrown);
         u.Energy -= ActionCosts.OneAction.Value;
     }
 
     static void SetQuiver()
     {
-        var throwable = u.Inventory.Where(i => i.Def is WeaponDef w && (w.Range > 1 || w.Launcher != null)).ToList();
-        if (throwable.Count == 0)
+        if (!PickItem("ready", i => i.Def is QuiverDef || i.Def is WeaponDef { Launcher: not null }, out var item)) return;
+
+        if (u.Quiver == item)
         {
-            g.pline("You have nothing to ready.");
+            g.pline("Readying an already readied item is readtacular but pointless.");
             return;
         }
-        var menu = new Menu<Item?>();
-        menu.Add("Ready what? (- for nothing)", LineStyle.Heading);
-        menu.AddHidden('-', null);
-        foreach (var item in throwable.OrderBy(i => i.InvLet))
-        {
-            string name = item.DisplayName;
-            if (item == u.Quiver)
-                name += " (quivered)";
-            menu.Add(item.InvLet, name, item);
-        }
-        var picked = menu.Display(MenuMode.PickOne);
-        if (picked.Count == 0) return;
-        u.Quiver = picked[0];
+
+        u.Quiver = item;
         if (u.Quiver != null)
-            g.pline("You ready {0:the}.", u.Quiver);
+        {
+
+            if (u.Quiver.Def is QuiverDef q)
+            {
+                // Punish scumming quiver swaps.
+
+                g.pline("You ready {0:the}.", u.Quiver);
+                // Note: it's a bid odd cos you "ready (5), but some splip out",
+                // which means you actually have (3), I am not sure which order is better
+                int lost = g.Rn2(g.Rn2(u.Quiver.Charges));
+                if (lost > 0)
+                {
+                    u.Quiver.Charges -= lost;
+                    if (lost > 2)
+                    {
+                        g.pline($"But a few {q.Ammo.Name.Plural()} slip out!");
+                    }
+                    else if(lost == 2)
+                    {
+                        g.pline($"But a couple of {q.Ammo.Name.Plural()} slip out!");
+                    }
+                    else
+                    {
+                        g.pline($"But {q.Ammo:an} slips out!");
+                    }
+                }
+
+                u.Energy -= ActionCosts.OneAction.Value;
+            }
+        }
         else
             g.pline("You empty your quiver.");
+        
     }
 
     static void WieldWeapon()
@@ -448,17 +492,17 @@ public static partial class Input
         {
             string name = item.DisplayName;
             if (u.Equipped.ContainsValue(item))
-                name += " (weapon in hand)";
+                name += $" (weapon in {HandStr(item)})";
             menu.Add(item.InvLet, name, item);
         }
         var picked = menu.Display(MenuMode.PickOne);
         if (picked.Count == 0) return;
         var result = g.DoEquip(u, picked[0]);
-        if (result == GameState.EquipResult.Cursed) return;
+        if (result == EquipResult.Cursed) return;
         if (picked[0] == null)
             g.pline("You are empty handed.");
         else
-            g.pline($"{picked[0]!.InvLet} - {picked[0]!.Def.Name} (weapon in hand).");
+            g.pline($"{picked[0]!.InvLet} - {picked[0]!.Def.Name} (weapon in {HandStr(picked[0]!)}).");
     }
 
     static void WearArmor()
@@ -510,7 +554,7 @@ public static partial class Input
             g.pline($"{item.InvLet} - {item.DisplayName} (being worn).");
     }
 
-    static string EquipDescription(Item item, EquipSlot? slot) => slot?.Type switch
+    public static string EquipDescription(Item item, EquipSlot? slot) => slot?.Type switch
     {
         ItemSlots.Ring => $"(worn on {slot.Value.Slot} hand)",
         ItemSlots.Hand when item.Def is WeaponDef { Hands: 2 } => "(weapon in hands)",

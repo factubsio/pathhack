@@ -60,7 +60,7 @@ public static partial class Input
         ['T'] = new("takeoff", "Take off armor", ArgType.None, _ => TakeOff()),
         ['R'] = new("remove", "Remove accessory", ArgType.None, _ => RemoveAccessory()),
         [';'] = new("farlook", "Examine (farlook)", ArgType.None, _ => Pokedex.Farlook()),
-        ['f'] = new("fire", "Fire quivered item", ArgType.Dir, Fire),
+        ['f'] = new("fire", "Fire quivered item", ArgType.None, _ => Fire()),
         ['Q'] = new("quiver", "Set quiver", ArgType.None, _ => SetQuiver()),
         ['Z'] = new("cast", "Cast spell", ArgType.None, _ => ZapSpell()),
         ['q'] = new("quaff", "Drink potion", ArgType.None, _ => Quaff()),
@@ -167,11 +167,9 @@ public static partial class Input
         Target target = Target.None;
         if (ability.Targeting == TargetingType.Direction)
         {
-            g.pline("In what direction?");
             Draw.DrawCurrent();
-            var dir = GetDirection(NextKey().Key);
-            if (dir == null) return;
-            target = new Target(null, dir.Value);
+            if (!PromptDirection(out var dir)) return;
+            target = new Target(null, dir);
         }
         else if (ability.Targeting == TargetingType.Unit)
         {
@@ -508,6 +506,23 @@ public static partial class Input
         ConsoleKey.OemPeriod or ConsoleKey.NumPad5 => Pos.Zero,
         _ => null,
     };
+
+    public static bool PromptDirection(out Pos dir, bool allowVertical = false)
+    {
+        g.pline("In what direction? ");
+
+        if (GetDirection(NextKey().Key) is {} d)
+        {
+            dir = d;
+            return true;
+        }
+        else
+        {
+            dir = default;
+            return false;
+        }
+    }
+
 
     static void HandleExtended()
     {

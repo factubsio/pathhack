@@ -11,7 +11,7 @@ public class Thorns(Dice damage, DamageType type) : LogicBrick
 
     protected override void OnDamageTaken(Fact fact, PHContext context)
     {
-        if (context.Source is not IUnit attacker || attacker.IsDM) return;
+        if (context.Source is not IUnit attacker || attacker.IsDM || !context.Melee) return;
         var defender = context.Target.Unit!;
 
         Target target = new(attacker, attacker.Pos);

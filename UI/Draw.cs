@@ -685,7 +685,12 @@ public static class Draw
 
     static void DrawStatus(Level level)
     {
-        Layers[0].Write(0, StatusRow, $"{level.Branch.Name}:{level.EffectiveDepth} $:{u.Gold} R:{g.CurrentRound} E:{u.Energy}".PadRight(ScreenWidth));
+        string quiverState = "";
+        if (u.Quiver?.Def is QuiverDef)
+        {
+            quiverState = $" Q:{u.Quiver.Charges}/{u.Quiver.MaxCharges}";
+        }
+        Layers[0].Write(0, StatusRow, $"{level.Branch.Name}:{level.EffectiveDepth} $:{u.Gold} R:{g.CurrentRound} E:{u.Energy}{quiverState}".PadRight(ScreenWidth));
         int nextLvl = u.CharacterLevel + 1;
         int needed = Progression.XpForLevel(nextLvl) - Progression.XpForLevel(u.CharacterLevel);
         int progress = u.XP - Progression.XpForLevel(u.CharacterLevel);

@@ -126,7 +126,7 @@ public class TelekineticProjectile(int range, Dice damage, string pool) : Action
         var item = Item.Create(TKProjectile);
 
         g.pline($"{unit:The} hurls a telekinetic bolt!");
-        var landed = DoThrow(unit, item, dir, from);
+        var landed = DoThrow(unit, item, dir, AttackType.Thrown, from);
         lvl.RemoveItem(item, landed);
     }
 }

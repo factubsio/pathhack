@@ -264,7 +264,7 @@ public class MeleeDamageRider(string name, DamageType type, Dice dice) : LogicBr
 
     protected override void OnBeforeDamageRoll(Fact fact, PHContext ctx)
     {
-        if (!ctx.Melee) return;
+        if (ctx.AttackType != AttackType.Melee) return;
         ctx.Damage.Add(new DamageRoll { Formula = dice, Type = type });
     }
 }

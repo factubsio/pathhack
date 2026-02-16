@@ -55,18 +55,27 @@ public static class ItemGen
     public static Item? GenerateScroll(int depth) => PickFrom(Scrolls.RandomAll, depth);
     public static Item? GenerateWeapon(int depth) => PickFrom(MundaneArmory.RandomAllWeapons, depth);
     public static Item? GenerateArmor(int depth) => PickFrom(MundaneArmory.RandomAllArmors, depth);
-    static Item? GenerateRing(int depth) => PickFrom(MagicRings.RandomAll, depth);
-    static Item? GenerateBoots(int depth) => PickFrom(MagicBoots.RandomAll, depth);
-    static Item? GenerateGloves(int depth) => PickFrom(MagicGloves.RandomAll, depth);
+    public static Item? GenerateQuiver(int depth) => PickFrom(MundaneQuivers.RandomQuivers, depth);
+    public static Item? GenerateRing(int depth) => PickFrom(MagicRings.RandomAll, depth);
+    public static Item? GenerateBoots(int depth) => PickFrom(MagicBoots.RandomAll, depth);
+    public static Item? GenerateGloves(int depth) => PickFrom(MagicGloves.RandomAll, depth);
 
     public static BUC RollBUC(int chance = 10, int bias = 0)
     {
-        if (bias <= -2) return BUC.Cursed;
-        if (bias >= 2) return BUC.Blessed;
-        if (bias == -1 && g.Rn2(10) != 0) return BUC.Cursed;
-        if (bias == 1 && g.Rn2(10) != 0) return BUC.Blessed;
-        if (g.Rn2(chance) != 0) return BUC.Uncursed;
-        return g.Rn2(2) == 0 ? BUC.Cursed : BUC.Blessed;
+        BUC RollInternal()
+        {
+            if (bias <= -2) return BUC.Cursed;
+            if (bias >= 2) return BUC.Blessed;
+            if (bias == -1 && g.Rn2(10) != 0) return BUC.Cursed;
+            if (bias == 1 && g.Rn2(10) != 0) return BUC.Blessed;
+            if (g.Rn2(chance) != 0) return BUC.Uncursed;
+            return g.Rn2(2) == 0 ? BUC.Cursed : BUC.Blessed;
+        }
+
+        BUC baseBuc = RollInternal();
+        if (NoCursedAllowed && baseBuc == BUC.Cursed) baseBuc = BUC.Uncursed;
+        if (NoBlessedAllowed && baseBuc == BUC.Blessed) baseBuc = BUC.Uncursed;
+        return baseBuc;
     }
 
     public static Item GenerateItem(ItemDef def, int depth = 1, int? maxPotency = null, bool propertyRunes = true)
@@ -93,13 +102,23 @@ public static class ItemGen
         {
             item.Potency = RollPotency(depth, genLog, maxPotency);
         }
-        else if (def.CanHavePotency)
+        else
         {
-            item.Potency = RollPotency(depth, genLog, maxPotency);
-        }
-        else if (def is WandDef wand)
-        {
-            item.Charges = g.RnRange(wand.MaxCharges / 2 - 1, wand.MaxCharges - 1);
+            if (def.CanHavePotency)
+            {
+                item.Potency = RollPotency(depth, genLog, maxPotency);
+            }
+
+            if (def is WandDef wand)
+            {
+                item.MaxCharges = wand.MaxCharges;
+                item.Charges = g.RnRange(wand.MaxCharges / 2 - 1, wand.MaxCharges - 1);
+            }
+            else if (def is QuiverDef quiver)
+            {
+                item.MaxCharges = quiver.Capacity.Roll();
+                item.Charges = item.MaxCharges;
+            }
         }
 
         if (genLog.Count > 0)
@@ -181,6 +200,34 @@ public static class ItemGen
         else
             item.PropertyRunes.Add(fact);
     }
+
+    internal static IDisposable LockNoBlessed() => LockRule(r => r.NoBlessed = true);
+    internal static IDisposable LockNoCursed() => LockRule(r => r.NoCursed = true);
+
+    internal static void DisposeRule()
+    {
+        rules.Pop();
+    }
+
+    private static ItemGenRules LockRule(Action<ItemGenRules> r)
+    {
+        ItemGenRules rule = new();
+        r(rule);
+        rules.Push(rule);
+        return rule;
+    }
+
+    private static bool NoCursedAllowed => rules.Count > 0 && rules.Peek().NoCursed;
+    private static bool NoBlessedAllowed => rules.Count > 0 && rules.Peek().NoBlessed;
+
+    private static readonly Stack<ItemGenRules> rules = [];
+}
+
+public sealed class ItemGenRules : IDisposable
+{
+    public void Dispose() => ItemGen.DisposeRule();
+    public bool NoCursed;
+    public bool NoBlessed;
 }
 
 public class NullFundamental() : RuneBrick("null", -1, RuneSlot.Fundamental)

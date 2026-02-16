@@ -22,6 +22,14 @@ public record class Modifier(ModifierCategory Category, int Value, string? Why =
     public string Label => $"{Why} :{Category}";
 }
 
+public enum AttackType
+{
+    None,
+    Melee,
+    Thrown,
+    Ammo,
+    Spell,
+}
 
 public sealed class PHContext : IDisposable
 {
@@ -31,7 +39,7 @@ public sealed class PHContext : IDisposable
     public SpellBrickBase? Spell;
     public ActionBrick? Action;
     public Item? Weapon;
-    public bool Melee = false;
+    public AttackType AttackType = AttackType.None;
     public Check? Check;
     public List<DamageRoll> Damage = [];
     public DiceFormula HealFormula;
@@ -53,6 +61,7 @@ public sealed class PHContext : IDisposable
     public bool IsCritFail => CheckDegree.Degree == Degree.CriticalFail;
 
     public static PHContext? Current { get; private set; }
+    public bool Melee => AttackType == AttackType.Melee;
 
     public void Dispose() => Current = Parent;
     public static PHContext Create(IUnit? source, Target target)
