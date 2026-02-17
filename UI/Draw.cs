@@ -69,92 +69,32 @@ public record struct Cell(char Ch, ConsoleColor Fg = ConsoleColor.Gray, ConsoleC
     internal static Cell From(Glyph glyph) => new(glyph.Value, glyph.Color, glyph.Background ?? ConsoleColor.Black, (CellStyle)glyph.Flags);
 }
 
-
-public class ScreenBuffer(int width, int height)
-{
-    public readonly int Width = width;
-    public readonly int Height = height;
-    readonly Cell?[] _cells = new Cell?[width * height];
-
-    public bool FullScreen;
-    public bool Ignore;
-
-    public Cell? this[int x, int y]
-    {
-        get => (x >= 0 && x < Width && y >= 0 && y < Height) ? _cells[y * Width + x] : null;
-        set { if (x >= 0 && x < Width && y >= 0 && y < Height) _cells[y * Width + x] = value; }
-    }
-
-    public void Clear()
-    {
-        Array.Clear(_cells);
-        FullScreen = false;
-        Ignore = false;
-    }
-
-    public void Deactivate() { Ignore = true; Draw.Invalidate(); Draw.Blit(); }
-
-    public LayerScope Activate(bool fullScreen = false)
-    {
-        Clear();
-        FullScreen = fullScreen;
-        if (fullScreen)
-            Draw.Invalidate();
-        return new LayerScope(this);
-    }
-
-    public void Write(int x, int y, string text, ConsoleColor fg = ConsoleColor.Gray, ConsoleColor bg = ConsoleColor.Black, CellStyle style = CellStyle.None)
-    {
-        foreach (char c in text)
-        {
-            this[x++, y] = new Cell(c, fg, bg, style);
-        }
-    }
-
-    public void Fill(int x, int y, int w, int h, Cell cell)
-    {
-        for (int dy = 0; dy < h; dy++)
-            for (int dx = 0; dx < w; dx++)
-                this[x + dx, y + dy] = cell;
-    }
-}
-
-public readonly struct LayerScope(ScreenBuffer layer) : IDisposable
-{
-    public void Dispose() => layer.Deactivate();
-}
-
 public static class Draw
 {
     public static bool Enabled = true;
 
-    public static readonly int ScreenWidth = Console.WindowWidth;
-    public static readonly int ScreenHeight = Console.WindowHeight;
+    public static readonly int ScreenWidth = TerminalBackend.Width;
+    public static readonly int ScreenHeight = TerminalBackend.Height;
 
     public const int MapWidth = 80;
     public const int MapHeight = 21;
-    public const int MsgRow = 0;
-    public const int MapRow = 1;
-    public const int StatusRow = MapRow + MapHeight;
 
-    public static readonly ScreenBuffer[] Layers = [
-        new(ScreenWidth, ScreenHeight),
-        new(ScreenWidth, ScreenHeight),
-        new(ScreenWidth, ScreenHeight),
-    ];
+    // Well-known windows
+    public static readonly Window MessageWin = new(ScreenWidth, 4, x: 0, y: 0, z: 0);
+    public static readonly Window MapWin = new(MapWidth, MapHeight, x: 0, y: 1, z: 0, opaque: true);
+    public static readonly Window StatusWin = new(ScreenWidth, 2, x: 0, y: 1 + MapHeight, z: 0, opaque: true);
 
-    static readonly Cell[] _prev = new Cell[ScreenWidth * ScreenHeight];
-
-    public static ScreenBuffer Overlay => Layers[^1];
-
-    public static void ClearOverlay() => Overlay.Clear();
+    public static void Init()
+    {
+        WM.Register(MessageWin);
+        WM.Register(MapWin);
+        WM.Register(StatusWin);
+    }
 
     public static void AnimateBeam(Pos from, Pos to, Glyph glyph, int delayMs = 30, bool pulse = false)
     {
-        // TODO: move visibility clipping to overlay layer instead of per-callsite
         var dir = (to - from).Signed;
-        
-        // DEC: x = vertical, q = horizontal. Unicode for diagonals.
+
         (char beamChar, bool dec) = (dir.X, dir.Y) switch
         {
             (0, _) => ('x', true),
@@ -163,27 +103,26 @@ public static class Draw
             _ => ('╱', false),
         };
 
-        using var layer = Overlay.Activate();
+        using var handle = WM.CreateTransient(MapWidth, MapHeight, x: 0, y: 1, z: 10);
+        var ov = handle.Window;
 
         if (pulse)
         {
-            // Draw entire beam at once
             Pos p = from + dir;
             while (p != to + dir)
             {
                 if (lvl.IsVisible(p))
-                    Overlay[p.X, p.Y + MapRow] = new Cell(beamChar, glyph.Color, Dec: dec);
+                    ov[p.X, p.Y] = new Cell(beamChar, glyph.Color, Dec: dec);
                 p += dir;
             }
             Blit();
             Thread.Sleep(delayMs * 3);
 
-            // Erase from source to dest
             p = from + dir;
             while (p != to + dir)
             {
                 if (lvl.IsVisible(p))
-                    Overlay[p.X, p.Y + MapRow] = Cell.Empty;
+                    ov[p.X, p.Y] = Cell.Empty;
                 Blit();
                 Thread.Sleep(delayMs);
                 p += dir;
@@ -195,7 +134,7 @@ public static class Draw
             while (p != to + dir)
             {
                 if (lvl.IsVisible(p))
-                    Overlay[p.X, p.Y + MapRow] = new Cell(beamChar, glyph.Color, Dec: dec);
+                    ov[p.X, p.Y] = new Cell(beamChar, glyph.Color, Dec: dec);
                 Blit();
                 Thread.Sleep(delayMs);
                 p += dir;
@@ -214,7 +153,6 @@ public static class Draw
         {
             int frames = to.ChebyshevDist(from);
             if (frames <= 0) return;
-
             delayMs = total / frames;
         }
 
@@ -222,16 +160,17 @@ public static class Draw
         int dy = Math.Sign(to.Y - from.Y);
         Pos p = from + new Pos(dx, dy);
 
-        using var layer = Overlay.Activate();
+        using var handle = WM.CreateTransient(MapWidth, MapHeight, x: 0, y: 1, z: 10);
+        var ov = handle.Window;
 
         while (p != to)
         {
             if (lvl.IsVisible(p))
             {
-                Overlay[p.X, p.Y + MapRow] = new Cell(glyph.Value, glyph.Color);
+                ov[p.X, p.Y] = new Cell(glyph.Value, glyph.Color);
                 Blit();
                 Thread.Sleep(delayMs);
-                Overlay[p.X, p.Y + MapRow] = null;
+                ov[p.X, p.Y] = null;
             }
             p += new Pos(dx, dy);
         }
@@ -240,145 +179,59 @@ public static class Draw
 
     public static void AnimateFlash(IEnumerable<Pos> positions, Glyph glyph, int delayMs = 150)
     {
-        using var layer = Overlay.Activate();
+        using var handle = WM.CreateTransient(MapWidth, MapHeight, x: 0, y: 1, z: 10);
+        var ov = handle.Window;
         foreach (var p in positions)
             if (lvl.IsVisible(p))
-                Overlay[p.X, p.Y + MapRow] = new Cell(glyph.Value, glyph.Color);
+                ov[p.X, p.Y] = new Cell(glyph.Value, glyph.Color);
         Blit();
         Thread.Sleep(delayMs);
     }
 
     public static void AnimateCone(Pos origin, IEnumerable<Pos> positions, Glyph frontier, Glyph mid, Glyph trail, int delayMs = 40)
     {
-        using var layer = Overlay.Activate();
-        
+        using var handle = WM.CreateTransient(MapWidth, MapHeight, x: 0, y: 1, z: 10);
+        var ov = handle.Window;
+
         var rings = positions
             .GroupBy(p => p.ChebyshevDist(origin))
             .OrderBy(g => g.Key)
             .Select(g => g.ToList())
             .ToList();
-        
+
         for (int i = 0; i < rings.Count; i++)
         {
-            // Update previous rings to trail/mid
             for (int j = 0; j < i; j++)
             {
-                var glyph = (i - j) >= 2 ? trail : mid;
+                var g2 = (i - j) >= 2 ? trail : mid;
                 foreach (var p in rings[j])
                     if (lvl.IsVisible(p))
-                        Overlay[p.X, p.Y + MapRow] = new Cell(glyph.Value, glyph.Color);
+                        ov[p.X, p.Y] = new Cell(g2.Value, g2.Color);
             }
-            
-            // Draw frontier
+
             foreach (var p in rings[i])
                 if (lvl.IsVisible(p))
-                    Overlay[p.X, p.Y + MapRow] = new Cell(frontier.Value, frontier.Color);
-            
+                    ov[p.X, p.Y] = new Cell(frontier.Value, frontier.Color);
+
             Blit();
             Thread.Sleep(delayMs);
         }
-        
+
         Thread.Sleep(delayMs * 2);
     }
 
-    public static void OverlayWrite(int x, int y, string text, ConsoleColor fg = ConsoleColor.Gray, ConsoleColor bg = ConsoleColor.Black, CellStyle style = CellStyle.None) =>
-        Overlay.Write(x, y, text, fg, bg, style);
+    public static int TotalBytesWritten => TerminalBackend.BytesWritten;
+    public static int DamagedCellCount => TerminalBackend.DamagedCells;
 
-    public static void OverlayFill(int x, int y, int w, int h) =>
-        Overlay.Fill(x, y, w, h, Cell.Empty);
-
-    static int AnsiColor(ConsoleColor c) => c switch
+    public static void Blit()
     {
-        ConsoleColor.Black => 30,
-        ConsoleColor.DarkRed => 31,
-        ConsoleColor.DarkGreen => 32,
-        ConsoleColor.DarkYellow => 33,
-        ConsoleColor.DarkBlue => 34,
-        ConsoleColor.DarkMagenta => 35,
-        ConsoleColor.DarkCyan => 36,
-        ConsoleColor.Gray => 37,
-        ConsoleColor.DarkGray => 90,
-        ConsoleColor.Red => 91,
-        ConsoleColor.Green => 92,
-        ConsoleColor.Yellow => 93,
-        ConsoleColor.Blue => 94,
-        ConsoleColor.Magenta => 95,
-        ConsoleColor.Cyan => 96,
-        ConsoleColor.White => 97,
-        _ => 37,
-    };
-
-    public static int TotalBytesWritten { get; private set; } = 0;
-    public static int DamagedCellCount { get; private set; } = 0;
-
-    public static void Blit(int row = -1)
-    {
-        int start = row < 0 ? 0 : row;
-        int end = row < 0 ? ScreenHeight : row + 1;
-
-        for (int y = start; y < end; y++)
-        {
-            for (int x = 0; x < ScreenWidth; x++)
-            {
-                Cell? cell = null;
-                for (int i = Layers.Length - 1; i >= 0 && cell == null; i--)
-                {
-                    if (Layers[i].Ignore) continue;
-                    cell = Layers[i][x, y];
-
-                    if (Layers[i].FullScreen)
-                    {
-                        break;
-                    }
-                }
-                cell ??= Cell.Empty;
-
-                int idx = (y * ScreenWidth) + x;
-                if (_prev[idx] == cell.Value) continue;
-                DamagedCellCount++;
-                _prev[idx] = cell.Value;
-
-                var fg = cell.Value.Fg;
-                var bg = cell.Value.Bg;
-                if ((cell.Value.Style & CellStyle.Reverse) != 0)
-                    (fg, bg) = (bg, fg);
-
-                int fgCode = AnsiColor(fg);
-                int bgCode = AnsiColor(bg) + 10;
-                char ch = cell.Value.Ch;
-
-                string cmd;
-
-                if ((cell.Value.Style & CellStyle.Bold) != 0)
-                    cmd = $"\x1b[{y + 1};{x + 1}H\x1b[{fgCode};{bgCode};1m{ch}\x1b[22m";
-                else if (cell.Value.Dec)
-                    cmd = $"\x1b[{y + 1};{x + 1}H\x1b[{fgCode};{bgCode}m\x1b(0{ch}\x1b(B";
-                else
-                    cmd = $"\x1b[{y + 1};{x + 1}H\x1b[{fgCode};{bgCode}m{ch}";
-
-                TotalBytesWritten += cmd.Length;
-                TtyRec.Write(cmd);
-                if (Enabled) Console.Write(cmd);
-            }
-        }
-        TtyRec.Write("\x1b[0m");
+        WM.Blit();
         TtyRec.Flush();
-        if (Enabled) Console.Write("\x1b[0m");
     }
 
-    public static void ResetRoundStats()
-    {
-        TotalBytesWritten = 0;
-        DamagedCellCount = 0;
-    }
+    public static void ResetRoundStats() => TerminalBackend.ResetStats();
 
-    internal static void Invalidate()
-    {
-        for (int i = 0; i < _prev.Length; i++)
-            _prev[i] = new();
-    }
-
-
+    public static void Invalidate() => Compositor.Invalidate();
 
     public static void DrawLevel(Level level)
     {
@@ -392,25 +245,24 @@ public static class Draw
             for (int x = 0; x < level.Width; x++)
             {
                 Pos p = new(x, y);
-                
-                // Check for monster with perception
+
                 if (level.UnitAt(p) is Monster m && !m.IsPlayer)
                 {
                     switch (m.Perception)
                     {
                         case PlayerPerception.Visible:
-                            Layers[0][x, y + MapRow] = Cell.From(m.Glyph);
+                            MapWin[x, y] = Cell.From(m.Glyph);
                             continue;
                         case PlayerPerception.Detected:
                         case PlayerPerception.Warned:
-                            Layers[0][x, y + MapRow] = Cell.From(m.Glyph); // TODO: different color?
+                            MapWin[x, y] = Cell.From(m.Glyph);
                             continue;
                         case PlayerPerception.Unease:
                             int warnLevel = Math.Clamp(m.EffectiveLevel / 4, 1, 5);
-                            Layers[0][x, y + MapRow] = new((char)('0' + warnLevel), ConsoleColor.Magenta);
+                            MapWin[x, y] = new((char)('0' + warnLevel), ConsoleColor.Magenta);
                             continue;
                         case PlayerPerception.Guess:
-                            Layers[0][x, y + MapRow] = new('?', ConsoleColor.DarkMagenta);
+                            MapWin[x, y] = new('?', ConsoleColor.DarkMagenta);
                             continue;
                     }
                 }
@@ -422,14 +274,14 @@ public static class Draw
                     IUnit? unit = level.UnitAt(p);
                     if (unit != null)
                     {
-                        Layers[0][x, y + MapRow] = Cell.From(unit.Glyph);
+                        MapWin[x, y] = Cell.From(unit.Glyph);
                     }
                     else
                     {
                         var area = areaMap[x, y];
                         if (!level[p].IsStructural && area != null)
                         {
-                            Layers[0][x, y + MapRow] = Cell.From(area.Glyph);
+                            MapWin[x, y] = Cell.From(area.Glyph);
                         }
                         else if (level[p].IsStairs)
                         {
@@ -437,7 +289,7 @@ public static class Draw
                             var cell = TileCell(level, p);
                             if (items.Count > 0)
                                 cell = cell with { Style = CellStyle.Reverse };
-                            Layers[0][x, y + MapRow] = cell;
+                            MapWin[x, y] = cell;
                         }
                         else
                         {
@@ -445,19 +297,19 @@ public static class Draw
                             if (items.Count > 0 && level[p].Type != TileType.Water)
                             {
                                 var top = items[^1];
-                                Layers[0][x, y + MapRow] = Cell.From(top.Glyph);
+                                MapWin[x, y] = Cell.From(top.Glyph);
                             }
                             else if (level.GetState(p)?.Feature is {} feature && feature.Id[0] != '_')
                             {
-                                Layers[0][x, y + MapRow] = new('_', ConsoleColor.DarkGreen);
+                                MapWin[x, y] = new('_', ConsoleColor.DarkGreen);
                             }
                             else if (level.Traps.TryGetValue(p, out var trap) && trap.PlayerSeen)
                             {
-                                Layers[0][x, y + MapRow] = Cell.From(trap.Glyph);
+                                MapWin[x, y] = Cell.From(trap.Glyph);
                             }
                             else
                             {
-                                Layers[0][x, y + MapRow] = TileCell(level, p);
+                                MapWin[x, y] = TileCell(level, p);
                             }
                         }
                     }
@@ -477,11 +329,11 @@ public static class Draw
                         if (mem.Tile.IsStairs && mem.TopItem != null)
                             cell = cell with { Style = CellStyle.Reverse };
                     }
-                    Layers[0][x, y + MapRow] = cell;
+                    MapWin[x, y] = cell;
                 }
                 else
                 {
-                    Layers[0][x, y + MapRow] = Cell.Empty;
+                    MapWin[x, y] = Cell.Empty;
                 }
             }
         }
@@ -511,9 +363,8 @@ public static class Draw
         ConsoleColor.Cyan => ConsoleColor.DarkCyan,
         ConsoleColor.Magenta => ConsoleColor.DarkMagenta,
         ConsoleColor.DarkGray => ConsoleColor.Black,
-        _ => c, // already dark
+        _ => c,
     };
-
 
     internal static ConsoleColor TileColor(Level level, TileType t, DoorState door) => t switch
     {
@@ -545,21 +396,21 @@ public static class Draw
         bool dec = t == TileType.Wall || t == TileType.Floor || t == TileType.Grass || (t == TileType.Door && door != DoorState.Closed);
         char ch = t switch
         {
-            TileType.Floor => '~',          //dec
+            TileType.Floor => '~',
             TileType.Wall => level[p].WallCh != '\0' ? level[p].WallCh : '0',
             TileType.Rock => ' ',
             TileType.Corridor => '#',
             TileType.Door => door switch
             {
-                DoorState.Broken => '~',    //dec
-                DoorState.Open => 'a',      //dec
+                DoorState.Broken => '~',
+                DoorState.Open => 'a',
                 _ => '+',
             },
             TileType.StairsUp => '<',
             TileType.StairsDown => '>',
             TileType.BranchUp => '<',
             TileType.BranchDown => '>',
-            TileType.Grass => '~',          //dec
+            TileType.Grass => '~',
             TileType.Pool => '~',
             TileType.Water => '≈',
             _ => '?',
@@ -575,14 +426,14 @@ public static class Draw
         if (save) SaveTopLine();
         if (!PHMonitor.Active)
         {
-            Layers[0].Write(col, row, "--more--");
-            Blit(0);
+            MessageWin.At(col, row).Write("--more--");
+            Blit();
             while (Input.NextKey().Key != ConsoleKey.Spacebar)
                 ;
         }
         TopLine = "";
         TopLineState = TopLineState.Empty;
-        return false; //return true if skip rest (esc?)
+        return false;
     }
 
     private static int MessageWidth => ScreenWidth - 8;
@@ -592,17 +443,16 @@ public static class Draw
 
     private static void SaveTopLine()
     {
-        if (TopLine.Length > 0) g.MessageHistory.Add(TopLine);
+        if (TopLine.Length > 0) g.MessageHistory.Add((TopLine, g.CurrentRound));
     }
-    
+
     public static void ClearTopLine()
     {
         SaveTopLine();
         TopLine = "";
         TopLineState = TopLineState.Empty;
-        for (int x = 0; x < ScreenWidth; x++)
-            Layers[0][x, 0] = null;
-        Blit(0);
+        MessageWin.Clear();
+        Blit();
     }
 
     internal static void RenderTopLine(string? v = null)
@@ -612,6 +462,8 @@ public static class Draw
         int row = 0;
         int col = 0;
         string remaining = v;
+        MessageWin.Clear();
+        var writer = MessageWin.At(0, 0);
         while (remaining.Length > 0)
         {
             int len = Math.Min(ScreenWidth, remaining.Length);
@@ -620,10 +472,11 @@ public static class Draw
                 int space = remaining.LastIndexOf(' ', len);
                 if (space > 0) len = space;
             }
-            Layers[0].Write(0, row, remaining[..len].PadRight(ScreenWidth));
+            writer.Write(remaining[..len].PadRight(ScreenWidth));
             remaining = remaining[len..].TrimStart();
             col = len;
             row++;
+            writer.NewLine();
         }
 
         if (row > 1)
@@ -634,30 +487,25 @@ public static class Draw
         }
         else
         {
-            Blit(0);
+            Blit();
         }
     }
 
     internal static void DrawMessage(string msg)
     {
-        // Can we append to current line?
         if (TopLineState != TopLineState.Empty && CanAppendMessage(msg))
         {
             TopLine += messageDelimit + msg;
         }
         else
         {
-            // Need fresh line - if unread content, prompt to flush it
             if (TopLineState == TopLineState.PresentMustShow) More(true, TopLine.Length, 0);
-
             TopLine = msg;
         }
 
         RenderTopLine();
-
         TopLineState = TopLineState.PresentMustShow;
     }
-
 
     public static void DrawCurrent(Pos? cursor = null)
     {
@@ -666,14 +514,14 @@ public static class Draw
             Perf.Start();
             DrawLevel(level);
             Perf.Stop("DrawLevel");
-            
+
             if (cursor is { } c && level.InBounds(c))
             {
-                var cell = Layers[0][c.X, c.Y + MapRow];
+                var cell = MapWin[c.X, c.Y];
                 if (cell.HasValue)
-                    Layers[0][c.X, c.Y + MapRow] = cell.Value with { Style = CellStyle.Reverse };
+                    MapWin[c.X, c.Y] = cell.Value with { Style = CellStyle.Reverse };
             }
-            
+
             Perf.Start();
             DrawStatus(level);
             Perf.Stop("DrawStatus");
@@ -690,16 +538,16 @@ public static class Draw
         {
             quiverState = $" Q:{u.Quiver.Charges}/{u.Quiver.MaxCharges}";
         }
-        Layers[0].Write(0, StatusRow, $"{level.Branch.Name}:{level.EffectiveDepth} $:{u.Gold} R:{g.CurrentRound} E:{u.Energy}{quiverState}".PadRight(ScreenWidth));
+        StatusWin.At(0, 0).Write($"{level.Branch.Name}:{level.EffectiveDepth} $:{u.Gold} R:{g.CurrentRound} E:{u.Energy}{quiverState}".PadRight(ScreenWidth));
         int nextLvl = u.CharacterLevel + 1;
         int needed = Progression.XpForLevel(nextLvl) - Progression.XpForLevel(u.CharacterLevel);
         int progress = u.XP - Progression.XpForLevel(u.CharacterLevel);
         string xpStr = $"XP:{progress}/{needed}";
         string hpStr = u.TempHp > 0 ? $"HP:{u.HP.Current}+{u.TempHp}/{u.HP.Max}" : $"HP:{u.HP.Current}/{u.HP.Max}";
         string prefix = $"{hpStr} AC:{u.GetAC()} CL:{u.CharacterLevel} ";
-        Layers[0].Write(0, StatusRow + 1, prefix.PadRight(ScreenWidth));
+        StatusWin.At(0, 1).Write(prefix.PadRight(ScreenWidth));
         bool pendingLvl = Progression.HasPendingLevelUp(u);
-        Layers[0].Write(prefix.Length, StatusRow + 1, xpStr, style: pendingLvl ? CellStyle.Reverse : CellStyle.None);
+        StatusWin.At(prefix.Length, 1).Write(xpStr, style: pendingLvl ? CellStyle.Reverse : CellStyle.None);
         DrawSpellPips();
     }
 
@@ -712,7 +560,7 @@ public static class Draw
             if (pool == null) continue;
 
             int left = 36 + width * (lvl - 1);
-            Layers[0].Write(left, StatusRow, $"l{lvl}");
+            StatusWin.At(left, 0).Write($"l{lvl}");
 
             int available = pool.EffectiveMax;
             for (int i = 0; i < pool.Max; i++)
@@ -731,11 +579,10 @@ public static class Draw
                 else
                     ch = '○';
 
-                Layers[0].Write(left + 3 + i, StatusRow + 1, ch.ToString(), fg);
+                StatusWin.At(left + 3 + i, 1).Write(ch.ToString(), fg);
             }
         }
     }
-
 }
 
 internal enum TopLineState

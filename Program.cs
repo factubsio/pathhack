@@ -214,6 +214,7 @@ else
 
 using var _noCursor = new HideCursor();
 
+Draw.Init();
 using var _rec = TtyRec.Start("game.rec");
 using var _plog = new StreamWriter("pline.log") { AutoFlush = true };
 

@@ -62,10 +62,10 @@ public static class BlackBox
         }
 
         // Messages since last snapshot
-        List<string> messages = g.MessageHistory;
+        var messages = g.MessageHistory;
         int from = Math.Max(0, _lastMessageIndex);
         string[] newMessages = from < messages.Count
-            ? [.. messages.GetRange(from, messages.Count - from)]
+            ? messages.GetRange(from, messages.Count - from).Select(m => m.Text).ToArray()
             : [];
         _lastMessageIndex = messages.Count;
 

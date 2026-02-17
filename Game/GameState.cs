@@ -344,7 +344,7 @@ public class GameState
         return didSave;
     }
 
-    public List<string> MessageHistory { get; } = [];
+    public List<(string Text, int Round)> MessageHistory { get; } = [];
 
     public void pline(string msg)
     {
@@ -625,10 +625,10 @@ public class GameState
 
     public static void LoreDump(string message)
     {
-        using var overlay = Draw.Overlay.Activate();
-        Draw.Overlay.FullScreen = true;
-        int y = RichText.Write(Draw.Overlay, 2, 2, 52, message);
-        Draw.OverlayWrite(2, y + 2, "press (space) to continue");
+        using var handle = WM.CreateTransient(Draw.ScreenWidth, Draw.ScreenHeight, z: 5, opaque: true);
+        var win = handle.Window;
+        int y = RichText.Write(win, 2, 2, 52, message);
+        win.At(2, y + 2).Write("press (space) to continue");
         Draw.Blit();
         while (Input.NextKey().Key != ConsoleKey.Spacebar)
             Draw.Blit();
@@ -735,7 +735,7 @@ public class GameState
         string verb = type switch
         {
             AttackType.None => "yeets?",
-            AttackType.Melee => weapon?.MeleeVerb ?? "attacks with",
+            AttackType.Melee => weapon?.MeleeVerb ?? "attack with",
             AttackType.Thrown => "throws",
             AttackType.Ammo => "fires",
             AttackType.Spell => "casts",
@@ -777,7 +777,7 @@ public class GameState
             }
             else if (attacker.IsPlayer)
             {
-                g.pline($"You bash the {defender}.");
+                g.pline($"You hit {defender:the}.");
             }
             else if (defender.IsPlayer)
             {
@@ -817,9 +817,9 @@ public class GameState
             else if (attacker.IsPlayer)
             {
                 if (improvised)
-                    g.pline($"You clumsily miss the {defender}.");
+                    g.pline($"You clumsily miss {defender:the}.");
                 else
-                    g.pline($"You miss the {defender}.");
+                    g.pline($"You miss {defender:the}.");
             }
             else if (defender.IsPlayer)
             {
@@ -1077,7 +1077,7 @@ public class GameState
         {
             unit.Inventory.Add(item);
             Log.Structured("pickup", $"{item.Def.Name:item}");
-            if (unit.IsPlayer && item.HasEnchantments && !item.Knowledge.HasFlag(ItemKnowledge.PropRunes))
+            if (unit.IsPlayer && item.HasEnchantments && !item.Knowledge.HasFlag(ItemKnowledge.PropChecked))
                 TryIdentifyProps(item);
         }
 
@@ -1086,11 +1086,12 @@ public class GameState
 
     static void TryIdentifyProps(Item item)
     {
+        item.Knowledge |= ItemKnowledge.PropChecked;
         int dc = 12;
         using var ctx = PHContext.Create(DungeonMaster.Mook, Target.From(u));
         bool passed = CreateAndDoCheck(ctx, "perception", dc, "identify");
         if (!passed) return;
-        item.Knowledge |= ItemKnowledge.PropRunes;
+        item.Knowledge |= ItemKnowledge.PropRunes | ItemKnowledge.PropPotency;
         if (ctx.IsCritSuccess)
             item.Knowledge |= ItemKnowledge.PropQuality;
     }

@@ -15,49 +15,42 @@ public class Menu<T>
 
     public List<T> Display(MenuMode mode = MenuMode.None)
     {
-        var layer = Draw.Overlay;
-        using var _ = layer.Activate();
-        
-        int maxLines = Draw.MapHeight - 3;
-        int pages = (_items.Count + maxLines - 1) / maxLines;
-        bool fullscreen = _items.Count > maxLines;
-        
-        // fullscreen uses more lines (covers status)
+        int contentWidth = _items.Max(x => x.Style == LineStyle.Item && x.Letter.HasValue 
+            ? x.Text.Length + 5
+            : x.Text.Length);
+        contentWidth = Math.Max(contentWidth, 30);
+        int menuWidth = contentWidth + 2;
+
+        // dNethack-style: fullscreen driven by width only, paging handles height
+        int offx = Math.Max(10, Draw.ScreenWidth - menuWidth - 1);
+        bool fullscreen = offx == 10 || _items.Count >= Draw.ScreenHeight - 1;
+
+        int menuX;
         if (fullscreen)
         {
-            maxLines = Draw.ScreenHeight - 2; // leave 1 for prompt
-            pages = (_items.Count + maxLines - 1) / maxLines;
-            layer.FullScreen = true;
+            menuX = 0;
+            contentWidth = Draw.ScreenWidth - 2;
+            menuWidth = Draw.ScreenWidth;
         }
+        else
+        {
+            menuX = Draw.ScreenWidth - menuWidth - 1;
+        }
+
+        int winY = 0;
+        int winH = Draw.ScreenHeight;
+        int maxLines = winH - 3;
+        int pages = (_items.Count + maxLines - 1) / maxLines;
+
+        using var handle = WM.CreateTransient(Draw.ScreenWidth, winH, x: 0, y: winY, z: 5, opaque: fullscreen);
+        var win = handle.Window;
 
         int page = InitialPage < 0 ? pages + InitialPage : InitialPage;
         HashSet<int> selected = [];
 
-        // calc width once from all items
-        int contentWidth = _items.Max(x => x.Style == LineStyle.Item && x.Letter.HasValue 
-            ? x.Text.Length + 5  // "a  - text"
-            : x.Text.Length);
-        contentWidth = Math.Max(contentWidth, 30); // min width for prompt
-        int menuWidth = contentWidth + 2;
-
-        // if too wide or multi-page, go fullscreen (offx=0), else right-align
-        int menuX = (menuWidth >= Draw.ScreenWidth - 10 || fullscreen)
-            ? 0
-            : Draw.ScreenWidth - menuWidth - 1;
-        
-        // fullscreen uses full width
-        if (menuX == 0)
-        {
-            contentWidth = Draw.ScreenWidth - 2;
-            menuWidth = Draw.ScreenWidth;
-        }
-
-        int startY = fullscreen ? 0 : Draw.MapRow;
-
         while (true)
         {
-            Draw.ClearOverlay();
-            Draw.Overlay.FullScreen = fullscreen;
+            win.Clear();
             int firstPageSize = InitialPage < 0 ? (_items.Count - 1) % maxLines + 1 : maxLines;
             int skip = page == 0 ? 0 : firstPageSize + (page - 1) * maxLines;
             int take = page == 0 ? firstPageSize : maxLines;
@@ -86,28 +79,22 @@ public class Menu<T>
             };
             lines.Add((prompt, LineStyle.Text, null));
 
-            int menuHeight = lines.Count + 2;
+            int menuHeight = lines.Count + 1;
             if (InitialPage < 0 && page == 0)
-                menuHeight = Math.Max(menuHeight, maxLines + 3);
-            Draw.OverlayFill(menuX, startY, menuWidth, menuHeight);
+                menuHeight = Math.Max(menuHeight, maxLines + 2);
 
-            int y = startY + 1 + (menuHeight - 2 - lines.Count);
+            win.At(menuX, 0).Fill(menuWidth, menuHeight, Cell.Empty);
+
+            int y = 0;
             foreach (var (text, style, color) in lines)
             {
-                if (style == LineStyle.SubHeading)
-                {
-                    Draw.OverlayWrite(menuX + 1, y++, text, fg: color ?? ConsoleColor.Gray, style: CellStyle.Reverse);
-                }
-                else
-                {
-                    Draw.OverlayWrite(menuX + 1, y++, text, fg: color ?? ConsoleColor.Gray);
-                }
+                CellStyle cs = style == LineStyle.SubHeading ? CellStyle.Reverse : CellStyle.None;
+                win.At(menuX + 1, y++).Write(text, fg: color ?? ConsoleColor.Gray, style: cs);
             }
 
             Draw.Blit();
             var key = Input.NextKey();
             
-            // paging
             if (key.Key == ConsoleKey.RightArrow || key.KeyChar == '>')
             {
                 if (pages > 1) page = (page + 1) % pages;
@@ -117,7 +104,7 @@ public class Menu<T>
             if (key.Key == ConsoleKey.Spacebar)
             {
                 if (page < pages - 1) { page++; continue; }
-                else break; // last page: exit
+                else break;
             }
             if (key.Key == ConsoleKey.LeftArrow || key.KeyChar == '<' || key.KeyChar == '^'
                 || (key.Key == ConsoleKey.P && key.Modifiers == ConsoleModifiers.Control))
@@ -126,7 +113,6 @@ public class Menu<T>
                 continue;
             }
             
-            // select all in PickAny
             if (mode == MenuMode.PickAny && (key.KeyChar == '.' || key.KeyChar == ','))
             {
                 var selectable = _items.Select((item, i) => (item, i)).Where(x => x.item.Value != null).ToList();
@@ -143,16 +129,13 @@ public class Menu<T>
                 return [];
             }
             
-            // confirm for PickAny
             if (mode == MenuMode.PickAny && (key.Key == ConsoleKey.Enter || key.KeyChar == '\n'))
             {
                 return selected.Select(i => _items[i].Value!).ToList();
             }
             
-            // letter selection
             char ch = key.KeyChar;
             
-            // hidden hotkeys
             if (_hidden.TryGetValue(ch, out var hiddenValue))
             {
                 return [hiddenValue!];
@@ -172,7 +155,6 @@ public class Menu<T>
                 }
             }
             
-            // category toggle in PickAny
             if (mode == MenuMode.PickAny)
             {
                 var catItems = _items.Select((item, i) => (item, i))
@@ -190,7 +172,6 @@ public class Menu<T>
                 }
             }
             
-            // any other key exits for None/PickOne
             if (mode != MenuMode.PickAny) break;
         }
         return [];

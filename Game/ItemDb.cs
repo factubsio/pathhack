@@ -1,7 +1,7 @@
 namespace Pathhack.Game;
 
 [Flags]
-public enum ItemKnowledge { None = 0, Seen = 1, BUC = 4, PropRunes = 8, PropQuality = 16, PropPotency = 32, Props = PropRunes | PropQuality | PropPotency }
+public enum ItemKnowledge { None = 0, Seen = 1, BUC = 4, PropRunes = 8, PropQuality = 16, PropPotency = 32, PropChecked = 64, Props = PropRunes | PropQuality | PropPotency }
 
 public enum AppearanceCategory { Potion, Scroll, Amulet, Boots, Gloves, Cloak, Ring, Bottle, Wand, Spellbook }
 

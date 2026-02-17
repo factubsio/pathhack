@@ -286,9 +286,9 @@ public static partial class Input
         foreach (var item in u.Inventory)
             buffs.AddRange(item.ActiveBuffNames);
         
-        var menu = new Menu();
-        menu.Add("Current Effects", LineStyle.Heading);
-        menu.Add("");
+        var menu = new TextMenu();
+        menu.AddHeading("Current Effects");
+        menu.Add();
         if (buffs.Count == 0)
         {
             menu.Add("You have no active effects.");
@@ -303,10 +303,10 @@ public static partial class Input
 
     static void ShowHelp()
     {
-        var menu = new Menu();
-        menu.Add("Pathhack Commands", LineStyle.Heading);
-        menu.Add("");
-        menu.Add("Movement", LineStyle.SubHeading);
+        var menu = new TextMenu();
+        menu.AddHeading("Pathhack Commands");
+        menu.Add();
+        menu.AddSubHeading("Movement");
         menu.Add("  hjkl/yubn      Move (vi keys)");
         menu.Add("  arrows         Move (arrow keys)");
         menu.Add("  numpad         Move (numpad)");
@@ -314,16 +314,16 @@ public static partial class Input
         menu.Add("  Ctrl+dir       Run until interesting");
         menu.Add("  _              Travel to location");
         menu.Add("  < >            Use stairs");
-        menu.Add("");
-        menu.Add("Commands", LineStyle.SubHeading);
+        menu.Add();
+        menu.AddSubHeading("Commands");
         foreach (var (key, cmd) in _commands.OrderBy(x => x.Key))
             menu.Add($"  {key,-14} {cmd.Desc}");
-        menu.Add("");
-        menu.Add("Special Keys", LineStyle.SubHeading);
+        menu.Add();
+        menu.AddSubHeading("Special Keys");
         foreach (var cmd in _specialCommands)
             menu.Add($"  {cmd.KeyName,-14} {cmd.Desc}");
-        menu.Add("");
-        menu.Add("Extended Commands (#)", LineStyle.SubHeading);
+        menu.Add();
+        menu.AddSubHeading("Extended Commands (#)");
         foreach (var (name, cmd) in _extCommands.Where(x => !x.Value.Hidden).OrderBy(x => x.Key))
             menu.Add($"  #{name,-13} {cmd.Desc}");
         menu.Display();
@@ -340,17 +340,12 @@ public static partial class Input
         
         if (_msgHistoryIdx < 2 && _msgHistoryIdx < history.Count)
         {
-            Draw.RenderTopLine(history[history.Count - 1 - _msgHistoryIdx]);
+            Draw.RenderTopLine(history[history.Count - 1 - _msgHistoryIdx].Text);
         }
         else
         {
-            // Third press or exhausted: show full list
             _msgHistoryIdx = -1;
-            var menu = new Menu { InitialPage = -1 };
-            menu.Add("Message History", LineStyle.Heading);
-            for (int i = 0; i < history.Count; i++)
-                menu.Add(history[i]);
-            menu.Display();
+            MessageScroll.Show(history);
         }
     }
 

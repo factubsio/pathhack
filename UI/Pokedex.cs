@@ -8,16 +8,20 @@ public static class Pokedex
         var monsters = lvl.LiveUnits.Where(m => !m.IsDead && lvl.IsVisible(m.Pos)).ToList();
         int monsterIdx = -1;
 
-        var layer = Draw.Overlay;
-        using var _ = layer.Activate();
+        using var handle = WM.CreateTransient(Draw.MapWidth, Draw.MapHeight, x: 0, y: 1, z: 3);
+        var ov = handle.Window;
+        // Also need a message overlay
+        using var msgHandle = WM.CreateTransient(Draw.ScreenWidth, 1, x: 0, y: 0, z: 3);
+        var msgOv = msgHandle.Window;
 
         while (true)
         {
-            Draw.ClearOverlay();
-            Draw.OverlayWrite(cursor.X, cursor.Y + Draw.MapRow, "X", ConsoleColor.Yellow, ConsoleColor.Black, CellStyle.Bold);
+            ov.Clear();
+            msgOv.Clear();
+            ov[cursor.X, cursor.Y] = new Cell('X', ConsoleColor.Yellow, ConsoleColor.Black, CellStyle.Bold);
             
             string desc = DescribeAt(cursor);
-            Draw.OverlayWrite(0, Draw.MsgRow, desc.PadRight(Draw.ScreenWidth));
+            msgOv.At(0, 0).Write(desc.PadRight(Draw.ScreenWidth));
             
             Draw.Blit();
             var key = Input.NextKey();
@@ -133,16 +137,17 @@ public static class Pokedex
 
     static void ShowMonsterEntry(Monster m)
     {
-        var menu = new Menu();
+        var menu = new TextMenu();
         
-        menu.Add($"{m.RealName,-24} Creature CR {m.Def.BaseLevel} {m.CreatureTypeRendered}", LineStyle.Heading);
+        menu.Add();
+        menu.AddHeading($"{m.RealName,-24} Creature CR {m.Def.BaseLevel} {m.CreatureTypeRendered}");
         menu.Add($"{m.Def.Size}");
-        menu.Add("");
+        menu.Add();
         menu.Add($"AC {m.GetAC()}; HP {m.Def.HpPerLevel}");
         var speed = m.QueryModifiers("speed_bonus");
         Log.Write($"speed: {speed}");
         menu.Add($"Movement: {SpeedDesc(m.LandMove)}");
-        menu.Add("");
+        menu.Add();
         
         var grantedActions = m.LiveFacts
             .Where(f => f.Brick is GrantAction)
@@ -151,7 +156,6 @@ public static class Pokedex
         
         bool hasWeaponOrNatural = grantedActions.Any(a => a is AttackWithWeapon || (a is NaturalAttack n && n.Weapon != m.Def.Unarmed));
 
-        // attacks first
         foreach (var fact in m.LiveFacts.Where(f => f.Brick is GrantAction))
         {
             var grant = (GrantAction)fact.Brick;
@@ -164,7 +168,6 @@ public static class Pokedex
             }
         }
 
-        // other actions
         foreach (var fact in m.LiveFacts.Where(f => f.Brick is GrantAction))
         {
             var grant = (GrantAction)fact.Brick;
@@ -172,14 +175,12 @@ public static class Pokedex
                 menu.Add($"  {grant.Action.Name}");
         }
 
-        // passives
         foreach (var fact in m.LiveFacts.Where(f => f.Brick is not GrantAction && f.Brick.PokedexDescription != null))
             menu.Add($"  {fact.Brick.PokedexDescription}");
 
-        // spells
         if (m.Spells.Count > 0)
         {
-            menu.Add("");
+            menu.Add();
             var byLevel = m.Spells.GroupBy(s => s.Level).OrderBy(g => g.Key);
             foreach (var group in byLevel)
             {
@@ -191,11 +192,10 @@ public static class Pokedex
             }
         }
 
-        // active buffs
         bool firstBuff = true;
         foreach (var buff in m.LiveFacts.Where(f => f.Brick.IsBuff))
         {
-            if (firstBuff) { menu.Add(""); menu.Add("Active effects:"); firstBuff = false; }
+            if (firstBuff) { menu.Add(); menu.Add("Active effects:"); firstBuff = false; }
             menu.Add($"  {buff.DisplayName}");
         }
         
@@ -220,7 +220,7 @@ public static class Pokedex
     public static void ShowItemEntry(Item item)
     {
         var def = item.Def;
-        var menu = new Menu();
+        var menu = new TextMenu();
         bool runesKnown = item.Knowledge.HasFlag(ItemKnowledge.PropRunes);
         bool qualityKnown = item.Knowledge.HasFlag(ItemKnowledge.PropQuality);
         bool potencyKnown = item.Knowledge.HasFlag(ItemKnowledge.PropPotency);
@@ -228,8 +228,8 @@ public static class Pokedex
         string equipped = item.Holder?.Equipped.ContainsValue(item) == true
             ? (def is ArmorDef ? " (being worn)" : " (weapon in hand)")
             : "";
-        menu.Add($"{item.DisplayName}{equipped}", LineStyle.Heading);
-        menu.Add("");
+        menu.AddHeading($"{item.DisplayName}{equipped}");
+        menu.Add();
 
         if (def is WeaponDef wpn)
         {
@@ -238,8 +238,8 @@ public static class Pokedex
             else
                 menu.Add($"Group: {wpn.Profiency}");
             var (prof, profSource) = u.GetProficiency(wpn);
-            ConsoleColor? profColor = prof == ProficiencyLevel.Untrained ? ConsoleColor.Red : null;
-            menu.Add($"Proficiency: {prof} ({profSource})", color: profColor);
+            ConsoleColor profColor = prof == ProficiencyLevel.Untrained ? ConsoleColor.Red : ConsoleColor.Gray;
+            menu.Add($"Proficiency: {prof} ({profSource})", profColor);
 
             string hands = wpn.Hands == 1 ? "One-handed" : "Two-handed";
             menu.Add($"{hands} {wpn.DamageType.SubCat} weapon.");
@@ -275,40 +275,39 @@ public static class Pokedex
             }
             else if (item.HasEnchantments)
             {
-                menu.Add("Enchanted — properties unknown.", color: ConsoleColor.DarkYellow);
+                menu.Add("Enchanted — properties unknown.", ConsoleColor.DarkYellow);
             }
         }
         else if (def is ArmorDef armor)
         {
             var prof = u.GetProficiency(armor.Proficiency);
-            ConsoleColor? profColor = prof == ProficiencyLevel.Untrained ? ConsoleColor.Red : null;
-            menu.Add($"Proficiency: {prof} ({armor.Proficiency})", color: profColor);
+            ConsoleColor profColor = prof == ProficiencyLevel.Untrained ? ConsoleColor.Red : ConsoleColor.Gray;
+            menu.Add($"Proficiency: {prof} ({armor.Proficiency})", profColor);
             menu.Add($"Armor. AC bonus: {armor.ACBonus}");
 
             if (armor.DexCap < 99)
                 menu.Add($"Dex cap: {armor.DexCap}");
         }
 
-        menu.Add("");
+        menu.Add();
         menu.Add($"Weighs {def.Weight}. Made of {item.Material}.");
 
-        // Description: only show when identified
         if (!runesKnown && item.HasEnchantments)
         {
-            menu.Add("Properties not identified.", color: ConsoleColor.DarkYellow);
+            menu.Add("Properties not identified.", ConsoleColor.DarkYellow);
         }
         else if (def.IsKnown())
         {
             if (def.PokedexDescription != null)
             {
-                menu.Add("");
+                menu.Add();
                 menu.Add(def.PokedexDescription);
             }
             else
             {
                 foreach (var brick in def.Components.Where(b => b.PokedexDescription != null))
                 {
-                    menu.Add("");
+                    menu.Add();
                     menu.Add(brick.PokedexDescription!);
                 }
             }

@@ -24,8 +24,8 @@ public static class ListPicker
     {
         if (items.Count == 0) return null;
         
-        var layer = Draw.Layers[2];
-        using var _ = layer.Activate(fullScreen: true);
+        using var handle = WM.CreateTransient(Draw.ScreenWidth, Draw.ScreenHeight, z: 5, opaque: true);
+        var win = handle.Window;
         
         int index = Math.Clamp(defaultIndex, 0, items.Count - 1);
         string? filter = null;
@@ -42,7 +42,7 @@ public static class ListPicker
             if (visible.Count > 0)
                 index = Math.Clamp(index, 0, visible.Count - 1);
 
-            DrawPicker(layer, visible, index, filter != null ? $"{prompt} [/{filter}{(typing ? "▌" : "")}]" : prompt, null, 0);
+            DrawPicker(win, visible, index, filter != null ? $"{prompt} [/{filter}{(typing ? "▌" : "")}]" : prompt, null, 0);
             var key = Input.NextKey();
 
             if (typing)
@@ -76,14 +76,14 @@ public static class ListPicker
 
     public static List<T>? PickMultiple<T>(IReadOnlyList<T> items, string prompt, int count) where T : class, ISelectable
     {
-        var layer = Draw.Layers[2];
-        using var _ = layer.Activate(fullScreen: true);
+        using var handle = WM.CreateTransient(Draw.ScreenWidth, Draw.ScreenHeight, z: 5, opaque: true);
+        var win = handle.Window;
         
         int index = 0;
         HashSet<int> selected = [];
         while (true)
         {
-            DrawPicker(layer, items, index, prompt, selected, count);
+            DrawPicker(win, items, index, prompt, selected, count);
             var key = Input.NextKey();
             switch (key.Key)
             {
@@ -106,11 +106,10 @@ public static class ListPicker
         }
     }
 
-    static void DrawPicker<T>(ScreenBuffer layer, IReadOnlyList<T> items, int cursor, string prompt, HashSet<int>? selected, int count) where T : ISelectable
+    static void DrawPicker<T>(Window win, IReadOnlyList<T> items, int cursor, string prompt, HashSet<int>? selected, int count) where T : ISelectable
     {
-        layer.Clear();
-        layer.FullScreen = true;
-        layer.Write(2, 1, prompt, ConsoleColor.White);
+        win.Clear();
+        win.At(2, 1).Write(prompt, ConsoleColor.White);
 
         int maxVisible = Draw.ScreenHeight - 7;
         int scroll = 0;
@@ -128,7 +127,7 @@ public static class ListPicker
             ConsoleColor fg = ConsoleColor.White;
             if (items[i].WhyNot != null)
                 fg = ConsoleColor.DarkYellow;
-            layer.Write(2, 3 + i - scroll, prefix + items[i].Name, fg, ConsoleColor.Black, style);
+            win.At(2, 3 + i - scroll).Write(prefix + items[i].Name, fg, ConsoleColor.Black, style);
         }
 
         if (items.Count > maxVisible)
@@ -140,16 +139,15 @@ public static class ListPicker
             for (int y = 0; y < trackH; y++)
             {
                 bool isThumb = y >= thumbY && y < thumbY + thumbH;
-                layer[trackX, 3 + y] = new Cell('x', isThumb ? ConsoleColor.White : ConsoleColor.DarkGray, Dec: true);
+                win[trackX, 3 + y] = new Cell('x', isThumb ? ConsoleColor.White : ConsoleColor.DarkGray, Dec: true);
             }
         }
 
-        // feels weird when it is mega wide, but has to be at least map wide?
         int paddedWidth = Math.Clamp(Draw.ScreenWidth - 10, Draw.MapWidth, 120);
 
         if (items.Count == 0)
         {
-            layer.Write(DetailX, 3, "No matches", ConsoleColor.DarkGray);
+            win.At(DetailX, 3).Write("No matches", ConsoleColor.DarkGray);
         }
         else
         {
@@ -157,31 +155,31 @@ public static class ListPicker
             var no = current.WhyNot;
             if (no != null)
             {
-                layer.Write(DetailX, 2, no, ConsoleColor.Red);
+                win.At(DetailX, 2).Write(no, ConsoleColor.Red);
             }
-            layer.Write(DetailX, 3, current.Name, ConsoleColor.Yellow);
+            win.At(DetailX, 3).Write(current.Name, ConsoleColor.Yellow);
             if (current.Tags.Length > 0)
             {
-                layer.Write(DetailX + current.Name.Length + 5, 3, '(' + string.Join(", ", current.Tags) + ')', ConsoleColor.Cyan);
+                win.At(DetailX + current.Name.Length + 5, 3).Write('(' + string.Join(", ", current.Tags) + ')', ConsoleColor.Cyan);
             }
             if (current.Subtitle != null)
             {
-                RichText.Write(layer, DetailX, 4, paddedWidth - DetailX - 2, current.Subtitle);
+                RichText.Write(win, DetailX, 4, paddedWidth - DetailX - 2, current.Subtitle);
             }
 
-            int descEnd = RichText.Write(layer, DetailX, 5, paddedWidth - DetailX - 2, current.Description);
+            int descEnd = RichText.Write(win, DetailX, 5, paddedWidth - DetailX - 2, current.Description);
 
             int detailY = descEnd + 2;
             foreach (var detail in current.Details)
             {
-                RichText.Write(layer, DetailX, detailY++, paddedWidth - DetailX - 2, detail);
+                RichText.Write(win, DetailX, detailY++, paddedWidth - DetailX - 2, detail);
             }
         }
 
         string help = selected != null
             ? $"[↑↓] select  [←→] toggle  [Enter] confirm ({selected.Count}/{count})  [Esc] back"
             : "[↑↓/jk] select  [Enter] confirm  [/] search  [Esc] back";
-        layer.Write(2, Draw.ScreenHeight - 2, help, ConsoleColor.DarkGray);
+        win.At(2, Draw.ScreenHeight - 2).Write(help, ConsoleColor.DarkGray);
         Draw.Blit();
     }
 }

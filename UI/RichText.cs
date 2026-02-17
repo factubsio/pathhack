@@ -4,7 +4,7 @@ public static class RichText
 {
     record struct State(ConsoleColor Fg, ConsoleColor Bg, CellStyle Style);
 
-    public static int Write(ScreenBuffer buf, int x, int y, int maxWidth, string text, ConsoleColor defaultFg = ConsoleColor.Gray, ConsoleColor defaultBg = ConsoleColor.Black)
+    public static int Write(Window buf, int x, int y, int maxWidth, string text, ConsoleColor defaultFg = ConsoleColor.Gray, ConsoleColor defaultBg = ConsoleColor.Black)
     {
         Stack<State> stack = [];
         var fg = defaultFg;
@@ -51,7 +51,7 @@ public static class RichText
                 }
                 if (char.IsWhiteSpace(c) && cx == x)
                     continue; // trim leading whitespace on line
-                buf.Write(cx, cy, c.ToString(), fg, bg, style);
+                buf[cx, cy] = new Cell(c, fg, bg, style);
                 cx++;
             }
         }
@@ -155,5 +155,40 @@ public static class RichText
             _ => ConsoleColor.Gray
         };
         return name.ToLowerInvariant() is "black" or "darkblue" or "darkgreen" or "darkcyan" or "darkred" or "darkmagenta" or "darkyellow" or "gray" or "darkgray" or "blue" or "green" or "cyan" or "red" or "magenta" or "yellow" or "white";
+    }
+
+    /// <summary>Returns visible character count of the longest sub-line (tags stripped, newline-aware).</summary>
+    public static int Measure(string text)
+    {
+        int max = 0, cur = 0;
+        foreach (var token in Tokenize(text))
+        {
+            if (token.IsTag) continue;
+            if (token.Text == "\n") { if (cur > max) max = cur; cur = 0; continue; }
+            cur += token.Text.Length;
+        }
+        return Math.Max(max, cur);
+    }
+
+    /// <summary>Returns how many rows Write() would consume, without actually writing.</summary>
+    public static int MeasureHeight(int x, int startY, int maxWidth, string text)
+    {
+        int cx = x, cy = startY;
+        int lineEnd = x + maxWidth;
+        foreach (var token in Tokenize(text))
+        {
+            if (token.IsTag) continue;
+            if (token.Text == "\n") { cx = x; cy++; continue; }
+            bool isWord = token.Text.Length > 0 && !char.IsWhiteSpace(token.Text[0]);
+            if (isWord && cx > x && cx + token.Text.Length > lineEnd) { cx = x; cy++; }
+            if (char.IsWhiteSpace(token.Text[0]) && cx == x) continue;
+            foreach (char c in token.Text)
+            {
+                if (cx >= lineEnd) { cx = x; cy++; }
+                if (char.IsWhiteSpace(c) && cx == x) continue;
+                cx++;
+            }
+        }
+        return cy - startY + 1;
     }
 }

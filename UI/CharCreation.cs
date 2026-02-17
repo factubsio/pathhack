@@ -14,13 +14,15 @@ public class CharCreation
 
     public bool Run()
     {
-        var layer = Draw.Layers[1];
-        using var _ = layer.Activate(fullScreen: true);
+        // ListPicker creates its own fullscreen transient window, so we just
+        // need a persistent one for the progress bar between picks.
+        using var handle = WM.CreateTransient(Draw.ScreenWidth, 1, z: 4, opaque: false);
+        var progressWin = handle.Window;
 
         int step = 0;
         while (step < 3)
         {
-            DrawProgress(layer);
+            DrawProgress(progressWin);
             
             bool? result = step switch
             {
@@ -44,32 +46,32 @@ public class CharCreation
         return true;
     }
 
-    void DrawProgress(ScreenBuffer layer)
+    void DrawProgress(Window win)
     {
-        layer.Clear();
+        win.Clear();
         int x = 2;
         
         if (Class != null)
         {
-            layer.Write(x, 0, Class.Name, ConsoleColor.Yellow);
+            win.At(x, 0).Write(Class.Name, ConsoleColor.Yellow);
             x += Class.Name.Length;
-            layer.Write(x, 0, " > ", ConsoleColor.DarkGray);
+            win.At(x, 0).Write(" > ", ConsoleColor.DarkGray);
             x += 3;
         }
 
         if (Deity != null)
         {
-            layer.Write(x, 0, Deity.Name, ConsoleColor.Cyan);
+            win.At(x, 0).Write(Deity.Name, ConsoleColor.Cyan);
             x += Deity.Name.Length;
-            layer.Write(x, 0, " > ", ConsoleColor.DarkGray);
+            win.At(x, 0).Write(" > ", ConsoleColor.DarkGray);
             x += 3;
         }
 
         if (Ancestry != null)
         {
-            layer.Write(x, 0, Ancestry.Name, ConsoleColor.Green);
+            win.At(x, 0).Write(Ancestry.Name, ConsoleColor.Green);
             x += Ancestry.Name.Length;
-            layer.Write(x, 0, " > ", ConsoleColor.DarkGray);
+            win.At(x, 0).Write(" > ", ConsoleColor.DarkGray);
         }
     }
 

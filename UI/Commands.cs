@@ -766,8 +766,8 @@ public static partial class Input
 
     static void ShowDiscoveries()
     {
-        var menu = new Menu();
-        menu.Add("Discoveries", LineStyle.Heading);
+        var menu = new TextMenu();
+        menu.AddHeading("Discoveries");
         
         bool any = false;
         foreach (var (cat, label) in new[] { 
@@ -785,7 +785,7 @@ public static partial class Input
             if (identified.Count == 0) continue;
             
             any = true;
-            menu.Add(label, LineStyle.SubHeading);
+            menu.AddSubHeading(label);
             foreach (var def in identified)
             {
                 var app = ItemDb.Instance.GetAppearance(def);

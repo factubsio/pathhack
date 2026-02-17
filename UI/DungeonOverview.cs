@@ -1,6 +1,5 @@
 namespace Pathhack.UI;
 
-// Max nesting depth 5 (dungeon → sub → sub → sub → sub). Throws if exceeded.
 readonly record struct BranchKey(sbyte A, sbyte B = -1, sbyte C = -1, sbyte D = -1, sbyte E = -1) : IComparable<BranchKey>
 {
     public int Length => E >= 0 ? 5 : D >= 0 ? 4 : C >= 0 ? 3 : B >= 0 ? 2 : 1;
@@ -66,7 +65,6 @@ static class DungeonOverview
             var other = entries[j].Key;
             if (other.Length < len) break;
             if (other.Length != len) continue;
-            // same prefix?
             bool match = true;
             for (int k = 0; k < len - 1; k++)
                 if (curr.Key[k] != other[k]) { match = false; break; }
@@ -90,7 +88,7 @@ static class DungeonOverview
         return false;
     }
 
-    static void RenderTree(ScreenBuffer buf, List<TreeEntry> entries, int cursor)
+    static void RenderTree(Window win, List<TreeEntry> entries, int cursor)
     {
         for (int i = 0; i < entries.Count; i++)
         {
@@ -99,30 +97,27 @@ static class DungeonOverview
             int x = 0;
             int y = i + 1;
 
-            // Draw continuation lines for parent levels
             for (int d = 1; d < len - 1; d++)
             {
                 if (HasContinuation(entries, i, d))
-                    buf.Write(x, y, "│   ", ConsoleColor.DarkGray);
+                    win.At(x, y).Write("│   ", ConsoleColor.DarkGray);
                 else
-                    buf.Write(x, y, "    ", ConsoleColor.DarkGray);
+                    win.At(x, y).Write("    ", ConsoleColor.DarkGray);
                 x += 4;
             }
 
-            // Draw connector
             if (i > 0 && len > 1)
             {
                 string connector = HasSibling(entries, i) ? "├─ " : "└─ ";
-                buf.Write(x, y, connector, ConsoleColor.DarkGray);
+                win.At(x, y).Write(connector, ConsoleColor.DarkGray);
                 x += 3;
             }
 
-            // Draw name
             bool isHere = e.Branch == u.Level.Branch;
             bool selected = i == cursor;
             ConsoleColor fg = isHere ? ConsoleColor.Blue : ConsoleColor.Gray;
             CellStyle style = selected ? CellStyle.Reverse : CellStyle.None;
-            buf.Write(x, y, e.Branch.Name, fg, style: style);
+            win.At(x, y).Write(e.Branch.Name, fg, style: style);
         }
     }
 
@@ -165,7 +160,6 @@ static class DungeonOverview
             return rows;
         }
 
-        // Phantom above
         if (firstVisited > 1)
             rows.Add(new($"{firstVisited - 1} ?", true));
 
@@ -192,7 +186,6 @@ static class DungeonOverview
                 visited ? rightAnnot : null));
         }
 
-        // Phantom below
         if (lastVisited < branch.MaxDepth)
             rows.Add(new($"{lastVisited + 1} ?", true));
 
@@ -200,24 +193,21 @@ static class DungeonOverview
     }
 
     const int SliceWidth = 20;
-    const int SliceLeft = 36; // tree panel names >33 chars will overlap
+    const int SliceLeft = 36;
 
-    static void RenderSlice(ScreenBuffer buf, Branch branch, int? scrollOverride = null)
+    static void RenderSlice(Window win, Branch branch, int? scrollOverride = null)
     {
         var rows = BuildSlice(branch);
 
-        buf.Write(SliceLeft, 0, branch.Name, branch.Color, style: CellStyle.Bold);
+        win.At(SliceLeft, 0).Write(branch.Name, branch.Color, style: CellStyle.Bold);
 
-        // Viewport: how many slice rows fit on screen
         int maxVisible = (Draw.ScreenHeight - 4) / 2;
 
-        // Find focus row (scroll override, player location, or 0)
         int focus = 0;
         if (scrollOverride == null)
             for (int i = 0; i < rows.Count; i++)
                 if (rows[i].IsHere) { focus = i; break; }
 
-        // Window around focus
         int startRow;
         if (scrollOverride != null)
             startRow = Math.Clamp(scrollOverride.Value, 0, Math.Max(0, rows.Count - maxVisible));
@@ -230,40 +220,36 @@ static class DungeonOverview
         {
             var row = rows[i];
             ConsoleColor fg = row.IsHere ? ConsoleColor.Blue : row.Dim ? ConsoleColor.DarkGray : ConsoleColor.Gray;
-            CellStyle style = CellStyle.None;
 
-            // Top edge (only for first visible slice)
             if (i == startRow)
             {
                 if (startRow > 0)
-                    buf.Write(SliceLeft + 1, y, "▲", ConsoleColor.DarkGray);
-                buf.Write(SliceLeft + 2, y, "╱", fg);
+                    win.At(SliceLeft + 1, y).Write("▲", ConsoleColor.DarkGray);
+                win.At(SliceLeft + 2, y).Write("╱", fg);
                 for (int x = 1; x < SliceWidth - 1; x++)
-                    buf.Write(SliceLeft + 2 + x, y, "─", fg);
-                buf.Write(SliceLeft + 2 + SliceWidth - 1, y, "╱", fg);
+                    win.At(SliceLeft + 2 + x, y).Write("─", fg);
+                win.At(SliceLeft + 2 + SliceWidth - 1, y).Write("╱", fg);
                 y++;
             }
 
-            // Middle:  ╱ label  ╱
-            buf.Write(SliceLeft + 1, y, "╱", fg);
-            buf.Write(SliceLeft + 2, y, " ", fg);
-            buf.Write(SliceLeft + 3, y, row.Label.PadRight(SliceWidth - 3), fg, style: style);
-            buf.Write(SliceLeft + SliceWidth, y, "╱", fg);
+            win.At(SliceLeft + 1, y).Write("╱", fg);
+            win.At(SliceLeft + 2, y).Write(" ", fg);
+            win.At(SliceLeft + 3, y).Write(row.Label.PadRight(SliceWidth - 3), fg);
+            win.At(SliceLeft + SliceWidth, y).Write("╱", fg);
 
             if (row.LeftAnnot is { } la)
-                buf.Write(SliceLeft - la.Length, y, la, ConsoleColor.DarkYellow);
+                win.At(SliceLeft - la.Length, y).Write(la, ConsoleColor.DarkYellow);
             if (row.RightAnnot is { } ra)
-                buf.Write(SliceLeft + SliceWidth + 2, y, ra, ConsoleColor.DarkCyan);
+                win.At(SliceLeft + SliceWidth + 2, y).Write(ra, ConsoleColor.DarkCyan);
             y++;
 
-            // Bottom edge (becomes next slice's top)
-            buf.Write(SliceLeft, y, "╱", fg);
+            win.At(SliceLeft, y).Write("╱", fg);
             for (int x = 1; x < SliceWidth - 1; x++)
-                buf.Write(SliceLeft + x, y, "─", fg);
-            buf.Write(SliceLeft + SliceWidth - 1, y, "╱", fg);
+                win.At(SliceLeft + x, y).Write("─", fg);
+            win.At(SliceLeft + SliceWidth - 1, y).Write("╱", fg);
 
             if (i == endRow - 1 && endRow < rows.Count)
-                buf.Write(SliceLeft - 1, y, "▼", ConsoleColor.DarkGray);
+                win.At(SliceLeft - 1, y).Write("▼", ConsoleColor.DarkGray);
 
             y++;
         }
@@ -286,16 +272,16 @@ static class DungeonOverview
         for (int i = 0; i < entries.Count; i++)
             if (entries[i].Branch == u.Level.Branch) { cursor = i; break; }
 
-        using var layer = Draw.Overlay.Activate(fullScreen: true);
+        using var handle = WM.CreateTransient(Draw.ScreenWidth, Draw.ScreenHeight, z: 5, opaque: true);
+        var win = handle.Window;
 
         while (true)
         {
-            Draw.Overlay.Clear();
-            Draw.Overlay.FullScreen = true;
+            win.Clear();
 
-            RenderTree(Draw.Overlay, entries, cursor);
-            RenderSlice(Draw.Overlay, entries[cursor].Branch, sliceScroll);
-            Draw.Overlay.Write(0, 0, "(j/k) navigate  (J/K) scroll slice  (esc) close", ConsoleColor.DarkGray);
+            RenderTree(win, entries, cursor);
+            RenderSlice(win, entries[cursor].Branch, sliceScroll);
+            win.At(0, 0).Write("(j/k) navigate  (J/K) scroll slice  (esc) close", ConsoleColor.DarkGray);
             Draw.Blit();
 
             var key = Input.NextKey();

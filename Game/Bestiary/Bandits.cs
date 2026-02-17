@@ -1,3 +1,4 @@
+
 namespace Pathhack.Game.Bestiary;
 
 public class AmbushTrap(int depth) : Trap(TrapType.Ambush, depth, detectDelta: -2, escapeDelta: 0, escapeBonus: 0)
@@ -72,6 +73,8 @@ public class StealCrestsOnHit : LogicBrick
     public static readonly StealCrestsOnHit Instance = new();
     public override string Id => "bandit:steal_crests";
 
+    public override AbilityTags Tags => AbilityTags.Mental; // it requires a bit of thought to steal money imo
+
     protected override void OnDamageDone(Fact fact, PHContext ctx)
     {
         if (fact.Entity is not Monster m || !ctx.Melee) return;
@@ -99,6 +102,8 @@ public class FencingBuff : LogicBrick
     public override bool IsBuff => true;
     public override string? BuffName => "Fencing";
     public override StackMode StackMode => StackMode.Reject;
+
+    public override AbilityTags Tags => AbilityTags.Mental; // it requires a bit of thought to steal money imo
 
     protected override object? OnQuery(Fact fact, string key, string? arg) => key.TrueWhen("fleeing");
 
