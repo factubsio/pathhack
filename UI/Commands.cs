@@ -354,7 +354,7 @@ public static partial class Input
 
         var weapon = u.GetWieldedItem();
         var quiver = u.Quiver.Def as QuiverDef;
-        if (quiver != null && quiver.Launcher != (weapon.Def as WeaponDef)?.Profiency)
+        if (quiver != null && quiver.WeaponProficiency != (weapon.Def as WeaponDef)?.Profiency)
         {
             g.pline($"That is a silly way to fire {u.Quiver:an}.");
             return;
@@ -368,10 +368,9 @@ public static partial class Input
                 g.pline($"Your {u.Quiver} is empty!");
                 return;
             }
-            toThrow = Item.Create(quiver.Ammo);
-            u.Quiver.Charges--;
-            range = 8; // from quiver, from weapon?
-            type = AttackType.Ammo;
+            ArcherySystem.ShootFrom(u, u.Quiver, dir);
+            u.Energy -= ActionCosts.OneAction.Value;
+            return;
         }
         else
         {

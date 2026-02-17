@@ -82,7 +82,6 @@ public class Fact(IEntity entity, LogicBrick brick, object? data)
 
     public void Remove()
     {
-        Log.Write($"removing fact {Brick} (already? {MarkedForRemoval})");
         if (MarkedForRemoval) return;
         MarkedForRemoval = true;
         if (Entity is not Item) Log.Structured("buff", $"{Entity:unit}{Brick.Id:name}{"remove":action}");
@@ -718,6 +717,8 @@ public interface IUnit : IEntity, IFormattable
     public int NaturalRegen { get; }
     public int StrMod { get; }
 
+    public void TryReloadQuiver(bool boost);
+
     Trap? TrappedIn { get; set; }
     int EscapeAttempts { get; set; }
     IUnit? GrabbedBy { get; set; }
@@ -895,6 +896,8 @@ public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) :
 
     public abstract int NaturalRegen { get; }
     public abstract int StrMod { get; }
+
+    public abstract void TryReloadQuiver(bool boost);
 
     public void AddSpell(SpellBrickBase spell)
     {

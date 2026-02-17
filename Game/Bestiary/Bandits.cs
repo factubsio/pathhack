@@ -51,6 +51,22 @@ public class AmbushTrap(int depth) : Trap(TrapType.Ambush, depth, detectDelta: -
     private static bool IsAmbusher(MonsterDef m) => m.Family == "bandit" && m != Bandits.Cutpurse;
 }
 
+public class LongRangeAdvantage() : LogicBrick
+{
+    public static readonly LongRangeAdvantage Instance = new();
+    public override string Id => "bandit:long_range_adv";
+
+    protected override void OnBeforeAttackRoll(Fact fact, PHContext ctx)
+    {
+        if (fact.Entity is IUnit unit && ctx.Target?.Unit is IUnit t
+            && unit.Pos.ChebyshevDist(t.Pos) > 5)
+        {
+            if (g.Rn2(5) == 0) g.YouObserve(unit, $"{unit:The} lines up a long range shot.");
+            ctx.Check!.Advantage++;
+        }
+    }
+}
+
 public class StealCrestsOnHit : LogicBrick
 {
     public static readonly StealCrestsOnHit Instance = new();
@@ -225,11 +241,12 @@ public static class Bandits
             new GrantAction(AttackWithWeapon.Instance),
         ]);
 
-    // --- Ranged (stubbed, no archery for monsters yet) ---
+    // --- Ranged ---
 
     public static readonly MonsterDef Archer = B("bandit_archer", "bandit archer", 3, 9, ConsoleColor.Green,
-        // TODO: ranged AI, longbow, keep distance
         components: [
+            new Equip(MundaneArmory.Longbow),
+            new Equip(MundaneQuivers.BasicArrows),
             new Equip(MundaneArmory.Dagger),
             LightArmor,
             new GrantAction(AttackWithWeapon.Instance),
@@ -237,10 +254,12 @@ public static class Bandits
 
     public static readonly MonsterDef Sniper = B("bandit_sniper", "bandit sniper", 6, 12, ConsoleColor.Green,
         ab: 1, dmg: 1,
-        // TODO: ranged AI, stealth/ambush, high single-hit
         components: [
+            new Equip(MundaneArmory.Longbow),
+            new Equip(MundaneQuivers.BasicArrows),
             new Equip(MundaneArmory.Dagger),
             LightArmor,
+            LongRangeAdvantage.Instance,
             new GrantAction(AttackWithWeapon.Instance),
         ]);
 

@@ -71,7 +71,9 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
     public required ClassDef Class = null!;
     public required DeityDef Deity = null!;
     public required AncestryDef Ancestry = null!;
-    public Item? Quiver;
+    public Item? Quiver { get; set; }
+
+    public override void TryReloadQuiver(bool boost) => ArcherySystem.TryReload(Quiver, boost);
 
     Room? _currentRoom;
     public Room? CurrentRoom

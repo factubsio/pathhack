@@ -177,6 +177,10 @@ public class Monster : Unit<MonsterDef>, IFormattable
   public MonFlags? OwnBrainFlags;
   public long Gold;
 
+  private Item? NonFullQuiver => Inventory.FirstOrDefault(i => i.Def is QuiverDef && i.Charges < i.MaxCharges);
+  public override void TryReloadQuiver(bool boost) => ArcherySystem.TryReload(NonFullQuiver, boost);
+
+
   public MonFlags EffectiveBrainFlags => OwnBrainFlags ?? Def.BrainFlags;
   public bool HasBrainFlag(MonFlags flag) => (EffectiveBrainFlags & flag) != 0;
 

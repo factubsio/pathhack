@@ -42,6 +42,7 @@ public class DungeonMaster : Entity<BaseDef>, IUnit, IFormattable
     public Glyph Glyph => Glyph.Null;
     public Dictionary<EquipSlot, Item> Equipped { get; } = [];
     Inventory? _inventory;
+    public void TryReloadQuiver(bool boost) { }
 
     public Inventory Inventory => _inventory ??= new(this);
     public List<ActionBrick> Actions { get; } = [];
@@ -103,5 +104,6 @@ public class DungeonMaster : Entity<BaseDef>, IUnit, IFormattable
     public string ToString(string? format, IFormatProvider? provider) => represents?.ToString(format, provider) ?? "the dungeon";
 
     public bool CanSee => true;
+    public Item? Quiver => null;
 
 }

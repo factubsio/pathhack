@@ -755,8 +755,8 @@ public class GameState
             if (!improvised)
             {
                 // Hmm, should we e.g. pass weapon?.Stat[s] to GetStrDamageBonus?
-                int strBonus = with.Query("str_bonus", null, MergeStrategy.Max, weapon?.StrBonus ?? 0);
-                dmg.Modifiers.Untyped(attacker.GetStrDamageBonus() * strBonus, "str_inherent");
+                double strMul = with.Query("str_damage_mult", null, MergeStrategy.Max, weapon?.StrBonus ?? 0.0);
+                dmg.Modifiers.Untyped((int)(attacker.GetStrDamageBonus() * strMul), "str_inherent");
             }
 
             ctx.Damage.Add(dmg);
@@ -1160,7 +1160,7 @@ public class GameState
         if (dir == Pos.Zero)
         {
             u.Energy -= ActionCosts.OneAction.Value;
-            ArcherySystem.TryReload(u.Quiver, true);
+            u.TryReloadQuiver(true);
         }
         else
         {

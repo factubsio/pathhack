@@ -4,51 +4,89 @@ public class AttackWithWeapon() : ActionBrick("attack_with_weapon")
 {
     public static readonly AttackWithWeapon Instance = new();
 
-    enum Act { Melee, Throw, Equip }
-    record struct Decision(Act Act, Item? Item = null);
+    enum Act { Melee, Throw, Equip, Shoot }
+    record struct Decision(Act Act, Item? Weapon = null, Item? Ammo = null);
 
     public override ActionPlan CanExecute(IUnit unit, object? data, Target target)
     {
         if (target.Unit == null) return new(false, "no target");
         int dist = unit.Pos.ChebyshevDist(target.Unit.Pos);
-
-        // fast path: adjacent + wielding a weapon
+        bool compass = target.Unit.Pos.IsCompassFrom(unit.Pos);
+        bool canSee = unit is Monster { CanSeeYou: true };
         var wielded = unit.Equipped.GetValueOrDefault(ItemSlots.MainHandSlot);
-        if (dist == 1 && wielded != null)
-            return new(true, Plan: new Decision(Act.Melee));
-        
-        bool canSwapMelee = wielded == null || wielded.BUC != BUC.Cursed;
+        // fast path: adjacent + wielding a weapon — skip inventory scan
+        if (dist == 1 && wielded?.Def is WeaponDef)
+            return new(true, Plan: new Decision(Act.Melee, wielded));
 
-        // pre-check throw geometry
-        bool canThrow = dist is >= 2 and <= 10
-            && target.Unit.Pos.IsCompassFrom(unit.Pos)
-            && unit is Monster { CanSeeYou: true };
-        string? throwableId = canThrow ? unit.Query<string>("throwable", null, MergeStrategy.Replace, null!) : null;
+        bool canSwap = wielded == null || wielded.BUC != BUC.Cursed;
+        string? throwableId = canSee && compass && dist >= 2
+            ? unit.Query<string>("throwable", null, MergeStrategy.Replace, null!) : null;
 
         // single inventory scan
-        Item? bestThrow = null;
-        Item? bestEquip = null;
+        Item? bestQuiver = null; double bestQuiverDmg = 0;
+        Item? bestBow = null;
+        Item? bestMelee = null; double bestMeleeDmg = 0;
+        Item? bestThrow = null; bool throwIsWielded = false;
+        string? launcherProf = null;
+
         foreach (var item in unit.Inventory)
         {
-            if (item.Def is not WeaponDef wep) continue;
+            if (item.Def is QuiverDef qd && item.Charges > 0)
+            {
+                double avg = qd.Ammo.BaseDamage.Average();
+                if (avg > bestQuiverDmg) { bestQuiver = item; bestQuiverDmg = avg; launcherProf = qd.WeaponProficiency; }
+            }
+            else if (item.Def is WeaponDef wep)
+            {
+                // bow candidate (only if we found a quiver)
+                if (launcherProf != null && wep.Profiency == launcherProf)
+                    bestBow ??= item;
 
-            if (canThrow && (wep.Launcher != null || (throwableId != null && wep.id == throwableId)))
-                if (bestThrow == null || bestThrow == wielded)
-                    bestThrow = item;
+                // melee candidate
+                if (canSwap)
+                {
+                    double avg = wep.BaseDamage.Average();
+                    if (avg > bestMeleeDmg) { bestMelee = item; bestMeleeDmg = avg; }
+                }
 
-            if (canSwapMelee && (bestEquip == null || wep.BaseDamage.Average() > ((WeaponDef)bestEquip.Def).BaseDamage.Average()))
-                bestEquip = item;
+                // throw candidate
+                if (throwableId != null || wep.Launcher != null)
+                {
+                    if (wep.Launcher != null || wep.id == throwableId)
+                    {
+                        if (bestThrow == null || throwIsWielded)
+                            { bestThrow = item; throwIsWielded = item == wielded; }
+                    }
+                }
+            }
         }
 
-        if (bestThrow != null) return new(true, Plan: new Decision(Act.Throw, bestThrow));
-        if (bestEquip != null && bestEquip != wielded)
+        // bow match: prefer wielded bow over inventory
+        if (bestQuiver != null && wielded?.Def is WeaponDef ww && ww.Profiency == launcherProf)
+            bestBow = wielded;
+
+        // 1: shoot if ready (quiver + wielding matching bow + compass)
+        if (bestQuiver != null && bestBow == wielded && wielded != null && compass && canSee)
+            return new(true, Plan: new Decision(Act.Shoot, bestBow, bestQuiver));
+
+        // 2: adjacent — prefer melee
+        if (dist == 1)
         {
-            Log.Verbose("aww", $"[AWW] {unit}: will equip {bestEquip.Def.Name}");
-            return new(true, Plan: new Decision(Act.Equip, bestEquip));
+            if (wielded != null && wielded.Def is WeaponDef)
+                return new(true, Plan: new Decision(Act.Melee, wielded));
+            if (bestMelee != null)
+                return new(true, Plan: new Decision(Act.Equip, bestMelee));
+            return new(true, Plan: new Decision(Act.Melee, unit.GetWieldedItem())); // unarmed
         }
-        
-        // Last resort punch them
-        if (dist == 1) return new(true, Plan: new Decision(Act.Melee));
+
+        // 3: dist 2+ — ranged options
+        if (bestThrow != null && canSee && compass)
+            return new(true, Plan: new Decision(Act.Throw, bestThrow));
+
+        // 4: equip bow if we have quiver+bow but aren't ready to shoot
+        if (bestQuiver != null && bestBow != null && bestBow != wielded && canSwap)
+            return new(true, Plan: new Decision(Act.Equip, bestBow));
+
         return "nothing to do";
     }
 
@@ -60,17 +98,17 @@ public class AttackWithWeapon() : ActionBrick("attack_with_weapon")
             return;
         }
 
-        Log.Verbose("aww", $"[AWW] {unit}: {d.Act} {d.Item?.Def.Name ?? "none"}");
+        Log.Verbose("aww", $"[AWW] {unit}: {d.Act} {d.Weapon?.Def.Name ?? "none"}");
 
         switch (d.Act)
         {
             case Act.Melee:
-                DoWeaponAttack(unit, target.Unit!, unit.GetWieldedItem());
+                DoWeaponAttack(unit, target.Unit!, d.Weapon!);
                 break;
 
             case Act.Throw:
             {
-                var item = d.Item!;
+                var item = d.Weapon!;
                 Pos dir = (target.Unit!.Pos - unit.Pos).Signed;
                 Item toThrow;
                 if (item.Count > 1)
@@ -87,8 +125,15 @@ public class AttackWithWeapon() : ActionBrick("attack_with_weapon")
             case Act.Equip:
                 unit.Unequip(ItemSlots.MainHandSlot);
                 unit.Unequip(ItemSlots.OffHandSlot);
-                unit.Equip(d.Item!);
+                unit.Equip(d.Weapon!);
                 break;
+
+            case Act.Shoot:
+            {
+                Pos dir = (target.Unit!.Pos - unit.Pos).Signed;
+                ArcherySystem.ShootFrom(unit, d.Ammo!, dir);
+                break;
+            }
         }
     }
 }

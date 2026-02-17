@@ -3,7 +3,9 @@ namespace Pathhack.Game;
 public class QuiverDef : ItemDef
 {
     public required Dice Capacity;
-    public required string Launcher;
+
+    // the "group" of weapons that can launch ammo from this quiver
+    public required string WeaponProficiency;
 
     public required WeaponDef Ammo;
 }
@@ -18,6 +20,15 @@ public static class ArcherySystem
         bool doCharge = g.Rn2(boost ? 2 : 3) == 0;
 
         if (doCharge) item.Charge(1);
+    }
+
+    public static void ShootFrom(IUnit unit, Item quiver, Pos dir)
+    {
+        var qd = (QuiverDef)quiver.Def;
+        var ammo = Item.Create(qd.Ammo);
+        quiver.Charges--;
+        g.YouObserveSelf(unit, $"You shoot!", $"{unit:The} {VTense(unit, "shoot")} {ammo:an}!", "a twang");
+        DoThrow(unit, ammo, dir, AttackType.Ammo, range: 8);
     }
 }
 
@@ -35,7 +46,7 @@ public static partial class MundaneQuivers
         Components = components,
         Price = price,
         Material = Materials.Leather,
-        Launcher = Proficiencies.Bow,
+        WeaponProficiency = Proficiencies.Bow,
 
         Ammo = new()
         {

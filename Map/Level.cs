@@ -366,9 +366,9 @@ public class Level(LevelId id, int width, int height)
             else
                 u.ClearTrack();
             LookHere();
-
-            ArcherySystem.TryReload(u.Quiver, false);
         }
+
+        unit.TryReloadQuiver(false);
     }
 
     static void LookHere()

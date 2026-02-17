@@ -103,7 +103,7 @@ public class WeaponDef : ItemDef
     public WeaponCategory Category = WeaponCategory.Item;
     public override ItemKnowledge RelevantKnowledge => ItemKnowledge.Seen | ItemKnowledge.Props | ItemKnowledge.BUC;
     public bool NotForWhacking = false;
-    public int StrBonus = 1;
+    public double StrBonus = 1;
 
     public WeaponDef()
     {
