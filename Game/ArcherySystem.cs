@@ -65,4 +65,28 @@ public static partial class MundaneQuivers
             capacity: d(4) + 3,
             dmg: d(8),
             price: 100);
+
+    public static readonly QuiverDef BlowgunDarts = new()
+    {
+        Name = "blowgun dart quiver",
+        id = "quiv:blowgun_dart",
+        CanHavePotency = true,
+        Glyph = new(')'),
+        DefaultEquipSlot = ItemSlots.Quiver,
+        Capacity = d(3) + 3,
+        Components = [],
+        Price = 20,
+        Material = Materials.Leather,
+        WeaponProficiency = Proficiencies.Blowgun,
+        Ammo = new()
+        {
+            Price = 0,
+            Weight = -1,
+            BaseDamage = d(3),
+            Profiency = Proficiencies.Blowgun,
+            Glyph = new(')'),
+            DamageType = DamageTypes.Piercing,
+            Name = "blowgun dart",
+        },
+    };
 }

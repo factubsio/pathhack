@@ -94,6 +94,7 @@ public static class Proficiencies
     public const string Thrown = "thrown";
     public const string Flail = "flail";
     public const string Whip = "whip";
+    public const string Blowgun = "blowgun";
     public const string Close = "close";
 
     // Armor
@@ -133,6 +134,7 @@ public static class WeaponTypes
     public const string Greataxe = "greataxe";
     public const string Rock = "rock";
     public const string Pick = "pick";
+    public const string Blowgun = "blowgun";
 }
 
 public enum ProficiencyLevel

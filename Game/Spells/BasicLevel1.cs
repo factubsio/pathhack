@@ -80,62 +80,6 @@ public static class BasicLevel1Spells
         lvl.CreateArea(area);
       }, TargetingType.Pos, maxRange: 4);
 
-  public static readonly SpellBrick AcidArrow = new("Acid Arrow", 2,
-      """You conjure an arrow of acid that continues corroding the target after it hits. Make a spell attack against the target. On a hit, you deal 3d8 acid damage plus 1d6 persistent acid damage.""",
-      (c, t) =>
-      {
-        if (t.Pos == null) return;
-        Pos dir = t.Pos.Value;
-
-        var range = g.RnRange(6, 10);
-        int dc = c.GetSpellDC();
-
-        g.YouObserve(c, $"{c:The} {VTense(c, "fling")} an acid arrow!", "a hissing sound");
-        
-        Pos last = c.Pos;
-        foreach (var step in Beam.Fire(c.Pos, t.Pos.Value, canBounce: false, range))
-        {
-          var unit = lvl.UnitAt(step.Pos);
-
-          if (unit != null)
-          {
-            using var ctx = PHContext.Create(c, Target.From(unit));
-            ctx.Spell = AcidArrow;
-            ctx.Damage.Add(new()
-            {
-              Formula = d(3, 8),
-              Type = DamageTypes.Acid,
-            });
-
-            Draw.AnimateProjectile(c.Pos, unit.Pos, new(dir.Char, ConsoleColor.Green));
-
-            if (DoAttackRoll(ctx, 0))
-            {
-              g.YouObserve(unit, $"It hits {unit:the}!", "it hit something!");
-              DoDamage(ctx);
-
-              if (unit.IsDead) return;
-
-              using var sizzleCtx = PHContext.Dupe();
-              if (!CheckFort(sizzleCtx, unit.GetSpellDC(), "acid arrow sizzle"))
-              {
-                g.YouObserve(unit, $"{unit:The} is covered in acid!", "something scream!");
-                unit.AddFact(AcidBurnBuff.Instance, 4);
-              }
-            }
-            else
-            {
-              g.YouObserve(unit, $"It misses {unit:the}!");
-            }
-            return;
-          }
-
-          last = step.Pos;
-        }
-
-        Draw.AnimateProjectile(c.Pos, last, new(dir.Char, ConsoleColor.Green));
-
-      }, TargetingType.Direction);
 
 
   const int BurningHandsRad = 3;

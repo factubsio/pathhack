@@ -352,7 +352,7 @@ public class GameState
         PlineLog?.WriteLine($"[{CurrentRound}] {msg}");
         PHMonitor.CapturePline(msg);
     }
-    internal void plineu(IUnit user, string msg)
+    public void plineu(IUnit user, string msg)
     {
         if (user.IsPlayer) pline(msg);
     }
@@ -1165,6 +1165,19 @@ public class GameState
         }
         else
         {
+            if (u.Has("confused") && g.Rn2(5) == 0)
+            {
+                for (int tries = 0; tries < 50; tries++)
+                {
+                    Pos d = Pos.AllDirs.Pick();
+                    if (lvl.CanMoveTo(upos, upos + d, u))
+                    {
+                        dir = d;
+                        break;
+                    }
+                }
+            }
+
             Pos next = upos + dir;
             if (!lvl.InBounds(next)) return;
 

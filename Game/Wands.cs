@@ -42,7 +42,7 @@ public static partial class Wands
     public static readonly WandDef MagicMissile = Crate(BasicLevel1Spells.MagicMissile);
     public static readonly WandDef BurningHands = Crate(BasicLevel1Spells.BurningHands);
     public static readonly WandDef CureLightWounds = Crate(BasicLevel1Spells.CureLightWounds);
-    public static readonly WandDef AcidArrow = Crate(BasicLevel1Spells.AcidArrow);
+    public static readonly WandDef AcidArrow = Crate(BasicLevel2Spells.AcidArrow);
     public static readonly WandDef ScorchingRay = Crate(BasicLevel2Spells.ScorchingRay);
 
     public static void DoEffect(WandDef def, IUnit user, Pos dir)

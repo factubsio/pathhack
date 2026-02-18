@@ -233,6 +233,20 @@ public static partial class MundaneArmory
         NotForWhacking = true,
     };
 
+    public static readonly WeaponDef Blowgun = new()
+    {
+        id = "blowgun",
+        Name = "blowgun",
+        BaseDamage = d(2),
+        Profiency = Proficiencies.Blowgun,
+        WeaponType = WeaponTypes.Blowgun,
+        DamageType = DamageTypes.Blunt,
+        Hands = 1,
+        Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkGreen),
+        Price = 10,
+        NotForWhacking = true,
+    };
+
     public static readonly WeaponDef Dart = new()
     {
         id = "dart",

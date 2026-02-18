@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Pathhack.Map;
 
 // TileType, TileFlags, and TileInfo.DefaultFlags must be kept in sync
@@ -302,6 +304,14 @@ public class Level(LevelId id, int width, int height)
     {
         ref CellState s = ref _state[p.Y * Width + p.X];
         return s ??= new CellState();
+    }
+
+    public bool UnitAt(Pos p, [NotNullWhen(true)] out IUnit? unit)
+    {
+        unit = null;
+        if (!InBounds(p)) return false;
+        unit = UnitAt(p);
+        return unit != null;
     }
 
     public IUnit? UnitAt(Pos p)

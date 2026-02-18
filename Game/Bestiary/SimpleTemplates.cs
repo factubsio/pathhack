@@ -5,7 +5,6 @@ public static class TemplateHelper
   public static readonly HashSet<string> CannotBeUndead = [
     CreatureTypes.Plant,
     CreatureTypes.Undead,
-    CreatureTypes.Elemental,
     CreatureTypes.Outsider,
     CreatureTypes.Construct,
     CreatureTypes.Ooze,

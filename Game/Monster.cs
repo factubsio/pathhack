@@ -11,17 +11,18 @@ public static class AxisExts
 
 public static class CreatureTypes
 {
-  public const string Humanoid = "humanoid";
-  public const string Beast = "beast";
-  public const string Undead = "undead";
-  public const string Construct = "construct";
-  public const string Elemental = "elemental";
-  public const string Outsider = "outsider";
   public const string Aberration = "aberration";
+  public const string Beast = "beast";
+  public const string Construct = "construct";
   public const string Dragon = "dragon";
   public const string Fey = "fey";
-  public const string Plant = "plant";
+  public const string Humanoid = "humanoid";
+  public const string MagicalBeast = "magical_beast";
+  public const string MonstrousHumanoid = "monstrous_humanoid";
   public const string Ooze = "ooze";
+  public const string Outsider = "outsider";
+  public const string Undead = "undead";
+  public const string Plant = "plant";
   public const string Giant = "giant";
 }
 
@@ -53,6 +54,7 @@ public static class CreatureSubtypes
   public const string Elf = "elf";
   public const string Dwarf = "dwarf";
   public const string Giant = "giant";
+  public const string Amphibious = "amphibious";
 }
 
 public enum GroupSize { None, Small, SmallMixed, Large, LargeMixed }

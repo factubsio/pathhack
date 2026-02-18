@@ -218,7 +218,7 @@ public static partial class ClassDefs
         BasicLevel1Spells.Light,
         BasicLevel1Spells.Shield,
         BasicLevel1Spells.Grease,
-        BasicLevel1Spells.AcidArrow,
+        BasicLevel2Spells.AcidArrow,
         BasicLevel1Spells.Command,
         BasicLevel1Spells.FalseLifeLesser,
         BasicLevel1Spells.ProtFromEvil,

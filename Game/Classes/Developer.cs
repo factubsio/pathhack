@@ -254,6 +254,16 @@ public class UncurseInventory() : ActionBrick("Uncurse Inventory")
     }
 }
 
+public class ConfuseSelf() : ActionBrick("Confuse Self")
+{
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target) => true;
+
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
+    {
+        unit.AddFact(ConfusedBuff.Instance, duration: 5);
+    }
+}
+
 public static partial class ClassDefs
 {
     public static ClassDef Developer => new()
@@ -291,7 +301,7 @@ public static partial class ClassDefs
             var sword = ItemGen.GenerateItem(MundaneArmory.Longsword, 100, -3);
             p.Inventory.Add(sword);
 
-            p.AddSpell(BasicLevel1Spells.AcidArrow);
+            p.AddSpell(BasicLevel2Spells.AcidArrow);
             
             // Test striking rune
             var strikingSword = Item.Create(MundaneArmory.Longsword);
@@ -335,6 +345,7 @@ public static partial class ClassDefs
             p.AddAction(new CurseInventory());
             p.AddAction(new UncurseInventory());
             p.AddAction(new TogglePhasing());
+            p.AddAction(new ConfuseSelf());
             p.AddAction(new GotoLevel());
             foreach (var blessing in Blessings.All)
                 blessing.ApplyMinor(p);

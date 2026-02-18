@@ -162,7 +162,7 @@ public static class Trolls
             new GrantPool("spell_l1", 2, 15),
             new GrantPool("spell_l2", 1, 25),
             new GrantSpell(BasicLevel1Spells.BurningHands),
-            new GrantSpell(BasicLevel1Spells.AcidArrow),
+            new GrantSpell(BasicLevel2Spells.AcidArrow),
         ], ac: 0, ab: 0,
         color: ConsoleColor.Yellow);
 
@@ -175,7 +175,7 @@ public static class Trolls
             new GrantSpell(BasicLevel1Spells.CureLightWounds),
             new GrantSpell(BasicLevel1Spells.MagicMissile),
             new GrantSpell(BasicLevel1Spells.BurningHands),
-            new GrantSpell(BasicLevel1Spells.AcidArrow),
+            new GrantSpell(BasicLevel2Spells.AcidArrow),
         ], ac: 0, ab: 0, dmg: 0,
         color: ConsoleColor.DarkMagenta);
 

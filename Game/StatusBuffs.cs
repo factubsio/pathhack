@@ -125,6 +125,7 @@ public static class CommonQueries
     public const string SleepImmune = "sleep_immunity";
     public const string BleedImmune = "bleed_immunity";
     public const string PoisonImmune = "poison_immunity";
+    public const string ConfusionImmune = "confusion_immunity";
     public const string DifficultTerrainImmune = "difficult_terrain_immunity";
     public const string See = "can_see";
 }
@@ -258,6 +259,24 @@ public class RegenBrick(params DamageType[] suppressedBy) : LogicBrick<RegenBric
 
   protected override object? OnQuery(Fact fact, string key, string? arg) =>
       key == "respawn_from_corpse" && !X(fact).IsSuppressed ? true : null;
+}
+
+public class ConfusedBuff : LogicBrick
+{
+    public static readonly ConfusedBuff Instance = new();
+    public override string Id => "confused";
+    public override bool IsBuff => true;
+    public override string? BuffName => "Confused";
+    public override StackMode StackMode => StackMode.ExtendDuration;
+
+    protected override object? OnQuery(Fact fact, string key, string? arg) =>
+        key == "confused" && !fact.Entity.Has(CommonQueries.ConfusionImmune) ? true : null;
+
+    protected override void OnFactRemoved(Fact fact)
+    {
+        g.plineu((IUnit)fact.Entity, "You feel less confused now.");
+    }
+
 }
 
 public class DazeImmunity : LogicBrick
