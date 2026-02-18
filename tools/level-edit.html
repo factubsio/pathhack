@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>pathhack level editor</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { overflow: hidden; height: 100%; }
+body { background: #1a1a2e; color: #ccc; font-family: 'Consolas','Monaco',monospace; font-size: 13px; display: flex; flex-direction: column; }
+
+#toolbar { padding: 6px 12px; display: flex; gap: 8px; align-items: center; border-bottom: 1px solid #333; background: #16213e; flex-shrink: 0; }
+#toolbar button, #toolbar select { background: #0f3460; color: #ccc; border: 1px solid #444; padding: 3px 10px; cursor: pointer; font-family: inherit; font-size: 12px; }
+#toolbar button.active { background: #e94560; color: #fff; border-color: #e94560; }
+#toolbar .sep { width: 1px; height: 20px; background: #444; }
+#toolbar .ab-display { display: flex; gap: 4px; align-items: center; }
+#toolbar .ab-box { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border: 2px solid #888; font-size: 16px; cursor: pointer; }
+#toolbar .ab-box.sel { border-color: #e94560; }
+#toolbar .ab-label { font-size: 10px; color: #888; }
+#status { padding: 4px 12px; font-size: 11px; color: #888; border-top: 1px solid #333; background: #16213e; flex-shrink: 0; }
+
+#main { display: flex; flex: 1; min-height: 0; }
+#canvas-wrap { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+canvas { image-rendering: pixelated; cursor: crosshair; }
+
+#sidebar { width: 160px; border-left: 1px solid #333; background: #16213e; overflow-y: auto; flex-shrink: 0; padding: 8px; }
+#sidebar h4 { color: #e94560; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin: 8px 0 4px; }
+#sidebar h4:first-child { margin-top: 0; }
+.pal-item { display: flex; align-items: center; gap: 6px; padding: 2px 4px; cursor: pointer; border-radius: 2px; }
+.pal-item:hover { background: #0f3460; }
+.pal-item.sel-a { outline: 2px solid #e94560; }
+.pal-item.sel-b { outline: 2px solid #4ecdc4; }
+.pal-item .swatch { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.pal-item .label { font-size: 11px; }
+.dd-item { padding: 4px 10px; cursor: pointer; white-space: nowrap; }
+.dd-item:hover, .dd-item.active { background: #e94560; color: #fff; }
+</style>
+</head>
+<body>
+<div id="toolbar">
+  <div id="level-picker" style="position:relative;">
+    <input id="level-input" type="text" autocomplete="off" placeholder="Search levels..." style="min-width:200px;background:#0f3460;color:#ccc;border:1px solid #444;padding:3px 10px;font-family:inherit;font-size:12px;">
+    <div id="level-dropdown" style="display:none; position:absolute; top:100%; left:0; background:#0f3460; border:1px solid #444; max-height:400px; overflow-y:auto; min-width:200px; z-index:50;"></div>
+  </div>
+  <button id="btn-new">New</button>
+  <button id="btn-save">Save</button>
+  <div class="sep"></div>
+  <button id="btn-brush" class="active" data-tool="brush">Brush</button>
+  <button id="btn-rect" data-tool="rect">Rect</button>
+  <button id="btn-fillrect" data-tool="fillrect">FillRect</button>
+  <button id="btn-oval" data-tool="oval">Oval</button>
+  <button id="btn-filloval" data-tool="filloval">FillOval</button>
+  <button id="btn-flood" data-tool="flood">Flood</button>
+  <button id="btn-eraser" data-tool="eraser">Eraser</button>
+  <div class="sep"></div>
+  <span style="color:#888;font-size:11px">Size: <span id="brush-size">1×1</span> [/]</span>
+  <div class="sep"></div>
+  <div class="ab-display">
+    <div class="ab-label">A</div>
+    <div class="ab-box sel" id="ab-a"></div>
+    <div class="ab-box" id="ab-b"></div>
+    <div class="ab-label">B</div>
+    <span style="font-size:10px;color:#666;margin-left:4px">[X] swap</span>
+  </div>
+  <div class="sep"></div>
+  <span id="cursor-info" style="color:#888;font-size:11px"></span>
+</div>
+<div id="main">
+  <div id="canvas-wrap"><canvas id="canvas"></canvas></div>
+  <div id="sidebar"></div>
+</div>
+<div id="status">Ready</div>
+<div id="help-overlay" onclick="this.style.display='none'" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:100; align-items:center; justify-content:center;">
+  <div style="background:#16213e; border:1px solid #444; padding:24px 32px; border-radius:6px; max-width:500px; width:100%;">
+    <h3 style="color:#e94560; margin-bottom:12px; font-size:14px;">Keyboard Shortcuts</h3>
+    <table style="width:100%; border-collapse:collapse; font-size:12px;">
+      <tr><td style="color:#4ecdc4; padding:3px 12px 3px 0;">1-7</td><td>Brush / Rect / FillRect / Oval / FillOval / Flood / Eraser</td></tr>
+      <tr><td style="color:#4ecdc4;">B</td><td>Brush</td></tr>
+      <tr><td style="color:#4ecdc4;">R</td><td>Rectangle</td></tr>
+      <tr><td style="color:#4ecdc4;">O</td><td>Oval</td></tr>
+      <tr><td style="color:#4ecdc4;">F</td><td>Flood fill</td></tr>
+      <tr><td style="color:#4ecdc4;">E</td><td>Eraser</td></tr>
+      <tr><td style="color:#4ecdc4;">X</td><td>Swap A/B</td></tr>
+      <tr><td style="color:#4ecdc4;">[ ]</td><td>Brush size −/+</td></tr>
+      <tr><td style="color:#4ecdc4;">Ctrl+Z</td><td>Undo</td></tr>
+      <tr><td style="color:#4ecdc4;">Ctrl+S</td><td>Save</td></tr>
+      <tr><td style="color:#4ecdc4;">G</td><td>Toggle grid</td></tr>
+      <tr><td style="color:#4ecdc4;">.</td><td>Quick select Floor</td></tr>
+      <tr><td style="color:#4ecdc4;">,</td><td>Quick select Grass</td></tr>
+      <tr><td style="color:#4ecdc4;">#</td><td>Quick select Corridor</td></tr>
+      <tr><td style="color:#4ecdc4;">Space</td><td>Quick select Rock</td></tr>
+      <tr><td style="color:#4ecdc4;">?</td><td>This help</td></tr>
+    </table>
+    <div style="color:#666; margin-top:12px; font-size:11px;">Click or press any key to close</div>
+  </div>
+</div>
+<script type="module" src="app.js"></script>
+<script>
+(function() {
+  let ws;
+  function connect() {
+    ws = new WebSocket("ws://" + location.host + "/ws");
+    ws.onmessage = (e) => { if (e.data === "reload") location.reload(); };
+    ws.onclose = () => setTimeout(connect, 1000);
+  }
+  connect();
+})();
+</script>
+</body>
+</html>
