@@ -188,6 +188,31 @@ public class SleepTarget() : ActionBrick("Sleep Target", TargetingType.Unit)
     }
 }
 
+public class GotoLevel() : ActionBrick("Goto Level")
+{
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target) => true;
+
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
+    {
+        Menu<Branch> branchMenu = new();
+        char letter = 'a';
+        foreach (var branch in g.Branches.Values)
+            branchMenu.Add(letter++, $"{branch.Name} (1-{branch.MaxDepth})", branch);
+        var picked = branchMenu.Display(MenuMode.PickOne);
+        if (picked.Count == 0) return;
+        Branch b = picked[0];
+
+        Menu<int> depthMenu = new();
+        letter = 'a';
+        for (int d = 1; d <= b.MaxDepth; d++)
+            depthMenu.Add(letter++, $"{b.Name}:{d}", d);
+        var depthPicked = depthMenu.Display(MenuMode.PickOne);
+        if (depthPicked.Count == 0) return;
+
+        g.GoToLevel(new LevelId(b, depthPicked[0]), SpawnAt.RandomLegal);
+    }
+}
+
 public class TogglePhasing() : SimpleToggleAction("Phasing", PhasingBuff.Instance);
 
 public class PhasingBuff : LogicBrick
@@ -310,6 +335,7 @@ public static partial class ClassDefs
             p.AddAction(new CurseInventory());
             p.AddAction(new UncurseInventory());
             p.AddAction(new TogglePhasing());
+            p.AddAction(new GotoLevel());
             foreach (var blessing in Blessings.All)
                 blessing.ApplyMinor(p);
         },
