@@ -37,7 +37,10 @@ List<BranchTemplate> templates = [
     new("meaty1", "Meaty 1", (7, 7), Color: ConsoleColor.DarkYellow) {
         Parent = "dungeon",
         EntranceDepth = (2, 4),
-        Levels = [],
+        Levels = [
+            new("jungle_shore", [/*"ss_shore_beached",*/ "ss_shore_debris"], FromTop, 1),
+            new("deep_jungle", null, FromTop, 2, Algorithm: CaveAlgorithm.OutdoorCAOpen),
+        ],
         AlgorithmPool = [CaveAlgorithm.Worley, CaveAlgorithm.WorleyWarren, CaveAlgorithm.CA],
         ColorPool = [
             (ConsoleColor.DarkYellow, ConsoleColor.DarkYellow),

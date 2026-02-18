@@ -14,7 +14,8 @@ public record LevelRule(
     string? RelativeTo = null,
     bool Required = true,
     string? BranchTarget = null, // if set, place branch stairs here
-    bool NoBranchEntrance = false // if true, no branch stairs can be placed here
+    bool NoBranchEntrance = false, // if true, no branch stairs can be placed here
+    CaveAlgorithm? Algorithm = null // override algorithm for this floor
 );
 
 public record BranchTemplate(
@@ -118,6 +119,11 @@ public static class DungeonResolver
                 foreach (var rl in resolved)
                     if (rl.Template == null)
                         rl.Algorithm = pool[_rng.Next(pool.Length)];
+
+            // Apply per-rule algorithm overrides
+            foreach (var rule in template.Levels)
+                if (rule.Algorithm is { } algo && placed.TryGetValue(rule.Id, out int ruleDepth))
+                    resolved[ruleDepth - 1].Algorithm = algo;
 
             // Assign colors from pool
             if (template.ColorPool is { } colors)

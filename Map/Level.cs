@@ -13,6 +13,7 @@ public enum TileType : ushort
     BranchUp,
     BranchDown,
     Grass,
+    Tree,
     Pool,
     Water,
 }
@@ -42,6 +43,7 @@ public static class TileInfo
         TileType.BranchUp => TileFlags.Passable | TileFlags.Structural,
         TileType.BranchDown => TileFlags.Passable | TileFlags.Structural,
         TileType.Grass => TileFlags.Passable,
+        TileType.Tree => TileFlags.Diggable,
         TileType.Pool => TileFlags.Passable,
         TileType.Water => TileFlags.None,
         _ => TileFlags.None,
@@ -58,9 +60,12 @@ public enum DoorState : byte
 
 public record struct TileMemory(Tile Tile, DoorState Door, Item? TopItem, Trap? Trap);
 
-public class TileFeature(string id)
+public class TileFeature(string id, Glyph? glyph = null, string? desc = null)
 {
     public string Id => id;
+    public Glyph? Glyph => glyph;
+    public string? Desc => desc;
+    public bool Hidden => id[0] == '_';
 }
 
 public class CellState
@@ -182,6 +187,7 @@ public class Level(LevelId id, int width, int height)
     readonly CellState[] _state = new CellState[width * height];
     readonly TileBitset _los = new(width, height);
     readonly TileBitset _lit = new(width, height);
+    public readonly TileBitset BaseLit = new(width, height);
     readonly TileBitset _visible = new(width, height);
     readonly TileBitset _seen = new(width, height);
     readonly TileMemory?[] _memory = new TileMemory?[width * height];
@@ -230,7 +236,7 @@ public class Level(LevelId id, int width, int height)
 
     public bool IsLit(Pos p) => _lit[p];
     public void SetLit(Pos p) => _lit[p] = true;
-    public void ClearLit() => _lit.Clear();
+    public void ClearLit() => _lit.CopyFrom(BaseLit);
 
     public bool WasSeen(Pos p) => _seen[p];
     public TileMemory? GetMemory(Pos p) => _memory[p.Y * Width + p.X];
@@ -257,7 +263,7 @@ public class Level(LevelId id, int width, int height)
         Tile t = this[p];
         return t.Type switch
         {
-            TileType.Rock or TileType.Wall => true,
+            TileType.Rock or TileType.Wall or TileType.Tree => true,
             TileType.Door => IsDoorClosed(p),
             _ => false,
         };

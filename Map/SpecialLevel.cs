@@ -10,6 +10,7 @@ public record SpecialLevel(string Id, string Map, Action<LevelBuilder>? PreRende
     public string? Name { get; init; }
     public string DisplayName => Name ?? Id;
     public HashSet<int>? IrregularRooms { get; init; }
+    public HashSet<int>? SolidRooms { get; init; }
 }
 
 public class LevelBuilder(Dictionary<char, List<Pos>> marks, LevelGenContext ctx)
@@ -89,9 +90,12 @@ public static class SpecialLevelParser
         ['-'] = TileType.Wall,
         ['|'] = TileType.Wall,
         [','] = TileType.Grass,
+        ['±'] = TileType.Tree,
+        ['~'] = TileType.Water,
+        ['+'] = TileType.Door,
     };
     
-    static readonly HashSet<char> MarkerChars = ['+', '<', '>', 'S', '^', '_'];
+    static readonly HashSet<char> MarkerChars = ['<', '>', 'S', '^', '_'];
     
     public static Dictionary<char, List<Pos>> Parse(SpecialLevel spec, LevelGenContext ctx)
     {
@@ -116,7 +120,10 @@ public static class SpecialLevelParser
                 
                 if (TileMap.TryGetValue(c, out var type))
                 {
-                    ctx.level.Set(p, type);
+                    if (type == TileType.Door)
+                        ctx.level.PlaceDoor(p);
+                    else
+                        ctx.level.Set(p, type);
                 }
                 else if (c == '+')
                 {
@@ -152,64 +159,89 @@ public static class SpecialLevelParser
             }
         }
         
-        // Build rooms from digit walls via flood fill from adjacent floor
-        foreach (var (n, walls) in roomTiles)
+        // Build rooms from digit tiles
+        foreach (var (n, tiles) in roomTiles)
         {
-            // Find a floor tile adjacent to any wall
-            Pos? seed = null;
-            foreach (var w in walls)
+            var tileSet = new HashSet<Pos>(tiles);
+
+            if (spec.SolidRooms?.Contains(n) == true)
             {
-                foreach (var d in Pos.CardinalDirs)
+                // Auto-border: interior digits become floor, border digits stay wall
+                // Add adjacent door tiles to tileSet for border detection
+                foreach (var p in tiles)
+                    foreach (var np in p.CardinalNeighbours())
+                        if (ctx.level.InBounds(np) && ctx.level[np].Type == TileType.Door)
+                            tileSet.Add(np);
+                HashSet<Pos> interior = [];
+                foreach (var p in tiles)
                 {
-                    var np = w + d;
-                    if (ctx.level.InBounds(np) && ctx.level[np].Type == TileType.Floor)
+                    bool isBorder = false;
+                    foreach (var d in Pos.CardinalDirs)
                     {
-                        seed = np;
-                        break;
+                        var np = p + d;
+                        if (!tileSet.Contains(np))
+                        { isBorder = true; break; }
+                    }
+
+                    if (isBorder)
+                        ctx.level.Set(p, TileType.Wall);
+                    else
+                    {
+                        ctx.level.Set(p, TileType.Floor);
+                        interior.Add(p);
                     }
                 }
-                if (seed != null) break;
+
+                foreach (var p in tileSet) interior.Add(p);
+                ctx.Log($"adding solid room {n} with {interior.Count} tiles");
+                LevelGen.PlaceIrregularRoom(ctx, interior);
             }
-            
-            if (seed == null)
+            else if (spec.IrregularRooms?.Contains(n) == true)
             {
-                ctx.Log($"room {n}: no adjacent floor found");
-                continue;
-            }
-            
-            HashSet<Pos> filled = [];
-            Queue<Pos> queue = new([seed.Value]);
-            while (queue.Count > 0)
-            {
-                var p = queue.Dequeue();
-                if (!filled.Add(p)) continue;
-                foreach (var d in Pos.CardinalDirs)
+                // Flood fill from adjacent floor, then PlaceIrregularRoom
+                Pos? seed = null;
+                foreach (var w in tiles)
                 {
-                    var np = p + d;
-                    if (ctx.level.InBounds(np) && ctx.level[np].Type == TileType.Floor && !filled.Contains(np))
-                        queue.Enqueue(np);
+                    foreach (var d in Pos.CardinalDirs)
+                    {
+                        var np = w + d;
+                        if (ctx.level.InBounds(np) && ctx.level[np].Type == TileType.Floor)
+                        { seed = np; break; }
+                    }
+                    if (seed != null) break;
                 }
-            }
-            
-            // Turn digit walls to floor so they become part of room, RenderRoom
-            // constructs walls later, it's all a bit hokey?
-            foreach (var w in walls)
-            {
-                ctx.level.Set(w, TileType.Floor);
-                filled.Add(w);
-            }
-            
-            if (spec.IrregularRooms?.Contains(n) == true)
-            {
-                ctx.Log($"adding irregular room with {filled.Count} tiles");
+
+                if (seed == null) { ctx.Log($"room {n}: no adjacent floor found"); continue; }
+
+                HashSet<Pos> filled = [];
+                Queue<Pos> queue = new([seed.Value]);
+                while (queue.Count > 0)
+                {
+                    var p = queue.Dequeue();
+                    if (!filled.Add(p)) continue;
+                    foreach (var d in Pos.CardinalDirs)
+                    {
+                        var np = p + d;
+                        if (ctx.level.InBounds(np) && ctx.level[np].Type == TileType.Floor && !filled.Contains(np))
+                            queue.Enqueue(np);
+                    }
+                }
+
+                foreach (var w in tiles)
+                {
+                    ctx.level.Set(w, TileType.Floor);
+                    filled.Add(w);
+                }
+
+                ctx.Log($"adding irregular room {n} with {filled.Count} tiles");
                 LevelGen.PlaceIrregularRoom(ctx, filled);
             }
             else
             {
-                int minX = filled.Min(p => p.X);
-                int maxX = filled.Max(p => p.X);
-                int minY = filled.Min(p => p.Y);
-                int maxY = filled.Max(p => p.Y);
+                foreach (var w in tiles)
+                    ctx.level.Set(w, TileType.Floor);
+                int minX = tiles.Min(p => p.X), maxX = tiles.Max(p => p.X);
+                int minY = tiles.Min(p => p.Y), maxY = tiles.Max(p => p.Y);
                 Rect bounds = new(minX, minY, maxX - minX + 1, maxY - minY + 1);
                 ctx.Log($"adding room {n}");
                 LevelGen.PlaceRoom(ctx, bounds);

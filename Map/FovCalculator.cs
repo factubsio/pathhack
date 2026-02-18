@@ -117,28 +117,6 @@ public static class FovCalculator
         }
 
         level.ClearLit();
-        foreach (var room in level.Rooms)
-        {
-            if (!room.Lit) continue;
-            foreach (var p in room.Interior)
-                level.SetLit(p);
-            foreach (var p in room.Border)
-                level.SetLit(p);
-        }
-
-        if (level.Outdoors)
-        {
-            for (int y = 0; y < level.Height; y++)
-            for (int x = 0; x < level.Width; x++)
-            {
-                Pos p = new(x, y);
-                var type = level[p].Type;
-
-                // Should this be water too? do we want a better way of tracking tiles that are actually "outdoors"?
-                if (type == TileType.Grass)
-                    level.SetLit(p);
-            }
-        }
 
         if (moreLit != null) level.Lit.Set(moreLit);
 

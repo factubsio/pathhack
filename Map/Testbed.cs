@@ -1,6 +1,6 @@
 namespace Pathhack.Map;
 
-public enum CaveAlgorithm { Worley, WorleyCavern, WorleyWarren, CA, Drunkard, BSP, Perlin, Circles, GrowingTree }
+public enum CaveAlgorithm { Worley, WorleyCavern, WorleyWarren, CA, OutdoorCA, OutdoorCAOpen, Drunkard, BSP, Perlin, Circles, GrowingTree }
 
 public enum WorleyMode { F2MinusF1, F1 }
 
@@ -83,12 +83,13 @@ public static class CaveGen
     public static void GenerateCA(LevelGenContext ctx, double fillPct = 0.40, int smooth = 2)
     {
         var level = ctx.level;
+        TileType wall = ctx.WallTile, floor = ctx.FloorTile;
         int width = level.Width, height = level.Height;
 
-        // Fill rock
+        // Fill wall type
         for (int y = 0; y < height; y++)
         for (int x = 0; x < width; x++)
-            level.Set(new(x, y), TileType.Rock);
+            level.Set(new(x, y), wall);
 
         // Random fill
         int limit = (int)((width - 2) * (height - 2) * fillPct);
@@ -97,9 +98,9 @@ public static class CaveGen
         {
             int x = LevelGen.RnRange(2, width - 3);
             int y = LevelGen.RnRange(1, height - 2);
-            if (level[new(x, y)].Type == TileType.Rock)
+            if (level[new(x, y)].Type == wall)
             {
-                level.Set(new(x, y), TileType.Floor);
+                level.Set(new(x, y), floor);
                 count++;
             }
         }
@@ -108,9 +109,9 @@ public static class CaveGen
         for (int y = 1; y < height - 1; y++)
         for (int x = 2; x < width - 1; x++)
         {
-            int n = CountNeighbors(level, x, y, TileType.Floor);
-            if (n <= 2) level.Set(new(x, y), TileType.Rock);
-            else if (n >= 5) level.Set(new(x, y), TileType.Floor);
+            int n = CountNeighbors(level, x, y, floor);
+            if (n <= 2) level.Set(new(x, y), wall);
+            else if (n >= 5) level.Set(new(x, y), floor);
         }
 
         // Pass two + smoothing (double-buffered)
@@ -121,17 +122,17 @@ public static class CaveGen
             for (int y = 1; y < height - 1; y++)
             for (int x = 2; x < width - 1; x++)
             {
-                int n = CountNeighbors(level, x, y, TileType.Floor);
+                int n = CountNeighbors(level, x, y, floor);
                 bool kill = pass == 0 ? n == killThreshold : n < killThreshold;
-                buf[x, y] = kill ? false : level[new(x, y)].Type == TileType.Floor;
+                buf[x, y] = kill ? false : level[new(x, y)].Type == floor;
             }
             for (int y = 1; y < height - 1; y++)
             for (int x = 2; x < width - 1; x++)
-                level.Set(new(x, y), buf[x, y] ? TileType.Floor : TileType.Rock);
+                level.Set(new(x, y), buf[x, y] ? floor : wall);
         }
 
-        Wallify(level);
-        EnsureConnectivity(ctx);
+        if (wall == TileType.Rock) Wallify(level);
+        if (ctx.Joined) EnsureConnectivity(ctx);
     }
 
     static int CountNeighbors(Level level, int x, int y, TileType type)
@@ -199,6 +200,7 @@ public static class CaveGen
     static bool ConnectPass(LevelGenContext ctx)
     {
         var level = ctx.level;
+        TileType wall = ctx.WallTile, floor = ctx.FloorTile;
         int[,] region = new int[level.Width, level.Height];
         int regionCount = 0;
         List<List<Pos>> regions = [];
@@ -207,7 +209,7 @@ public static class CaveGen
         for (int x = 1; x < level.Width - 1; x++)
         {
             Pos p = new(x, y);
-            if (level[p].Type != TileType.Floor || region[x, y] != 0) continue;
+            if (level[p].Type != floor || region[x, y] != 0) continue;
 
             regionCount++;
             List<Pos> tiles = [];
@@ -223,7 +225,7 @@ public static class CaveGen
                 {
                     var n = cur + d;
                     if (!level.InBounds(n) || region[n.X, n.Y] != 0) continue;
-                    if (level[n].Type != TileType.Floor) continue;
+                    if (level[n].Type != floor) continue;
                     region[n.X, n.Y] = regionCount;
                     queue.Enqueue(n);
                 }
@@ -241,7 +243,7 @@ public static class CaveGen
             if (regions[i].Count < 8)
             {
                 foreach (var p in regions[i])
-                    level.Set(p, TileType.Rock);
+                    level.Set(p, wall);
                 regions.RemoveAt(i);
             }
         }
@@ -251,13 +253,15 @@ public static class CaveGen
         {
             var from = regions[i][LevelGen.Rn2(regions[i].Count)];
             var to = regions[0][LevelGen.Rn2(regions[0].Count)];
-            DigTunnel(level, from, to);
+            DigTunnel(ctx, from, to);
         }
         return true;
     }
 
-    static void DigTunnel(Level level, Pos from, Pos to)
+    static void DigTunnel(LevelGenContext ctx, Pos from, Pos to)
     {
+        var level = ctx.level;
+        TileType floor = ctx.FloorTile;
         int x = from.X, y = from.Y;
         while (x != to.X || y != to.Y)
         {
@@ -267,10 +271,10 @@ public static class CaveGen
                 y += Math.Sign(to.Y - y);
 
             Pos p = new(x, y);
-            if (level.InBounds(p) && level[p].Type != TileType.Floor)
-                level.Set(p, TileType.Floor);
+            if (level.InBounds(p) && level[p].Type != floor)
+                level.Set(p, floor);
         }
-        Wallify(level);
+        if (ctx.WallTile == TileType.Rock) Wallify(level);
     }
 
     public static void GenerateDrunkard(LevelGenContext ctx, int walkers = 2, double fillTarget = 0.25)
@@ -377,7 +381,7 @@ public static class CaveGen
         {
             Pos a = new(rooms[i].X + rooms[i].W / 2, rooms[i].Y + rooms[i].H / 2);
             Pos b = new(rooms[i + 1].X + rooms[i + 1].W / 2, rooms[i + 1].Y + rooms[i + 1].H / 2);
-            DigTunnel(level, a, b);
+            DigTunnel(ctx, a, b);
         }
 
         Wallify(level);
@@ -484,7 +488,7 @@ public static class CaveGen
                 if (d < bestDist) { bestDist = d; bestFrom = from; bestTo = to; }
             }
             if (bestTo < 0) break;
-            DigTunnel(level, circles[bestFrom].center, circles[bestTo].center);
+            DigTunnel(ctx, circles[bestFrom].center, circles[bestTo].center);
             connected.Add(bestTo);
             remaining.Remove(bestTo);
         }
@@ -494,7 +498,7 @@ public static class CaveGen
         {
             int a = LevelGen.Rn2(circles.Count);
             int b = LevelGen.Rn2(circles.Count);
-            if (a != b) DigTunnel(level, circles[a].center, circles[b].center);
+            if (a != b) DigTunnel(ctx, circles[a].center, circles[b].center);
         }
 
         Wallify(level);
@@ -564,7 +568,7 @@ public static class CaveGen
 
             // Carve room and tunnel
             carved += CarveCircle(level, candidate, r);
-            DigTunnel(level, parent, candidate);
+            DigTunnel(ctx, parent, candidate);
             centers.Add(candidate);
             failures = 0;
         }

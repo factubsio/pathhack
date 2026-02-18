@@ -140,8 +140,8 @@ public static class Dump
             return Cell.From(items[^1].Glyph);
         if (level.Traps.TryGetValue(p, out var trap))
             return Cell.From(trap.Glyph);
-        if (level.GetState(p)?.Feature is { } feature && feature.Id[0] != '_')
-            return new('_', ConsoleColor.DarkGreen);
+        if (level.GetState(p)?.Feature is { } feature && !feature.Hidden)
+            return feature.Glyph is { } g ? Cell.From(g) : new('_', ConsoleColor.DarkGreen);
         return TileCell(level, p);
     }
 
@@ -195,6 +195,7 @@ public static class Dump
             TileType.StairsUp or TileType.BranchUp => '<',
             TileType.StairsDown or TileType.BranchDown => '>',
             TileType.Grass => '.',
+            TileType.Tree => '±',
             TileType.Pool => '~',
             TileType.Water => '~',
             _ => '?',

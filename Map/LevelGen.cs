@@ -112,6 +112,18 @@ public static class LevelGen
                     case CaveAlgorithm.WorleyCavern: CaveGen.GenerateWorley(ctx, WorleyConfig.Sweep(WorleyConfig.Cavern)); break;
                     case CaveAlgorithm.WorleyWarren: CaveGen.GenerateWorley(ctx, WorleyConfig.Sweep(WorleyConfig.Warren)); break;
                     case CaveAlgorithm.CA: CaveGen.GenerateCA(ctx); break;
+                    case CaveAlgorithm.OutdoorCA:
+                        ctx.WallTile = TileType.Tree;
+                        ctx.FloorTile = TileType.Grass;
+                        ctx.level.Outdoors = true;
+                        CaveGen.GenerateCA(ctx, fillPct: 0.50, smooth: 0);
+                        break;
+                    case CaveAlgorithm.OutdoorCAOpen:
+                        ctx.WallTile = TileType.Tree;
+                        ctx.FloorTile = TileType.Grass;
+                        ctx.level.Outdoors = true;
+                        CaveGen.GenerateCA(ctx, fillPct: 0.52);
+                        break;
                     case CaveAlgorithm.Drunkard: CaveGen.GenerateDrunkard(ctx); break;
                     case CaveAlgorithm.BSP: CaveGen.GenerateBSP(ctx); break;
                     case CaveAlgorithm.Perlin: PerlinNoise.Generate(ctx); break;
@@ -170,6 +182,7 @@ public static class LevelGen
             }
             
             LogLevel(ctx.level);
+            BakeBaseLit(ctx.level);
             ctx.level.UnderConstruction = false;
             return ctx.level;
         }
@@ -182,6 +195,24 @@ public static class LevelGen
 
     public static SpecialLevel? GetTemplate(string? name) => name == null ? null : SpecialLevels.TryGetValue(name, out var level) ? level : null;
 
+    static void BakeBaseLit(Level level)
+    {
+        foreach (var room in level.Rooms)
+        {
+            if (!room.Lit) continue;
+            foreach (var p in room.Interior) level.BaseLit[p] = true;
+            foreach (var p in room.Border) level.BaseLit[p] = true;
+        }
+
+        if (level.Outdoors)
+            for (int y = 0; y < level.Height; y++)
+            for (int x = 0; x < level.Width; x++)
+            {
+                Pos p = new(x, y);
+                if (level[p].Type != TileType.Rock) level.BaseLit[p] = true;
+            }
+    }
+
     internal static readonly Dictionary<string, SpecialLevel> SpecialLevels = new()
     {
         ["everflame_tomb"] = Dat.CryptLevels.EverflameEnd,
@@ -193,6 +224,8 @@ public static class LevelGen
         ["trunau_tomb"] = Dat.TrunauLevels.Tomb,
         ["redlake_outer"] = Dat.TrunauLevels.FortOuter,
         ["redlake_inner"] = Dat.TrunauLevels.RedlakeInner,
+        ["ss_shore_beached"] = Dat.SerpentsSkullLevels.ShoreBeached,
+        ["ss_shore_debris"] = Dat.SerpentsSkullLevels.ShoreDebris,
     };
     
     static SpecialLevel? FindSpecialLevel(string id) => 
@@ -867,6 +900,7 @@ public static class LevelGen
     {
         foreach (Pos p in room.Border)
         {
+            if (level[p].Type == TileType.Door) continue;
             level.Set(p, TileType.Wall);
             level.GetOrCreateState(p).Room = room;
         }
@@ -1198,6 +1232,9 @@ public class LevelGenContext(TextWriter? log)
     public bool NoSpawns;
     public bool NoRoomAssignment;
     public bool WantsRiver;
+    public TileType WallTile = TileType.Rock;
+    public TileType FloorTile = TileType.Floor;
+    public bool Joined = true;
 
     public Pos? FindStairsLocation()
     {

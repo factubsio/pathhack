@@ -119,6 +119,9 @@ public static class Pokedex
         if (lvl.Traps.TryGetValue(p, out var trap) && trap.PlayerSeen)
             return $"^  {trap.Type} trap";
 
+        if (lvl.GetState(p)?.Feature is { } feature && feature.Desc != null)
+            return $"{feature.Glyph?.Value ?? '_'}  {feature.Desc}";
+
         var tile = lvl[p];
         return tile.Type switch
         {
@@ -131,6 +134,9 @@ public static class Pokedex
             TileType.BranchUp => "< branch stairs up",
             TileType.BranchDown => "> branch stairs down",
             TileType.Rock => "solid rock",
+            TileType.Grass => ", grass",
+            TileType.Tree => "± tree",
+            TileType.Water => "~ water",
             _ => "unknown"
         };
     }

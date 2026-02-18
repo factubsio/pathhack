@@ -205,4 +205,9 @@ public sealed class TileBitset(int width, int height) : IEnumerable<Pos>, IDispo
         for (int x = 0; x < width; x++)
             _bits[x] |= o._bits[x];
     }
+
+    internal void CopyFrom(TileBitset o)
+    {
+        Array.Copy(o._bits, _bits, width);
+    }
 }

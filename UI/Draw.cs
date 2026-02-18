@@ -299,9 +299,9 @@ public static class Draw
                                 var top = items[^1];
                                 MapWin[x, y] = Cell.From(top.Glyph);
                             }
-                            else if (level.GetState(p)?.Feature is {} feature && feature.Id[0] != '_')
+                            else if (level.GetState(p)?.Feature is {} feature && !feature.Hidden)
                             {
-                                MapWin[x, y] = new('_', ConsoleColor.DarkGreen);
+                                MapWin[x, y] = feature.Glyph is { } g ? Cell.From(g) : new('_', ConsoleColor.DarkGreen);
                             }
                             else if (level.Traps.TryGetValue(p, out var trap) && trap.PlayerSeen)
                             {
@@ -318,6 +318,8 @@ public static class Draw
                 {
                     ConsoleColor col = ConsoleColor.DarkBlue;
                     if (mem.Tile.Type == TileType.Wall) col = level.WallColor ?? ConsoleColor.Gray;
+                    else if (mem.Tile.Type == TileType.Tree) col = ConsoleColor.DarkGreen;
+                    else if (mem.Tile.Type == TileType.Grass) col = ConsoleColor.DarkGreen;
                     Cell cell;
                     if (mem.TopItem is { } item && !mem.Tile.IsStairs && mem.Tile.Type != TileType.Water)
                         cell = new(item.Glyph.Value, item.Glyph.Color);
@@ -381,6 +383,7 @@ public static class Draw
         TileType.StairsUp => ConsoleColor.Gray,
         TileType.StairsDown => ConsoleColor.Gray,
         TileType.Grass => ConsoleColor.Green,
+        TileType.Tree => ConsoleColor.DarkGreen,
         TileType.Pool => ConsoleColor.Blue,
         TileType.Water => ConsoleColor.Blue,
         _ => ConsoleColor.Gray,
@@ -411,6 +414,7 @@ public static class Draw
             TileType.BranchUp => '<',
             TileType.BranchDown => '>',
             TileType.Grass => '~',
+            TileType.Tree => '±',
             TileType.Pool => '~',
             TileType.Water => '≈',
             _ => '?',
