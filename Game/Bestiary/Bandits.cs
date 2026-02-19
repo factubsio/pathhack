@@ -77,7 +77,7 @@ public class CutpurseGold : LogicBrick
     protected override void OnSpawn(Fact fact, PHContext ctx)
     {
         if (g.Rn2(2) != 0 || ctx.Source is not Monster m) return;
-        int depth = lvl.EffectiveDepth;
+        int depth = lvl?.EffectiveDepth ?? 1;
         m.Gold += 1 + (g.Rn2(depth + 2) + 1) * (g.Rn2(30) + 1);
     }
 }
