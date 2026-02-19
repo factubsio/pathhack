@@ -234,7 +234,7 @@ public static class Pokedex
         string equipped = item.Holder?.Equipped.ContainsValue(item) == true
             ? (def is ArmorDef ? " (being worn)" : " (weapon in hand)")
             : "";
-        menu.AddHeading($"{item.DisplayName}{equipped}");
+        menu.AddHeading($"{item.DisplayNameWeighted}{equipped}");
         menu.Add();
 
         if (def is WeaponDef wpn)

@@ -324,7 +324,7 @@ public class VeryDrunkJinkinBrain : MonsterBrain
                 // 33% chance we bump our head against the wall, oops
                 if (g.Rn2(1) == 0)
                 {
-                    g.YouObserve(m, "{0:The} bumps {0:own} head against the wall!");
+                    g.YouObserve(m, $"{m:The} bumps {m:own} head against the wall!");
                     using var ctx = PHContext.Create(m, Target.From(m));
                     ctx.DeathReason = "the bottle";
                     ctx.Damage.Add(new()

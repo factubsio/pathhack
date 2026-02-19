@@ -2,6 +2,7 @@ namespace Pathhack.Game;
 
 public enum MoralAxis { Evil = -1, Neutral = 0, Good = 1 }
 public enum EthicalAxis { Chaotic = -1, Neutral = 0, Lawful = 1 }
+public enum Pronoun { Male, Female, Nonbinary }
 
 public static class AxisExts
 {
@@ -154,6 +155,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
   private Monster(MonsterDef def, IEnumerable<LogicBrick> components) : base(def, components) { }
 
   public PlayerPerception Perception;
+  public Pronoun Self;
 
   public static bool Hates(Monster a, Monster b)
   {
@@ -326,8 +328,8 @@ public class Monster : Unit<MonsterDef>, IFormattable
     "The" => ProperName ?? (Def.IsUnique ? RealName : RealName.The().Capitalize()),
     "an" => ProperName ?? (Def.IsUnique ? RealName : RealName.An()),
     "An" => ProperName ?? (Def.IsUnique ? RealName : RealName.An().Capitalize()),
-    "own" => "his",
-    "Own" => "His",
+    "own" => Self switch { Game.Pronoun.Male => "his", Game.Pronoun.Female => "her", _ => "their" },
+    "Own" => Self switch { Game.Pronoun.Male => "His", Game.Pronoun.Female => "Her", _ => "Their" },
     _ => RealName,
   };
 
@@ -340,6 +342,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
     if (!firstTimeSpawn) components = components.Where(c => !c.Tags.HasFlag(AbilityTags.FirstSpawnOnly));
     Log.Muted = true;
     Monster m = new(def, components);
+    m.Self = (Pronoun)g.Rn2(3);
     m.Peaceful = def.Peaceful;
     m.TemplateBonusLevels = (template?.LevelBonus(def, m.EffectiveLevel) ?? 0) + depthBonus;
     m.HP.Reset((int)(Math.Max(1, def.HpPerLevel * m.EffectiveLevel - 1) * HpMultiplier));

@@ -318,7 +318,7 @@ public class DarknessBlessingMinor() : BlessingAction("Darkness Blessing", Targe
             if (victim.IsNullOrDead() || victim == unit) continue;
             victim.AddFact(BlindBuff.Instance.Timed(), duration: BlindDuration);
             if (unit.IsPlayer)
-                g.pline("{0:The} is blinded!", victim);
+                g.pline($"{victim:The} is blinded!");
         }
     }
 }

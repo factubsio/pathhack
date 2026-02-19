@@ -37,7 +37,7 @@ public static class BasicLevel1Spells
         if (t.Pos == null) return;
 
         int missiles = Math.Min(4, 1 + c.CasterLevel / 3);
-        g.YouObserve(c, $"{{0:The}} {VTense(c, "cast")} magic missile!", "a magical hum");
+        g.YouObserve(c, $"{c:The} {VTense(c, "cast")} magic missile!", "a magical hum");
 
         var range = g.RnRange(6, 10);
         Log.Write($"beam: range:{range}");
@@ -49,7 +49,7 @@ public static class BasicLevel1Spells
           if (unit != null)
           {
             Draw.AnimateBeam(step.SegmentStart, step.Pos, new Glyph('*', ConsoleColor.Magenta));
-            g.YouObserve(unit, "The magic missile hits {0}.");
+            g.YouObserve(unit, $"The magic missile hits {unit:the}.");
             using var ctx = PHContext.Create(c, Target.From(unit));
             for (int i = 0; i < missiles; i++)
             {
@@ -96,7 +96,7 @@ public static class BasicLevel1Spells
             new Glyph('≈', ConsoleColor.Yellow),
             new Glyph('≈', ConsoleColor.Red),
             new Glyph('~', ConsoleColor.DarkRed));
-        g.YouObserve(c, $"{{0:The}} {VTense(c, "shoot")} flames!", "a whoosh of flames");
+        g.YouObserve(c, $"{c:The} {VTense(c, "shoot")} flames!", "a whoosh of flames");
 
         int dc = c.GetSpellDC();
 

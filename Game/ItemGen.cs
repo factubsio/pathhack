@@ -91,7 +91,7 @@ public static class ItemGen
         return baseBuc;
     }
 
-    public static Item GenerateItem(ItemDef def, int depth = 1, int? maxPotency = null, bool propertyRunes = true)
+    public static Item GenerateItem(ItemDef def, int depth = 1, int? maxPotency = null, bool propertyRunes = true, bool fundamental = true)
     {
         int bucChance = def switch
         {
@@ -107,7 +107,9 @@ public static class ItemGen
         if (def is WeaponDef)
         {
             item.Potency = RollPotency(depth, genLog, maxPotency);
-            RollFundamental(item, depth, genLog);
+            // fundamental: skip only applies to weapons; armor has no striking/bonus runes (yet).
+            if (fundamental)
+                RollFundamental(item, depth, genLog);
             if (propertyRunes)
                 RollPropertyRunes(item, depth, genLog);
         }
@@ -169,12 +171,19 @@ public static class ItemGen
         ApplyRune(item, StrikingRune.Of(quality), fundamental: true);
     }
 
-    private static void RollPropertyRunes(Item item, int depth, List<string> genLog)
+    public static void RollPropertyRunes(Item item, int depth, List<string>? genLog = null, int startSlot = 0)
     {
         int d = Math.Clamp(depth, 0, ItemGenTables.Fill.Length - 1);
         HashSet<int> usedCategories = [];
+
+        // Don't duplicate existing elemental runes
+        foreach (var fact in item.PropertyRunes)
+        {
+            if (fact.Brick is ElementalRune er)
+                usedCategories.Add(er.Category);
+        }
         
-        for (int slot = 0; slot < item.Potency; slot++)
+        for (int slot = startSlot; slot < item.Potency; slot++)
         {
             int fillRoll = g.Rn2(100);
             if (ItemGenTables.Fill[d][fillRoll] == 0) continue;
@@ -186,7 +195,7 @@ public static class ItemGen
             int quality = ItemGenTables.Quality[d][qualRoll];
             
             string[] names = ["flaming", "frost", "shock"];
-            genLog.Add($"{names[category]} f{fillRoll} q{qualRoll}={quality}");
+            genLog?.Add($"{names[category]} f{fillRoll} q{qualRoll}={quality}");
             
             RuneBrick rune = category switch
             {
@@ -199,7 +208,7 @@ public static class ItemGen
         }
     }
 
-    private static int RollQuality(int depth)
+    public static int RollQuality(int depth)
     {
         int d = Math.Clamp(depth, 0, ItemGenTables.Quality.Length - 1);
         return ItemGenTables.Quality[d][g.Rn2(100)];
@@ -284,6 +293,8 @@ public class StrikingRune(int quality) : RuneBrick("striking", quality, RuneSlot
 public class ElementalRune : RuneBrick
 {
     readonly DamageType _type;
+    // 0=fire, 1=cold, 2=shock — matches RollPropertyRunes category indices
+    public int Category => _type.SubCat switch { "fire" => 0, "cold" => 1, _ => 2 };
     public override string Id => $"r_prop:{_type.SubCat}/{Quality}";
 
     ElementalRune(string displayName, DamageType type, int quality) : base(displayName, quality, RuneSlot.Property)

@@ -50,7 +50,7 @@ public static partial class Scrolls
                 {
                     toId.Def.SetKnown();
                     toId.Knowledge |= ItemKnowledge.Props | ItemKnowledge.BUC;
-                    g.pline($"{toId.InvLet} - {toId.DisplayName}.");
+                    g.pline($"{toId.InvLet} - {toId.DisplayNameWeighted}.");
                 }
                 break;
                 

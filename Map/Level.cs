@@ -424,7 +424,7 @@ public class Level(LevelId id, int width, int height)
             {
                 if (!Config.AutoPickupClasses.Contains(item.Def.Class)) continue;
                 g.DoPickup(u, item);
-                g.pline($"{(item.Def.Class == '$' ? '$' : item.InvLet)} - {item}.");
+                g.pline($"{(item.Def.Class == '$' ? '$' : item.InvLet)} - {item.DisplayNameWeighted}.");
             }
             items = lvl.ItemsAt(upos); // refresh after pickup
         }
@@ -433,9 +433,9 @@ public class Level(LevelId id, int width, int height)
         else if (items.Count == 1)
             g.pline($"You see here {items[0]:an}.");
         else if (items.Count >= 5)
-            g.pline("There are {0} items here.", items.Count >= 10 ? "many" : "several");
+            g.pline($"There are {(items.Count >= 10 ? "many" : "several")} items here.");
         else
-            g.pline("There are {0} items here.", items.Count);
+            g.pline($"There are {items.Count} items here.");
 
         foreach (var n in upos.Neighbours())
         {

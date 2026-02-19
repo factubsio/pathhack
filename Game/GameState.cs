@@ -357,8 +357,6 @@ public class GameState
         if (user.IsPlayer) pline(msg);
     }
 
-    public void pline(string fmt, params object[] args) => pline(string.Format(fmt, args));
-
     public void YouObserveSelf(IUnit source, string ifSelf, string? ifSee, string? sound = null, int hearRadius = 6)
     {
         if (source.IsDM) return;
@@ -372,9 +370,9 @@ public class GameState
         bool canHear = sound != null && upos.ChebyshevDist(source.Pos) <= hearRadius;
 
         if (canSee && ifSee != null)
-            pline(ifSee, source);
+            pline(ifSee);
         else if (canHear)
-            pline("You hear {0}.", sound!);
+            pline($"You hear {sound}.");
     }
 
     public bool YouObserve(IUnit source, string? ifSee, string? sound = null, int hearRadius = 6)
@@ -385,9 +383,9 @@ public class GameState
         bool canHear = sound != null && upos.ChebyshevDist(source.Pos) <= hearRadius;
 
         if (canSee && ifSee != null)
-            pline(ifSee, source);
+            pline(ifSee);
         else if (canHear)
-            pline("You hear {0}.", sound!);
+            pline($"You hear {sound}.");
         
         return canSee;
     }
@@ -400,7 +398,7 @@ public class GameState
         if (canSee && ifSee != null)
             pline(ifSee);
         else if (canHear)
-            pline("You hear {0}.", sound!);
+            pline($"You hear {sound}.");
     }
 
     public int CurrentRound;
@@ -801,14 +799,14 @@ public class GameState
             else if (defender.IsPlayer)
             {
                 if (weapon?.Category == WeaponCategory.Item)
-                    g.pline($"{attacker:The} {VTense(attacker, verb)} its {with:bare}!  {attacker:The} hits!");
+                    g.pline($"{attacker:The} {VTense(attacker, verb)} {attacker:own} {with:bare}!  {attacker:The} hits!");
                 else
                     g.pline($"{attacker:The} hits!");
             }
             else
             {
                 if (weapon?.Category == WeaponCategory.Item)
-                    g.YouObserve(attacker, $"{attacker:The} {VTense(attacker, verb)} its {with:bare}! {attacker:The} hits {defender:the}.");
+                    g.YouObserve(attacker, $"{attacker:The} {VTense(attacker, verb)} {attacker:own} {with:bare}! {attacker:The} hits {defender:the}.");
                 else
                     g.YouObserve(attacker, $"{attacker:The} hits {defender:the}.");
             }
@@ -843,14 +841,14 @@ public class GameState
             else if (defender.IsPlayer)
             {
                 if (weapon?.Category == WeaponCategory.Item)
-                    g.pline($"{attacker:The} {VTense(attacker, verb)} its {with:bare}!  {attacker:The} misses.");
+                    g.pline($"{attacker:The} {VTense(attacker, verb)} {attacker:own} {with:bare}!  {attacker:The} misses.");
                 else
                     g.pline($"{attacker:The} misses.");
             }
             else
             {
                 if (weapon?.Category == WeaponCategory.Item)
-                    g.YouObserve(attacker, $"{attacker:The} {VTense(attacker, verb)} its {with:bare}!  {attacker:The} misses {defender:the}.");
+                    g.YouObserve(attacker, $"{attacker:The} {VTense(attacker, verb)} {attacker:own} {with:bare}!  {attacker:The} misses {defender:the}.");
                 else
                     g.YouObserve(attacker, $"{attacker:The} misses {defender:the}.");
             }

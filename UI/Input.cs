@@ -116,7 +116,7 @@ public static partial class Input
         var item = Pathhack.Wish.WishParser.Parse(s.Value);
         if (item == null) { g.pline("Nothing happens."); return; }
         u.Inventory.Add(item);
-        g.pline($"{item.InvLet} - {item}.");
+        g.pline($"{item.InvLet} - {item.DisplayNameWeighted}.");
     }
 
     static void DoSpawn(CommandArg arg)

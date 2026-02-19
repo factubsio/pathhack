@@ -241,7 +241,7 @@ public static partial class Input
                 menu.Add(ClassDisplayName(lastClass.Value), LineStyle.SubHeading);
             }
             char let = useInvLet ? item.InvLet : autoLet++;
-            string name = item.DisplayName;
+            string name = item.DisplayNameWeighted;
             var equippedKv = unit?.Equipped.FirstOrDefault(kv => kv.Value == item);
             if (equippedKv is { Key: var slot } && slot != default)
                 name += " " + EquipDescription(item, slot);
@@ -275,7 +275,7 @@ public static partial class Input
         if (!PickItem("drop", CanDrop, out var item)) return;
         _sellResponse = null;
         if (!DoDrop(u, item)) return;
-        g.pline($"You drop {item.InvLet} - {item}.");
+        g.pline($"You drop {item.InvLet} - {item.DisplayNameWeighted}.");
         TrySellToShop(item);
         u.Energy -= ActionCosts.OneAction.Value;
     }
@@ -298,7 +298,7 @@ public static partial class Input
             dropped++;
         }
         if (dropped == 0) return;
-        g.pline("You drop {0} item{1}.", dropped, dropped == 1 ? "" : "s");
+        g.pline($"You drop {dropped} item{(dropped == 1 ? "" : "s")}.");
         u.Energy -= ActionCosts.OneAction.Value;
     }
 
@@ -371,7 +371,7 @@ public static partial class Input
         {
             if (u.Quiver.Charges == 0)
             {
-                g.pline($"Your {u.Quiver} is empty!");
+                g.pline($"Your {u.Quiver:bare} is empty!");
                 return;
             }
             ArcherySystem.ShootFrom(u, u.Quiver, dir);
@@ -458,7 +458,7 @@ public static partial class Input
             {
                 // Punish scumming quiver swaps.
 
-                g.pline("You ready {0:the}.", u.Quiver);
+                g.pline($"You ready {u.Quiver:the}.");
                 // Note: it's a bid odd cos you "ready (5), but some splip out",
                 // which means you actually have (3), I am not sure which order is better
                 int lost = g.Rn2(g.Rn2(u.Quiver.Charges));
@@ -495,7 +495,7 @@ public static partial class Input
         menu.AddHidden('-', null);
         foreach (var item in weapons.OrderBy(i => ItemClasses.Order.IndexOf(i.Def.Class)).ThenBy(i => i.InvLet))
         {
-            string name = item.DisplayName;
+            string name = item.DisplayNameWeighted;
             if (u.Equipped.ContainsValue(item))
                 name += $" (weapon in {HandStr(item)})";
             menu.Add(item.InvLet, name, item);
@@ -530,7 +530,7 @@ public static partial class Input
         if (slot == GameState.EquipResult.NoSlot)
             g.pline("You can't wear that.");
         else
-            g.pline($"{armor.InvLet} - {armor.DisplayName} (being worn).");
+            g.pline($"{armor.InvLet} - {armor.DisplayNameWeighted} (being worn).");
     }
 
     static void PutOnAccessory()
@@ -556,7 +556,7 @@ public static partial class Input
                 : "You are already wearing an amulet.");
         }
         else
-            g.pline($"{item.InvLet} - {item.DisplayName} (being worn).");
+            g.pline($"{item.InvLet} - {item.DisplayNameWeighted} (being worn).");
     }
 
     public static string EquipDescription(Item item, EquipSlot? slot) => slot?.Type switch
@@ -582,7 +582,7 @@ public static partial class Input
         var picked = menu.Display(MenuMode.PickOne);
         if (picked.Count == 0) return;
         if (g.DoUnequip(u, picked[0]))
-            g.pline("You take off {0}.", DoName(picked[0]));
+            g.pline($"You take off {DoName(picked[0])}.");
     }
 
     static void RemoveAccessory()
@@ -599,7 +599,7 @@ public static partial class Input
         var picked = menu.Display(MenuMode.PickOne);
         if (picked.Count == 0) return;
         if (g.DoUnequip(u, picked[0]))
-            g.pline("You remove {0}.", DoName(picked[0]));
+            g.pline($"You remove {DoName(picked[0])}.");
     }
 
     // Like GetDirection but supports </>, slightly odd?
@@ -981,7 +981,7 @@ public static partial class Input
                 g.pline($"The list price of {item:the,noprice} is {price.Crests()}.");
                 item.UnitPrice = price;
             }
-            g.pline($"{(item.Def.Class == '$' ? '$' : item.InvLet)} - {item}.");
+            g.pline($"{(item.Def.Class == '$' ? '$' : item.InvLet)} - {item.DisplayNameWeighted}.");
         }
 
         u.Energy -= ActionCosts.OneAction.Value;
@@ -1011,7 +1011,7 @@ public static partial class Input
             menu.Add("");
             char let = 'a';
             foreach (var c in containers)
-                menu.Add(let++, c.DisplayName, c);
+                menu.Add(let++, c.DisplayNameWeighted, c);
             var picked = menu.Display(MenuMode.PickOne);
             if (picked.Count == 0) return;
             container = picked[0];

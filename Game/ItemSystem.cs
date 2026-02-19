@@ -201,6 +201,7 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
     };
 
     public string DisplayName => CostOf(Count == 1 ? GetDisplayName(Count).An() : GetDisplayName(Count));
+    public string DisplayNameWeighted => DisplayName + $" {{{EffectiveWeight}}}";
     public string SingleName => CostOf(GetDisplayName(1).An());
     public string RealName => GetRealName(Count);
 
@@ -261,7 +262,7 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
                 .Select(r => (RuneBrick)r.Brick)
                 .Where(r => !r.IsNull);
             foreach (var r in props)
-                parts.Add(r.DisplayName);
+                parts.Add($"{r.DisplayName}/{r.Quality}");
         }
         else if (HasEnchantments)
         {

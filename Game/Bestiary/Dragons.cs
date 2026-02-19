@@ -47,7 +47,7 @@ public class BreathWeapon(BreathShape shape, DamageType damageType, ConsoleColor
         {
             using var cone = lvl.CollectCone(unit.Pos, dir, range);
             Draw.AnimateFlash(cone, new Glyph('≈', color));
-            g.YouObserve(unit, $"{{0:The}} breathes {name}!", $"a blast of {name}");
+            g.YouObserve(unit, $"{unit:The} breathes {name}!", $"a blast of {name}");
             HitArea(unit, cone, name);
         }
         else
@@ -60,7 +60,7 @@ public class BreathWeapon(BreathShape shape, DamageType damageType, ConsoleColor
             }
             if (line.Count > 0)
                 Draw.AnimateBeam(unit.Pos, line[^1], new Glyph('*', color));
-            g.YouObserve(unit, $"{{0:The}} breathes {name}!", $"a blast of {name}");
+            g.YouObserve(unit, $"{unit:The} breathes {name}!", $"a blast of {name}");
             HitArea(unit, line, name);
         }
     }
