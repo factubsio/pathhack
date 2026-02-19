@@ -294,6 +294,7 @@ public class GallowsRaise(int range) : LogicBrick<GallowsRaise.State>
 public class HeartrotDisease() : AfflictionBrick(16, "fortitude")
 {
     public static readonly HeartrotDisease Instance = new();
+    public override bool IsActive => true;
     public override string Id => "heartrot";
     public override string AfflictionName => "Heartrot";
     public override int MaxStage => 4;
