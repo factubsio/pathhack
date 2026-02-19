@@ -299,6 +299,90 @@ public static class NaturalWeapons
         MeleeVerb = "slams",
         Price = -1,
     };
+
+    public static readonly WeaponDef Slam_2d8 = new()
+    {
+        id = "slam_2d8",
+        Name = "slam",
+        BaseDamage = d(2, 8),
+        DamageType = DamageTypes.Blunt,
+        Profiency = Proficiencies.Unarmed,
+        Category = WeaponCategory.Natural,
+        MeleeVerb = "slams",
+        Price = -1,
+    };
+
+    public static readonly WeaponDef Branch_1d6 = new()
+    {
+        id = "branch_1d6",
+        Name = "branch",
+        BaseDamage = d(6),
+        DamageType = DamageTypes.Slashing,
+        Profiency = Proficiencies.Unarmed,
+        Category = WeaponCategory.Natural,
+        MeleeVerb = "slashes",
+        Price = -1,
+    };
+
+    public static readonly WeaponDef Branch_1d8 = new()
+    {
+        id = "branch_1d8",
+        Name = "branch",
+        BaseDamage = d(8),
+        DamageType = DamageTypes.Slashing,
+        Profiency = Proficiencies.Unarmed,
+        Category = WeaponCategory.Natural,
+        MeleeVerb = "slashes",
+        Price = -1,
+    };
+
+    public static readonly WeaponDef Branch_2d6 = new()
+    {
+        id = "branch_2d6",
+        Name = "branch",
+        BaseDamage = d(2, 6),
+        DamageType = DamageTypes.Slashing,
+        Profiency = Proficiencies.Unarmed,
+        Category = WeaponCategory.Natural,
+        MeleeVerb = "slashes",
+        Price = -1,
+    };
+
+    public static readonly WeaponDef Tendril_1d4 = new()
+    {
+        id = "tendril_1d4",
+        Name = "tendril",
+        BaseDamage = d(4),
+        DamageType = DamageTypes.Blunt,
+        Profiency = Proficiencies.Unarmed,
+        Category = WeaponCategory.Natural,
+        MeleeVerb = "lashes",
+        Price = -1,
+    };
+
+    public static readonly WeaponDef Tendril_1d6 = new()
+    {
+        id = "tendril_1d6",
+        Name = "tendril",
+        BaseDamage = d(6),
+        DamageType = DamageTypes.Blunt,
+        Profiency = Proficiencies.Unarmed,
+        Category = WeaponCategory.Natural,
+        MeleeVerb = "lashes",
+        Price = -1,
+    };
+
+    public static readonly WeaponDef Vine_1d6 = new()
+    {
+        id = "vine_1d6",
+        Name = "vine",
+        BaseDamage = d(6),
+        DamageType = DamageTypes.Blunt,
+        Profiency = Proficiencies.Unarmed,
+        Category = WeaponCategory.Natural,
+        MeleeVerb = "lashes",
+        Price = -1,
+    };
 }
 
 public class SayOnDeath(string message) : LogicBrick

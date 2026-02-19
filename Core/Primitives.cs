@@ -210,4 +210,11 @@ public sealed class TileBitset(int width, int height) : IEnumerable<Pos>, IDispo
     {
         Array.Copy(o._bits, _bits, width);
     }
+
+    internal void Reset(bool val)
+    {
+        uint template = val ? ~0u : 0u;
+        for (int x = 0; x < width; x++)
+            _bits[x] = template;
+    }
 }

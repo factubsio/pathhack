@@ -258,6 +258,7 @@ public class ApplyFactOnAttackHit(LogicBrick toApply, int? duration = null) : Lo
 public class MeleeDamageRider(string name, DamageType type, Dice dice) : LogicBrick
 {
     public static readonly MeleeDamageRider Shock_1d4 = new("shock", DamageTypes.Shock, d(4));
+    public static readonly MeleeDamageRider Acid_2d6 = new("acid_2d6", DamageTypes.Acid, d(2, 6));
 
     public override string Id => $"melee_rider+{type.SubCat}/{dice.Serialize()}";
     public override string? PokedexDescription => $"{name} ({dice} {type.SubCat} on hit)";

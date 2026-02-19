@@ -246,7 +246,7 @@ public static class Draw
             {
                 Pos p = new(x, y);
 
-                if (level.UnitAt(p) is Monster m && !m.IsPlayer)
+                if (level.UnitAt(p) is Monster m && !m.IsPlayer && !m.HiddenFromRender)
                 {
                     switch (m.Perception)
                     {

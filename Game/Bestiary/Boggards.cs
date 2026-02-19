@@ -1,6 +1,7 @@
 namespace Pathhack.Game.Bestiary;
 
-public class TonguePull(int cd) : CooldownAction("Tongue Pull", TargetingType.None, _ => cd, tags: AbilityTags.Harmful)
+public class TonguePull(int cd, string verb = "grab", string flavor = "with its sticky tongue", string sound = "a slurping sound")
+    : CooldownAction("Tongue Pull", TargetingType.None, _ => cd, tags: AbilityTags.Harmful)
 {
     public override ActionPlan CanExecute(IUnit unit, object? data, Target target)
     {
@@ -29,7 +30,7 @@ public class TonguePull(int cd) : CooldownAction("Tongue Pull", TargetingType.No
         using var ctx = PHContext.Create(unit, target);
         if (!CheckReflex(ctx, dc, "tongue pull"))
         {
-            g.YouObserve(unit, $"{unit:The} grabs {target.Unit:the} with its sticky tongue!", "a slurping sound");
+            g.YouObserve(unit, $"{unit:The} {VTense(unit, verb)} {target.Unit:the} {flavor}!", sound);
             Pos adj = unit.Pos + (target.Unit!.Pos - unit.Pos).Signed;
             lvl.MoveUnit(target.Unit, adj, true);
         }

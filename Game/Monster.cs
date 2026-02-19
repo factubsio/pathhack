@@ -176,6 +176,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
   public MoralAxis? OwnMoralAxis;
   public EthicalAxis? OwnEthicalAxis;
   public Glyph? OwnGlyph;
+  public bool HiddenFromRender;
   public MonFlags? OwnBrainFlags;
   public long Gold;
 

@@ -112,5 +112,7 @@ public static class Menagerie
 
             idx++;
         }
+
+        level.BaseLit.Reset(true);
     }
 }
