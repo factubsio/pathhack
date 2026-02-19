@@ -315,10 +315,18 @@ public class IdentifyOnEquip(string message) : LogicBrick
     }
 }
 
-public class GrantProficiency(string skill, ProficiencyLevel level, bool requiresEquipped = false) : LogicBrick
+public class GrantProficiency(string skill, ProficiencyLevel level) : LogicBrick
 {
-    public override string Id => $"proficiency+{skill}";
-    public override bool RequiresEquipped => requiresEquipped;
+    public override string Id => $"proficiency+{skill}/{level}";
+    public override bool RequiresEquipped => false;
+    protected override object? OnQuery(Fact fact, string key, string? arg) =>
+        key == "proficiency" && arg == skill ? (int)level : null;
+}
+
+public class GrantProficiencyWhenEquipped(string skill, ProficiencyLevel level) : LogicBrick
+{
+    public override string Id => $"proficiency_equip+{skill}/{level}";
+    public override bool RequiresEquipped => true;
     protected override object? OnQuery(Fact fact, string key, string? arg) =>
         key == "proficiency" && arg == skill ? (int)level : null;
 }

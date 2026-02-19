@@ -6,7 +6,7 @@ public static class BrickAllowList
 {
     public static HashSet<string> InlineTypes = new()
     {
-        "QueryBrick", "GrantAction", "GrantSpell", "GrantPool", "GrantProficiency",
+        "QueryBrick", "GrantAction", "GrantSpell", "GrantPool", "GrantProficiency", "GrantProficiencyWhenEquipped",
         "GrantBlessingBrick", "Equip", "EquipSet",
         "TimedFact", "ApplyWhenEquipped", "GrantWhenEquipped",
         "ApplyAfflictionOnHit", "ApplyFactOnAttackHit",

@@ -438,7 +438,7 @@ public static partial class MundaneArmory
         Name = "ring of knives",
         Glyph = new(ItemClasses.Ring, ConsoleColor.Cyan),
         DefaultEquipSlot = ItemSlots.Ring,
-        Components = [new GrantProficiency(Proficiencies.LightBlade, ProficiencyLevel.Trained, requiresEquipped: true)],
+        Components = [new GrantProficiencyWhenEquipped(Proficiencies.LightBlade, ProficiencyLevel.Trained)],
         Price = 400,
     };
 }
