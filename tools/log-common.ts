@@ -173,7 +173,7 @@ export function parseLog(content: string): LogData {
           if (d.unit === "you") {
             const icon = d.action === "add" ? "🟢" : "🔴";
             const dur = d.duration ? ` (${d.duration}r)` : "";
-            events.push({ round, text: `${icon} ${d.action} ${d.name}${dur}` });
+            events.push({ round, text: `${icon} ${d.action} ${d.name}${dur}`, cls: "buff-event" });
           }
           break;
       }

@@ -28,6 +28,6 @@ public static class Arena
         foreach (var p in interior) level.GetOrCreateState(p).Room = room;
 
         level.StairsUp = new(ox + size / 2, oy + size / 2);
-        level.NoInitialSpawns = true;
+        level.SpawnFlags = SpawnFlags.None;
     }
 }

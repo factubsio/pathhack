@@ -60,7 +60,7 @@ public static class Grammar
         return verb + "s";
     }
 
-    public static string DoName(Item item) => item.DisplayName.An();
-    public static string DoNameOne(Item item) => item.SingleName.An();
+    public static string DoName(Item item) => item.DisplayName;
+    public static string DoNameOne(Item item) => item.SingleName;
     public static bool IsPluralItem(Item item) => PluralWords.Any(p => item.Def.Name.Contains(p));
 }

@@ -31,11 +31,39 @@ public static class SerpentsSkullLevels
         PostRender: b =>
         {
             b.Level.Outdoors = true;
+            b.Context.FloorTile = TileType.Grass;
+            b.Level.SpawnFlags |= SpawnFlags.Anywhere;
             b.Level.WallColor = ConsoleColor.DarkYellow;
             foreach (var room in b.Level.Rooms)
                 room.Flags |= RoomFlags.Lit;
             b.Stair(b['<'], TileType.BranchUp);
             b.Stair(b['>'], TileType.StairsDown);
+
+            for (int r = 0; r < 3; r++)
+            {
+                var reason = $"skull/skel_{r}";
+                var room = b.Level.Rooms[r];
+                for (int i = 0; i < g.RnRange(2, 4); i++)
+                {
+                    var pos = b.Level.FindLocationInRoom(room, b.Level.NoUnit);
+                    if (pos == null) continue;
+                    MonsterSpawner.SpawnAndPlace(b.Level,reason, null, true, pos: pos);
+                }
+
+                var chestPos = b.Level.FindLocationInRoom(room, _ => true);
+                if (chestPos != null)
+                {
+                    var chest = Item.Create(Containers.Chest);
+                    b.Level.PlaceItem(chest, chestPos.Value);
+                    var inv = chest.FindFactOfType<ContainerBrick>();
+
+                    for (int i = 0; i < g.RnRange(1, 4); i++)
+                    {
+                        ContainerBrick.AddItemTo(inv, ItemGen.GenerateRandomItem(b.Level.EffectiveDepth + 2));
+                    }
+
+                }
+            }
         })
     {
         HasPortalToParent = true,
@@ -69,6 +97,8 @@ public static class SerpentsSkullLevels
         PostRender: b =>
         {
             b.Level.Outdoors = true;
+            b.Context.FloorTile = TileType.Grass;
+            b.Level.SpawnFlags |= SpawnFlags.Anywhere;
             foreach (var room in b.Level.Rooms)
                 room.Flags |= RoomFlags.Lit;
             b.Stair(b['<'], TileType.BranchUp);
@@ -125,9 +155,65 @@ public static class SerpentsSkullLevels
                     break;
                 }
             }
+
+            // Joyful and fun beach!
+            MonsterSpawner.SpawnAndPlace(b.Level, "zombies!", null, allowTemplate: true);
+            MonsterSpawner.SpawnAndPlace(b.Level, "zombies!", null, allowTemplate: true);
+            MonsterSpawner.SpawnAndPlace(b.Level, "zombies!", null, allowTemplate: true);
+            MonsterSpawner.SpawnAndPlace(b.Level, "zombies!", null, allowTemplate: true);
+            MonsterSpawner.SpawnAndPlace(b.Level, "zombies!", null, allowTemplate: true);
+            MonsterSpawner.SpawnAndPlace(b.Level, "zombies!", null, allowTemplate: true);
         })
     {
         HasPortalToParent = true,
         HasStairsDown = true,
     };
+}
+
+public class ShoreBehaviour : ILevelRuntimeBehaviour
+{
+    static readonly MonsterDef[][] Families = [Snakes.All, Spiders.All, Cats.All];
+    static readonly SkeletonTemplate Skeleton = new();
+    static readonly ZombieTemplate Zombie = new();
+
+    [BehaviourId("ss_shore")]
+    public static readonly ShoreBehaviour Instance = new();
+
+    public SpawnPick? PickMonster(Level level, int effectiveLevel, string reason)
+    {
+        var template = PickTemplate(level);
+        if (reason.StartsWith("skull/skel"))
+        {
+            var candidates = AllMonsters.All.Where(m => m.BaseLevel <= effectiveLevel && m.CreatureType == CreatureTypes.Humanoid).ToList();
+            var def = MonsterSpawner.PickWeighted(candidates);
+            if (def != null)
+                return new(def, template);
+            else
+                return new(Template: template);
+        }
+
+        int roll = g.Rn2(10);
+
+        // 30%: family pick + undead
+        if (roll < 3)
+        {
+            var family = Families.Pick();
+            var candidates = family.Where(m => m.BaseLevel <= effectiveLevel).ToList();
+            var def = MonsterSpawner.PickWeighted(candidates);
+            if (def != null) return new(def, template);
+        }
+
+        // 20%: undead template only, let global pick the def
+        if (roll < 5)
+            return new(Template: template);
+
+        // 50%: normal
+        return null;
+    }
+
+    static MonsterTemplate PickTemplate(Level level)
+    {
+        var resolved = level.Id.Branch.ResolvedLevels[level.Id.Depth - 1];
+        return resolved.Template == SerpentsSkullLevels.ShoreBeached ? Skeleton : Zombie;
+    }
 }

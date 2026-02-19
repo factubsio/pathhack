@@ -5,7 +5,7 @@ namespace Pathhack.Map;
 
 public record LevelTemplate(
     string Id,
-    string? BehaviourId = null,
+    ILevelRuntimeBehaviour? Behaviour = null,
     CaveAlgorithm? Algorithm = null,
     CaveAlgorithm[]? AlgorithmPool = null,
     string[]? Variants = null,
@@ -36,7 +36,7 @@ public record BranchTemplate(
     BranchDir Dir = BranchDir.Down,
     ConsoleColor Color = ConsoleColor.White,
     string? Entry = null,                   // template id of entry floor (default: first)
-    string? DefaultBehaviour = null,
+    ILevelRuntimeBehaviour? DefaultBehaviour = null,
     CaveAlgorithm[]? DefaultAlgorithmPool = null,
     ConsoleColor? DefaultWallColor = null,
     ConsoleColor? DefaultFloorColor = null
@@ -58,6 +58,7 @@ public record ResolvedLevel(int LocalIndex, SpecialLevel? Template = null)
     public ConsoleColor? FloorColor { get; set; }
     public ConsoleColor? WallColor { get; set; }
     public bool NoBranchEntrance { get; set; }
+    public ILevelRuntimeBehaviour? Behaviour { get; set; }
 
     public IEnumerable<DungeonGenCommand> Commands => GenCommands;
     public void AddCommand(string debug, Action<LevelGenContext> action) => GenCommands.Add(new(action, debug));
@@ -369,6 +370,7 @@ public static class DungeonResolver
             WallColor = t?.WallColor,
             FloorColor = t?.FloorColor,
             NoBranchEntrance = t?.NoBranchEntrance ?? false,
+            Behaviour = t?.Behaviour ?? branch.DefaultBehaviour,
         };
     }
 

@@ -331,31 +331,21 @@ public static partial class ClassDefs
             p.Inventory.Add(armor).Identify();
             p.Equip(armor);
 
-            p.Inventory.Add(ItemGen.GenerateItem(MundaneArmory.Pickaxe)).Identify();
-
-            p.Inventory.Add(ItemGen.GenerateItem(MundaneArmory.Longbow)).Identify();
-            p.Inventory.Add(ItemGen.GenerateItem(MundaneQuivers.BasicArrows)).Identify();
-
             // Starting potions
-            p.Inventory.Add(Item.Create(Potions.Healing, 2)).Identify();
-            p.Inventory.Add(Item.Create(Potions.Speed)).Identify();
-            p.Inventory.Add(Item.Create(Potions.Paralysis, 2)).Identify();
-            p.Inventory.Add(Item.Create(Bottles.Grease, 3)).Identify();
-            p.Inventory.Add(Item.Create(Bottles.Fireball, 2)).Identify();
-            p.Inventory.Add(Item.Create(Bottles.HoldPerson, 2)).Identify();
-            p.Inventory.Add(Item.Create(Bottles.SoundBurst, 2)).Identify();
+            p.Inventory.Add(Item.Create(Potions.Healing, g.RnRange(2, 3))).Identify();
 
-            p.Inventory.Add(ItemGen.GenerateItem(Wands.AcidArrow)).Identify();
-            p.Inventory.Add(ItemGen.GenerateItem(Wands.BurningHands)).Identify();
-            p.Inventory.Add(ItemGen.GenerateItem(Wands.MagicMissile)).Identify();
-            p.Inventory.Add(ItemGen.GenerateItem(Wands.ScorchingRay)).Identify();
-            
-            // Starting scrolls
-            p.Inventory.Add(Item.Create(Scrolls.MagicMapping)).Identify();
+            if (ItemGen.TryGenerateWand(1, out var wand))
+                p.Inventory.Add(wand).Identify();
+
+            if (ItemGen.TryGenerateScroll(1, out var scroll1))
+                p.Inventory.Add(scroll1.AsStack(2)).Identify();
+
             p.Inventory.Add(Item.Create(Scrolls.Identify, 2)).Identify();
 
-            p.Inventory.Add(Item.Create(Foods.Ration, 2)).Identify();
-            p.Inventory.Add(Item.Create(Foods.Apple, 2)).Identify();
+            p.Inventory.Add(Item.Create(Containers.Sack)).Identify();
+
+            p.Inventory.Add(Item.Create(Foods.Ration, g.RnRange(1, 3))).Identify();
+            p.Inventory.Add(Item.Create(Foods.Apple, g.RnRange(4, 7))).Identify();
 
             p.AddAction(new BlindSelf());
         },

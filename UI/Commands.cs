@@ -109,7 +109,7 @@ public static partial class Input
             return;
         }
         
-        int weight = u.Inventory.Sum(i => i.Def.Weight);
+        int weight = u.Inventory.Sum(i => i.EffectiveWeight);
         int maxWeight = 500; // TODO: calc from str
         int slots = u.Inventory.Count();
         int maxSlots = 52;
@@ -251,7 +251,7 @@ public static partial class Input
         }
     }
 
-    static string ClassDisplayName(char c) => c switch
+    public static string ClassDisplayName(char c) => c switch
     {
         ItemClasses.Weapon => "Weapons",
         ItemClasses.Armor => "Armor",
@@ -268,31 +268,37 @@ public static partial class Input
         _ => "Other",
     };
 
+    static bool CanDrop(Item item) => true;
+
     static void DropItem()
     {
-        if (!PickItem("drop", _ => true, out var item)) return;
+        if (!PickItem("drop", CanDrop, out var item)) return;
         _sellResponse = null;
+        if (!DoDrop(u, item)) return;
         g.pline($"You drop {item.InvLet} - {item}.");
-        DoDrop(u, item);
         TrySellToShop(item);
         u.Energy -= ActionCosts.OneAction.Value;
     }
 
     static void DropItems()
     {
-        if (u.Inventory.Count == 0) return;
+        var droppable = u.Inventory.Where(CanDrop).ToList();
+        if (droppable.Count == 0) return;
         var menu = new Menu<Item>();
         menu.Add("Drop what?", LineStyle.Heading);
-        BuildItemList(menu, u.Inventory);
+        BuildItemList(menu, droppable);
         var toDrop = menu.Display(MenuMode.PickAny);
         if (toDrop.Count == 0) return;
         _sellResponse = null;
-        g.pline("You drop {0} item{1}.", toDrop.Count, toDrop.Count == 1 ? "" : "s");
+        int dropped = 0;
         foreach (var item in toDrop)
         {
-            DoDrop(u, item);
+            if (!DoDrop(u, item)) continue;
             TrySellToShop(item);
+            dropped++;
         }
+        if (dropped == 0) return;
+        g.pline("You drop {0} item{1}.", dropped, dropped == 1 ? "" : "s");
         u.Energy -= ActionCosts.OneAction.Value;
     }
 
@@ -622,7 +628,7 @@ public static partial class Input
         if (potion.Def is BottleDef or PotionDef)
         {
             string useType = potion.Def is BottleDef ? "bottle" : "potion";
-            g.pline($"You drink {potion.SingleName.An()}.");
+            g.pline($"You drink {potion.SingleName}.");
             Log.Structured("use", $"{"quaff":action}{potion.Def.Name:item}{useType:type}");
             if (potion.Def is BottleDef bottle)
                 Bottles.DoEffect(bottle, u, upos);
@@ -979,5 +985,38 @@ public static partial class Input
         }
 
         u.Energy -= ActionCosts.OneAction.Value;
+    }
+
+    static void LootContainer()
+    {
+        var containers = lvl.ItemsAt(upos)
+            .Where(i => i.FindBrickOfType<ContainerBrick>() is not null)
+            .ToList();
+
+        if (containers.Count == 0)
+        {
+            g.pline("There is nothing here to loot.");
+            return;
+        }
+
+        Item container;
+        if (containers.Count == 1)
+        {
+            container = containers[0];
+        }
+        else
+        {
+            Menu<Item> menu = new();
+            menu.Add("Loot which container?", LineStyle.Heading);
+            menu.Add("");
+            char let = 'a';
+            foreach (var c in containers)
+                menu.Add(let++, c.DisplayName, c);
+            var picked = menu.Display(MenuMode.PickOne);
+            if (picked.Count == 0) return;
+            container = picked[0];
+        }
+
+        LogicBrick.FireOnVerb(container, ItemVerb.Apply);
     }
 }

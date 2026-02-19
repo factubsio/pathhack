@@ -148,6 +148,7 @@ public static class LevelGen
             }
 
             Log("Resolving commands...");
+            ctx.level.FloorTile = ctx.FloorTile;
             foreach (var cmd in resolved.Commands)
             {
                 Log($"  executing: {cmd.Debug}");
@@ -175,10 +176,11 @@ public static class LevelGen
                 Log("PopulateRooms done");
             }
 
-            if (ctx.level.Rooms.Count == 0)
+            bool anywhere = ctx.level.SpawnFlags.HasFlag(SpawnFlags.Anywhere);
+            if (ctx.level.Rooms.Count == 0 || anywhere)
             {
-                Log("PopulateCave (roomless)...");
-                PopulateCave(ctx);
+                Log($"PopulateCave (roomless={ctx.level.Rooms.Count == 0}, anywhere={anywhere})...");
+                PopulateCave(ctx, anywhere ? ctx.level.Rooms.Count : 0);
             }
             
             LogLevel(ctx.level);
@@ -604,7 +606,7 @@ public static class LevelGen
     record RoomRule(RoomType Type, Func<Level, Room, int> Chance);
 
     static readonly RoomRule[] RoomRules = [
-        new(RoomType.GoblinNest, (l, r) => RequireNoUpStairs(l, r) * RequireSize(r, 9) * MapRange(l.Depth, 1..6, 12..0)),
+        new(RoomType.GoblinNest, (l, r) => RequireNoUpStairs(l, r) * RequireSize(r, 9) * RequireDepth(l, 3) * MapRange(l.Depth, 3..6, 12..0)),
         new(RoomType.GremlinParty, (l, r) => RequireNoUpStairs(l, r) * RequireDepth(l, 2) * 10),
         new(RoomType.GremlinPartyBig, (l, r) => RequireNoUpStairs(l, r) * RequireSize(r, 16) * RequireDepth(l, 4) * 5),
     ];
@@ -687,10 +689,10 @@ public static class LevelGen
     }
 
     // NH rules from mklev.c for OROOM
-    static void PopulateCave(LevelGenContext ctx)
+    static void PopulateCave(LevelGenContext ctx, int subtract = 0)
     {
         var level = ctx.level;
-        int count = RnRange(4, 8 + level.EffectiveDepth / 2);
+        int count = Math.Max(0, RnRange(4, 8 + level.EffectiveDepth / 2) - subtract);
         for (int i = 0; i < count; i++)
         {
             var pos = level.FindLocation(p => level.NoUnit(p) && !level[p].IsStairs);

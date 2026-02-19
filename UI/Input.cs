@@ -43,6 +43,7 @@ public static partial class Input
         ["help"] = new("help", "Show help", ArgType.None, _ => ShowHelp()),
         ["name"] = new("name", "Name an item type", ArgType.None, _ => CallItem()),
         ["dismiss"] = new("dismiss", "Dismiss a maintained buff", ArgType.None, _ => DismissAction.DoDismiss(u)),
+        ["loot"] = new("loot", "Loot a container on the ground", ArgType.None, _ => LootContainer()),
     };
 
     static readonly Dictionary<char, Command> _commands = new()

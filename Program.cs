@@ -27,7 +27,7 @@ List<BranchTemplate> templates = [
     new("meaty1", "Meaty 1", Color: ConsoleColor.DarkYellow,
         DefaultAlgorithmPool: [CaveAlgorithm.Worley, CaveAlgorithm.WorleyWarren, CaveAlgorithm.CA]) {
         Linear = [
-            new(new LevelTemplate("jungle_shore", Variants: [/*"ss_shore_beached",*/ "ss_shore_debris"])),
+            new(new LevelTemplate("jungle_shore", Behaviour: ShoreBehaviour.Instance, Variants: ["ss_shore_beached", "ss_shore_debris"])),
             new(new LevelTemplate("deep_jungle", Algorithm: CaveAlgorithm.OutdoorCAOpen)),
             new(Count: 5),
         ],

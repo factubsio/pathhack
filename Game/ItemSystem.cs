@@ -145,6 +145,8 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
 
     public bool IsUnique => IsNamedUnique || Def.IsUnique;
 
+    public int EffectiveWeight => (Def.Weight + Query<int>("weight", null, MergeStrategy.Sum, 0)) * Count;
+
     string? _material;
     public string Material
     {
@@ -185,8 +187,8 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
         _ => Def.Glyph
     };
 
-    public string DisplayName => CostOf(GetDisplayName(Count));
-    public string SingleName => CostOf(GetDisplayName(1));
+    public string DisplayName => CostOf(Count == 1 ? GetDisplayName(Count).An() : GetDisplayName(Count));
+    public string SingleName => CostOf(GetDisplayName(1).An());
     public string RealName => GetRealName(Count);
 
     private string CostOf(string displayName)
@@ -258,7 +260,8 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
         if (Def is WandDef or QuiverDef && potencyKnown)
             parts.Add($"({Charges})");
 
-        return string.Join(" ", parts);
+        var result = string.Join(" ", parts);
+        return result;
     }
 
     private string GetRealName(int count)
@@ -346,14 +349,14 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
     public override string ToString() => DisplayName;
     public string ToString(string? format, IFormatProvider? provider) => format switch
     {
-        "the" => DisplayName.The(),
-        "The" => DisplayName.The().Capitalize(),
+        "the" => CostOf(GetDisplayName(Count).The()),
+        "The" => CostOf(GetDisplayName(Count).The().Capitalize()),
         "the,noprice" => GetDisplayName(Count).The(),
         "The,noprice" => GetDisplayName(Count).The().Capitalize(),
-        "an" when IsUnique => Count > 1 ? DisplayName : DisplayName.The(),
-        "An" when IsUnique => Count > 1 ? DisplayName : DisplayName.The().Capitalize(),
-        "an" => Count > 1 ? DisplayName : DisplayName.An(),
-        "An" => Count > 1 ? DisplayName.Capitalize() : DisplayName.An().Capitalize(),
+        "an" when IsUnique => CostOf(GetDisplayName(Count).The()),
+        "An" when IsUnique => CostOf(GetDisplayName(Count).The().Capitalize()),
+        "an" => DisplayName,
+        "An" => DisplayName.Capitalize(),
         _ => DisplayName
     };
 
@@ -372,6 +375,13 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
     }
 
     internal void PlaceAt(Pos pos) => lvl.PlaceItem(this, pos);
+
+    internal Item AsStack(int stackSize)
+    {
+        if (!Def.Stackable) throw new NotSupportedException();
+        Count = stackSize;
+        return this;
+    }
 }
 
 public record struct EquipSlot(string Type, string Slot);

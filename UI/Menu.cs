@@ -5,12 +5,13 @@ public enum LineStyle { Text, Heading, SubHeading, Item }
 
 public class Menu<T>
 {
-    readonly List<(char? Letter, string Text, T? Value, LineStyle Style, char? Category, ConsoleColor? Color)> _items = [];
+    readonly List<(char? Letter, char? AltKey, string Text, T? Value, LineStyle Style, char? Category, ConsoleColor? Color)> _items = [];
     readonly Dictionary<char, T?> _hidden = [];
     public int InitialPage { get; set; }
     
-    public void Add(string line, LineStyle style = LineStyle.Text, ConsoleColor? color = null) => _items.Add((null, line, default, style, null, color));
-    public void Add(char letter, string text, T value, char? category = null) => _items.Add((letter, text, value, LineStyle.Item, category, null));
+    public void Add(string line, LineStyle style = LineStyle.Text, ConsoleColor? color = null) => _items.Add((null, null, line, default, style, null, color));
+    public void Add(char letter, string text, T value, char? category = null) => _items.Add((letter, null, text, value, LineStyle.Item, category, null));
+    public void Add(char letter, char altKey, string text, T value, char? category = null) => _items.Add((letter, altKey, text, value, LineStyle.Item, category, null));
     public void AddHidden(char letter, T? value) => _hidden[letter] = value;
 
     public List<T> Display(MenuMode mode = MenuMode.None)
@@ -60,7 +61,7 @@ public class Menu<T>
             var lines = new List<(string Text, LineStyle Style, ConsoleColor? Color)>();
             for (int i = 0; i < pageItems.Count; i++)
             {
-                var (letter, text, _, style, _, color) = pageItems[i];
+                var (letter, _, text, _, style, _, color) = pageItems[i];
                 if (style == LineStyle.Item && letter.HasValue)
                 {
                     char sel = mode == MenuMode.PickAny && selected.Contains(pageOffset + i) ? '+' : '-';
@@ -141,7 +142,7 @@ public class Menu<T>
                 return [hiddenValue!];
             }
             
-            int idx = _items.FindIndex(x => x.Letter == ch);
+            int idx = _items.FindIndex(x => x.Letter == ch || x.AltKey == ch);
             if (idx >= 0 && _items[idx].Value != null)
             {
                 if (mode == MenuMode.PickOne)

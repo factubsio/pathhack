@@ -20,7 +20,7 @@ public static class TestLevel
             b.Stair(b['<'], TileType.BranchUp);
             b.Stair(b['>'], TileType.StairsDown);
             b.Monster(Derro.Strangler, b['D']);
-            b.Level.NoInitialSpawns = true;
+            b.Level.SpawnFlags = SpawnFlags.None;
         });
 
     public static readonly SpecialLevel Mitflit = new("test_mitflit", """
@@ -37,7 +37,7 @@ public static class TestLevel
             b.Stair(b['<'], TileType.StairsUp);
             b.Stair(b['>'], TileType.StairsDown);
             b.Monster(Gremlins.Mitflit, b['M']);
-            b.Level.NoInitialSpawns = true;
+            b.Level.SpawnFlags = SpawnFlags.None;
         });
 
     public static readonly SpecialLevel Pugwampi = new("test_pugwampi", """
@@ -54,7 +54,7 @@ public static class TestLevel
             b.Stair(b['<'], TileType.StairsUp);
             b.Stair(b['>'], TileType.StairsDown);
             b.Monster(Gremlins.Pugwampi, b['M']);
-            b.Level.NoInitialSpawns = true;
+            b.Level.SpawnFlags = SpawnFlags.None;
         });
 
     public static readonly SpecialLevel Jinkin = new("test_jinkin", """
@@ -71,7 +71,7 @@ public static class TestLevel
             b.Stair(b['<'], TileType.StairsUp);
             b.Stair(b['>'], TileType.StairsDown);
             b.Monster(Gremlins.Jinkin, b['M']);
-            b.Level.NoInitialSpawns = true;
+            b.Level.SpawnFlags = SpawnFlags.None;
         });
 
     public static readonly SpecialLevel Nuglub = new("test_nuglub", """
@@ -88,7 +88,7 @@ public static class TestLevel
             b.Stair(b['<'], TileType.StairsUp);
             b.Stair(b['>'], TileType.StairsDown);
             b.Monster(Gremlins.Nuglub, b['M']);
-            b.Level.NoInitialSpawns = true;
+            b.Level.SpawnFlags = SpawnFlags.None;
         });
 
     public static readonly SpecialLevel Grimple = new("test_grimple", """
@@ -105,7 +105,7 @@ public static class TestLevel
             b.Stair(b['<'], TileType.StairsUp);
             b.Stair(b['>'], TileType.StairsDown);
             b.Monster(Gremlins.Grimple, b['M']);
-            b.Level.NoInitialSpawns = true;
+            b.Level.SpawnFlags = SpawnFlags.None;
         });
 
     public static readonly SpecialLevel DrunkJinkin = new("test_drunk", """
@@ -123,7 +123,7 @@ public static class TestLevel
             b.Stair(b['>'], TileType.StairsDown);
             foreach (var p in b.Marks('M'))
                 b.Monster(Gremlins.VeryDrunkJinkin, p);
-            b.Level.NoInitialSpawns = true;
+            b.Level.SpawnFlags = SpawnFlags.None;
         });
 
     public static readonly SpecialLevel PitTrap = new("test_pit", """
@@ -139,7 +139,7 @@ public static class TestLevel
         {
             b.Stair(b['<'], TileType.StairsUp);
             b.Stair(b['>'], TileType.StairsDown);
-            b.Level.NoInitialSpawns = true;
+            b.Level.SpawnFlags = SpawnFlags.None;
             b.Trap(new PitTrap(10), b['^']);
             b.Monster(Goblins.Basic, b['M']);
         });

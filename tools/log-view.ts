@@ -42,6 +42,14 @@ async function main() {
     mvmBtn.style.opacity = hidden ? "0.4" : "1";
   });
 
+  const buffsBtn = document.getElementById("toggle-buffs") as HTMLButtonElement;
+  buffsBtn.style.opacity = "0.4";
+  document.getElementById("panel-events")!.classList.add("buff-hidden");
+  buffsBtn.addEventListener("click", () => {
+    const hidden = document.getElementById("panel-events")!.classList.toggle("buff-hidden");
+    buffsBtn.style.opacity = hidden ? "0.4" : "1";
+  });
+
   // maximize buttons
   for (const btn of document.querySelectorAll<HTMLButtonElement>(".max-btn")) {
     btn.addEventListener("click", () => {

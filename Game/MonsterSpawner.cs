@@ -7,7 +7,7 @@ public static class MonsterSpawner
 
     public static void TryRuntimeSpawn(Level level)
     {
-        if (level.NoInitialSpawns) return;
+        if (!level.SpawnFlags.HasFlag(SpawnFlags.Runtime)) return;
 
         if (g.Rn2(RuntimeSpawnFrequency) != 0) return;
         
@@ -29,7 +29,7 @@ public static class MonsterSpawner
 
     public static void CatchUpSpawns(Level level, long turnDelta)
     {
-        if (level.NoInitialSpawns) return;
+        if (!level.SpawnFlags.HasFlag(SpawnFlags.Catchup)) return;
 
         int expectedSpawns = (int)(turnDelta / RuntimeSpawnFrequency);
         int actualSpawns = (int)(expectedSpawns * CatchUpRate);
@@ -46,7 +46,9 @@ public static class MonsterSpawner
         int depth = level.EffectiveDepth;
         int playerLevel = u?.CharacterLevel ?? 1;
         
-        def ??= PickMonster(depth, playerLevel, filter);
+        var resolved = level.Id.Branch.ResolvedLevels[level.Id.Depth - 1];
+        var pick = resolved.Behaviour?.PickMonster(level, depth, reason);
+        def ??= pick?.Def ?? PickMonster(depth, playerLevel, filter);
         if (def == null) return false;
 
         // Grow up if effective level reaches grown form's base level
@@ -61,10 +63,10 @@ public static class MonsterSpawner
         pos ??= level.FindLocation(p => level.NoUnit(p) && !level[p].IsStairs);
         if (pos == null) return false;
 
-        MonsterTemplate? template = null;
+        MonsterTemplate? template = pick?.Template is { } t && t.CanApplyTo(def) ? t : null;
 
         // FIXME: logic, etc.
-        if (allowTemplate && g.Rn2(10) < 1)
+        if (template == null && allowTemplate && g.Rn2(10) < 1)
         {
             template = MonsterTemplate.All.Shuffled().FirstOrDefault(x => x.CanApplyTo(def));
         }

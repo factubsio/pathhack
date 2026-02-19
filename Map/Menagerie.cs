@@ -88,7 +88,7 @@ public static class Menagerie
         level.Rooms.Add(room);
         foreach (var p in border) level.GetOrCreateState(p).Room = room;
         foreach (var p in interior) level.GetOrCreateState(p).Room = room;
-        level.NoInitialSpawns = true;
+        level.SpawnFlags = SpawnFlags.None;
 
         // place player in first cell
         level.StairsUp = new(cellW / 2, cellH / 2);

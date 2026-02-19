@@ -178,6 +178,19 @@ public record class Room(List<Pos> Border, List<Pos> Interior)
     }
 }
 
+[Flags]
+public enum SpawnFlags
+{
+    None     = 0,
+    Initial  = 1 << 0,
+    Runtime  = 1 << 1,
+    Catchup  = 1 << 2,
+    More     = 1 << 3,
+    Less     = 1 << 4,
+    Anywhere = 1 << 5,
+    Default  = Initial | Runtime | Catchup,
+}
+
 public class Level(LevelId id, int width, int height)
 {
     public LevelId Id => id;
@@ -212,8 +225,9 @@ public class Level(LevelId id, int width, int height)
     public long LastExitTurn { get; set; }
     public IReadOnlyList<Area> AllAreas => Areas;
 
-    public bool NoInitialSpawns;
+    public SpawnFlags SpawnFlags = SpawnFlags.Default;
     public bool Outdoors;
+    public TileType FloorTile = TileType.Floor;
     public ConsoleColor? FloorColor;
     public ConsoleColor? WallColor;
     public string? FirstIntro;
@@ -528,7 +542,7 @@ public class Level(LevelId id, int width, int height)
             for (int i = 0; i < maxAttempts; i++)
             {
                 Pos p = new(g.Rn2(Width), g.Rn2(Height));
-                if (this[p].Type == TileType.Floor && predicate(p)) return p;
+                if (this[p].Type == FloorTile && predicate(p)) return p;
             }
         }
         return null;

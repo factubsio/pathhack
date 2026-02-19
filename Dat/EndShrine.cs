@@ -80,7 +80,7 @@ public static class EndShrineLevels
  5555555 6666666 7777777  ..............................
 """, PostRender: b =>
   {
-    b.Level.NoInitialSpawns = true;
+    b.Level.SpawnFlags = SpawnFlags.None;
     b.Level.FirstIntro = "Before you stands the Cathedral of Sancta [fg=yellow]Iomedaea[/fg], once the heart of Lastwall's faith. When the Whispering Tyrant broke the nation, the priests sealed its doors rather than let it fall to undeath. The wards have held for a century.";
     b.Level.ReturnIntro = "The ruined spires of the ancient cathedral rise from the darkness ahead.";
 

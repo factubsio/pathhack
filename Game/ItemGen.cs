@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Pathhack.Game;
 
 // TODO: Add MapDepth(branch, actualDepth) -> 1-20 to handle:
@@ -59,6 +61,17 @@ public static class ItemGen
     public static Item? GenerateRing(int depth) => PickFrom(MagicRings.RandomAll, depth);
     public static Item? GenerateBoots(int depth) => PickFrom(MagicBoots.RandomAll, depth);
     public static Item? GenerateGloves(int depth) => PickFrom(MagicGloves.RandomAll, depth);
+
+    public static bool TryGeneratePotion(int depth, [NotNullWhen(true)] out Item? item) => (item = PickFrom(Potions.RandomAll, depth)) != null;
+    public static bool TryGenerateWand(int depth, [NotNullWhen(true)] out Item? item) => (item = PickFrom(Wands.RandomAll, depth)) != null;
+    public static bool TryGenerateBottle(int depth, [NotNullWhen(true)] out Item? item) => (item = PickFrom(Bottles.RandomAll, depth)) != null;
+    public static bool TryGenerateScroll(int depth, [NotNullWhen(true)] out Item? item) => (item = PickFrom(Scrolls.RandomAll, depth)) != null;
+    public static bool TryGenerateWeapon(int depth, [NotNullWhen(true)] out Item? item) => (item = PickFrom(MundaneArmory.RandomAllWeapons, depth)) != null;
+    public static bool TryGenerateArmor(int depth, [NotNullWhen(true)] out Item? item) => (item = PickFrom(MundaneArmory.RandomAllArmors, depth)) != null;
+    public static bool TryGenerateQuiver(int depth, [NotNullWhen(true)] out Item? item) => (item = PickFrom(MundaneQuivers.RandomQuivers, depth)) != null;
+    public static bool TryGenerateRing(int depth, [NotNullWhen(true)] out Item? item) => (item = PickFrom(MagicRings.RandomAll, depth)) != null;
+    public static bool TryGenerateBoots(int depth, [NotNullWhen(true)] out Item? item) => (item = PickFrom(MagicBoots.RandomAll, depth)) != null;
+    public static bool TryGenerateGloves(int depth, [NotNullWhen(true)] out Item? item) => (item = PickFrom(MagicGloves.RandomAll, depth)) != null;
 
     public static BUC RollBUC(int chance = 10, int bias = 0)
     {

@@ -46,7 +46,7 @@ public static class CryptLevels
             // FIXME: put back in some skeleton tempalted monsters
             // foreach (var p in b.Marks('S'))
             //     b.Monster(MiscMonsters.Skeleton, p);
-            b.Level.NoInitialSpawns = true;
+            b.Level.SpawnFlags = SpawnFlags.None;
         })
     {
         HasPortalToParent = true,

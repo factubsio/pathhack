@@ -3,7 +3,7 @@ namespace Pathhack.Game;
 [Flags]
 public enum ItemKnowledge { None = 0, Seen = 1, BUC = 4, PropRunes = 8, PropQuality = 16, PropPotency = 32, PropChecked = 64, Props = PropRunes | PropQuality | PropPotency }
 
-public enum AppearanceCategory { Potion, Scroll, Amulet, Boots, Gloves, Cloak, Ring, Bottle, Wand, Spellbook }
+public enum AppearanceCategory { Potion, Scroll, Amulet, Boots, Gloves, Cloak, Ring, Bottle, Wand, Spellbook, Bag }
 
 public record Appearance(string Name, ConsoleColor Color, string? Material = null);
 
@@ -228,6 +228,13 @@ public class ItemDb
             new("brass ring", ConsoleColor.DarkYellow, "brass"),
             new("wooden ring", ConsoleColor.DarkYellow, "wood"),
             new("agate ring", ConsoleColor.DarkRed, "agate"),
+        ],
+        [AppearanceCategory.Bag] = [
+            new("leather bag", ConsoleColor.DarkYellow),
+            new("cloth bag", ConsoleColor.DarkYellow),
+            new("greasy bag", ConsoleColor.DarkYellow),
+            new("burlap bag", ConsoleColor.DarkYellow),
+            new("canvas bag", ConsoleColor.DarkYellow),
         ],
     };
 

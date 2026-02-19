@@ -147,7 +147,7 @@ She taps a worn parchment. "There's an ancient tomb beneath Trunau. Most folk ha
         PostRender: b =>
         {
             b.Level.Outdoors = true;
-            b.Level.NoInitialSpawns = true;
+            b.Level.SpawnFlags = SpawnFlags.None;
             foreach (var room in b.Level.Rooms)
                 room.Flags |= RoomFlags.Lit;
             b.Stair(b['<'], TileType.BranchUp);
@@ -189,7 +189,7 @@ She taps a worn parchment. "There's an ancient tomb beneath Trunau. Most folk ha
         """,
         PostRender: b =>
         {
-            b.Level.NoInitialSpawns = true;
+            b.Level.SpawnFlags = SpawnFlags.None;
             b.Stair(b['<'], TileType.StairsUp);
             
             // spawn orcs to the right of the wall

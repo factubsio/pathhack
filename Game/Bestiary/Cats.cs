@@ -192,7 +192,7 @@ public class Pounce() : ActionBrick("pounce", TargetingType.Unit)
         Pos dir = (tgt.Pos - unit.Pos).Signed;
         Pos landing = tgt.Pos - dir;
 
-        g.pline($"{unit:The} pounces!");
+        g.YouObserve(unit, $"{unit:The} pounces!");
         lvl.MoveUnit(unit, landing, true);
 
         var fullAttack = unit.Actions.OfType<FullAttack>().FirstOrDefault();

@@ -995,8 +995,28 @@ public class GameState
         }
     }
 
-    public static void DoDrop(IUnit unit, Item item)
+    /// <summary>
+    /// If item is equipped: weapons get a cursed check + unequip, non-weapons are refused.
+    /// Returns true if the item is free to drop/move.
+    /// </summary>
+    public static bool TryUnequipForDrop(IUnit unit, Item item)
     {
+        var slot = unit.Equipped.FirstOrDefault(kv => kv.Value == item).Key;
+        if (slot == default) return true;
+        if (slot.Type != ItemSlots.Hand)
+        {
+            if (unit.IsPlayer)
+                g.pline(Grammar.IsPluralItem(item) ? "You will have to take them off first." : "You will have to take it off first.");
+            return false;
+        }
+        return g.DoUnequip(unit, item);
+    }
+
+    public static bool DoDrop(IUnit unit, Item item)
+    {
+        if (!TryUnequipForDrop(unit, item))
+            return false;
+
         unit.Inventory.Remove(item);
         if (unit is Player p && p.Quiver == item)
             p.Quiver = null;
@@ -1009,6 +1029,7 @@ public class GameState
         }
 
         Log.Structured("drop", $"{item.Def.Name:item}");
+        return true;
     }
 
     public static Pos DoThrow(IUnit thrower, Item item, Pos dir, AttackType type, Pos? from = null, int? range = null)
@@ -1016,7 +1037,7 @@ public class GameState
         Pos pos = from ?? thrower.Pos;
         Pos last = pos;
         IUnit? hit = null;
-        range ??= Math.Max(1, 4 + thrower.StrMod - item.Def.Weight / 40);
+        range ??= Math.Max(1, 4 + thrower.StrMod - item.EffectiveWeight / 40);
         for (int i = 0; i < range; i++)
         {
             pos += dir;
@@ -1245,6 +1266,7 @@ public class GameState
                 if (unit.IsPlayer)
                 {
                     var existing = unit.Equipped[slot];
+                    existing.Knowledge |= ItemKnowledge.BUC;
                     if (existing.Def is WeaponDef)
                         WeldMsg(unit);
                     else
@@ -1258,10 +1280,11 @@ public class GameState
                 unit.Energy -= ActionCosts.OneAction.Value;
                 return EquipResult.NoSlot;
             }
-            if (item.IsCursed && item.Def is WeaponDef)
+            if (item.IsCursed)
             {
                 item.Knowledge |= ItemKnowledge.BUC;
-                g.pline($"The {item.Def.Name} welds itself to your {HandStr(item)}!");
+                if (item.Def is WeaponDef)
+                    g.pline($"The {item.Def.Name} welds itself to your {HandStr(item)}!");
             }
         }
         unit.Energy -= ActionCosts.OneAction.Value;
@@ -1285,6 +1308,7 @@ public class GameState
         {
             if (unit.IsPlayer)
             {
+                item.Knowledge |= ItemKnowledge.BUC;
                 if (item.Def is WeaponDef)
                     WeldMsg(unit);
                 else
