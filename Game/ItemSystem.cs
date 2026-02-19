@@ -99,7 +99,7 @@ public class WeaponDef : ItemDef
     public ActionCost Cost = 12;
     public string[]? AltProficiencies;
     public string? Launcher; // "hand" for thrown weapons
-    public string? MeleeVerb; // "thrusts", "swings", etc.
+    public string? MeleeVerb; // "thrust", "swing", etc.
     public WeaponCategory Category = WeaponCategory.Item;
     public override ItemKnowledge RelevantKnowledge => ItemKnowledge.Seen | ItemKnowledge.Props | ItemKnowledge.BUC;
     public bool NotForWhacking = false;
@@ -145,7 +145,20 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
 
     public bool IsUnique => IsNamedUnique || Def.IsUnique;
 
-    public int EffectiveWeight => (Def.Weight + Query<int>("weight", null, MergeStrategy.Sum, 0)) * Count;
+    public int EffectiveWeight => CorpseOf is { } c
+        ? CorpseWeight(c.Size)
+        : (Def.Weight + Query<int>("weight", null, MergeStrategy.Sum, 0)) * Count;
+
+    static int CorpseWeight(UnitSize size) => size switch
+    {
+        UnitSize.Tiny => 60,
+        UnitSize.Small => 250,
+        UnitSize.Medium => 1000,
+        UnitSize.Large => 2000,
+        UnitSize.Huge => 4000,
+        UnitSize.Gargantuan => 8000,
+        _ => 1000,
+    };
 
     string? _material;
     public string Material
@@ -357,6 +370,7 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
         "An" when IsUnique => CostOf(GetDisplayName(Count).The().Capitalize()),
         "an" => DisplayName,
         "An" => DisplayName.Capitalize(),
+        "bare" => GetDisplayName(Count),
         _ => DisplayName
     };
 

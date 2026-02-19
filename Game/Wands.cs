@@ -12,6 +12,7 @@ public class WandDef : ItemDef
         Glyph = new(ItemClasses.Wand, ConsoleColor.Magenta);
         AppearanceCategory = Game.AppearanceCategory.Wand;
         Stackable = false;
+        Weight = 7;
     }
 }
 

@@ -46,6 +46,7 @@ public static partial class MundaneQuivers
         Components = components,
         Price = price,
         Material = Materials.Leather,
+        Weight = 20,
         WeaponProficiency = Proficiencies.Bow,
 
         Ammo = new()
@@ -77,6 +78,7 @@ public static partial class MundaneQuivers
         Components = [],
         Price = 20,
         Material = Materials.Leather,
+        Weight = 15,
         WeaponProficiency = Proficiencies.Blowgun,
         Ammo = new()
         {

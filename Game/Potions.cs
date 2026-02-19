@@ -7,6 +7,7 @@ public class PotionDef : ItemDef
         Glyph = new(ItemClasses.Potion, ConsoleColor.Magenta);
         AppearanceCategory = Game.AppearanceCategory.Potion;
         Stackable = true;
+        Weight = 10;
     }
 }
 

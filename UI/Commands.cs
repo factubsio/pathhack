@@ -109,8 +109,8 @@ public static partial class Input
             return;
         }
         
-        int weight = u.Inventory.Sum(i => i.EffectiveWeight);
-        int maxWeight = 500; // TODO: calc from str
+        int weight = u.CarriedWeight;
+        int maxWeight = u.CarryCapacity;
         int slots = u.Inventory.Count();
         int maxSlots = 52;
         menu.Add($"Inventory: {weight}/{maxWeight} weight ({slots}/{maxSlots} slots)", LineStyle.Heading);

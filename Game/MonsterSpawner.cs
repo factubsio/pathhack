@@ -73,6 +73,10 @@ public static class MonsterSpawner
 
         var mon = Monster.Spawn(def, reason, template, bonusLevels);
         mon.IsAsleep = asleep;
+
+        // me like gold
+        if (def.CreatureType == CreatureTypes.Humanoid && g.Rn2(4) == 0)
+            mon.Gold += (1 + (g.Rn2(depth + 2) + 1) * (g.Rn2(30) + 1)) / 4;
         level.PlaceUnit(mon, pos.Value);
 
         if (!noGroup)

@@ -52,6 +52,9 @@ public static class Grammar
     public static string VTense(IUnit subj, string verb)
     {
         if (subj.IsPlayer) return verb == "is" ? "are" : verb;
+        // compound verb: conjugate first word only ("attack with" → "attacks with")
+        int sp = verb.IndexOf(' ');
+        if (sp >= 0) return VTense(subj, verb[..sp]) + verb[sp..];
         // singular: add s/es
         if (verb.EndsWith('s') || verb.EndsWith('x') || verb.EndsWith("ch") || verb.EndsWith("sh"))
             return verb + "es";

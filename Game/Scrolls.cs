@@ -17,6 +17,7 @@ public class ScrollDef : ItemDef
         Glyph = new(ItemClasses.Scroll, ConsoleColor.White);
         AppearanceCategory = Game.AppearanceCategory.Scroll;
         Stackable = true;
+        Weight = 5;
     }
 }
 

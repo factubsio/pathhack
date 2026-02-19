@@ -13,6 +13,7 @@ public static partial class MundaneArmory
         WeaponType = WeaponTypes.Dagger,
         DamageType = DamageTypes.Piercing,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
+        Weight = 10,
         Price = 2,
     };
 
@@ -25,6 +26,7 @@ public static partial class MundaneArmory
         WeaponType = WeaponTypes.Shortsword,
         DamageType = DamageTypes.Slashing,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
+        Weight = 30,
         Price = 9,
     };
 
@@ -37,6 +39,7 @@ public static partial class MundaneArmory
         WeaponType = WeaponTypes.Longsword,
         DamageType = DamageTypes.Slashing,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
+        Weight = 40,
         Price = 10,
     };
 
@@ -49,6 +52,7 @@ public static partial class MundaneArmory
         WeaponType = WeaponTypes.Scimitar,
         DamageType = DamageTypes.Slashing,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
+        Weight = 40,
         Price = 10,
     };
 
@@ -61,6 +65,7 @@ public static partial class MundaneArmory
         WeaponType = WeaponTypes.Rapier,
         DamageType = DamageTypes.Piercing,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
+        Weight = 30,
         Price = 20,
     };
 
@@ -74,6 +79,7 @@ public static partial class MundaneArmory
         DamageType = DamageTypes.Slashing,
         Hands = 2,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
+        Weight = 80,
         Price = 30,
     };
 
@@ -86,6 +92,7 @@ public static partial class MundaneArmory
         WeaponType = WeaponTypes.Club,
         DamageType = DamageTypes.Blunt,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
+        Weight = 30,
         Price = 1,
     };
 
@@ -98,6 +105,7 @@ public static partial class MundaneArmory
         WeaponType = WeaponTypes.Club,
         DamageType = DamageTypes.Blunt,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
+        Weight = 40,
         Price = 2,
     };
 
@@ -111,6 +119,7 @@ public static partial class MundaneArmory
         DamageType = DamageTypes.Blunt,
         Hands = 2,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
+        Weight = 120,
         Price = 10,
     };
 
@@ -123,6 +132,7 @@ public static partial class MundaneArmory
         WeaponType = WeaponTypes.Mace,
         DamageType = DamageTypes.Blunt,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
+        Weight = 40,
         Price = 10,
     };
 
@@ -135,6 +145,7 @@ public static partial class MundaneArmory
         WeaponType = WeaponTypes.Flail,
         DamageType = DamageTypes.Blunt,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.Gray),
+        Weight = 50,
         Price = 8,
     };
 
@@ -148,6 +159,7 @@ public static partial class MundaneArmory
         DamageType = DamageTypes.Blunt,
         Hands = 2,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
+        Weight = 40,
         Price = 1,
     };
 
@@ -162,6 +174,7 @@ public static partial class MundaneArmory
         Hands = 2,
         Reach = 2,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
+        Weight = 50,
         Price = 2,
     };
 
@@ -175,7 +188,8 @@ public static partial class MundaneArmory
         DamageType = DamageTypes.Piercing,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
         Launcher = "hand",
-        MeleeVerb = "thrusts",
+        MeleeVerb = "thrust",
+        Weight = 30,
         Price = 1,
     };
 
@@ -189,6 +203,7 @@ public static partial class MundaneArmory
         DamageType = DamageTypes.Slashing,
         Hands = 2,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.Gray),
+        Weight = 100,
         Price = 20,
     };
 
@@ -202,6 +217,7 @@ public static partial class MundaneArmory
         DamageType = DamageTypes.Slashing,
         Reach = 2,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
+        Weight = 20,
         Price = 1,
     };
 
@@ -216,6 +232,7 @@ public static partial class MundaneArmory
         Reach = 2,
         Hands = 2,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkGray),
+        Weight = 100,
         Price = 30,
     };
 
@@ -229,6 +246,7 @@ public static partial class MundaneArmory
         DamageType = DamageTypes.Blunt, //for whacking!
         Hands = 2,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
+        Weight = 30,
         Price = 60,
         NotForWhacking = true,
     };
@@ -243,6 +261,7 @@ public static partial class MundaneArmory
         DamageType = DamageTypes.Blunt,
         Hands = 1,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkGreen),
+        Weight = 5,
         Price = 10,
         NotForWhacking = true,
     };
@@ -258,6 +277,7 @@ public static partial class MundaneArmory
         Stackable = true,
         Launcher = "hand",
         Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
+        Weight = 2,
         Price = 1,
         NotForWhacking = true,
     };
@@ -273,6 +293,7 @@ public static partial class MundaneArmory
         DamageType = DamageTypes.Blunt,
         Launcher = "hand",
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
+        Weight = 20,
         Price = 5,
     };
 
@@ -287,6 +308,7 @@ public static partial class MundaneArmory
         Launcher = "hand",
         Stackable = true,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.Gray),
+        Weight = 20,
         Price = 4,
     };
 
@@ -299,6 +321,7 @@ public static partial class MundaneArmory
         WeaponType = WeaponTypes.Axe,
         DamageType = DamageTypes.Slashing,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.Gray),
+        Weight = 60,
         Price = 10,
     };
 
@@ -311,6 +334,7 @@ public static partial class MundaneArmory
         WeaponType = WeaponTypes.Axe,
         DamageType = DamageTypes.Slashing,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
+        Weight = 80,
         Price = 30,
     };
 
@@ -324,6 +348,7 @@ public static partial class MundaneArmory
         DamageType = DamageTypes.Slashing,
         Hands = 2,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.Gray),
+        Weight = 120,
         Price = 20,
     };
 
@@ -336,8 +361,9 @@ public static partial class MundaneArmory
         Profiency = Proficiencies.Axe,
         WeaponType = WeaponTypes.Pick,
         DamageType = DamageTypes.Piercing,
-        MeleeVerb = "strikes",
+        MeleeVerb = "strike",
         Glyph = new(ItemClasses.Weapon, ConsoleColor.Gray),
+        Weight = 60,
         Price = 14,
         Components = [DiggerIdentity.Instance, DiggerVerb.Instance],
     };
@@ -352,6 +378,7 @@ public static partial class MundaneArmory
         DamageType = DamageTypes.Slashing,
         Hands = 2,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkYellow),
+        Weight = 80,
         Price = 15,
     };
 
@@ -364,6 +391,7 @@ public static partial class MundaneArmory
         DexCap = 4,
         Glyph = new(ItemClasses.Armor, ConsoleColor.DarkYellow),
         Components = [new ArmorBrick(1, 4)],
+        Weight = 25,
         Price = 20,
     };
 
@@ -377,6 +405,7 @@ public static partial class MundaneArmory
         CheckPenalty = -1,
         Glyph = new(ItemClasses.Armor, ConsoleColor.Gray),
         Components = [new ArmorBrick(2, 3)],
+        Weight = 50,
         Price = 50,
     };
 
@@ -390,6 +419,7 @@ public static partial class MundaneArmory
         CheckPenalty = -2,
         Glyph = new(ItemClasses.Armor, ConsoleColor.DarkYellow),
         Components = [new ArmorBrick(3, 2)],
+        Weight = 50,
         Price = 20,
     };
 
@@ -403,6 +433,7 @@ public static partial class MundaneArmory
         CheckPenalty = -2,
         Glyph = new(ItemClasses.Armor, ConsoleColor.Gray),
         Components = [new ArmorBrick(4, 1)],
+        Weight = 100,
         Price = 80,
     };
 
@@ -416,6 +447,7 @@ public static partial class MundaneArmory
         CheckPenalty = -3,
         Glyph = new(ItemClasses.Armor, ConsoleColor.DarkGray),
         Components = [new ArmorBrick(4, 1)],
+        Weight = 150,
         Price = 130,
     };
 
@@ -429,6 +461,7 @@ public static partial class MundaneArmory
         CheckPenalty = -3,
         Glyph = new(ItemClasses.Armor, ConsoleColor.White),
         Components = [new ArmorBrick(6, 0)],
+        Weight = 250,
         Price = 300,
     };
 
@@ -439,6 +472,7 @@ public static partial class MundaneArmory
         Glyph = new(ItemClasses.Ring, ConsoleColor.Cyan),
         DefaultEquipSlot = ItemSlots.Ring,
         Components = [new GrantProficiencyWhenEquipped(Proficiencies.LightBlade, ProficiencyLevel.Trained)],
+        Weight = 3,
         Price = 400,
     };
 }

@@ -415,13 +415,15 @@ public class GameState
         PHMonitor.WaitForStartRound();
 
         // === Player phase ===
-        u.Energy += 12;
+        u.Energy += 12 - u.EnergyPenalty;
 
         Perf.Start();
         foreach (var entity in ActiveEntities)
             LogicBrick.FireOnRoundStart(entity);
         LogicBrick.FireOnRoundStart(u);
         Perf.Stop("OnRoundStart");
+
+        u.CheckEncumbrance();
 
         while (u.Energy > 1 && !u.IsDead)
         {
@@ -437,6 +439,8 @@ public class GameState
             PHMonitor.WaitForAction(u.Energy);
             if (!PHMonitor.Active) Input.PlayerTurn();
             Perf.Stop("PlayerTurn");
+
+            u.CheckEncumbrance();
         }
 
         PHMonitor.WaitForEndPlayerTurn();
@@ -689,6 +693,21 @@ public class GameState
         {
             check.Modifiers.Untyped(attacker.GetSpellAttackBonus(ctx.Spell), "atk");
         }
+        
+        if (attacker.IsPlayer)
+        {
+            int penalty = u.Encumbrance switch
+            {
+                Encumbrance.Burdened => 1,
+                Encumbrance.Stressed => 2,
+                Encumbrance.Strained => 2,
+                Encumbrance.Overtaxed => 3,
+                Encumbrance.Overloaded => 3,
+                _ => 0,
+            };
+            if (penalty != 0)
+                check.Modifiers.Untyped(-penalty, "weight");
+        }
 
         if (attackBonus != 0)
             check.Modifiers.Untyped(attackBonus, "multi_atk");
@@ -782,14 +801,14 @@ public class GameState
             else if (defender.IsPlayer)
             {
                 if (weapon?.Category == WeaponCategory.Item)
-                    g.pline($"{attacker:The} {verb} its {with}!  {attacker:The} hits!");
+                    g.pline($"{attacker:The} {VTense(attacker, verb)} its {with:bare}!  {attacker:The} hits!");
                 else
                     g.pline($"{attacker:The} hits!");
             }
             else
             {
                 if (weapon?.Category == WeaponCategory.Item)
-                    g.YouObserve(attacker, $"{attacker:The} {verb} its {with}! {attacker:The} hits {defender:the}.");
+                    g.YouObserve(attacker, $"{attacker:The} {VTense(attacker, verb)} its {with:bare}! {attacker:The} hits {defender:the}.");
                 else
                     g.YouObserve(attacker, $"{attacker:The} hits {defender:the}.");
             }
@@ -824,14 +843,14 @@ public class GameState
             else if (defender.IsPlayer)
             {
                 if (weapon?.Category == WeaponCategory.Item)
-                    g.pline($"{attacker:The} {verb} its {with}!  {attacker:The} misses.");
+                    g.pline($"{attacker:The} {VTense(attacker, verb)} its {with:bare}!  {attacker:The} misses.");
                 else
                     g.pline($"{attacker:The} misses.");
             }
             else
             {
                 if (weapon?.Category == WeaponCategory.Item)
-                    g.YouObserve(attacker, $"{attacker:The} {verb} its {with}!  {attacker:The} misses {defender:the}.");
+                    g.YouObserve(attacker, $"{attacker:The} {VTense(attacker, verb)} its {with:bare}!  {attacker:The} misses {defender:the}.");
                 else
                     g.YouObserve(attacker, $"{attacker:The} misses {defender:the}.");
             }

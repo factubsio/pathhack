@@ -9,6 +9,7 @@ public class BottleDef : ItemDef
         Glyph = new(ItemClasses.Potion, ConsoleColor.Cyan);
         AppearanceCategory = Game.AppearanceCategory.Bottle;
         Stackable = true;
+        Weight = 10;
     }
 }
 

@@ -260,7 +260,7 @@ public static class NaturalWeapons
         BaseDamage = d(6),
         DamageType = DamageTypes.Slashing,
         Profiency = Proficiencies.Unarmed,
-        MeleeVerb = "swings",
+        MeleeVerb = "swing",
         Price = -1,
     };
 
@@ -272,7 +272,7 @@ public static class NaturalWeapons
         DamageType = DamageTypes.Blunt,
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
-        MeleeVerb = "slams",
+        MeleeVerb = "slam",
         Price = -1,
     };
 
@@ -284,7 +284,7 @@ public static class NaturalWeapons
         DamageType = DamageTypes.Blunt,
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
-        MeleeVerb = "slams",
+        MeleeVerb = "slam",
         Price = -1,
     };
 
@@ -296,7 +296,7 @@ public static class NaturalWeapons
         DamageType = DamageTypes.Blunt,
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
-        MeleeVerb = "slams",
+        MeleeVerb = "slam",
         Price = -1,
     };
 
@@ -308,7 +308,7 @@ public static class NaturalWeapons
         DamageType = DamageTypes.Blunt,
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
-        MeleeVerb = "slams",
+        MeleeVerb = "slam",
         Price = -1,
     };
 
@@ -320,7 +320,7 @@ public static class NaturalWeapons
         DamageType = DamageTypes.Slashing,
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
-        MeleeVerb = "slashes",
+        MeleeVerb = "slash",
         Price = -1,
     };
 
@@ -332,7 +332,7 @@ public static class NaturalWeapons
         DamageType = DamageTypes.Slashing,
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
-        MeleeVerb = "slashes",
+        MeleeVerb = "slash",
         Price = -1,
     };
 
@@ -344,7 +344,7 @@ public static class NaturalWeapons
         DamageType = DamageTypes.Slashing,
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
-        MeleeVerb = "slashes",
+        MeleeVerb = "slash",
         Price = -1,
     };
 
@@ -356,7 +356,7 @@ public static class NaturalWeapons
         DamageType = DamageTypes.Blunt,
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
-        MeleeVerb = "lashes",
+        MeleeVerb = "lash",
         Price = -1,
     };
 
@@ -368,7 +368,7 @@ public static class NaturalWeapons
         DamageType = DamageTypes.Blunt,
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
-        MeleeVerb = "lashes",
+        MeleeVerb = "lash",
         Price = -1,
     };
 
@@ -380,7 +380,7 @@ public static class NaturalWeapons
         DamageType = DamageTypes.Blunt,
         Profiency = Proficiencies.Unarmed,
         Category = WeaponCategory.Natural,
-        MeleeVerb = "lashes",
+        MeleeVerb = "lash",
         Price = -1,
     };
 }

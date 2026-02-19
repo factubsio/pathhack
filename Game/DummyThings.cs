@@ -2,8 +2,8 @@ namespace Pathhack.Game;
 
 public static class DummyThings
 {
-    public static readonly ItemDef FireWand = new() { id = "fire_wand", Name = "wand of fire", Glyph = new(ItemClasses.Wand, ConsoleColor.Red), Price = 100, };
-    public static readonly ItemDef ColdWand = new() { id = "cold_wand", Name = "wand of cold", Glyph = new(ItemClasses.Wand, ConsoleColor.Blue), Price = 100, };
+    public static readonly ItemDef FireWand = new() { id = "fire_wand", Name = "wand of fire", Glyph = new(ItemClasses.Wand, ConsoleColor.Red), Weight = 7, Price = 100, };
+    public static readonly ItemDef ColdWand = new() { id = "cold_wand", Name = "wand of cold", Glyph = new(ItemClasses.Wand, ConsoleColor.Blue), Weight = 7, Price = 100, };
 
     public static readonly ItemDef Blindfold = new()
     {
@@ -11,6 +11,7 @@ public static class DummyThings
         Name = "blindfold",
         Glyph = new(ItemClasses.Amulet, ConsoleColor.DarkGray),
         DefaultEquipSlot = ItemSlots.Face,
+        Weight = 2,
         Components = [BlindBuff.Instance.WhenEquipped()],
         Price = 2,
     };

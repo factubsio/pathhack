@@ -459,7 +459,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
 
       int dist = goal is { } g2 ? candidate.ChebyshevDist(g2) : 0;
       if (Approach == Approach.Flee) dist = -dist;
-      int penalty = WasRecentlyAt(candidate) ? 100 : 0;
+      int penalty = !CanSeeYou && WasRecentlyAt(candidate) ? 100 : 0;
       int score = dist + penalty;
 
       bool wins = score < bestScore 

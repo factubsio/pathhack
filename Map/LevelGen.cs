@@ -697,7 +697,7 @@ public static class LevelGen
         {
             var pos = level.FindLocation(p => level.NoUnit(p) && !level[p].IsStairs);
             if (pos == null) break;
-            MonsterSpawner.SpawnAndPlace(level, "cave", null, true, pos, true);
+            MonsterSpawner.SpawnAndPlace(level, "OCAVE", null, true, pos);
         }
     }
 
@@ -714,7 +714,7 @@ public static class LevelGen
                 var def = MonsterSpawner.PickMonster(level.EffectiveDepth, u?.CharacterLevel ?? 1);
                 if (def != null)
                 {
-                    var mon = MonsterSpawner.SpawnAndPlace(level, "OROOM", null, true, pos, true);
+                    var mon = MonsterSpawner.SpawnAndPlace(level, "OROOM", null, true, pos);
                 }
             }
         }

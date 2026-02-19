@@ -68,6 +68,20 @@ public class LongRangeAdvantage() : LogicBrick
     }
 }
 
+public class CutpurseGold : LogicBrick
+{
+    public static readonly CutpurseGold Instance = new();
+    public override string Id => "cutpurse:gold";
+    public override AbilityTags Tags => AbilityTags.FirstSpawnOnly;
+
+    protected override void OnSpawn(Fact fact, PHContext ctx)
+    {
+        if (g.Rn2(2) != 0 || ctx.Source is not Monster m) return;
+        int depth = lvl.EffectiveDepth;
+        m.Gold += 1 + (g.Rn2(depth + 2) + 1) * (g.Rn2(30) + 1);
+    }
+}
+
 public class StealCrestsOnHit : LogicBrick
 {
     public static readonly StealCrestsOnHit Instance = new();
@@ -227,6 +241,7 @@ public static class Bandits
         components: [
             new Equip(MundaneArmory.Dagger),
             StealCrestsOnHit.Instance,
+            CutpurseGold.Instance,
             new GrantAction(AttackWithWeapon.Instance),
         ]);
 

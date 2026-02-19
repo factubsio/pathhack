@@ -50,11 +50,11 @@ public static class MonsterTable
             .OrderBy(i => i.Class)
             .ThenBy(i => i.Name);
 
-        Console.WriteLine($"{"Name",-24} {"Class",-10} {"Price",6}");
-        Console.WriteLine(new string('-', 44));
+        Console.WriteLine($"{"Name",-24} {"Class",-10} {"Wt",4} {"Price",6}");
+        Console.WriteLine(new string('-', 50));
 
         foreach (var i in defs)
-            Console.WriteLine($"{i.Name,-24} {ClassName(i.Class),-10} {i.Price,6}");
+            Console.WriteLine($"{i.Name,-24} {ClassName(i.Class),-10} {i.Weight,4} {i.Price,6}");
     }
 
     static string ClassName(char c) => c switch

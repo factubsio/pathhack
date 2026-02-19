@@ -13,6 +13,7 @@ public static class Gems
         Launcher = "hand",
         Stackable = true,
         Glyph = new(ItemClasses.Gem, ConsoleColor.Gray),
+        Weight = 10,
         Price = 0,
     };
 }

@@ -2,6 +2,8 @@ using System.Security.Principal;
 
 namespace Pathhack.Game;
 
+public enum Encumbrance { Unencumbered, Burdened, Stressed, Strained, Overtaxed, Overloaded }
+
 public class PlayerDef : BaseDef { }
 
 public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IFormattable
@@ -46,14 +48,68 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
 
     public LevelId Level { get; set; }
     public int DarkVisionRadius => Math.Clamp(Ancestry.DarkVisionRadius + QueryModifiers("light_radius").Calculate(), 0, 100);
+    public int CarryCapacity => 25 * (Str + Con);
+    public int CarriedWeight => Inventory.Sum(i => i.EffectiveWeight);
+
+    public Encumbrance Encumbrance
+    {
+        get
+        {
+            int excess = CarriedWeight - CarryCapacity;
+            if (excess <= 0) return Encumbrance.Unencumbered;
+            int cap = Math.Max(1, CarryCapacity);
+            int level = excess * 2 / cap + 1;
+            return (Encumbrance)Math.Min(level, (int)Encumbrance.Overloaded);
+        }
+    }
+
     public override ActionCost LandMove
     {
         get
         {
             int cost = ActionCosts.StandardLandMove.Value - QueryModifiers("speed_bonus").Calculate();
             double mult = Query("speed_mult", null, MergeStrategy.Replace, 1.0);
-            return (int)(cost / mult);
+            cost = (int)(cost / mult);
+            return Encumbrance > Encumbrance.Unencumbered
+                ? cost + cost / 5
+                : cost;
         }
+    }
+
+    public int EnergyPenalty => Encumbrance switch
+    {
+        Encumbrance.Stressed => 6,
+        Encumbrance.Strained => 9,
+        Encumbrance.Overtaxed => 10,
+        Encumbrance.Overloaded => 11,
+        _ => 0,
+    };
+
+    Encumbrance _lastEncumbrance;
+    public void CheckEncumbrance()
+    {
+        var cur = Encumbrance;
+        if (cur == _lastEncumbrance) return;
+        if (cur > _lastEncumbrance)
+            g.pline(cur switch
+            {
+                Encumbrance.Burdened => "Your movements are slowed by your load.",
+                Encumbrance.Stressed => "You rebalance your load. Movement is difficult.",
+                Encumbrance.Strained => "You stagger under your heavy load.",
+                Encumbrance.Overtaxed => "You can barely move with this load!",
+                Encumbrance.Overloaded => "You can't even move with this load!",
+                _ => "",
+            });
+        else
+            g.pline(cur switch
+            {
+                Encumbrance.Unencumbered => "Your movements are now unencumbered.",
+                Encumbrance.Burdened => "Your movements are only slightly slowed.",
+                Encumbrance.Stressed => "You rebalance your load. Movement is still difficult.",
+                Encumbrance.Strained => "You still stagger under your load.",
+                _ => "",
+            });
+        _lastEncumbrance = cur;
     }
 
     public ValueStatBlock<int> BaseAttributes;

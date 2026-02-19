@@ -11,6 +11,7 @@ public static class OrcishArmory
         WeaponType = WeaponTypes.OrcKnuckleDagger,
         DamageType = DamageTypes.Piercing,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkGray),
+        Weight = 15,
         Price = 10,
     };
 
@@ -23,6 +24,7 @@ public static class OrcishArmory
         WeaponType = WeaponTypes.OrcNecksplitter,
         DamageType = DamageTypes.Slashing,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.DarkGray),
+        Weight = 60,
         Price = 30,
     };
 
@@ -36,6 +38,7 @@ public static class OrcishArmory
         CheckPenalty = -2,
         Glyph = new(ItemClasses.Armor, ConsoleColor.DarkGray),
         Components = [new ArmorBrick(2, 1)],
+        Weight = 60,
         Price = 50,
     };
 }

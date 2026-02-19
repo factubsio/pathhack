@@ -542,7 +542,28 @@ public static class Draw
         {
             quiverState = $" Q:{u.Quiver.Charges}/{u.Quiver.MaxCharges}";
         }
-        StatusWin.At(0, 0).Write($"{level.Branch.Name}:{level.EffectiveDepth} $:{u.Gold} R:{g.CurrentRound} E:{u.Energy}{quiverState}".PadRight(ScreenWidth));
+        string encStr = u.Encumbrance switch
+        {
+            Encumbrance.Burdened => " Burdn",
+            Encumbrance.Stressed => " Stres",
+            Encumbrance.Strained => " Strai",
+            Encumbrance.Overtaxed => " Overt",
+            Encumbrance.Overloaded => " Overl",
+            _ => "",
+        };
+        string statusLine = $"{level.Branch.Name}:{level.EffectiveDepth} $:{u.Gold} R:{g.CurrentRound} E:{u.Energy}{quiverState}";
+        StatusWin.At(0, 0).Write(statusLine.PadRight(ScreenWidth));
+        if (encStr.Length > 0)
+        {
+            var (fg, style) = u.Encumbrance switch
+            {
+                Encumbrance.Burdened => (ConsoleColor.Yellow, CellStyle.None),
+                Encumbrance.Stressed => (ConsoleColor.DarkYellow, CellStyle.None),
+                Encumbrance.Strained => (ConsoleColor.Red, CellStyle.None),
+                _ => (ConsoleColor.Red, CellStyle.Reverse),
+            };
+            StatusWin.At(statusLine.Length, 0).Write(encStr, fg, style: style);
+        }
         int nextLvl = u.CharacterLevel + 1;
         int needed = Progression.XpForLevel(nextLvl) - Progression.XpForLevel(u.CharacterLevel);
         int progress = u.XP - Progression.XpForLevel(u.CharacterLevel);
