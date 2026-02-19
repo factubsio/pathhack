@@ -103,7 +103,8 @@ public static class BranchExt
 public record class Branch(string Id, string Name, int MaxDepth, ConsoleColor Color = ConsoleColor.White, BranchDir Dir = BranchDir.Down)
 {
     public List<ResolvedLevel> ResolvedLevels { get; init; } = [];
-    public int? EntranceDepthInParent { get; init; }
+    public int Entry { get; init; }                             // index of entry floor within this branch
+    public int? EntranceDepthInParent { get; init; }            // index in parent's levels where portal lives
     public HashSet<int> BlockedEntranceDepths { get; init; } = [];
     public bool Discovered { get; set; }
 }

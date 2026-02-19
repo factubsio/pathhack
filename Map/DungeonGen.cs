@@ -3,44 +3,61 @@ using System.Text;
 
 namespace Pathhack.Map;
 
-public enum DepthAnchor { FromTop, FromBottom, RelativeTo }
-
-public record LevelRule(
+public record LevelTemplate(
     string Id,
-    string[]? Templates,        // null = normal gen, else pick one
-    DepthAnchor Anchor,
-    int Base,
-    int Range = 1,
+    string? BehaviourId = null,
+    CaveAlgorithm? Algorithm = null,
+    CaveAlgorithm[]? AlgorithmPool = null,
+    string[]? Variants = null,
+    ConsoleColor? WallColor = null,
+    ConsoleColor? FloorColor = null,
+    bool Outdoors = false,
+    bool NoBranchEntrance = false
+);
+
+public record LinearPlacementRule(
+    LevelTemplate? Template = null,
+    int Count = 1,
+    int CountMax = -1,                      // -1 = fixed, else [Count, CountMax]
+    string? BranchId = null
+);
+
+public record ConstraintPlacementRule(
+    LevelTemplate? Template = null,
+    string? BranchId = null,
+    (int Min, int Max) Depth = default,     // negative = from bottom
     string? RelativeTo = null,
-    bool Required = true,
-    string? BranchTarget = null, // if set, place branch stairs here
-    bool NoBranchEntrance = false, // if true, no branch stairs can be placed here
-    CaveAlgorithm? Algorithm = null // override algorithm for this floor
+    int Probability = 100                   // 100 = required, 0 = try but don't fail
 );
 
 public record BranchTemplate(
     string Id,
     string Name,
-    (int Min, int Max) DepthRange,
-    string? Parent = null,
-    (int From, int To)? EntranceDepth = null, // negative = from bottom
+    BranchDir Dir = BranchDir.Down,
     ConsoleColor Color = ConsoleColor.White,
-    BranchDir Dir = BranchDir.Down
+    string? Entry = null,                   // template id of entry floor (default: first)
+    string? DefaultBehaviour = null,
+    CaveAlgorithm[]? DefaultAlgorithmPool = null,
+    ConsoleColor? DefaultWallColor = null,
+    ConsoleColor? DefaultFloorColor = null
 )
 {
-    public List<LevelRule> Levels { get; init; } = [];
-    public CaveAlgorithm[]? AlgorithmPool { get; init; }
-    public (ConsoleColor Floor, ConsoleColor Wall)[]? ColorPool { get; init; }
+    // exactly one of these should be set
+    public LinearPlacementRule[]? Linear { get; init; }
+    public ConstraintPlacementRule[]? Constraints { get; init; }
+    public (int Min, int Max) DepthRange { get; init; }     // constraint mode only
 }
 
 public record ResolvedLevel(int LocalIndex, SpecialLevel? Template = null)
 {
     private readonly List<DungeonGenCommand> GenCommands = [];
+    public string? TemplateId { get; set; }
     public string? BranchDown { get; set; }
     public string? BranchUp { get; set; }
     public CaveAlgorithm? Algorithm { get; set; }
     public ConsoleColor? FloorColor { get; set; }
     public ConsoleColor? WallColor { get; set; }
+    public bool NoBranchEntrance { get; set; }
 
     public IEnumerable<DungeonGenCommand> Commands => GenCommands;
     public void AddCommand(string debug, Action<LevelGenContext> action) => GenCommands.Add(new(action, debug));
@@ -54,10 +71,10 @@ public static class DungeonResolver
     const int MaxIterations = 10000;
 
     static void Log(string msg) => _log?.WriteLine(msg);
-
     static int Rn2(int n) => _rng.Rn2(n);
     static int RnRange(int min, int max) => _rng.RnRange(min, max);
     static T Pick<T>(T[] arr) => arr[Rn2(arr.Length)];
+    static void Shuffle<T>(List<T> list) { for (int i = list.Count - 1; i > 0; i--) { int j = Rn2(i + 1); (list[i], list[j]) = (list[j], list[i]); } }
 
     public static Dictionary<string, Branch> Resolve(List<BranchTemplate> templates, int gameSeed, bool log = true)
     {
@@ -66,123 +83,153 @@ public static class DungeonResolver
         finally { _log?.Dispose(); _log = null; }
     }
 
+    // --- collect child branch ids from placement rules ---
+
+    static HashSet<string> CollectChildBranchIds(BranchTemplate t)
+    {
+        HashSet<string> ids = [];
+        if (t.Linear != null)
+            foreach (var r in t.Linear)
+                if (r.BranchId != null) ids.Add(r.BranchId);
+        if (t.Constraints != null)
+            foreach (var r in t.Constraints)
+                if (r.BranchId != null) ids.Add(r.BranchId);
+        return ids;
+    }
+
+    // --- main resolver ---
+
     static Dictionary<string, Branch> ResolveInner(List<BranchTemplate> templates, int gameSeed)
     {
         _iterations = 0;
         Log($"Resolving dungeon structure, seed={gameSeed}");
         byte[] bytes = SHA256.HashData(Encoding.UTF8.GetBytes($"{gameSeed}:dungeon_structure"));
         _rng = new Random(BitConverter.ToInt32(bytes, 0));
-        Dictionary<string, Branch> branches = [];
 
         var byId = templates.ToDictionary(t => t.Id);
-        var sorted = TopoSort(templates, t => t.Parent != null && byId.TryGetValue(t.Parent, out BranchTemplate? value) ? [value] : []);
-        Log($"Topo order: {string.Join(", ", sorted.Select(t => t.Id))}");
 
-        foreach (var template in sorted)
+        // Track unresolved children per template and parent relationships
+        Dictionary<string, int> unresolvedChildren = [];
+        Dictionary<string, string> parentOf = [];
+        foreach (var t in templates)
         {
-            int branchLength = RnRange(template.DepthRange.Min, template.DepthRange.Max);
-            Log($"\nBranch {template.Id}: depth={branchLength} (range {template.DepthRange})");
-
-            int? depthInParent = null;
-            if (template.Parent != null && template.EntranceDepth is var (from, to))
-            {
-                var parent = branches[template.Parent];
-                var parentTemplate = templates.First(t => t.Id == template.Parent);
-                int minD = from < 0 ? parent.MaxDepth + from + 1 : from;
-                int maxD = to < 0 ? parent.MaxDepth + to + 1 : to;
-                maxD = Math.Min(maxD, parent.MaxDepth);
-                minD = Math.Min(minD, maxD);
-                
-                // Exclude depths with NoBranchEntrance special levels
-                var blocked = parent.BlockedEntranceDepths;
-                var valid = Enumerable.Range(minD - 1, maxD - minD + 1).Where(d => !blocked.Contains(d)).ToList();
-                
-                if (valid.Count == 0)
-                    throw new Exception($"No valid entrance depth for {template.Id} in {template.Parent}");
-                
-                depthInParent = valid[_rng.Next(valid.Count)];
-                parent.BlockedEntranceDepths.Add(depthInParent.Value);
-                Log($"  Entrance in {template.Parent} at depth {depthInParent} (range {minD}-{maxD}, blocked: [{string.Join(",", blocked)}])");
-            }
-
-            List<ResolvedLevel> resolved = [.. new ResolvedLevel[branchLength]];
-            for (int i = 0; i < branchLength; i++) resolved[i] = new(i);
-
-            Dictionary<string, int> placed = [];
-
-            Log($"  Placing {template.Levels.Count} level rules...");
-            if (!PlaceLevels(template.Levels, 0, branchLength, resolved, placed))
-                throw new Exception($"Failed to resolve branch {template.Id}");
-
-            // Assign cave algorithms from pool
-            if (template.AlgorithmPool is { } pool)
-                foreach (var rl in resolved)
-                    if (rl.Template == null)
-                        rl.Algorithm = pool[_rng.Next(pool.Length)];
-
-            // Apply per-rule algorithm overrides
-            foreach (var rule in template.Levels)
-                if (rule.Algorithm is { } algo && placed.TryGetValue(rule.Id, out int ruleDepth))
-                    resolved[ruleDepth - 1].Algorithm = algo;
-
-            // Assign colors from pool
-            if (template.ColorPool is { } colors)
-                foreach (var rl in resolved)
-                {
-                    var pick = colors[_rng.Next(colors.Length)];
-                    rl.FloorColor = pick.Floor;
-                    rl.WallColor = pick.Wall;
-                }
-
-            // Compute blocked entrance depths from NoBranchEntrance rules
-            var blockedDepths = template.Levels
-                .Where(r => r.NoBranchEntrance && placed.ContainsKey(r.Id))
-                .Select(r => placed[r.Id] - 1)
-                .ToHashSet();
-
-            branches[template.Id] = new Branch(template.Id, template.Name, branchLength, template.Color, template.Dir)
-            {
-                ResolvedLevels = resolved,
-                EntranceDepthInParent = depthInParent,
-                BlockedEntranceDepths = blockedDepths
-            };
+            var childIds = CollectChildBranchIds(t);
+            unresolvedChildren[t.Id] = childIds.Count;
+            foreach (var c in childIds)
+                parentOf[c] = t.Id;
         }
 
-        foreach (var template in sorted)
+        // Resolve leaf-first
+        List<BranchTemplate> remaining = [..templates];
+        Dictionary<string, Branch> branches = [];
+
+        while (remaining.Count > 0)
         {
-            var branch = branches[template.Id];
-            // Add portals between branches
-            if (template.Parent != null && branch.EntranceDepthInParent != null)
+            int idx = remaining.FindIndex(t => unresolvedChildren[t.Id] == 0);
+            if (idx < 0) throw new Exception("Cycle or unresolvable branch dependencies");
+
+            var template = remaining[idx];
+            remaining.RemoveAt(idx);
+
+            Log($"\nResolving {template.Id}");
+            List<ResolvedLevel> levels = template.Linear != null
+                ? ResolveLinear(template)
+                : ResolveConstraint(template);
+
+            // Assign algorithms: per-level template > branch default pool
+            foreach (var rl in levels)
             {
-                var parent = branches[template.Parent];
-                int parentIndex = branch.EntranceDepthInParent.Value;
-                var parentLevel = parent.ResolvedLevels[parentIndex];
-                var branchEntry = branch.ResolvedLevels[0];
-
-                if (template.Dir == BranchDir.Down)
-                {
-                    parentLevel.BranchDown = branch.Id;
-                    branchEntry.BranchUp = parent.Id;
-                }
-                else
-                {
-                    parentLevel.BranchUp = branch.Id;
-                    branchEntry.BranchDown = parent.Id;
-                }
-
-                parentLevel.AddCommand($"place portal TO {template.Name}",
-                    PlacePortalTo(template.Id, 0, template.Dir, parentLevel.Template?.HasPortalToChild == true));
-
-                branchEntry.AddCommand($"place portal BACK {template.Parent}",
-                    PlacePortalTo(template.Parent, parentIndex, template.Dir.Reversed(), branchEntry.Template?.HasPortalToParent == true));
+                if (rl.Algorithm != null) continue;
+                if (template.DefaultAlgorithmPool is { } pool)
+                    rl.Algorithm = pool[_rng.Next(pool.Length)];
             }
 
+            // Assign colors from branch defaults
+            foreach (var rl in levels)
+            {
+                rl.WallColor ??= template.DefaultWallColor;
+                rl.FloorColor ??= template.DefaultFloorColor;
+            }
+
+            // Determine entry floor
+            int entry = 0;
+            if (template.Entry != null)
+            {
+                int found = levels.FindIndex(l => l.TemplateId == template.Entry);
+                if (found >= 0) entry = found;
+            }
+
+            // Compute blocked entrance depths
+            HashSet<int> blocked = levels
+                .Select((r, i) => (r, i))
+                .Where(x => x.r.NoBranchEntrance)
+                .Select(x => x.i)
+                .ToHashSet();
+
+            branches[template.Id] = new Branch(template.Id, template.Name, levels.Count, template.Color, template.Dir)
+            {
+                ResolvedLevels = levels,
+                Entry = entry,
+                BlockedEntranceDepths = blocked,
+            };
+
+            if (parentOf.TryGetValue(template.Id, out var pid))
+                unresolvedChildren[pid]--;
+        }
+
+        // Compute EntranceDepthInParent now that all branches exist
+        foreach (var (childId, pId) in parentOf)
+        {
+            var parent = branches[pId];
+            for (int i = 0; i < parent.ResolvedLevels.Count; i++)
+            {
+                var rl = parent.ResolvedLevels[i];
+                if (rl.BranchDown == childId || rl.BranchUp == childId)
+                {
+                    branches[childId] = branches[childId] with { EntranceDepthInParent = i };
+                    break;
+                }
+            }
+        }
+
+        // --- post-pass: portals and stairs ---
+        foreach (var (id, branch) in branches)
+        {
+            var template = byId[id];
+
+            // Wire portals for child branches referenced by this branch's levels
+            for (int i = 0; i < branch.ResolvedLevels.Count; i++)
+            {
+                var rl = branch.ResolvedLevels[i];
+
+                if (rl.BranchDown is { } downId && branches.TryGetValue(downId, out var child))
+                {
+                    var childEntry = child.ResolvedLevels[child.Entry];
+                    childEntry.BranchUp = id;
+
+                    rl.AddCommand($"place portal TO {child.Name}",
+                        PlacePortalTo(downId, child.Entry, BranchDir.Down, rl.Template?.HasPortalToChild == true));
+                    childEntry.AddCommand($"place portal BACK {id}",
+                        PlacePortalTo(id, i, BranchDir.Up, childEntry.Template?.HasPortalToParent == true));
+                }
+
+                if (rl.BranchUp is { } upId && branches.TryGetValue(upId, out var childUp))
+                {
+                    var childEntry = childUp.ResolvedLevels[childUp.Entry];
+                    childEntry.BranchDown = id;
+
+                    rl.AddCommand($"place portal TO {childUp.Name}",
+                        PlacePortalTo(upId, childUp.Entry, BranchDir.Up, rl.Template?.HasPortalToChild == true));
+                    childEntry.AddCommand($"place portal BACK {id}",
+                        PlacePortalTo(id, i, BranchDir.Down, childEntry.Template?.HasPortalToParent == true));
+                }
+            }
+
+            // Stairs
             for (int i = 0; i < branch.MaxDepth; i++)
             {
-                // A bit crappy but iiwii, work out if there is a level physically above/below us.
-                bool hasAbove = (template.Dir == BranchDir.Down) ? i > 0 : i < branch.MaxDepth - 1;
-                bool hasBelow = (template.Dir == BranchDir.Down) ? i < branch.MaxDepth - 1 : i > 0;
-
+                bool hasAbove = template.Dir == BranchDir.Down ? i > 0 : i < branch.MaxDepth - 1;
+                bool hasBelow = template.Dir == BranchDir.Down ? i < branch.MaxDepth - 1 : i > 0;
                 var r = branch.ResolvedLevels[i];
 
                 if (hasAbove && r.Template?.HasStairsUp != true) r.AddCommand("stairs up", PlaceStairs(TileType.StairsUp));
@@ -191,127 +238,160 @@ public static class DungeonResolver
         }
 
         branches["dungeon"].ResolvedLevels[0].AddCommand("place dungeon entrance", PlaceStairs(TileType.StairsUp));
-
         return branches;
     }
 
-    private static Action<LevelGenContext> PlaceStairs(TileType type)
+    // --- linear resolver ---
+
+    static List<ResolvedLevel> ResolveLinear(BranchTemplate branch)
     {
-        return ctx =>
+        List<ResolvedLevel> levels = [];
+        Dictionary<string, List<int>> candidates = [];
+
+        foreach (var rule in branch.Linear!)
         {
-            var pos = ctx.FindStairsLocation() ?? ctx.Throw<Pos>($"cannot place stairs {type}");
-            ctx.level.Set(pos, type);
-        };
+            int count = rule.CountMax < 0 ? rule.Count : RnRange(rule.Count, rule.CountMax);
+            int startIdx = levels.Count;
+
+            for (int i = 0; i < count; i++)
+                levels.Add(ResolveLevel(rule.Template, branch, levels.Count));
+
+            if (rule.BranchId != null)
+            {
+                if (!candidates.TryGetValue(rule.BranchId, out var list))
+                    candidates[rule.BranchId] = list = [];
+                for (int i = startIdx; i < levels.Count; i++)
+                    list.Add(i);
+            }
+        }
+
+        // Assign branch exits to random floors within their candidate segments
+        HashSet<int> used = [];
+        foreach (var (branchId, floors) in candidates)
+        {
+            List<int> available = floors.Where(f => !used.Contains(f)).ToList();
+            if (available.Count == 0)
+                throw new Exception($"No available floor for branch '{branchId}' in '{branch.Id}'");
+            int pick = available[Rn2(available.Count)];
+            levels[pick].BranchDown = branchId;
+            used.Add(pick);
+        }
+
+        return levels;
     }
 
-    private static Action<LevelGenContext> PlacePortalTo(string toBranch, int toLevel, BranchDir dir, bool patchExisting)
-    {
-        return ctx =>
-        {
-            TileType type = dir == BranchDir.Down ? TileType.BranchDown : TileType.BranchUp;
-            LevelId to = new(g.Branches[toBranch], toLevel + 1);
+    // --- constraint resolver ---
 
-            if (!patchExisting)
+    static List<ResolvedLevel> ResolveConstraint(BranchTemplate branch)
+    {
+        int depth = RnRange(branch.DepthRange.Min, branch.DepthRange.Max);
+        List<ResolvedLevel> levels = new(depth);
+        for (int i = 0; i < depth; i++)
+            levels.Add(new ResolvedLevel(i));
+
+        var rules = branch.Constraints ?? [];
+
+        // Pre-resolve negative depths
+        var resolved = rules.Select(r => (
+            rule: r,
+            min: r.Depth.Min < 0 ? depth + r.Depth.Min : r.Depth.Min,
+            max: r.Depth.Max < 0 ? depth + r.Depth.Max : r.Depth.Max
+        )).ToArray();
+
+        Dictionary<string, int> placed = [];
+
+        bool Place(int idx)
+        {
+            if (++_iterations > MaxIterations)
+                throw new Exception($"DungeonResolver exceeded {MaxIterations} iterations in '{branch.Id}'");
+            if (idx >= resolved.Length) return true;
+
+            var (rule, min, max) = resolved[idx];
+
+            if (rule.Probability < 100 && RnRange(1, 100) > rule.Probability)
+                return Place(idx + 1);
+
+            if (rule.RelativeTo != null)
             {
-                var pos = ctx.FindStairsLocation() ?? ctx.Throw<Pos>("cannot place portal");
-                ctx.level.Set(pos, type);
+                if (!placed.TryGetValue(rule.RelativeTo, out int basePos))
+                    return false;
+                min += basePos;
+                max += basePos;
             }
 
-            if (dir == BranchDir.Down)
-                ctx.level.BranchDownTarget = to;
-            else
-                ctx.level.BranchUpTarget = to;
+            min = Math.Max(0, min);
+            max = Math.Min(depth - 1, max);
+
+            List<int> valid = [];
+            for (int d = min; d <= max; d++)
+                if (levels[d].Template == null && levels[d].BranchDown == null && !placed.ContainsValue(d))
+                    valid.Add(d);
+
+            Shuffle(valid);
+
+            foreach (int d in valid)
+            {
+                var old = levels[d];
+                levels[d] = ResolveLevel(rule.Template, branch, d);
+                if (rule.BranchId != null) levels[d].BranchDown = rule.BranchId;
+                string? key = rule.Template?.Id ?? rule.BranchId;
+                if (key != null) placed[key] = d;
+
+                if (Place(idx + 1)) return true;
+
+                levels[d] = old;
+                if (key != null) placed.Remove(key);
+            }
+
+            return rule.Probability == 0;
+        }
+
+        if (!Place(0))
+            throw new Exception($"Constraint solver failed for '{branch.Id}'");
+
+        return levels;
+    }
+
+    // --- shared helpers ---
+
+    static ResolvedLevel ResolveLevel(LevelTemplate? t, BranchTemplate branch, int index)
+    {
+        string? variant = t?.Variants != null ? Pick(t.Variants) : null;
+        SpecialLevel? spec = LevelGen.GetTemplate(variant);
+
+        CaveAlgorithm? algo = t?.Algorithm
+            ?? (t?.AlgorithmPool is { } pool ? pool[Rn2(pool.Length)] : null);
+
+        return new ResolvedLevel(index, spec)
+        {
+            TemplateId = t?.Id,
+            Algorithm = algo,
+            WallColor = t?.WallColor,
+            FloorColor = t?.FloorColor,
+            NoBranchEntrance = t?.NoBranchEntrance ?? false,
         };
     }
 
-    static bool PlaceLevels(List<LevelRule> rules, int idx, int branchDepth,
-          List<ResolvedLevel> resolved, Dictionary<string, int> placed)
+    static Action<LevelGenContext> PlaceStairs(TileType type) => ctx =>
     {
-        if (++_iterations > MaxIterations)
-            throw new Exception($"DungeonResolver exceeded {MaxIterations} iterations - check branch constraints");
-        
-        string indent = new(' ', idx * 2);
-        if (idx >= rules.Count) return true;
+        var pos = ctx.FindStairsLocation() ?? ctx.Throw<Pos>($"cannot place stairs {type}");
+        ctx.level.Set(pos, type);
+    };
 
-        var rule = rules[idx];
-        var valid = GetValidDepths(rule, branchDepth, resolved, placed);
-        Log($"{indent}{rule.Id}: valid=[{string.Join(",", valid)}] (anchor={rule.Anchor} base={rule.Base} range={rule.Range})");
-
-        if (valid.Count == 0)
-        {
-            Log($"{indent}{rule.Id}: FAIL (required={rule.Required})");
-            return !rule.Required && PlaceLevels(rules, idx + 1, branchDepth, resolved, placed);
-        }
-
-        // Shuffle valid depths
-        for (int i = valid.Count - 1; i > 0; i--)
-        {
-            int j = Rn2(i + 1);
-            (valid[i], valid[j]) = (valid[j], valid[i]);
-        }
-
-        foreach (int d in valid)
-        {
-            Log($"{indent}{rule.Id}: trying depth {d}");
-            placed[rule.Id] = d;
-            string? template = rule.Templates != null ? Pick(rule.Templates) : null;
-            var spec = LevelGen.GetTemplate(template);
-            var old = resolved[d - 1];
-            resolved[d - 1] = old with { Template = spec ?? old.Template };
-
-            if (PlaceLevels(rules, idx + 1, branchDepth, resolved, placed))
-                return true;
-
-            Log($"{indent}{rule.Id}: backtrack from {d}");
-            resolved[d - 1] = old;
-            placed.Remove(rule.Id);
-        }
-
-        return false;
-    }
-
-    static List<int> GetValidDepths(LevelRule rule, int branchDepth,
-        List<ResolvedLevel> resolved, Dictionary<string, int> placed)
+    static Action<LevelGenContext> PlacePortalTo(string toBranch, int toLevel, BranchDir dir, bool patchExisting) => ctx =>
     {
-        if (rule.Anchor == DepthAnchor.RelativeTo && !placed.ContainsKey(rule.RelativeTo!))
-            return [];
+        TileType type = dir == BranchDir.Down ? TileType.BranchDown : TileType.BranchUp;
+        LevelId to = new(g.Branches[toBranch], toLevel + 1);
 
-        int baseDepth = rule.Anchor switch
+        if (!patchExisting)
         {
-            DepthAnchor.FromTop => rule.Base,
-            DepthAnchor.FromBottom => branchDepth + rule.Base,
-            DepthAnchor.RelativeTo => placed[rule.RelativeTo!] + rule.Base,
-            _ => throw new ArgumentOutOfRangeException()
-        };
-
-        List<int> valid = [];
-        for (int d = baseDepth; d < baseDepth + rule.Range; d++)
-        {
-            if (d < 1 || d > branchDepth) continue;
-            if (resolved[d - 1].Template != null) continue;
-            valid.Add(d);
-        }
-        return valid;
-    }
-
-    static List<T> TopoSort<T>(List<T> items, Func<T, List<T>> getDeps)
-    {
-        List<T> result = [];
-        HashSet<T> visited = [];
-        HashSet<T> visiting = [];
-
-        void Visit(T item)
-        {
-            if (visited.Contains(item)) return;
-            if (visiting.Contains(item)) throw new Exception("Cycle in branch dependencies");
-            visiting.Add(item);
-            foreach (var dep in getDeps(item)) Visit(dep);
-            visiting.Remove(item);
-            visited.Add(item);
-            result.Add(item);
+            var pos = ctx.FindStairsLocation() ?? ctx.Throw<Pos>("cannot place portal");
+            ctx.level.Set(pos, type);
         }
 
-        foreach (var item in items) Visit(item);
-        return result;
-    }
+        if (dir == BranchDir.Down)
+            ctx.level.BranchDownTarget = to;
+        else
+            ctx.level.BranchUpTarget = to;
+    };
 }

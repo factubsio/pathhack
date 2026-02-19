@@ -1,6 +1,5 @@
 using Pathhack.Dat;
 using Pathhack.Game.Classes;
-using static Pathhack.Map.DepthAnchor;
 
 DateTime lastCtrlC = DateTime.UnixEpoch;
 
@@ -19,65 +18,56 @@ Console.CancelKeyPress += (o, e) =>
 };
 
 List<BranchTemplate> templates = [
-    new("dungeon", "Dungeon", (18, 22), Color: ConsoleColor.Yellow) {
-        Levels = [
-            new("sanctuary", ["sanctuary_1"], FromBottom, 0, NoBranchEntrance: true),
-            new("bigroom", ["bigroom_rect", "bigroom_oval"], FromTop, 12, 4, Required: false),
-        ]
+    // --- child branches (leaf-first) ---
+
+    new("quest", "Quest", Color: ConsoleColor.Magenta) {
+        Linear = [new(Count: 5)],
     },
-    
-    // Quest (5 levels)
-    new("quest", "Quest", (5, 5), Color: ConsoleColor.Magenta) {
-        Parent = "dungeon",
-        EntranceDepth = (8, 10),
-        Levels = []
-    },
-    
-    // Easy meaty (7 levels)
-    new("meaty1", "Meaty 1", (7, 7), Color: ConsoleColor.DarkYellow) {
-        Parent = "dungeon",
-        EntranceDepth = (2, 4),
-        Levels = [
-            new("jungle_shore", [/*"ss_shore_beached",*/ "ss_shore_debris"], FromTop, 1),
-            new("deep_jungle", null, FromTop, 2, Algorithm: CaveAlgorithm.OutdoorCAOpen),
-        ],
-        AlgorithmPool = [CaveAlgorithm.Worley, CaveAlgorithm.WorleyWarren, CaveAlgorithm.CA],
-        ColorPool = [
-            (ConsoleColor.DarkYellow, ConsoleColor.DarkYellow),
-            (ConsoleColor.DarkRed, ConsoleColor.DarkRed),
-            (ConsoleColor.Cyan, ConsoleColor.Cyan),
+
+    new("meaty1", "Meaty 1", Color: ConsoleColor.DarkYellow,
+        DefaultAlgorithmPool: [CaveAlgorithm.Worley, CaveAlgorithm.WorleyWarren, CaveAlgorithm.CA]) {
+        Linear = [
+            new(new LevelTemplate("jungle_shore", Variants: [/*"ss_shore_beached",*/ "ss_shore_debris"])),
+            new(new LevelTemplate("deep_jungle", Algorithm: CaveAlgorithm.OutdoorCAOpen)),
+            new(Count: 5),
         ],
     },
-    
-    // Hard meaty (7 levels)
-    new("meaty2", "Meaty 2", (7, 7), Color: ConsoleColor.Red) {
-        Parent = "dungeon",
-        EntranceDepth = (11, 13),
-        Levels = []
+
+    new("meaty2", "Meaty 2", Color: ConsoleColor.Red) {
+        Linear = [new(Count: 7)],
     },
-    
-    // Hard meaty (7 levels)
-    new("meaty3", "Meaty 3", (7, 7), Color: ConsoleColor.DarkCyan) {
-        Parent = "dungeon",
-        EntranceDepth = (14, 16),
-        Levels = []
+
+    new("meaty3", "Meaty 3", Color: ConsoleColor.DarkCyan) {
+        Linear = [new(Count: 7)],
     },
-    
-    // Mini branches (1 level each, underleveled challenge)
-    new("mini1", "Mini 1", (1, 1), Color: ConsoleColor.Blue) {
-        Parent = "dungeon",
-        EntranceDepth = (4, 16),
-        Levels = []
+
+    new("mini1", "Mini 1", Color: ConsoleColor.Blue) {
+        Linear = [new()],
     },
-    new("mini2", "Mini 2", (1, 1), Color: ConsoleColor.Blue) {
-        Parent = "dungeon",
-        EntranceDepth = (4, 16),
-        Levels = []
+
+    new("mini2", "Mini 2", Color: ConsoleColor.Blue) {
+        Linear = [new()],
     },
-    new("mini3", "Mini 3", (1, 1), Color: ConsoleColor.Blue) {
-        Parent = "dungeon",
-        EntranceDepth = (4, 16),
-        Levels = []
+
+    new("mini3", "Mini 3", Color: ConsoleColor.Blue) {
+        Linear = [new()],
+    },
+
+    // --- main branch ---
+
+    new("dungeon", "Dungeon", Color: ConsoleColor.Yellow) {
+        DepthRange = (18, 22),
+        Constraints = [
+            new(new LevelTemplate("sanctuary", Variants: ["sanctuary_1"], NoBranchEntrance: true), Depth: (-1, -1)),
+            new(new LevelTemplate("bigroom", Variants: ["bigroom_rect", "bigroom_oval"]), Depth: (11, 15), Probability: 0),
+            new(BranchId: "quest", Depth: (7, 9)),
+            new(BranchId: "meaty1", Depth: (1, 3)),
+            new(BranchId: "meaty2", Depth: (10, 12)),
+            new(BranchId: "meaty3", Depth: (13, 15)),
+            new(BranchId: "mini1", Depth: (3, 15)),
+            new(BranchId: "mini2", Depth: (3, 15)),
+            new(BranchId: "mini3", Depth: (3, 15)),
+        ],
     },
 ];
 
@@ -107,6 +97,41 @@ if (algoIdx >= 0 && algoIdx + 1 < args.Length && Enum.TryParse<CaveAlgorithm>(ar
 {
     LevelGen.ForceAlgorithm = algoArg;
     args = args.Where((_, i) => i != algoIdx && i != algoIdx + 1).ToArray();
+}
+
+if (args.Length > 0 && args[0] == "--resolve")
+{
+    int seed = 0;
+    if (args.Length > 1 && int.TryParse(args[1], out var rs)) seed = rs;
+    var branches = DungeonResolver.Resolve(templates, seed, log: false);
+    foreach (var branch in branches.Values)
+    {
+        Console.WriteLine($"\n=== {branch.Name} ({branch.MaxDepth} floors, entry={branch.Entry}) ===");
+        int i = 0;
+        while (i < branch.ResolvedLevels.Count)
+        {
+            var l = branch.ResolvedLevels[i];
+            if (l.TemplateId == null && l.BranchDown == null && l.BranchUp == null)
+            {
+                int j = i;
+                while (j < branch.ResolvedLevels.Count && branch.ResolvedLevels[j].TemplateId == null
+                    && branch.ResolvedLevels[j].BranchDown == null && branch.ResolvedLevels[j].BranchUp == null) j++;
+                Console.WriteLine($"  {i}{(j - 1 > i ? $"-{j - 1}" : "")}: default ({j - i})");
+                i = j;
+            }
+            else
+            {
+                List<string> parts = [];
+                if (l.TemplateId != null) parts.Add(l.TemplateId);
+                if (l.Algorithm != null) parts.Add($"algo:{l.Algorithm}");
+                if (l.BranchDown != null) parts.Add($"-> {l.BranchDown}");
+                if (l.BranchUp != null) parts.Add($"<- {l.BranchUp}");
+                Console.WriteLine($"  {i}: {string.Join(", ", parts)}");
+                i++;
+            }
+        }
+    }
+    return;
 }
 
 if (args.Length > 0 && args[0] == "--test-dungeon")
@@ -220,10 +245,6 @@ using var _noCursor = new HideCursor();
 Draw.Init();
 using var _rec = TtyRec.Start("game.rec");
 using var _plog = new StreamWriter("pline.log") { AutoFlush = true };
-
-// SampleTests.RegisterAll();
-// TestRunner.Run();
-// return;
 
 var creation = new CharCreation();
 if (LevelGen.MonitorAttached)
