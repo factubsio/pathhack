@@ -96,12 +96,16 @@ public static class Proficiencies
     public const string Whip = "whip";
     public const string Blowgun = "blowgun";
     public const string Close = "close";
+    public const string Hammer = "hammer";
+    public const string Crossbow = "crossbow";
+    public const string Firearm = "firearm";
 
     // Armor
     public const string NakedArmor = "armor_naked";
     public const string LightArmor = "armor_light";
     public const string MediumArmor = "armor_medium";
     public const string HeavyArmor = "armor_heavy";
+    public const string Shield = "shield";
 }
 
 public static class WeaponTypes

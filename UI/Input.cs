@@ -44,6 +44,7 @@ public static partial class Input
         ["name"] = new("name", "Name an item type", ArgType.None, _ => CallItem()),
         ["dismiss"] = new("dismiss", "Dismiss a maintained buff", ArgType.None, _ => DismissAction.DoDismiss(u)),
         ["loot"] = new("loot", "Loot a container on the ground", ArgType.None, _ => LootContainer()),
+        ["enhance"] = new("enhance", "Show proficiencies", ArgType.None, _ => ShowEnhance()),
     };
 
     static readonly Dictionary<char, Command> _commands = new()
@@ -98,6 +99,7 @@ public static partial class Input
         _extCommands["spawn"] = new("spawn", "Spawn a monster", ArgType.String("What monster?"), DoSpawn, Hidden: true);
         _extCommands["place"] = new("place", "Place a trap", ArgType.String("What trap?"), DoPlace, Hidden: true);
         _extCommands["brickstats"] = new("brickstats", "Dump brick hook stats", ArgType.None, _ => BrickStatsHook.Instance.Dump(), Hidden: true);
+        _extCommands["train"] = new("train", "Train a proficiency", ArgType.None, _ => DoTrain(), Hidden: true);
         _specialCommands.Add(new(ConsoleKey.T, ConsoleModifiers.Control, "Teleport (debug)", DebugTeleport));
         LogicBrick.GlobalHook = BrickStatsHook.Instance;
     }
@@ -108,6 +110,34 @@ public static partial class Input
         var pos = PickPosition();
         if (pos == null || pos == upos) return;
         lvl.MoveUnit(u, pos.Value, free: true);
+    }
+
+    static void DoTrain()
+    {
+        (string Key, string Name)[][] all = [EnhanceWeapons, EnhanceArmor, EnhanceSaves, EnhanceSkills];
+        var menu = new Menu<string>();
+        char letter = 'a';
+        foreach (var group in all)
+            foreach (var (key, name) in group)
+            {
+                ProficiencyLevel lvl = u.GetProficiency(key);
+                menu.Add(letter++, $"{name,-16} {ProfBar(lvl)} {lvl}", key);
+            }
+        var picked = menu.Display(MenuMode.PickOne);
+        if (picked.Count == 0) return;
+        string skill = picked[0];
+        ProficiencyLevel cur = u.GetProficiency(skill);
+        ProficiencyLevel next = cur switch
+        {
+            ProficiencyLevel.Untrained => ProficiencyLevel.Trained,
+            ProficiencyLevel.Trained => ProficiencyLevel.Expert,
+            ProficiencyLevel.Expert => ProficiencyLevel.Master,
+            ProficiencyLevel.Master => ProficiencyLevel.Legendary,
+            _ => cur,
+        };
+        if (next == cur) { g.pline("Already legendary."); return; }
+        u.SetProficiency(skill, next);
+        g.pline($"{skill}: {next}.");
     }
 
     static void DoWish(CommandArg arg)

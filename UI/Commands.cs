@@ -1019,4 +1019,109 @@ public static partial class Input
 
         LogicBrick.FireOnVerb(container, ItemVerb.Apply);
     }
+
+    static readonly (string Key, string Name)[] EnhanceWeapons =
+    [
+        (Proficiencies.Unarmed, "Unarmed"), (Proficiencies.Natural, "Natural"),
+        (Proficiencies.HeavyBlade, "Heavy blade"), (Proficiencies.LightBlade, "Light blade"),
+        (Proficiencies.Club, "Club"), (Proficiencies.Axe, "Axe"),
+        (Proficiencies.Polearm, "Polearm"), (Proficiencies.Staff, "Staff"),
+        (Proficiencies.Bow, "Bow"), (Proficiencies.Thrown, "Thrown"),
+        (Proficiencies.Flail, "Flail"), (Proficiencies.Whip, "Whip"),
+        (Proficiencies.Blowgun, "Blowgun"), (Proficiencies.Close, "Close"),
+        (Proficiencies.Hammer, "Hammer"), (Proficiencies.Crossbow, "Crossbow"),
+        (Proficiencies.Firearm, "Firearm"),
+    ];
+
+    static readonly (string Key, string Name)[] EnhanceArmor =
+    [
+        (Proficiencies.NakedArmor, "Unarmored"), (Proficiencies.LightArmor, "Light armor"),
+        (Proficiencies.MediumArmor, "Medium armor"), (Proficiencies.HeavyArmor, "Heavy armor"),
+        (Proficiencies.Shield, "Shield"),
+    ];
+
+    static readonly (string Key, string Name)[] EnhanceSaves =
+    [
+        (Check.Fort, "Fortitude"), (Check.Reflex, "Reflex"), (Check.Will, "Will"),
+    ];
+
+    static readonly (string Key, string Name)[] EnhanceSkills =
+    [
+        ("perception", "Perception"), ("spell_attack", "Spell attack"),
+        ("athletics", "Athletics"),
+    ];
+
+    static string ProfBar(ProficiencyLevel level)
+    {
+        int filled = level switch
+        {
+            ProficiencyLevel.Trained => 1,
+            ProficiencyLevel.Expert => 2,
+            ProficiencyLevel.Master => 3,
+            ProficiencyLevel.Legendary => 4,
+            _ => 0,
+        };
+        return new string('●', filled) + new string('○', 4 - filled);
+    }
+
+    static string FormatProf(string name, ProficiencyLevel lvl)
+    {
+        string bar = ProfBar(lvl);
+        string label = lvl == ProficiencyLevel.Untrained ? "" : $" {lvl}";
+        ConsoleColor color = lvl switch
+        {
+            ProficiencyLevel.Legendary => ConsoleColor.Magenta,
+            ProficiencyLevel.Master => ConsoleColor.Cyan,
+            ProficiencyLevel.Expert => ConsoleColor.Green,
+            ProficiencyLevel.Trained => ConsoleColor.White,
+            _ => ConsoleColor.DarkGray,
+        };
+        return $"  {name,-16} [fg={color}]{bar}{label}[/]";
+    }
+
+    static void ShowEnhance()
+    {
+        using var handle = WM.CreateTransient(Draw.ScreenWidth, Draw.ScreenHeight, z: 5, opaque: true);
+        var win = handle.Window;
+
+        const int colWidth = 38;
+        const int col1X = 2;
+        const int col2X = col1X + colWidth;
+
+        win.At(col1X, 0).Write("Proficiencies", ConsoleColor.White, style: CellStyle.Bold);
+
+        void WriteSection(int x, ref int y, string heading, (string Key, string Name)[] entries)
+        {
+            y++;
+            win.At(x, y++).Write(heading, ConsoleColor.White, style: CellStyle.Reverse);
+            foreach (var (key, name) in entries)
+            {
+                ProficiencyLevel lvl = u.GetProficiency(key);
+                string bar = ProfBar(lvl);
+                string label = lvl == ProficiencyLevel.Untrained ? "" : $" {lvl}";
+                ConsoleColor color = lvl switch
+                {
+                    ProficiencyLevel.Legendary => ConsoleColor.Magenta,
+                    ProficiencyLevel.Master => ConsoleColor.Cyan,
+                    ProficiencyLevel.Expert => ConsoleColor.Green,
+                    ProficiencyLevel.Trained => ConsoleColor.White,
+                    _ => ConsoleColor.DarkGray,
+                };
+                win.At(x, y).Write($"  {name,-16} ", ConsoleColor.Gray);
+                win.At(x + 19, y).Write($"{bar}{label}", color);
+                y++;
+            }
+        }
+
+        int ly = 1, ry = 1;
+        WriteSection(col1X, ref ly, "Weapons", EnhanceWeapons);
+        WriteSection(col2X, ref ry, "Armor", EnhanceArmor);
+        WriteSection(col2X, ref ry, "Saves", EnhanceSaves);
+        WriteSection(col2X, ref ry, "Skills", EnhanceSkills);
+
+        int bottomY = Math.Max(ly, ry) + 1;
+        win.At(col1X, bottomY).Write("(press any key)", ConsoleColor.DarkGray);
+        Draw.Blit();
+        Input.NextKey();
+    }
 }
