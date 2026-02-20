@@ -89,7 +89,7 @@ public class PitTrap(int depth) : Trap(TrapType.Pit, depth, 0, 0, 4)
 public class WebTrap(int depth) : Trap(TrapType.Web, depth, -2, 0, 4)
 {
     public override MoveMode TriggeredBy => MoveMode.Walk;
-    public override Glyph Glyph => new('"', ConsoleColor.Gray);
+    public override Glyph Glyph => new('¤', ConsoleColor.Gray);
 
     public override bool Trigger(IUnit? unit, Item? item)
     {

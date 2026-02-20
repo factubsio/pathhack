@@ -119,7 +119,12 @@ public class FencingBuff : LogicBrick
 
     public override AbilityTags Tags => AbilityTags.Mental; // it requires a bit of thought to steal money imo
 
-    protected override object? OnQuery(Fact fact, string key, string? arg) => key.TrueWhen("fleeing");
+    protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
+    {
+        "fleeing" => true,
+        "can_act" when fact.ExpiresAt - g.CurrentRound <= 2 => false,
+        _ => null,
+    };
 
     protected override void OnRoundEnd(Fact fact)
     {
@@ -236,8 +241,9 @@ public static class Bandits
 
     // --- Mundane ---
 
+    // cutpurses in groups are complete dicks
     public static readonly MonsterDef Cutpurse = B("bandit_cutpurse", "cutpurse", 1, 5, ConsoleColor.DarkGray,
-        hp: 4, ac: -1, dmg: -1, flags: MonFlags.Cowardly, growsInto: () => Bandit!,
+        hp: 4, ac: -1, dmg: -1, flags: MonFlags.Cowardly, group: GroupSize.None, growsInto: () => Bandit!,
         components: [
             new Equip(MundaneArmory.Dagger),
             StealCrestsOnHit.Instance,

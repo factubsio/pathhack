@@ -425,6 +425,7 @@ public class Level(LevelId id, int width, int height)
                 if (!Config.AutoPickupClasses.Contains(item.Def.Class)) continue;
                 g.DoPickup(u, item);
                 g.pline($"{(item.Def.Class == '$' ? '$' : item.InvLet)} - {item.DisplayNameWeighted}.");
+                Movement.DidAutoPickup = true;
             }
             items = lvl.ItemsAt(upos); // refresh after pickup
         }

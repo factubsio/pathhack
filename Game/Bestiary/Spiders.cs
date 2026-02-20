@@ -50,7 +50,7 @@ public class WebSpit(int cooldown = 120) : CooldownAction("spit web", TargetingT
 
         void Animate()
         {
-            Draw.AnimateProjectile(animStart, last, new Glyph('*', ConsoleColor.White));
+            Draw.AnimateProjectile(animStart, last, new Glyph('¤', ConsoleColor.White));
             animStart = last;
         }
 
@@ -182,9 +182,9 @@ public static class Spiders
         StartingRot = Foods.RotSpoiled,
         GroupSize = GroupSize.SmallMixed,
         Components = [
-            WebImmunity.Instance,
-            new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d3)),
             new GrantAction(WebSpit.Instance),
+            new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d3)),
+            WebImmunity.Instance,
         ],
     };
 
@@ -237,8 +237,8 @@ public static class Spiders
         StartingRot = Foods.RotSpoiled,
         Components = [
             WebImmunity.Instance,
-            new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d4)),
             new GrantAction(WebSpit.Instance),
+            new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d4)),
         ],
     };
 
@@ -290,8 +290,8 @@ public static class Spiders
         StartingRot = Foods.RotSpoiled,
         Components = [
             WebImmunity.Instance,
-            new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d6)),
             new GrantAction(WebSpit.Instance),
+            new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d6)),
             SpiderVenom.DC13.OnHit(),
         ],
     };

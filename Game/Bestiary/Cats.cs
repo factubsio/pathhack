@@ -22,7 +22,9 @@ public static class Cats
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
         Components = [
+#pragma warning disable BEE008 // full attack is preferred over quick bite in this case
             new GrantAction(new FullAttack("maul", NaturalWeapons.Bite_1d4, NaturalWeapons.Claw_1d2, NaturalWeapons.Claw_1d2)),
+#pragma warning restore BEE008
             new GrantAction(QuickBite.Instance),
         ],
     };

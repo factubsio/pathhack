@@ -93,9 +93,9 @@ public static class Trolls
             EthicalAxis = EthicalAxis.Chaotic,
             Components = [
                 regen,
+                .. extra ?? [],
                 new GrantAction(AttackWithWeapon.Instance),
                 new GrantAction(new FullAttack("troll", bite, claw, claw)),
-                .. extra ?? [],
             ],
         };
     }

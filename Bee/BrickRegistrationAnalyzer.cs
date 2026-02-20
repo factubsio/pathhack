@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -18,6 +19,8 @@ public class BrickRegistrationAnalyzer : DiagnosticAnalyzer
     public const string DeprecatedHookDiagnosticId = "BEE005";
     public const string NonConstPropertyDiagnosticId = "BEE006";
     public const string WhenEquippedConflictDiagnosticId = "BEE007";
+    public const string AttackOrderDiagnosticId = "BEE008";
+    public const string NaturalBeforeWeaponDiagnosticId = "BEE009";
 
     static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -75,8 +78,24 @@ public class BrickRegistrationAnalyzer : DiagnosticAnalyzer
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 
+    static readonly DiagnosticDescriptor AttackOrderRule = new(
+        AttackOrderDiagnosticId,
+        "Basic attack action should be last GrantAction",
+        "GrantAction({0}) should be the last GrantAction in Components — AI tries actions in order",
+        "MasonryYard",
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    static readonly DiagnosticDescriptor NaturalBeforeWeaponRule = new(
+        NaturalBeforeWeaponDiagnosticId,
+        "NaturalAttack should come after AttackWithWeapon",
+        "GrantAction(NaturalAttack) should come after GrantAction(AttackWithWeapon) — AWW yields to NA when appropriate",
+        "MasonryYard",
+        DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-        ImmutableArray.Create(Rule, RampRule, RoundHookRule, UnsupportedHookRule, DeprecatedHookRule, NonConstPropertyRule, WhenEquippedConflictRule);
+        ImmutableArray.Create(Rule, RampRule, RoundHookRule, UnsupportedHookRule, DeprecatedHookRule, NonConstPropertyRule, WhenEquippedConflictRule, AttackOrderRule, NaturalBeforeWeaponRule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -101,6 +120,9 @@ public class BrickRegistrationAnalyzer : DiagnosticAnalyzer
 
             // BEE007: .WhenEquipped() on RequiresEquipped brick
             compilationCtx.RegisterSyntaxNodeAction(ctx => AnalyzeWhenEquippedCall(ctx, db), SyntaxKind.InvocationExpression);
+
+            // BEE008: basic attack not last GrantAction in Components
+            compilationCtx.RegisterSyntaxNodeAction(AnalyzeAttackOrder, SyntaxKind.CollectionExpression);
         });
     }
 
@@ -230,6 +252,81 @@ public class BrickRegistrationAnalyzer : DiagnosticAnalyzer
             else if (BrickAllowList.DeprecatedHooks.TryGetValue(name, out var reason))
                 ctx.ReportDiagnostic(Diagnostic.Create(DeprecatedHookRule, method.Identifier.GetLocation(), symbol.Name, name, reason));
         }
+    }
+
+    // --- BEE008: attack action ordering ---
+
+    static readonly HashSet<string> BasicAttackTypes = new HashSet<string> { "AttackWithWeapon", "NaturalAttack", "FullAttack" };
+
+    static void AnalyzeAttackOrder(SyntaxNodeAnalysisContext ctx)
+    {
+        var collection = (CollectionExpressionSyntax)ctx.Node;
+
+        // Only check Components assignments
+        if (collection.Parent is AssignmentExpressionSyntax assign)
+        {
+            if (assign.Left is not IdentifierNameSyntax id || id.Identifier.Text != "Components") return;
+        }
+        else if (collection.Parent is EqualsValueClauseSyntax equals
+            && equals.Parent is PropertyDeclarationSyntax prop
+            && prop.Identifier.Text == "Components")
+        {
+            // property declaration: Components = [...];
+        }
+        else return;
+
+        // Find all GrantAction elements and their inner type
+        List<(ExpressionElementSyntax element, string innerType)> grantActions = [];
+        foreach (var el in collection.Elements)
+        {
+            if (el is not ExpressionElementSyntax expr) continue;
+            var inner = expr.Expression;
+
+            // new GrantAction(X) or new GrantAction(new X(...))
+            string? innerType = GetGrantActionInnerType(ctx, inner);
+            if (innerType != null)
+                grantActions.Add((expr, innerType));
+        }
+
+        if (grantActions.Count < 2) return;
+
+        // Check: basic attacks should come after all non-basic GrantActions
+        for (int i = 0; i < grantActions.Count; i++)
+        {
+            if (!BasicAttackTypes.Contains(grantActions[i].innerType)) continue;
+            // Any non-basic after this?
+            for (int j = i + 1; j < grantActions.Count; j++)
+            {
+                if (!BasicAttackTypes.Contains(grantActions[j].innerType))
+                {
+                    ctx.ReportDiagnostic(Diagnostic.Create(AttackOrderRule, grantActions[i].element.GetLocation(), grantActions[i].innerType));
+                    break;
+                }
+            }
+        }
+
+        // Check: NaturalAttack/FullAttack before AttackWithWeapon
+        int awwIdx = -1, naIdx = -1;
+        for (int i = 0; i < grantActions.Count; i++)
+        {
+            if (grantActions[i].innerType == "AttackWithWeapon") awwIdx = i;
+            if (grantActions[i].innerType is "NaturalAttack" or "FullAttack" && naIdx < 0) naIdx = i;
+        }
+        if (naIdx >= 0 && awwIdx >= 0 && naIdx < awwIdx)
+            ctx.ReportDiagnostic(Diagnostic.Create(NaturalBeforeWeaponRule, grantActions[naIdx].element.GetLocation()));
+    }
+
+    static string? GetGrantActionInnerType(SyntaxNodeAnalysisContext ctx, ExpressionSyntax expr)
+    {
+        // Match: new GrantAction(arg)
+        if (expr is not ObjectCreationExpressionSyntax creation) return null;
+        var type = ctx.SemanticModel.GetTypeInfo(creation).Type;
+        if (type?.Name != "GrantAction") return null;
+        if (creation.ArgumentList?.Arguments.Count != 1) return null;
+
+        var arg = creation.ArgumentList.Arguments[0].Expression;
+        var argType = ctx.SemanticModel.GetTypeInfo(arg).Type;
+        return argType?.Name;
     }
 
     // --- Helpers ---

@@ -133,7 +133,6 @@ public static class Gremlins
                 new Outfit(1, new OutfitItem(MundaneArmory.Dagger))
             ),
             new GrantAction(AttackWithWeapon.Instance),
-            new GrantAction(new NaturalAttack(NaturalWeapons.Fist)),
         ],
     };
 

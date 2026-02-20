@@ -7,6 +7,7 @@ public static class Movement
     public static RunMode Mode;
     public static Pos Dir;
     public static List<Pos>? TravelPath;
+    public static bool DidAutoPickup;
     static int _travelIdx;
 
     static bool IsInteresting(Pos p) => lvl[p].IsStairs;
@@ -99,6 +100,12 @@ public static class Movement
 
     static bool ShouldStopAfterMove()
     {
+        if (DidAutoPickup)
+        {
+            DidAutoPickup = false;
+            return true;
+        }
+
         if (Mode == RunMode.UntilBlocked)
         {
             // Stop ON items

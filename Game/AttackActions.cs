@@ -14,8 +14,8 @@ public class AttackWithWeapon() : ActionBrick("attack_with_weapon")
         bool compass = target.Unit.Pos.IsCompassFrom(unit.Pos);
         bool canSee = unit is Monster { CanSeeYou: true };
         var wielded = unit.Equipped.GetValueOrDefault(ItemSlots.MainHandSlot);
-        // fast path: adjacent + wielding a weapon — skip inventory scan
-        if (dist == 1 && wielded?.Def is WeaponDef)
+        // fast path: adjacent + wielding a melee weapon — skip inventory scan
+        if (dist == 1 && wielded?.Def is WeaponDef { NotForWhacking: false })
             return new(true, Plan: new Decision(Act.Melee, wielded));
 
         bool canSwap = wielded == null || wielded.BUC != BUC.Cursed;
@@ -38,12 +38,8 @@ public class AttackWithWeapon() : ActionBrick("attack_with_weapon")
             }
             else if (item.Def is WeaponDef wep)
             {
-                // bow candidate (only if we found a quiver)
-                if (launcherProf != null && wep.Profiency == launcherProf)
-                    bestBow ??= item;
-
                 // melee candidate
-                if (canSwap)
+                if (canSwap && !wep.NotForWhacking)
                 {
                     double avg = wep.BaseDamage.Average();
                     if (avg > bestMeleeDmg) { bestMelee = item; bestMeleeDmg = avg; }
@@ -61,9 +57,15 @@ public class AttackWithWeapon() : ActionBrick("attack_with_weapon")
             }
         }
 
-        // bow match: prefer wielded bow over inventory
-        if (bestQuiver != null && wielded?.Def is WeaponDef ww && ww.Profiency == launcherProf)
-            bestBow = wielded;
+        // bow match: find best bow for our quiver (after scan so order doesn't matter)
+        if (launcherProf != null)
+        {
+            if (wielded?.Def is WeaponDef ww && ww.Profiency == launcherProf)
+                bestBow = wielded;
+            else
+                foreach (var item in unit.Inventory)
+                    if (item.Def is WeaponDef wb && wb.Profiency == launcherProf) { bestBow = item; break; }
+        }
 
         // 1: shoot if ready (quiver + wielding matching bow + compass)
         if (bestQuiver != null && bestBow == wielded && wielded != null && compass && canSee)
@@ -72,10 +74,12 @@ public class AttackWithWeapon() : ActionBrick("attack_with_weapon")
         // 2: adjacent — prefer melee
         if (dist == 1)
         {
-            if (wielded != null && wielded.Def is WeaponDef)
+            if (wielded?.Def is WeaponDef { NotForWhacking: false })
                 return new(true, Plan: new Decision(Act.Melee, wielded));
             if (bestMelee != null)
                 return new(true, Plan: new Decision(Act.Equip, bestMelee));
+            if (unit.Actions.Any(a => a is NaturalAttack or FullAttack))
+                return "has natural attack";
             return new(true, Plan: new Decision(Act.Melee, unit.GetWieldedItem())); // unarmed
         }
 
@@ -126,6 +130,7 @@ public class AttackWithWeapon() : ActionBrick("attack_with_weapon")
                 unit.Unequip(ItemSlots.MainHandSlot);
                 unit.Unequip(ItemSlots.OffHandSlot);
                 unit.Equip(d.Weapon!);
+                g.YouObserve(unit, $"{unit:The} switches to {unit:own} {d.Weapon!}");
                 break;
 
             case Act.Shoot:

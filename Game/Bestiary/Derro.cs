@@ -125,10 +125,10 @@ public static class Derro
         GroupSize = GroupSize.SmallMixed,
         Components = [
             new EquipSet(new Outfit(1, new OutfitItem(MundaneArmory.Dagger))),
-            new GrantAction(AttackWithWeapon.Instance),
             new GrantPool(TelekineticProjectile.Resource, 2, 30),
             new GrantAction(TelekineticProjectile.Minor),
             TKAttackBonus.Instance,
+            new GrantAction(AttackWithWeapon.Instance),
         ],
     };
 
@@ -151,9 +151,9 @@ public static class Derro
         CreatureType = CreatureTypes.Humanoid,
         Components = [
             new EquipSet(new Outfit(1, new OutfitItem(MundaneArmory.Club))),
-            new GrantAction(AttackWithWeapon.Instance),
             new GrantPool(DazeAction.Resource, 1, 20),
             new GrantAction(new DazeAction(4, 12, DazeAction.Resource)),
+            new GrantAction(AttackWithWeapon.Instance),
         ],
     };
 
