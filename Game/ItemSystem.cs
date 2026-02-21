@@ -80,6 +80,7 @@ public enum RuneSlot { Fundamental, Property }
 public abstract class RuneBrick(string displayName, int quality, RuneSlot slot) : LogicBrick
 {
     public string DisplayName => displayName;
+    public string QualifiedName => $"{displayName}/{Quality}";
     public int Quality => quality;
     public RuneSlot Slot => slot;
     public bool IsNull => this == NullFundamental.Instance;
@@ -128,7 +129,7 @@ public class ArmorDef : ItemDef
     }
 }
 
-public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormattable
+public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormattable, ISelectable
 {
     public char InvLet;
     public IUnit? Holder;
@@ -253,7 +254,7 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
         if (qualityKnown)
         {
             if (Fundamental?.Brick is RuneBrick { IsNull: false } fb)
-                parts.Add($"{fb.DisplayName}/{fb.Quality}");
+                parts.Add(fb.QualifiedName);
         }
 
         if (runesKnown)
@@ -262,7 +263,7 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
                 .Select(r => (RuneBrick)r.Brick)
                 .Where(r => !r.IsNull);
             foreach (var r in props)
-                parts.Add($"{r.DisplayName}/{r.Quality}");
+                parts.Add(r.QualifiedName);
         }
         else if (HasEnchantments)
         {
@@ -288,7 +289,7 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
         if (Def is WeaponDef) parts.Add($"+{Potency}");
         else if (Def is ArmorDef && Potency > 0) parts.Add($"+{Potency}");
         if (Fundamental?.Brick is RuneBrick { IsNull: false } fb)
-            parts.Add($"{fb.DisplayName}/{fb.Quality}");
+            parts.Add(fb.QualifiedName);
         var props = PropertyRunes.Select(r => (RuneBrick)r.Brick).Where(r => !r.IsNull).Select(r => r.DisplayName);
         if (props.Any()) parts.Add(string.Join(" ", props));
         parts.Add(count > 1 ? Def.Name.Plural() : Def.Name);
@@ -296,6 +297,12 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
     }
 
     public int Price => UnitPrice * Count;
+
+    public string Name => GetDisplayName(Count);
+
+    public string Description => Def.PokedexDescription ?? Def.Name;
+
+    public string? WhyNot => null;
 
     public static Item Create(ItemDef def, int count = 1) => new(def) { Count = count };
 

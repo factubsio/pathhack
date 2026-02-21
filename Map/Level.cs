@@ -60,7 +60,7 @@ public enum DoorState : byte
     Broken,
 }
 
-public record struct TileMemory(Tile Tile, DoorState Door, Item? TopItem, Trap? Trap);
+public record struct TileMemory(Tile Tile, DoorState Door, Item? TopItem, Trap? Trap, TileFeature? Feature);
 
 public class TileFeature(string id, Glyph? glyph = null, string? desc = null)
 {
@@ -272,7 +272,8 @@ public class Level(LevelId id, int width, int height)
             top = _memory[p.Y * Width + p.X]?.TopItem;
         }
         Trap? trap = Traps.TryGetValue(p, out var t) && t.PlayerSeen ? t : null;
-        _memory[p.Y * Width + p.X] = new TileMemory(this[p], GetState(p)?.Door ?? DoorState.Closed, top, trap);
+        TileFeature? feature = GetState(p)?.Feature;
+        _memory[p.Y * Width + p.X] = new TileMemory(this[p], GetState(p)?.Door ?? DoorState.Closed, top, trap, feature);
     }
 
     public bool IsOpaque(Pos p)
@@ -428,6 +429,11 @@ public class Level(LevelId id, int width, int height)
                 Movement.DidAutoPickup = true;
             }
             items = lvl.ItemsAt(upos); // refresh after pickup
+        }
+
+        if (lvl.GetState(upos)?.Feature is {} f && !f.Hidden)
+        {
+            g.pline($"There is a {f.Desc ?? "something"} here.");
         }
 
         if (items.Count == 0) {}

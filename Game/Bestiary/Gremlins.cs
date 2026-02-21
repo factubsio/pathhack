@@ -41,6 +41,7 @@ public class WeaponCurse : LogicBrick
     public override bool IsBuff => true;
     public override bool IsActive => true;
     public override string? BuffName => "Pugwampi's Ill Fortune";
+    public override BuffPriority BuffPriority => BuffPriority.Moderate;
 
     protected override void OnBeforeAttackRoll(Fact fact, PHContext ctx)
     {
@@ -58,6 +59,7 @@ public class JinkinCurse : LogicBrick
     public override bool IsBuff => true;
     public override bool IsActive => true;
     public override string? BuffName => "Jinkin's Ill Fortune";
+    public override BuffPriority BuffPriority => BuffPriority.Severe;
 
     protected override void OnBeforeCheck(Fact fact, PHContext context)
     {
@@ -74,6 +76,7 @@ public class FilthFever : LogicBrick
 {
     public override string Id => "gremlin:filth_fever";
     public override string? BuffName => "Filth Fever";
+    public override BuffPriority BuffPriority => BuffPriority.Affliction;
     public static readonly FilthFever Instance = new();
     public override bool IsBuff => true;
     public override bool IsActive => true;

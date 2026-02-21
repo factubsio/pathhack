@@ -102,6 +102,16 @@ public enum FactDisplayMode
     Duration = 4,
 }
 
+public enum BuffPriority
+{
+    Critical = 0,  // can't act: paralyzed, stunned, dazed
+    Severe = 1,    // major impairment: blind, confused, nauseated, fleeing
+    Moderate = 2,  // significant: prone, silenced
+    Affliction = 3,// ongoing diseases/poisons
+    Buff = 4,      // beneficial effects
+    Low = 5,       // immunity windows, minor
+}
+
 public abstract class LogicBrick
 {
     public static LogicBrick? GlobalHook;
@@ -118,6 +128,7 @@ public abstract class LogicBrick
     public virtual FactDisplayMode DisplayMode => FactDisplayMode.Name;
     public virtual int MaxStacks => int.MaxValue;
     public virtual bool RequiresEquipped => false;
+    public virtual BuffPriority BuffPriority => BuffPriority.Buff;
     public virtual string? PokedexDescription => null;
     public virtual AbilityTags Tags => AbilityTags.None;
 

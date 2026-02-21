@@ -15,10 +15,10 @@ const { values: args, positionals } = parseArgs({
 });
 
 const file = positionals[0] ?? "game.log";
-const sections = new Set(args.s ?? ["ttk", "recent"]);
+const sections = new Set(args.s ?? ["ttk", "hp", "recent"]);
 const json = args.j!;
 
-const { attacks, checks, damages, spawns, deaths, levelups, exps, heals, equips, casts, actions, events, maxRound } = parseLog(readFileSync(file, "utf-8"));
+const { attacks, checks, damages, spawns, deaths, levelups, exps, heals, equips, casts, actions, events, timeSeries, maxRound } = parseLog(readFileSync(file, "utf-8"));
 
 // --- Analysis helpers ---
 
@@ -177,6 +177,28 @@ showSection("recent", () => {
     saves: saveStats(checks.filter(c => rf(c.round) && c.key.endsWith("_save"))),
   };
 });
+
+showSection("hp", () => {
+  const pts = timeSeries.filter(t => t.hp !== undefined);
+  if (pts.length === 0) { console.log("\n=== HP OVER TIME === (no data)"); return; }
+  const maxHp = Math.max(...pts.map(p => p.hp!));
+  const width = 60;
+  console.log(`\n=== HP OVER TIME (max ${maxHp}) ===`);
+  // bucket into ~40 rows by round range
+  const rows = 40;
+  const bucketSize = Math.max(1, Math.ceil(maxRound / rows));
+  for (let b = 0; b < rows; b++) {
+    const lo = b * bucketSize, hi = (b + 1) * bucketSize;
+    const inBucket = pts.filter(p => p.round >= lo && p.round < hi);
+    if (inBucket.length === 0) continue;
+    const minHpB = Math.min(...inBucket.map(p => p.hp!));
+    const maxHpB = Math.max(...inBucket.map(p => p.hp!));
+    const barMin = Math.round(minHpB / maxHp * width);
+    const barMax = Math.round(maxHpB / maxHp * width);
+    const bar = " ".repeat(barMin) + "█".repeat(Math.max(1, barMax - barMin));
+    console.log(`  R${String(lo).padStart(5)}–${String(hi).padStart(5)}: ${bar} ${minHpB}–${maxHpB}`);
+  }
+}, () => timeSeries.filter(t => t.hp !== undefined).map(t => ({ round: t.round, hp: t.hp })));
 
 for (const raw of ["damages", "spawns", "deaths", "levelups", "exps", "heals", "equips", "casts", "actions"] as const) {
   const data: Record<string, unknown[]> = { damages, spawns, deaths, levelups, exps, heals, equips, casts, actions };

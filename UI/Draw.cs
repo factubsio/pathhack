@@ -82,7 +82,9 @@ public static class Draw
     // Well-known windows
     public static readonly Window MessageWin = new(ScreenWidth, 4, x: 0, y: 0, z: 0);
     public static readonly Window MapWin = new(MapWidth, MapHeight, x: 0, y: 1, z: 0, opaque: true);
-    public static readonly Window StatusWin = new(ScreenWidth, 2, x: 0, y: 1 + MapHeight, z: 0, opaque: true);
+    // How many status lines fit: 2 base + up to 2 extra
+    public static readonly int StatusHeight = Math.Min(4, Math.Max(2, ScreenHeight - (1 + MapHeight)));
+    public static readonly Window StatusWin = new(ScreenWidth, StatusHeight, x: 0, y: 1 + MapHeight, z: 0, opaque: true);
 
     public static void Init()
     {
@@ -325,6 +327,8 @@ public static class Draw
                         cell = new(item.Glyph.Value, item.Glyph.Color);
                     else if (mem.Trap is { } trap)
                         cell = new(trap.Glyph.Value, trap.Glyph.Color);
+                    else if (mem.Feature is { } feature && !feature.Hidden && feature.Glyph is { } fg)
+                        cell = new(fg.Value, fg.Color);
                     else
                     {
                         cell = MemoryTileCell(level, p, mem, col);
@@ -480,7 +484,7 @@ public static class Draw
             remaining = remaining[len..].TrimStart();
             col = len;
             row++;
-            writer.NewLine();
+            writer.NewLine(false);
         }
 
         if (row > 1)
@@ -539,31 +543,13 @@ public static class Draw
     {
         string quiverState = "";
         if (u.Quiver?.Def is QuiverDef)
-        {
             quiverState = $" Q:{u.Quiver.Charges}/{u.Quiver.MaxCharges}";
-        }
-        string encStr = u.Encumbrance switch
-        {
-            Encumbrance.Burdened => " Burdn",
-            Encumbrance.Stressed => " Stres",
-            Encumbrance.Strained => " Strai",
-            Encumbrance.Overtaxed => " Overt",
-            Encumbrance.Overloaded => " Overl",
-            _ => "",
-        };
+
+        // Line 0: location, gold, round, energy, quiver
         string statusLine = $"{level.Branch.Name}:{level.EffectiveDepth} $:{u.Gold} R:{g.CurrentRound} E:{u.Energy}{quiverState}";
         StatusWin.At(0, 0).Write(statusLine.PadRight(ScreenWidth));
-        if (encStr.Length > 0)
-        {
-            var (fg, style) = u.Encumbrance switch
-            {
-                Encumbrance.Burdened => (ConsoleColor.Yellow, CellStyle.None),
-                Encumbrance.Stressed => (ConsoleColor.DarkYellow, CellStyle.None),
-                Encumbrance.Strained => (ConsoleColor.Red, CellStyle.None),
-                _ => (ConsoleColor.Red, CellStyle.Reverse),
-            };
-            StatusWin.At(statusLine.Length, 0).Write(encStr, fg, style: style);
-        }
+
+        // Line 1: HP, AC, CL, XP
         int nextLvl = u.CharacterLevel + 1;
         int needed = Progression.XpForLevel(nextLvl) - Progression.XpForLevel(u.CharacterLevel);
         int progress = u.XP - Progression.XpForLevel(u.CharacterLevel);
@@ -574,6 +560,129 @@ public static class Draw
         bool pendingLvl = Progression.HasPendingLevelUp(u);
         StatusWin.At(prefix.Length, 1).Write(xpStr, style: pendingLvl ? CellStyle.Reverse : CellStyle.None);
         DrawSpellPips();
+
+        if (StatusHeight >= 3)
+            DrawStatLine(2);
+
+        if (StatusHeight >= 4)
+            DrawStatusEffects(3);
+    }
+
+    static void DrawStatusEffects(int row)
+    {
+        StatusWin.At(0, row).Write("".PadRight(ScreenWidth));
+
+        List<(string text, ConsoleColor color, int priority, int? remaining)> entries = [];
+
+        // Hunger
+        var hunger = Hunger.GetState(u.Nutrition);
+        if (hunger != HungerState.Normal)
+        {
+            string label = Hunger.GetLabel(hunger);
+            var (color, pri) = hunger switch
+            {
+                HungerState.Satiated => (ConsoleColor.Green, (int)BuffPriority.Low),
+                HungerState.Hungry => (ConsoleColor.Yellow, (int)BuffPriority.Moderate),
+                HungerState.Weak => (ConsoleColor.Red, (int)BuffPriority.Severe),
+                HungerState.Fainting => (ConsoleColor.Red, (int)BuffPriority.Critical),
+                _ => (ConsoleColor.Gray, (int)BuffPriority.Low),
+            };
+            entries.Add((label, color, pri, null));
+        }
+
+        // Buffs from player and inventory
+        foreach (var fact in u.LiveFacts.Where(f => f.Brick.IsBuff))
+            entries.Add(BuffEntry(fact));
+        foreach (var item in u.Inventory)
+            foreach (var fact in item.LiveFacts.Where(f => f.Brick.IsBuff))
+                entries.Add(BuffEntry(fact));
+
+        // Sort: priority asc, then remaining duration asc (expiring soon first)
+        entries.Sort((a, b) =>
+        {
+            int c = a.priority.CompareTo(b.priority);
+            if (c != 0) return c;
+            // nulls (permanent) sort after timed
+            if (a.remaining == null && b.remaining == null) return 0;
+            if (a.remaining == null) return 1;
+            if (b.remaining == null) return -1;
+            return a.remaining.Value.CompareTo(b.remaining.Value);
+        });
+
+        int col = 0;
+        int shown = 0;
+        int total = entries.Count;
+        foreach (var (text, color, _, _) in entries)
+        {
+            int needed = (shown > 0 ? 2 : 0) + text.Length; // "  " separator
+            // Reserve space for overflow indicator
+            int overflow = total - shown - 1;
+            int reserveLen = overflow > 0 ? 2 + $"…+{overflow}".Length : 0;
+            if (col + needed + reserveLen > ScreenWidth && overflow > 0)
+            {
+                string trunc = $"…+{total - shown}";
+                StatusWin.At(col + 2, row).Write(trunc, ConsoleColor.DarkGray);
+                break;
+            }
+            if (shown > 0) col += 2; // gap
+            StatusWin.At(col, row).Write(text, color);
+            col += text.Length;
+            shown++;
+        }
+    }
+
+    static (string text, ConsoleColor color, int priority, int? remaining) BuffEntry(Fact fact)
+    {
+        string name = fact.Brick.BuffName ?? fact.Brick.GetType().Name;
+        int? rem = fact.RemainingRounds;
+
+        // Build display text
+        string text = name;
+        if (fact.Brick.DisplayMode.HasFlag(FactDisplayMode.Stacks) && fact.Stacks > 1)
+            text += $"[{fact.Stacks}]";
+
+        var color = fact.Brick.BuffPriority switch
+        {
+            BuffPriority.Critical => ConsoleColor.Red,
+            BuffPriority.Severe => ConsoleColor.Red,
+            BuffPriority.Moderate => ConsoleColor.Yellow,
+            BuffPriority.Affliction => ConsoleColor.DarkYellow,
+            BuffPriority.Buff => ConsoleColor.Green,
+            BuffPriority.Low => ConsoleColor.DarkGray,
+            _ => ConsoleColor.Gray,
+        };
+
+        return (text, color, (int)fact.Brick.BuffPriority, rem);
+    }
+
+    static void DrawStatLine(int row)
+    {
+        string stats = $"Str:{u.Str} Dex:{u.Dex} Con:{u.Con} Int:{u.Int} Wis:{u.Wis} Cha:{u.Cha}";
+        StatusWin.At(0, row).Write(stats.PadRight(ScreenWidth));
+
+        int col = stats.Length;
+
+        // Encumbrance
+        if (u.Encumbrance != Encumbrance.Unencumbered)
+        {
+            string encStr = u.Encumbrance switch
+            {
+                Encumbrance.Burdened => " Burdn",
+                Encumbrance.Stressed => " Stres",
+                Encumbrance.Strained => " Strai",
+                Encumbrance.Overtaxed => " Overt",
+                Encumbrance.Overloaded => " Overl",
+                _ => "",
+            };
+            var (fg, style) = u.Encumbrance switch
+            {
+                Encumbrance.Burdened => (ConsoleColor.Yellow, CellStyle.None),
+                Encumbrance.Stressed => (ConsoleColor.DarkYellow, CellStyle.None),
+                Encumbrance.Strained => (ConsoleColor.Red, CellStyle.None),
+                _ => (ConsoleColor.Red, CellStyle.Reverse),
+            };
+            StatusWin.At(col, row).Write(encStr, fg, style: style);
+        }
     }
 
     static void DrawSpellPips()

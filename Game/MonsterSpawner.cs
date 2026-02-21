@@ -148,7 +148,11 @@ public static class MonsterSpawner
                 && (filter == null || filter(m)))
             .ToList();
 
-        return PickWeighted(candidates);
+        var pick = PickWeighted(candidates);
+        int gap = pick != null ? playerLevel - pick.BaseLevel : 0;
+        if ((gap > 2 && g.Rn2(2) == 0) || (gap > 1 && g.Rn2(3) == 0))
+            pick = PickWeighted(candidates) ?? pick;
+        return pick;
     }
 
     public static int CalcBonusLevels(int baseLevel, int depth, int playerLevel)

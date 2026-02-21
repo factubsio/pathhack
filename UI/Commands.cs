@@ -308,7 +308,7 @@ public static partial class Input
         if (room?.Type != RoomType.Shop || room.Resident == null) return;
         var shop = room.Resident.FindFact(ShopkeeperBrick.Instance)?.As<ShopState>();
         if (shop == null) return;
-        if (shop.Stock.ContainsKey(item)) return; // already shop item (returned unpaid)
+        if (shop.Stock.ContainsKey(item)) return; // shop item returned
 
         int offer = shop.SellOffer(item);
         if (offer <= 0)

@@ -92,7 +92,7 @@ public static class BasicLevel2Spells
             using var ctx = PHContext.Create(c, t);
             if (!CheckWill(ctx, c.GetSpellDC(), "hold person"))
             {
-                g.pline($"{target:The} {VTense(target, "freeze")} in place!");
+                g.YouObserve(target, $"{target:The} {VTense(target, "freeze")} in place!");
                 target.AddFact(ParalyzedBuff.Instance.Timed(), 3 + c.CasterLevel / 4);
             }
             else

@@ -20,6 +20,7 @@ public static class ItemGen
         (4, GenerateRing),
         (4, GenerateBoots),
         (4, GenerateGloves),
+        (3, GenerateRune),
     ];
     
     static int TotalWeight => ClassWeights.Sum(x => x.weight);
@@ -72,6 +73,20 @@ public static class ItemGen
     public static bool TryGenerateRing(int depth, [NotNullWhen(true)] out Item? item) => (item = PickFrom(MagicRings.RandomAll, depth)) != null;
     public static bool TryGenerateBoots(int depth, [NotNullWhen(true)] out Item? item) => (item = PickFrom(MagicBoots.RandomAll, depth)) != null;
     public static bool TryGenerateGloves(int depth, [NotNullWhen(true)] out Item? item) => (item = PickFrom(MagicGloves.RandomAll, depth)) != null;
+
+    public static Item? GenerateRune(int depth)
+    {
+        int quality = RollQuality(depth);
+        RuneItemDef def = (g.Rn2(4)) switch
+        {
+            0 => Runes.Strikings[quality - 1],
+            1 => Runes.Flamings[quality - 1],
+            2 => Runes.Frosts[quality - 1],
+            _ => Runes.Shocks[quality - 1],
+        };
+        return GenerateItem(def, depth);
+    }
+    public static bool TryGenerateRune(int depth, [NotNullWhen(true)] out Item? item) => (item = GenerateRune(depth)) != null;
 
     public static BUC RollBUC(int chance = 10, int bias = 0)
     {

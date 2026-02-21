@@ -100,6 +100,8 @@ public static partial class Input
         _extCommands["place"] = new("place", "Place a trap", ArgType.String("What trap?"), DoPlace, Hidden: true);
         _extCommands["brickstats"] = new("brickstats", "Dump brick hook stats", ArgType.None, _ => BrickStatsHook.Instance.Dump(), Hidden: true);
         _extCommands["train"] = new("train", "Train a proficiency", ArgType.None, _ => DoTrain(), Hidden: true);
+        _extCommands["forge"] = new("forge", "Open rune forge", ArgType.None, _ => DoForge());
+        _extCommands["dip"] = new("dip", "Open rune forge", ArgType.None, _ => DoForge());
         _specialCommands.Add(new(ConsoleKey.T, ConsoleModifiers.Control, "Teleport (debug)", DebugTeleport));
         LogicBrick.GlobalHook = BrickStatsHook.Instance;
     }
@@ -110,6 +112,16 @@ public static partial class Input
         var pos = PickPosition();
         if (pos == null || pos == upos) return;
         lvl.MoveUnit(u, pos.Value, free: true);
+    }
+
+    static void DoForge()
+    {
+        if (!lvl.HasFeature(upos, "rune_forge"))
+        {
+            g.pline("There is no rune forge here.");
+            return;
+        }
+        RuneForge.Open(u.Inventory);
     }
 
     static void DoTrain()

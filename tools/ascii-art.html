@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>pathhack ascii art</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { overflow: hidden; height: 100%; }
+body { background: #1a1a2e; color: #ccc; font-family: 'Consolas','Monaco',monospace; font-size: 13px; display: flex; flex-direction: column; }
+
+#toolbar { padding: 6px 12px; display: flex; gap: 8px; align-items: center; border-bottom: 1px solid #333; background: #16213e; flex-shrink: 0; }
+#toolbar button { background: #0f3460; color: #ccc; border: 1px solid #444; padding: 3px 10px; cursor: pointer; font-family: inherit; font-size: 12px; }
+#toolbar button.active { background: #e94560; color: #fff; border-color: #e94560; }
+#toolbar .sep { width: 1px; height: 20px; background: #444; }
+#toolbar input.char-input { width: 28px; text-align: center; background: #0f3460; color: #fff; border: 1px solid #444; padding: 3px; font-family: inherit; font-size: 14px; }
+#toolbar input.size-input { width: 44px; text-align: center; background: #0f3460; color: #fff; border: 1px solid #444; padding: 3px; font-family: inherit; font-size: 12px; }
+
+#main { display: flex; flex: 1; min-height: 0; }
+#canvas-wrap { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+canvas { image-rendering: pixelated; cursor: crosshair; }
+
+#sidebar { width: 170px; border-left: 1px solid #333; background: #16213e; flex-shrink: 0; padding: 12px; overflow-y: auto; }
+#sidebar h4 { color: #e94560; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin: 12px 0 6px; }
+#sidebar h4:first-child { margin-top: 0; }
+
+.color-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; }
+.char-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; }
+.char-swatch { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #fff; background: #0f3460; border: 1px solid transparent; border-radius: 2px; cursor: pointer; }
+.char-swatch:hover { border-color: #888; }
+.char-swatch.sel { border-color: #e94560; }
+.color-swatch { width: 100%; aspect-ratio: 1; border: 2px solid transparent; border-radius: 2px; cursor: pointer; }
+.color-swatch:hover { border-color: #888; }
+.color-swatch.sel { border-color: #e94560; }
+
+.color-preview { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
+.preview-stack { position: relative; width: 36px; height: 36px; cursor: pointer; }
+.preview-box { position: absolute; width: 24px; height: 24px; border: 2px solid #888; }
+#bg-preview { top: 10px; left: 10px; z-index: 1; }
+#fg-preview { top: 0; left: 0; z-index: 2; }
+.preview-label { font-size: 10px; color: #888; }
+
+#status { padding: 4px 12px; font-size: 11px; color: #888; border-top: 1px solid #333; background: #16213e; flex-shrink: 0; }
+</style>
+</head>
+<body>
+<div id="toolbar">
+  <button class="active" data-tool="brush">Brush (B)</button>
+  <button data-tool="eraser">Eraser (E)</button>
+  <button data-tool="polyline">Polyline (L)</button>
+  <button data-tool="curve">Curve (C)</button>
+  <button data-tool="select">Select (S)</button>
+  <div class="sep"></div>
+  <span style="color:#888;font-size:11px">Size: <span id="brush-size">1×1</span> [/]</span>
+  <div class="sep"></div>
+  <button id="btn-autoline">Auto-Line: Off</button>
+  <div class="sep"></div>
+  <span style="color:#888;font-size:11px">Char:</span>
+  <input id="brush-char" class="char-input" type="text" maxlength="1" value="*">
+  <div class="sep"></div>
+  <span style="color:#888;font-size:11px">Size:</span>
+  <input id="view-w" class="size-input" type="number" min="1" max="80" value="80">
+  <span style="color:#888;font-size:11px">×</span>
+  <input id="view-h" class="size-input" type="number" min="1" max="21" value="21">
+  <div class="sep"></div>
+  <button id="btn-copy">Copy</button>
+  <button id="btn-paste">Paste</button>
+  <button id="btn-autosel">Auto-Select</button>
+  <button id="btn-center">Center</button>
+  <button id="btn-clear">Clear</button>
+  <div class="sep"></div>
+  <span id="cursor-info" style="color:#888;font-size:11px"></span>
+</div>
+<div id="main">
+  <div id="canvas-wrap"><canvas id="canvas"></canvas></div>
+  <div id="sidebar">
+    <h4>Chars</h4>
+    <div id="char-palette" class="char-grid"></div>
+    <h4>Foreground</h4>
+    <div id="fg-colors" class="color-grid"></div>
+    <h4>Background</h4>
+    <div id="bg-colors" class="color-grid"></div>
+    <div class="color-preview">
+      <div class="preview-stack" id="swap-colors" title="Swap FG/BG">
+        <div class="preview-box" id="bg-preview"></div>
+        <div class="preview-box" id="fg-preview"></div>
+      </div>
+      <span class="preview-label">Click to swap</span>
+    </div>
+  </div>
+</div>
+<div id="status">Ready — Esc: cancel, Enter: finish polyline, Ctrl+Z: undo</div>
+<script type="module" src="app.js"></script>
+<script>
+(function() {
+  let ws;
+  function connect() {
+    ws = new WebSocket("ws://" + location.host + "/ws");
+    ws.onmessage = (e) => { if (e.data === "reload") location.reload(); };
+    ws.onclose = () => setTimeout(connect, 1000);
+  }
+  connect();
+})();
+</script>
+</body>
+</html>

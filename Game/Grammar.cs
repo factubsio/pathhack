@@ -34,6 +34,8 @@ public static class Grammar
         int ofIdx = s.IndexOf(" of ");
         if (ofIdx < 0)
             ofIdx = s.IndexOf(" labelled ");
+        if (ofIdx < 0)
+            ofIdx = s.IndexOf(" scribed ");
         if (ofIdx > 0)
             return PluralWord(s[..ofIdx]) + s[ofIdx..];
         

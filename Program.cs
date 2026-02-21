@@ -228,6 +228,8 @@ if (args.Length > 0 && args[0] == "--bricks")
     return;
 }
 
+using var _noCursor = new HideCursor();
+
 if (args.Length > 0)
 {
     var field = typeof(TestLevel).GetField(args[0]);
@@ -239,8 +241,6 @@ else
     // bubble dbeug
     // LevelGen.ForcedLevel1 = TestLevel.OneRoom;
 }
-
-using var _noCursor = new HideCursor();
 
 Draw.Init();
 using var _rec = TtyRec.Start("game.rec");
@@ -327,8 +327,6 @@ while (true)
     //     if (dummyPos != default)
     //         startLevel.PlaceUnit(Monster.Spawn(MONSTER_UNDER_TEST, "debug"), dummyPos);
     // }
-
-    // TEST: lock one L1 slot
 
     Draw.DrawCurrent();
 

@@ -15,12 +15,14 @@ public record class SimpleSelectable(string Name, string Description) : ISelecta
     public string? WhyNot => null;
 }
 
+public delegate bool ListPickerDrawCallback<T>(WindowWriter writer, T item, bool own);
+
 public static class ListPicker
 {
     const int ListWidth = 24;
     const int DetailX = ListWidth + 2;
 
-    public static T? Pick<T>(IReadOnlyList<T> items, string prompt, int defaultIndex = 0) where T : class, ISelectable
+    public static T? Pick<T>(IReadOnlyList<T> items, string prompt, int defaultIndex = 0, ListPickerDrawCallback<T>? custom = null) where T : class, ISelectable
     {
         if (items.Count == 0) return null;
         
@@ -42,7 +44,7 @@ public static class ListPicker
             if (visible.Count > 0)
                 index = Math.Clamp(index, 0, visible.Count - 1);
 
-            DrawPicker(win, visible, index, filter != null ? $"{prompt} [/{filter}{(typing ? "▌" : "")}]" : prompt, null, 0);
+            DrawPicker(win, visible, index, filter != null ? $"{prompt} [/{filter}{(typing ? "▌" : "")}]" : prompt, null, 0, custom);
             var key = Input.NextKey();
 
             if (typing)
@@ -62,8 +64,21 @@ public static class ListPicker
                 case ConsoleKey.DownArrow or ConsoleKey.J:
                     index = (index + 1) % visible.Count;
                     break;
-                case ConsoleKey.Enter:
-                    if (visible.Count > 0 && visible[index].WhyNot == null) return visible[index];
+                case ConsoleKey.Enter or ConsoleKey.RightArrow or ConsoleKey.L:
+                    if (visible.Count > 0 && visible[index].WhyNot == null)
+                    {
+                        if (custom != null)
+                        {
+                            int paddedWidth = Math.Clamp(Draw.ScreenWidth - 10, Draw.MapWidth, 120);
+                            win.At(DetailX - 2, 0).Write("------", fg: ConsoleColor.Yellow);
+                            win.At(DetailX - 2, 1).WriteVertical("||||||", fg: ConsoleColor.Yellow);
+                            Draw.Blit();
+                            var rhs = win.At(DetailX, 2, paddedWidth - DetailX - 2, Draw.ScreenHeight - 4);
+                            bool exit = custom(rhs, visible[index], true);
+                            if (exit) return null;
+                        }
+                        else return visible[index];
+                    }
                     break;
                 case ConsoleKey.Escape:
                     return null;
@@ -106,7 +121,7 @@ public static class ListPicker
         }
     }
 
-    static void DrawPicker<T>(Window win, IReadOnlyList<T> items, int cursor, string prompt, HashSet<int>? selected, int count) where T : ISelectable
+    static void DrawPicker<T>(Window win, IReadOnlyList<T> items, int cursor, string prompt, HashSet<int>? selected, int count, ListPickerDrawCallback<T>? custom = null) where T : ISelectable
     {
         win.Clear();
         win.At(2, 1).Write(prompt, ConsoleColor.White);
@@ -148,6 +163,11 @@ public static class ListPicker
         if (items.Count == 0)
         {
             win.At(DetailX, 3).Write("No matches", ConsoleColor.DarkGray);
+        }
+        else if (custom != null)
+        {
+            var rhs = win.At(DetailX, 2, paddedWidth - DetailX - 2, Draw.ScreenHeight - 4);
+            custom(rhs, items[cursor], false);
         }
         else
         {

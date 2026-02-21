@@ -9,6 +9,7 @@ public class BlindBuff : LogicBrick
 
   public override bool IsBuff => true;
   public override string? BuffName => "Blind";
+  public override BuffPriority BuffPriority => BuffPriority.Severe;
   public override StackMode StackMode => StackMode.Stack;
 
   protected override object? OnQuery(Fact fact, string key, string? arg) => key.FalseWhen(CommonQueries.See);
@@ -30,6 +31,7 @@ public class ProneBuff : LogicBrick
   public override string Id => "prone";
   public override bool IsBuff => true;
   public override string? BuffName => "Hamstrung";
+  public override BuffPriority BuffPriority => BuffPriority.Moderate;
   public override StackMode StackMode => StackMode.Stack;
 
   protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
@@ -46,6 +48,7 @@ public class SilencedBuff : LogicBrick
   public override string Id => "silenced";
   public override bool IsBuff => true;
   public override string? BuffName => "Silenced";
+  public override BuffPriority BuffPriority => BuffPriority.Moderate;
   public override StackMode StackMode => StackMode.Stack;
 
   protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
@@ -62,6 +65,7 @@ public class ParalyzedBuff : LogicBrick
     public override bool IsBuff => true;
     public override bool IsActive => true;
     public override string? BuffName => "Paralyzed";
+    public override BuffPriority BuffPriority => BuffPriority.Critical;
     public override StackMode StackMode => StackMode.Stack;
 
     protected override object? OnQuery(Fact fact, string key, string? arg) => key == "can_act" && !fact.Entity.Has(CommonQueries.ParalysisImmune) ? false : null;
@@ -79,6 +83,7 @@ public class NauseatedBuff : LogicBrick
   public override string Id => "nauseated";
   public override bool IsBuff => true;
   public override string? BuffName => "Nauseated";
+  public override BuffPriority BuffPriority => BuffPriority.Severe;
   public override StackMode StackMode => StackMode.Stack;
 
   protected override void OnBeforeCheck(Fact fact, PHContext context)
@@ -97,6 +102,7 @@ public class FleeingBuff : LogicBrick
   public override string Id => "fleeing";
   public override bool IsBuff => true;
   public override string? BuffName => "Fleeing";
+  public override BuffPriority BuffPriority => BuffPriority.Severe;
 
   protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
   {
@@ -112,6 +118,7 @@ public class StunnedBuff : LogicBrick
   public override bool IsBuff => true;
   public override bool IsActive => true;
   public override string? BuffName => "Stunned";
+  public override BuffPriority BuffPriority => BuffPriority.Critical;
 
   protected override object? OnQuery(Fact fact, string key, string? arg) => key == "can_act" && !fact.Entity.Has(CommonQueries.StunImmune) ? false : null;
 }
@@ -143,6 +150,7 @@ public abstract class AfflictionBrick(int dc, string? tag = null) : LogicBrick<A
 
   public override bool IsBuff => true;
   public override bool IsActive => true;
+  public override BuffPriority BuffPriority => BuffPriority.Affliction;
   public override StackMode StackMode => StackMode.Stack;
   public override FactDisplayMode DisplayMode => FactDisplayMode.Name | FactDisplayMode.Stacks;
 
@@ -267,6 +275,7 @@ public class ConfusedBuff : LogicBrick
     public override string Id => "confused";
     public override bool IsBuff => true;
     public override string? BuffName => "Confused";
+    public override BuffPriority BuffPriority => BuffPriority.Severe;
     public override StackMode StackMode => StackMode.ExtendDuration;
 
     protected override object? OnQuery(Fact fact, string key, string? arg) =>
@@ -284,6 +293,7 @@ public class DazeImmunity : LogicBrick
     public static readonly DazeImmunity Instance = new();
     public override string Id => "daze_immune";
     public override string? BuffName => "Daze Immunity";
+    public override BuffPriority BuffPriority => BuffPriority.Low;
     public override StackMode StackMode => StackMode.Reject;
 
     protected override object? OnQuery(Fact fact, string key, string? arg) => key.TrueWhen(CommonQueries.DazeImmune);
@@ -295,6 +305,7 @@ public class DazedBuff : LogicBrick
     public override string Id => "dazed";
     public override bool IsBuff => true;
     public override string? BuffName => "Dazed";
+    public override BuffPriority BuffPriority => BuffPriority.Critical;
     public override StackMode StackMode => StackMode.Reject;
 
     protected override object? OnQuery(Fact fact, string key, string? arg) =>

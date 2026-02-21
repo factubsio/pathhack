@@ -10,14 +10,14 @@ public static class BasicLevel1Spells
         var target = lvl.UnitAt(c.Pos + t.Pos.Value);
         if (target == null) return;
 
-        int dice = (1 + c.CasterLevel) / 2;
+        int dice = 1 + (1 + c.CasterLevel) / 2;
         using var ctx = PHContext.Create(c, t);
 
         if (target.IsCreature(CreatureTypes.Undead) == true)
         {
           ctx.Damage.Add(new()
           {
-            Formula = d(dice, 8) + 2,
+            Formula = d(dice, 8) + 6,
             Type = DamageTypes.Magic,
           });
           DoDamage(ctx);
@@ -55,7 +55,7 @@ public static class BasicLevel1Spells
             {
               ctx.Damage.Add(new()
               {
-                Formula = d(4) + 1,
+                Formula = d(6) + 2 + unit.EffectiveLevel / 4,
                 Type = DamageTypes.Magic,
               });
             }
@@ -194,6 +194,7 @@ public class AcidBurnBuff : LogicBrick
   public override bool IsActive => true;
   public override bool IsBuff => true;
   public override string? BuffName => "Acid burn";
+  public override BuffPriority BuffPriority => BuffPriority.Moderate;
 
   public static readonly AcidBurnBuff Instance = new();
 

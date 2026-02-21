@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+
 namespace Pathhack.UI;
 
 public class Window(int width, int height, int x = 0, int y = 0, int z = 0, bool opaque = false)
@@ -37,22 +39,39 @@ public class Window(int width, int height, int x = 0, int y = 0, int z = 0, bool
 
 public struct WindowWriter(Window window, Pos origin, int width, int height)
 {
-    public Pos Cursor = origin;
+    private Pos Cursor = origin;
+    public void SetCursor(int x, int y) => Cursor = new(Origin.X + x, Origin.Y + y);
     readonly Pos Origin = origin;
     public readonly int Width = width;
     public readonly int Height = height;
 
-    public void Write(string text, ConsoleColor fg = ConsoleColor.Gray, ConsoleColor bg = ConsoleColor.Black, CellStyle style = CellStyle.None)
+    private void Write(string text, ConsoleColor fg, ConsoleColor bg, CellStyle style, Pos advance, char overwrite = '\0', bool transparent = false)
     {
         foreach (char c in text)
         {
-            if (Cursor.X - Origin.X < Width && Cursor.Y - Origin.Y < Height)
-                window[Cursor.X, Cursor.Y] = new Cell(c, fg, bg, style);
-            Cursor = new(Cursor.X + 1, Cursor.Y);
+            if ((!transparent || c != ' ') && Cursor.X - Origin.X < Width && Cursor.Y - Origin.Y < Height)
+                window[Cursor.X, Cursor.Y] = new Cell(overwrite == '\0' ? c : overwrite, fg, bg, style);
+            Cursor += advance;
         }
     }
 
-    public void Fill(int w, int h, Cell cell)
+    public void Write(string text, ConsoleColor fg = ConsoleColor.Gray, ConsoleColor bg = ConsoleColor.Black, CellStyle style = CellStyle.None, bool transparent = false) => Write(text, fg, bg, style, Pos.E, '\0', transparent);
+    public void WriteVertical(string text, ConsoleColor fg = ConsoleColor.Gray, ConsoleColor bg = ConsoleColor.Black, CellStyle style = CellStyle.None, bool transparent = false) => Write(text, fg, bg, style, Pos.S, '\0', transparent);
+    public void NewLine(bool cr = true)
+    {
+        if (cr)
+        {
+            Cursor = new(Origin.X, Cursor.Y + 1);
+        }
+        else
+        {
+            Cursor += Pos.S;
+        }
+    }
+
+    public readonly void Clear() => Fill(Width, Height, Cell.Empty);
+
+    public readonly void Fill(int w, int h, Cell cell)
     {
         for (int dy = 0; dy < h; dy++)
             for (int dx = 0; dx < w; dx++)
@@ -60,7 +79,19 @@ public struct WindowWriter(Window window, Pos origin, int width, int height)
                     window[Cursor.X + dx, Cursor.Y + dy] = cell;
     }
 
-    public void NewLine() { Cursor = new(Origin.X, Cursor.Y + 1); }
+    public void WriteMulti(string text, ConsoleColor fg = ConsoleColor.Gray, ConsoleColor bg = ConsoleColor.Black, CellStyle style = CellStyle.None, char overwrite = '\0', bool transparent = false)
+    {
+        int beginX = Cursor.X;
+        var lines = text.Split('\n');
+        int start = 0, end = lines.Length - 1;
+        if (start <= end && lines[start].Trim().Length == 0) start++;
+        if (start <= end && lines[end].Trim().Length == 0) end--;
+        for (int i = start; i <= end; i++)
+        {
+            Write(lines[i], fg, bg, style, Pos.E, overwrite, transparent);
+            Cursor = new(beginX, Cursor.Y + 1);
+        }
+    }
 }
 
 public static class WindowDecorations

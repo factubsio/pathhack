@@ -50,7 +50,7 @@ public class DungeonMaster : Entity<BaseDef>, IUnit, IFormattable
     public ActionCost LandMove => 12;
     public int NaturalRegen => 0;
     public int StrMod => 0;
-    public int CasterLevel => 20;
+    public int CasterLevel => represents?.CasterLevel ?? 5;
     public Trap? TrappedIn { get; set; }
     public int EscapeAttempts { get; set; }
     public IUnit? GrabbedBy { get; set; }
