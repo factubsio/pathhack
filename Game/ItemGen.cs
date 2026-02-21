@@ -116,7 +116,8 @@ public static class ItemGen
             PotionDef => 10,
             _ => 5, // rings, tools, gems
         };
-        Item item = new(def) { BUC = RollBUC(bucChance, def.BUCBias) };
+        Item item = Item.Create(def);
+        item.BUC = RollBUC(bucChance, def.BUCBias);
         List<string> genLog = [];
         
         if (def is WeaponDef)

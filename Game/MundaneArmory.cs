@@ -207,6 +207,86 @@ public static partial class MundaneArmory
         Price = 20,
     };
 
+    public static readonly WeaponDef Halberd = new()
+    {
+        id = "halberd",
+        Name = "halberd",
+        BaseDamage = d(10),
+        Profiency = Proficiencies.Polearm,
+        WeaponType = WeaponTypes.Halberd,
+        DamageType = DamageTypes.Slashing,
+        Hands = 2,
+        Reach = 2,
+        MeleeVerb = "chops at",
+        Glyph = new(ItemClasses.Weapon, ConsoleColor.Gray),
+        Weight = 120,
+        Price = 25,
+    };
+
+    public static readonly WeaponDef Glaive = new()
+    {
+        id = "glaive",
+        Name = "glaive",
+        BaseDamage = d(8),
+        Profiency = Proficiencies.Polearm,
+        WeaponType = WeaponTypes.Glaive,
+        DamageType = DamageTypes.Slashing,
+        Hands = 2,
+        Reach = 2,
+        MeleeVerb = "slashes",
+        Glyph = new(ItemClasses.Weapon, ConsoleColor.Gray),
+        Weight = 100,
+        Price = 15,
+    };
+
+    public static readonly WeaponDef LucerneHammer = new()
+    {
+        id = "lucerne_hammer",
+        Name = "lucerne hammer",
+        BaseDamage = d(10),
+        Profiency = Proficiencies.Polearm,
+        WeaponType = WeaponTypes.LucerneHammer,
+        DamageType = DamageTypes.Blunt,
+        Hands = 2,
+        Reach = 2,
+        MeleeVerb = "smashes",
+        Glyph = new(ItemClasses.Weapon, ConsoleColor.Gray),
+        Weight = 120,
+        Price = 20,
+    };
+
+    public static readonly WeaponDef Ranseur = new()
+    {
+        id = "ranseur",
+        Name = "ranseur",
+        BaseDamage = d(8),
+        Profiency = Proficiencies.Polearm,
+        WeaponType = WeaponTypes.Ranseur,
+        DamageType = DamageTypes.Piercing,
+        Hands = 2,
+        Reach = 2,
+        MeleeVerb = "thrusts",
+        Glyph = new(ItemClasses.Weapon, ConsoleColor.Gray),
+        Weight = 100,
+        Price = 15,
+    };
+
+    public static readonly WeaponDef Bardiche = new()
+    {
+        id = "bardiche",
+        Name = "bardiche",
+        BaseDamage = d(12),
+        Profiency = Proficiencies.Polearm,
+        WeaponType = WeaponTypes.Bardiche,
+        DamageType = DamageTypes.Slashing,
+        Hands = 2,
+        Reach = 2,
+        MeleeVerb = "cleaves",
+        Glyph = new(ItemClasses.Weapon, ConsoleColor.Gray),
+        Weight = 140,
+        Price = 30,
+    };
+
     public static readonly WeaponDef Whip = new()
     {
         id = "whip",

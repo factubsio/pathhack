@@ -287,6 +287,7 @@ public class LuckBlessingPassive : LogicBrick<LuckBlessingData>
     public override string Id => "blessing:luck";
     public override bool IsBuff => true;
     public override string? BuffName => "Luck";
+    public override StatusDisplay StatusDisplayPriority => StatusDisplay.None;
 
     protected override void OnBeforeCheck(Fact fact, PHContext context)
     {

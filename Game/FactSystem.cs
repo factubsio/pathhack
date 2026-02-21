@@ -102,7 +102,7 @@ public enum FactDisplayMode
     Duration = 4,
 }
 
-public enum BuffPriority
+public enum StatusDisplay
 {
     Critical = 0,  // can't act: paralyzed, stunned, dazed
     Severe = 1,    // major impairment: blind, confused, nauseated, fleeing
@@ -110,6 +110,7 @@ public enum BuffPriority
     Affliction = 3,// ongoing diseases/poisons
     Buff = 4,      // beneficial effects
     Low = 5,       // immunity windows, minor
+    None = 6,
 }
 
 public abstract class LogicBrick
@@ -128,7 +129,7 @@ public abstract class LogicBrick
     public virtual FactDisplayMode DisplayMode => FactDisplayMode.Name;
     public virtual int MaxStacks => int.MaxValue;
     public virtual bool RequiresEquipped => false;
-    public virtual BuffPriority BuffPriority => BuffPriority.Buff;
+    public virtual StatusDisplay StatusDisplayPriority => StatusDisplay.Buff;
     public virtual string? PokedexDescription => null;
     public virtual AbilityTags Tags => AbilityTags.None;
 
@@ -661,6 +662,27 @@ public class Inventory(IUnit owner) : IEnumerable<Item>
         item = Items.First(i => i.InvLet == ch);
         return true;
     }
+
+    public void SwapLetters(Item a, char newLet)
+    {
+        char oldLet = a.InvLet;
+        int oldIdx = LetterToIndex(oldLet);
+        int newIdx = LetterToIndex(newLet);
+        if (newIdx < 0) return;
+
+        if (TryGet(newLet, out var b))
+        {
+            b.InvLet = oldLet;
+            // old slot stays in use (now b's)
+        }
+        else
+        {
+            if (oldIdx >= 0) inUse &= ~(1UL << oldIdx);
+        }
+
+        a.InvLet = newLet;
+        inUse |= 1UL << newIdx;
+    }
 }
 
 public class Hitpoints
@@ -703,6 +725,7 @@ public class Hitpoints
 public static class UnitExts
 {
     public static bool IsNullOrDead([NotNullWhen(false)] this IUnit? unit) => unit == null || unit.IsDead;
+    public static bool CanLetGoOf(this IUnit unit, Item item) => !item.IsCursed;
 }
 
 public interface IUnit : IEntity, IFormattable

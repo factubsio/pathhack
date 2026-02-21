@@ -510,6 +510,59 @@ public static partial class Input
             g.pline($"{picked[0]!.InvLet} - {picked[0]!.Def.Name} (weapon in {HandStr(picked[0]!)}).");
     }
 
+    static void DoSwapWeapon()
+    {
+        var eq = u.Equipped;
+        eq.TryGetValue(ItemSlots.MainHandSlot, out var main);
+        eq.TryGetValue(ItemSlots.AltSlot, out var alt);
+
+        if (main == null && alt == null) { g.pline("You have nothing to swap."); return; }
+
+        // cursed main hand can't leave
+        if (main != null && !u.CanLetGoOf(main))
+        {
+            main.Knowledge |= ItemKnowledge.BUC;
+            g.pline($"Your {main.Def.Name} is welded to your {HandStr(main)}!");
+            return;
+        }
+
+        // cursed alt can't leave either
+        if (alt != null && !u.CanLetGoOf(alt))
+        {
+            alt.Knowledge |= ItemKnowledge.BUC;
+            g.pline($"Your {alt.Def.Name} is stuck!");
+            return;
+        }
+
+        // 2h alt coming in but off-hand is occupied by something else
+        bool altIs2h = alt?.Def is WeaponDef { Hands: > 1 };
+        if (altIs2h && eq.TryGetValue(ItemSlots.OffHandSlot, out var off) && off != main)
+        {
+            g.pline($"You need a free off-hand to wield {alt!.Def.Name}.");
+            return;
+        }
+
+        // clear main+off slots
+        bool mainIs2h = main?.Def is WeaponDef { Hands: > 1 };
+        eq.Remove(ItemSlots.MainHandSlot);
+        if (mainIs2h) eq.Remove(ItemSlots.OffHandSlot);
+        eq.Remove(ItemSlots.AltSlot);
+
+        // swap
+        if (alt != null)
+        {
+            eq[ItemSlots.MainHandSlot] = alt;
+            if (altIs2h) eq[ItemSlots.OffHandSlot] = alt;
+        }
+        if (main != null)
+            eq[ItemSlots.AltSlot] = main;
+
+        if (alt != null)
+            g.pline($"{alt.InvLet} - {alt:an} {EquipDescription(alt, ItemSlots.MainHandSlot)}.");
+        else
+            g.pline("You are empty handed.");
+    }
+
     static void WearArmor()
     {
         var armors = u.Inventory.Where(i => i.Def is ArmorDef
@@ -564,6 +617,7 @@ public static partial class Input
         ItemSlots.Ring => $"(worn on {slot.Value.Slot} hand)",
         ItemSlots.Hand when item.Def is WeaponDef { Hands: 2 } => "(weapon in hands)",
         ItemSlots.Hand => "(weapon in hand)",
+        ItemSlots.Alt => "(alternate weapon)",
         _ => "(being worn)",
     };
 

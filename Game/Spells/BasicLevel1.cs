@@ -194,7 +194,7 @@ public class AcidBurnBuff : LogicBrick
   public override bool IsActive => true;
   public override bool IsBuff => true;
   public override string? BuffName => "Acid burn";
-  public override BuffPriority BuffPriority => BuffPriority.Moderate;
+  public override StatusDisplay StatusDisplayPriority => StatusDisplay.Moderate;
 
   public static readonly AcidBurnBuff Instance = new();
 

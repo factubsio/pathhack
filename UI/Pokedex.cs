@@ -231,9 +231,8 @@ public static class Pokedex
         bool qualityKnown = item.Knowledge.HasFlag(ItemKnowledge.PropQuality);
         bool potencyKnown = item.Knowledge.HasFlag(ItemKnowledge.PropPotency);
 
-        string equipped = item.Holder?.Equipped.ContainsValue(item) == true
-            ? (def is ArmorDef ? " (being worn)" : " (weapon in hand)")
-            : "";
+        var eqKv = item.Holder?.Equipped.FirstOrDefault(kv => kv.Value == item);
+        string equipped = eqKv is { Value: not null } kv ? $" {Input.EquipDescription(item, kv.Key)}" : "";
         menu.AddHeading($"{item.DisplayNameWeighted}{equipped}");
         menu.Add();
 

@@ -41,7 +41,7 @@ public class ShedArmorDebuff : LogicBrick
     public override string Id => "troll:shed_armor";
     public override bool IsBuff => true;
     public override string? BuffName => "Shed Armor";
-    public override BuffPriority BuffPriority => BuffPriority.Moderate;
+    public override StatusDisplay StatusDisplayPriority => StatusDisplay.Moderate;
 
     protected override void OnBeforeDefendRoll(Fact fact, PHContext ctx) => ctx.Check!.Modifiers.Untyped(-5, "shed");
     protected override void OnBeforeAttackRoll(Fact fact, PHContext ctx) => ctx.Check!.Modifiers.Untyped(1, "shedrage");

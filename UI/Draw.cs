@@ -581,21 +581,18 @@ public static class Draw
             string label = Hunger.GetLabel(hunger);
             var (color, pri) = hunger switch
             {
-                HungerState.Satiated => (ConsoleColor.Green, (int)BuffPriority.Low),
-                HungerState.Hungry => (ConsoleColor.Yellow, (int)BuffPriority.Moderate),
-                HungerState.Weak => (ConsoleColor.Red, (int)BuffPriority.Severe),
-                HungerState.Fainting => (ConsoleColor.Red, (int)BuffPriority.Critical),
-                _ => (ConsoleColor.Gray, (int)BuffPriority.Low),
+                HungerState.Satiated => (ConsoleColor.Green, (int)StatusDisplay.Low),
+                HungerState.Hungry => (ConsoleColor.Yellow, (int)StatusDisplay.Moderate),
+                HungerState.Weak => (ConsoleColor.Red, (int)StatusDisplay.Severe),
+                HungerState.Fainting => (ConsoleColor.Red, (int)StatusDisplay.Critical),
+                _ => (ConsoleColor.Gray, (int)StatusDisplay.Low),
             };
             entries.Add((label, color, pri, null));
         }
 
         // Buffs from player and inventory
-        foreach (var fact in u.LiveFacts.Where(f => f.Brick.IsBuff))
+        foreach (var fact in u.LiveFacts.Where(f => f.Brick.IsBuff && f.Brick.StatusDisplayPriority != StatusDisplay.None))
             entries.Add(BuffEntry(fact));
-        foreach (var item in u.Inventory)
-            foreach (var fact in item.LiveFacts.Where(f => f.Brick.IsBuff))
-                entries.Add(BuffEntry(fact));
 
         // Sort: priority asc, then remaining duration asc (expiring soon first)
         entries.Sort((a, b) =>
@@ -641,18 +638,18 @@ public static class Draw
         if (fact.Brick.DisplayMode.HasFlag(FactDisplayMode.Stacks) && fact.Stacks > 1)
             text += $"[{fact.Stacks}]";
 
-        var color = fact.Brick.BuffPriority switch
+        var color = fact.Brick.StatusDisplayPriority switch
         {
-            BuffPriority.Critical => ConsoleColor.Red,
-            BuffPriority.Severe => ConsoleColor.Red,
-            BuffPriority.Moderate => ConsoleColor.Yellow,
-            BuffPriority.Affliction => ConsoleColor.DarkYellow,
-            BuffPriority.Buff => ConsoleColor.Green,
-            BuffPriority.Low => ConsoleColor.DarkGray,
+            StatusDisplay.Critical => ConsoleColor.Red,
+            StatusDisplay.Severe => ConsoleColor.Red,
+            StatusDisplay.Moderate => ConsoleColor.Yellow,
+            StatusDisplay.Affliction => ConsoleColor.DarkYellow,
+            StatusDisplay.Buff => ConsoleColor.Green,
+            StatusDisplay.Low => ConsoleColor.DarkGray,
             _ => ConsoleColor.Gray,
         };
 
-        return (text, color, (int)fact.Brick.BuffPriority, rem);
+        return (text, color, (int)fact.Brick.StatusDisplayPriority, rem);
     }
 
     static void DrawStatLine(int row)

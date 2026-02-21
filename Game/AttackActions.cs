@@ -1,5 +1,6 @@
 namespace Pathhack.Game;
 
+// TODO: monster AI should use weapon.Reach for melee range (dist <= reach instead of dist == 1)
 public class AttackWithWeapon() : ActionBrick("attack_with_weapon")
 {
     public static readonly AttackWithWeapon Instance = new();
@@ -18,7 +19,7 @@ public class AttackWithWeapon() : ActionBrick("attack_with_weapon")
         if (dist == 1 && wielded?.Def is WeaponDef { NotForWhacking: false })
             return new(true, Plan: new Decision(Act.Melee, wielded));
 
-        bool canSwap = wielded == null || wielded.BUC != BUC.Cursed;
+        bool canSwap = wielded == null || unit.CanLetGoOf(wielded);
         string? throwableId = canSee && compass && dist >= 2
             ? unit.Query<string>("throwable", null, MergeStrategy.Replace, null!) : null;
 

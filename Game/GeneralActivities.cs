@@ -168,3 +168,26 @@ public class DiggerVerb() : VerbResponder(ItemVerb.Apply)
 
     public static readonly DiggerVerb Instance = new();
 }
+
+public class ReachAttackVerb() : VerbResponder(ItemVerb.Apply)
+{
+    public override string Id => "reach_attack";
+
+    protected override void OnVerb(Fact fact, ItemVerb verb)
+    {
+        if (fact.Entity is not Item item || item.Def is not WeaponDef wep) return;
+
+        if (u.GetWieldedItem() != item)
+        {
+            if (g.DoEquip(u, item, free: true) != EquipResult.Ok) return;
+        }
+
+        var tgt = UI.Input.PickTargetInRange(wep.Reach, filter: m => m.Perception >= PlayerPerception.Detected);
+        if (tgt == null) return;
+
+        DoWeaponAttack(u, tgt, item);
+        u.Energy -= ActionCosts.OneAction.Value;
+    }
+
+    public static readonly ReachAttackVerb Instance = new();
+}

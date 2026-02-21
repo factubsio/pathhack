@@ -1265,7 +1265,7 @@ public class GameState
 
     }
 
-    public EquipResult DoEquip(IUnit unit, Item? item, EquipSlot? slotOverride = null)
+    public EquipResult DoEquip(IUnit unit, Item? item, EquipSlot? slotOverride = null, bool free = false)
     {
         if (item == null)
         {
@@ -1294,7 +1294,7 @@ public class GameState
             var result = unit.Equip(item);
             if (result == null)
             {
-                unit.Energy -= ActionCosts.OneAction.Value;
+                if (!free) unit.Energy -= ActionCosts.OneAction.Value;
                 return EquipResult.NoSlot;
             }
             if (item.IsCursed)
@@ -1304,7 +1304,7 @@ public class GameState
                     g.pline($"The {item.Def.Name} welds itself to your {HandStr(item)}!");
             }
         }
-        unit.Energy -= ActionCosts.OneAction.Value;
+        if (!free) unit.Energy -= ActionCosts.OneAction.Value;
         return EquipResult.Ok;
     }
 

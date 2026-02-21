@@ -71,6 +71,7 @@ public static partial class Input
         ['z'] = new("zap", "Zap wand", ArgType.None, _ => ZapWand()),
         ['e'] = new("eat", "Eat food", ArgType.None, _ => Eat()),
         ['a'] = new("apply", "Apply item", ArgType.None, _ => Apply()),
+        ['x'] = new("swap", "Swap to alternate weapon", ArgType.None, _ => DoSwapWeapon()),
         ['\\'] = new("discoveries", "Show discoveries", ArgType.None, _ => ShowDiscoveries()),
         ['C'] = new("call", "Name an item type", ArgType.None, _ => CallItem()),
         ['?'] = new("help", "Show help", ArgType.None, _ => ShowHelp()),
@@ -102,6 +103,7 @@ public static partial class Input
         _extCommands["train"] = new("train", "Train a proficiency", ArgType.None, _ => DoTrain(), Hidden: true);
         _extCommands["forge"] = new("forge", "Open rune forge", ArgType.None, _ => DoForge());
         _extCommands["dip"] = new("dip", "Open rune forge", ArgType.None, _ => DoForge());
+        _extCommands["adjust"] = new("adjust", "Adjust inventory letters", ArgType.None, _ => DoAdjust());
         _specialCommands.Add(new(ConsoleKey.T, ConsoleModifiers.Control, "Teleport (debug)", DebugTeleport));
         LogicBrick.GlobalHook = BrickStatsHook.Instance;
     }
@@ -122,6 +124,18 @@ public static partial class Input
             return;
         }
         RuneForge.Open(u.Inventory);
+    }
+
+    static void DoAdjust()
+    {
+        if (!PickItem("adjust", _ => true, out var item)) return;
+        g.pline($"Adjust {item:an} to what letter?");
+        char ch = NextKey().KeyChar;
+        if (ch is (< 'a' or > 'z') and (< 'A' or > 'Z')) { g.pline("Never mind."); return; }
+        if (ch == item.InvLet) return;
+
+        u.Inventory.SwapLetters(item, ch);
+        g.pline($"{ch} - {item:an}.");
     }
 
     static void DoTrain()
@@ -217,42 +231,8 @@ public static partial class Input
         }
         else if (ability.Targeting == TargetingType.Unit)
         {
-            g.pline("Target what?");
-            Draw.DrawCurrent();
-            List<IUnit> candidates = [..lvl.LiveUnits
-                .OfType<Monster>()
-                .Where(m => m.Pos.ChebyshevDist(upos) < ability.EffectiveMaxRange && m.Perception >= PlayerPerception.Detected)
-                .OrderBy(m => m.Pos.ChebyshevDist(upos))
-            ];
-            Menu<IUnit> m = new();
-            char let = 'a';
-            foreach (var candidate in candidates.Take(6))
-                m.Add(let++, $"{candidate:An} [{candidate.Pos.RelativeTo(upos)}]", candidate);
-            
-            m.Add('x', "Pick manually", u);
-
-            var tgt_ = m.Display(MenuMode.PickOne);
-            if (tgt_.Count == 0) return;
-            var tgt = tgt_[0];
-
-            if (tgt.IsPlayer)
-            {
-                g.pline("Pick a target.");
-                var pos = PickPosition();
-                if (pos == null) return;
-                if (pos.Value.ChebyshevDist(upos) > ability.EffectiveMaxRange)
-                {
-                    g.pline("Too far.");
-                    return;
-                }
-                var unit = lvl.UnitAt(pos.Value) as Monster;
-                if (unit == null || unit.Perception < PlayerPerception.Detected)
-                {
-                    g.pline("You can't target that.");
-                    return;
-                }
-                tgt = unit;
-            }
+            var tgt = PickTargetInRange(ability.EffectiveMaxRange, filter: m => m.Perception >= PlayerPerception.Detected);
+            if (tgt == null) return;
 
             Log.Write($"target unit {tgt} at {tgt.Pos}");
 
@@ -408,6 +388,48 @@ public static partial class Input
         }
         Log.Verbose("movement", $"Travel: from={upos} to={cursor} path=[{string.Join(",", PathToPositions(upos, path))}]");
         Movement.StartTravel(path);
+    }
+
+    public static IUnit? PickTargetInRange(int range, Pos? origin = null, Func<Monster, bool>? filter = null)
+    {
+        Pos from = origin ?? upos;
+        g.pline("Target what?");
+        Draw.DrawCurrent();
+        List<IUnit> candidates = [..lvl.LiveUnits
+            .OfType<Monster>()
+            .Where(m => m.Pos.ChebyshevDist(from) <= range && (filter == null || filter(m)))
+            .OrderBy(m => m.Pos.ChebyshevDist(from))
+        ];
+        Menu<IUnit> menu = new();
+        char let = 'a';
+        foreach (var candidate in candidates.Take(6))
+            menu.Add(let++, $"{candidate:An} [{candidate.Pos.RelativeTo(from)}]", candidate);
+        menu.Add('x', "Pick manually", u);
+
+        var picks = menu.Display(MenuMode.PickOne);
+        if (picks.Count == 0) return null;
+        var tgt = picks[0];
+
+        if (tgt.IsPlayer)
+        {
+            g.pline("Pick a target.");
+            var pos = PickPosition();
+            if (pos == null) return null;
+            if (pos.Value.ChebyshevDist(from) > range)
+            {
+                g.pline("Too far.");
+                return null;
+            }
+            var unit = lvl.UnitAt(pos.Value) as Monster;
+            if (unit == null || (filter != null && !filter(unit)))
+            {
+                g.pline("You can't target that.");
+                return null;
+            }
+            tgt = unit;
+        }
+
+        return tgt;
     }
 
     static Pos? PickPosition(Pos? start = null, Action<Pos>? onMove = null, bool allowGlyphJump = true)

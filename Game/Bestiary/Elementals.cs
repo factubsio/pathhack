@@ -45,7 +45,7 @@ public class FireBurnBuff : LogicBrick
     public override bool IsActive => true;
     public override bool IsBuff => true;
     public override string? BuffName => "Burning";
-    public override BuffPriority BuffPriority => BuffPriority.Moderate;
+    public override StatusDisplay StatusDisplayPriority => StatusDisplay.Moderate;
     public override StackMode StackMode => StackMode.ExtendDuration;
 
     protected override void OnRoundStart(Fact fact)
@@ -65,7 +65,7 @@ public class NumbingColdDebuff : LogicBrick
     public override string Id => "elemental:numbing_cold";
     public override bool IsBuff => true;
     public override string? BuffName => "Numbing cold";
-    public override BuffPriority BuffPriority => BuffPriority.Moderate;
+    public override StatusDisplay StatusDisplayPriority => StatusDisplay.Moderate;
     public override StackMode StackMode => StackMode.ExtendDuration;
 
     protected override object? OnQuery(Fact fact, string key, string? arg) => key.NumWhen("speed_mult", 0.7);

@@ -139,6 +139,11 @@ public static class WeaponTypes
     public const string Rock = "rock";
     public const string Pick = "pick";
     public const string Blowgun = "blowgun";
+    public const string Halberd = "halberd";
+    public const string Glaive = "glaive";
+    public const string LucerneHammer = "lucerne_hammer";
+    public const string Ranseur = "ranseur";
+    public const string Bardiche = "bardiche";
 }
 
 public enum ProficiencyLevel

@@ -304,7 +304,13 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
 
     public string? WhyNot => null;
 
-    public static Item Create(ItemDef def, int count = 1) => new(def) { Count = count };
+    public static Item Create(ItemDef def, int count = 1)
+    {
+        Item item = new(def) { Count = count };
+        if (def is WeaponDef { Reach: > 1 })
+            item.AddFact(ReachAttackVerb.Instance);
+        return item;
+    }
 
     public void Identify()
     {
@@ -431,10 +437,13 @@ public static class ItemSlots
     public const string Hands = "hands";
     public const string Quiver = "quiver";
 
+    public const string Alt = "alt";
+
     public static readonly EquipSlot BodySlot = new(Body, "_");
     public static readonly EquipSlot FaceSlot = new(Face, "_");
     public static readonly EquipSlot MainHandSlot = new(Hand, "_");
     public static readonly EquipSlot OffHandSlot = new(Hand, "off");
+    public static readonly EquipSlot AltSlot = new(Alt, "_");
     public static readonly EquipSlot FeetSlot = new(Feet, "_");
     public static readonly EquipSlot HandsSlot = new(Hands, "_");
     public static readonly EquipSlot QuiverSlot = new(Quiver, "_");
