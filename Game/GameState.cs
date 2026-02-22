@@ -246,6 +246,7 @@ public class GameState
     public Level? CurrentLevel { get; set; }
     public HashSet<IEntity> PendingFactCleanup { get; } = [];
     public HashSet<IEntity> ActiveEntities { get; } = [];
+    public Dictionary<string, LevelId> GeneratedArtifacts { get; } = [];
     public List<Action> DeferredActions { get; } = [];
 
     public void Defer(Action action) => DeferredActions.Add(action);
@@ -810,6 +811,9 @@ public class GameState
                 else
                     g.YouObserve(attacker, $"{attacker:The} hits {defender:the}.");
             }
+            if (ctx.Check!.DegreeOfSuccess.Degree == Degree.CriticalSuccess)
+                ctx.Damage[0].Double();
+
             DoDamage(ctx);
 
             // Combined attack log

@@ -360,7 +360,7 @@ public static partial class Input
 
         var weapon = u.GetWieldedItem();
         var quiver = u.Quiver.Def as QuiverDef;
-        if (quiver != null && quiver.WeaponProficiency != (weapon.Def as WeaponDef)?.Profiency)
+        if (quiver != null && quiver.WeaponType != (weapon.Def as WeaponDef)?.WeaponType)
         {
             g.pline($"That is a silly way to fire {u.Quiver:an}.");
             return;
@@ -1074,17 +1074,26 @@ public static partial class Input
         LogicBrick.FireOnVerb(container, ItemVerb.Apply);
     }
 
-    static readonly (string Key, string Name)[] EnhanceWeapons =
+    static readonly (string Key, string Name)[] EnhanceStyles =
     [
-        (Proficiencies.Unarmed, "Unarmed"), (Proficiencies.Natural, "Natural"),
-        (Proficiencies.HeavyBlade, "Heavy blade"), (Proficiencies.LightBlade, "Light blade"),
-        (Proficiencies.Club, "Club"), (Proficiencies.Axe, "Axe"),
-        (Proficiencies.Polearm, "Polearm"), (Proficiencies.Staff, "Staff"),
-        (Proficiencies.Bow, "Bow"), (Proficiencies.Thrown, "Thrown"),
-        (Proficiencies.Flail, "Flail"), (Proficiencies.Whip, "Whip"),
-        (Proficiencies.Blowgun, "Blowgun"), (Proficiencies.Close, "Close"),
-        (Proficiencies.Hammer, "Hammer"), (Proficiencies.Crossbow, "Crossbow"),
-        (Proficiencies.Firearm, "Firearm"),
+        (Proficiencies.Unarmed, "Unarmed"),
+        (WeaponStyle.Simple, "Simple"),
+        (WeaponStyle.Impact, "Impact"), (WeaponStyle.Carve, "Carve"), (WeaponStyle.Skewer, "Skewer"),
+        (WeaponStyle.Staff, "Staff"), (WeaponStyle.Flail, "Flail"),
+        (WeaponStyle.Thrown, "Thrown"), (WeaponStyle.Firearm, "Firearm"),
+    ];
+
+    static readonly (string Key, string Name)[] EnhanceGrips =
+    [
+        (WeaponGrip.Light, "Light"), (WeaponGrip.Heavy, "Heavy"),
+        (WeaponGrip.Great, "Great"), (WeaponGrip.Polearm, "Polearm"),
+    ];
+
+    static readonly (string Key, string Name)[] EnhanceExoticWeapons =
+    [
+        (Proficiencies.Natural, "Natural"),
+        (Proficiencies.Bow, "Bow"), (Proficiencies.Crossbow, "Crossbow"),
+        (Proficiencies.Whip, "Whip"), (Proficiencies.Blowgun, "Blowgun"),
     ];
 
     static readonly (string Key, string Name)[] EnhanceArmor =
@@ -1138,9 +1147,10 @@ public static partial class Input
         using var handle = WM.CreateTransient(Draw.ScreenWidth, Draw.ScreenHeight, z: 5, opaque: true);
         var win = handle.Window;
 
-        const int colWidth = 38;
+        const int colWidth = 24;
         const int col1X = 2;
         const int col2X = col1X + colWidth;
+        const int col3X = col2X + colWidth;
 
         win.At(col1X, 0).Write("Proficiencies", ConsoleColor.White, style: CellStyle.Bold);
 
@@ -1152,7 +1162,6 @@ public static partial class Input
             {
                 ProficiencyLevel lvl = u.GetProficiency(key);
                 string bar = ProfBar(lvl);
-                string label = lvl == ProficiencyLevel.Untrained ? "" : $" {lvl}";
                 ConsoleColor color = lvl switch
                 {
                     ProficiencyLevel.Legendary => ConsoleColor.Magenta,
@@ -1161,19 +1170,21 @@ public static partial class Input
                     ProficiencyLevel.Trained => ConsoleColor.White,
                     _ => ConsoleColor.DarkGray,
                 };
-                win.At(x, y).Write($"  {name,-16} ", ConsoleColor.Gray);
-                win.At(x + 19, y).Write($"{bar}{label}", color);
+                win.At(x, y).Write($" {name,-14}", ConsoleColor.Gray);
+                win.At(x + 15, y).Write(bar, color);
                 y++;
             }
         }
 
-        int ly = 1, ry = 1;
-        WriteSection(col1X, ref ly, "Weapons", EnhanceWeapons);
-        WriteSection(col2X, ref ry, "Armor", EnhanceArmor);
-        WriteSection(col2X, ref ry, "Saves", EnhanceSaves);
-        WriteSection(col2X, ref ry, "Skills", EnhanceSkills);
+        int ly = 1, my = 1, ry = 1;
+        WriteSection(col1X, ref ly, "Style", EnhanceStyles);
+        WriteSection(col1X, ref ly, "Grip", EnhanceGrips);
+        WriteSection(col2X, ref my, "Exotic", EnhanceExoticWeapons);
+        WriteSection(col2X, ref my, "Defense", EnhanceArmor);
+        WriteSection(col3X, ref ry, "Saves", EnhanceSaves);
+        WriteSection(col3X, ref ry, "Skills", EnhanceSkills);
 
-        int bottomY = Math.Max(ly, ry) + 1;
+        int bottomY = Math.Max(Math.Max(ly, my), ry) + 1;
         win.At(col1X, bottomY).Write("(press any key)", ConsoleColor.DarkGray);
         Draw.Blit();
         Input.NextKey();

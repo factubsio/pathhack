@@ -57,7 +57,7 @@ public class WeaponDamageRider(string name, DamageType type, Dice dice) : LogicB
   {
     if (fact.Entity is Item item && item.Holder?.IsPlayer == true)
     {
-      bool isUnarmed = item.Def is WeaponDef w && w.Profiency == Proficiencies.Unarmed;
+      bool isUnarmed = item.Def is WeaponDef w && w.Category == WeaponCategory.Unarmed;
       string weaponName = isUnarmed ? "fists" : item.Def.Name;
       if (item.Has(Key))
         g.pline($"{item.Holder:Own} {weaponName} seems more energised.");
@@ -70,7 +70,7 @@ public class WeaponDamageRider(string name, DamageType type, Dice dice) : LogicB
   {
     if (fact.Entity is Item item && item.Holder is { IsPlayer: true })
     {
-      bool isUnarmed = item.Def is WeaponDef w && w.Profiency == Proficiencies.Unarmed;
+      bool isUnarmed = item.Def is WeaponDef w && w.Category == WeaponCategory.Unarmed;
       string weaponName = isUnarmed ? "fists" : item.Def.Name;
       if (item.Has(Key))
         g.pline($"{item.Holder:Own} {weaponName} seems slightly less energised.");

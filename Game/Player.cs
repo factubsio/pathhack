@@ -266,13 +266,15 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
 
     public (ProficiencyLevel Level, string Source) GetProficiency(WeaponDef weapon)
     {
-        int fromGroup = (int)GetProficiency(weapon.Profiency);
+        int fromStyle = (int)GetProficiency(weapon.Style);
+        int fromGrip = (int)GetProficiency(weapon.Grip);
         int fromType = weapon.WeaponType != null ? (int)GetProficiency(weapon.WeaponType) : 0;
 
-        if (fromType > fromGroup)
-            return ((ProficiencyLevel)fromType, weapon.WeaponType!);
-        else
-            return ((ProficiencyLevel)fromGroup, weapon.Profiency);
+        int best = fromType;
+        string source = weapon.WeaponType ?? weapon.Style;
+        if (fromStyle > best) { best = fromStyle; source = weapon.Style; }
+        if (fromGrip > best) { best = fromGrip; source = weapon.Grip; }
+        return ((ProficiencyLevel)best, source);
     }
 
     public override int GetAttackBonus(WeaponDef weapon) => StrMod + (int)GetProficiency(weapon).Level;

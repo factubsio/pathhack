@@ -8,7 +8,7 @@ public static class EndShrineLevels
     Name = "Divine punishment",
     BaseDamage = d(6, 6),
     DamageType = DamageTypes.Magic,
-    Profiency = "_exotic",
+    Style = WeaponStyle.Exotic, Grip = WeaponGrip.Exotic,
     Price = 10000,
   };
 

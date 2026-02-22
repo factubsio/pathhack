@@ -4,8 +4,8 @@ public class QuiverDef : ItemDef
 {
     public required Dice Capacity;
 
-    // the "group" of weapons that can launch ammo from this quiver
-    public required string WeaponProficiency;
+    // the weapon type that can launch ammo from this quiver
+    public required string WeaponType;
 
     public required WeaponDef Ammo;
 }
@@ -47,14 +47,14 @@ public static partial class MundaneQuivers
         Price = price,
         Material = Materials.Leather,
         Weight = 20,
-        WeaponProficiency = Proficiencies.Bow,
+        WeaponType = WeaponTypes.Longbow,
 
         Ammo = new()
         {
             Price = 0,
             Weight = -1,
             BaseDamage = dmg,
-            Profiency = Proficiencies.Bow,
+            Style = WeaponStyle.Exotic, Grip = WeaponGrip.Exotic,
             Glyph = new(')'),
             DamageType =  DamageTypes.Piercing,
             Name = name,
@@ -79,13 +79,13 @@ public static partial class MundaneQuivers
         Price = 20,
         Material = Materials.Leather,
         Weight = 15,
-        WeaponProficiency = Proficiencies.Blowgun,
+        WeaponType = WeaponTypes.Blowgun,
         Ammo = new()
         {
             Price = 0,
             Weight = -1,
             BaseDamage = d(3),
-            Profiency = Proficiencies.Blowgun,
+            Style = WeaponStyle.Exotic, Grip = WeaponGrip.Exotic,
             Glyph = new(')'),
             DamageType = DamageTypes.Piercing,
             Name = "blowgun dart",

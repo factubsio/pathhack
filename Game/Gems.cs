@@ -7,7 +7,7 @@ public static class Gems
         id = "rock",
         Name = "rock",
         BaseDamage = d(6),
-        Profiency = Proficiencies.Thrown,
+        Style = WeaponStyle.Thrown, Grip = WeaponGrip.Light,
         WeaponType = WeaponTypes.Rock,
         DamageType = DamageTypes.Blunt,
         Launcher = "hand",

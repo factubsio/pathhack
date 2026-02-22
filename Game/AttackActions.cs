@@ -35,7 +35,7 @@ public class AttackWithWeapon() : ActionBrick("attack_with_weapon")
             if (item.Def is QuiverDef qd && item.Charges > 0)
             {
                 double avg = qd.Ammo.BaseDamage.Average();
-                if (avg > bestQuiverDmg) { bestQuiver = item; bestQuiverDmg = avg; launcherProf = qd.WeaponProficiency; }
+                if (avg > bestQuiverDmg) { bestQuiver = item; bestQuiverDmg = avg; launcherProf = qd.WeaponType; }
             }
             else if (item.Def is WeaponDef wep)
             {
@@ -61,11 +61,11 @@ public class AttackWithWeapon() : ActionBrick("attack_with_weapon")
         // bow match: find best bow for our quiver (after scan so order doesn't matter)
         if (launcherProf != null)
         {
-            if (wielded?.Def is WeaponDef ww && ww.Profiency == launcherProf)
+            if (wielded?.Def is WeaponDef ww && ww.WeaponType == launcherProf)
                 bestBow = wielded;
             else
                 foreach (var item in unit.Inventory)
-                    if (item.Def is WeaponDef wb && wb.Profiency == launcherProf) { bestBow = item; break; }
+                    if (item.Def is WeaponDef wb && wb.WeaponType == launcherProf) { bestBow = item; break; }
         }
 
         // 1: shoot if ready (quiver + wielding matching bow + compass)

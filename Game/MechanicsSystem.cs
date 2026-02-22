@@ -79,6 +79,41 @@ public sealed class PHContext : IDisposable
     internal static PHContext Dupe() => Create(Current!.Source, Current!.Target);
 }
 
+public static class WeaponStyle
+{
+    public const string Simple = "style_simple";
+    public const string Impact = "style_impact";
+    public const string Carve = "style_carve";
+    public const string Skewer = "style_skewer";
+    public const string Staff = "style_staff";
+    public const string Flail = "style_flail";
+    public const string Thrown = "style_thrown";
+    public const string Firearm = "style_firearm";
+    public const string Exotic = "style_exotic";
+
+    public static string Pretty(string s) => s switch
+    {
+        Simple => "Simple", Impact => "Impact", Carve => "Carve", Skewer => "Skewer",
+        Staff => "Staff", Flail => "Flail", Thrown => "Thrown", Firearm => "Firearm",
+        Exotic => "Exotic", _ => s
+    };
+}
+
+public static class WeaponGrip
+{
+    public const string Light = "grip_light";
+    public const string Heavy = "grip_heavy";
+    public const string Great = "grip_great";
+    public const string Polearm = "grip_polearm";
+    public const string Exotic = "grip_exotic";
+
+    public static string Pretty(string s) => s switch
+    {
+        Light => "Light", Heavy => "Heavy", Great => "Great",
+        Polearm => "Polearm", Exotic => "Exotic", _ => s
+    };
+}
+
 public static class Proficiencies
 {
     // Weapon groups
@@ -144,6 +179,8 @@ public static class WeaponTypes
     public const string LucerneHammer = "lucerne_hammer";
     public const string Ranseur = "ranseur";
     public const string Bardiche = "bardiche";
+    public const string Greatsword = "greatsword";
+    public const string EarthBreaker = "earth_breaker";
 }
 
 public enum ProficiencyLevel
@@ -219,10 +256,10 @@ public class Modifiers
 
 public enum Degree
 {
-    CriticalSuccess,
-    Success,
-    Fail,
     CriticalFail,
+    Fail,
+    Success,
+    CriticalSuccess,
 }
 
 public readonly struct CheckResult(Degree degree)
@@ -260,13 +297,16 @@ public class Check
             if (ForcedResult == true) return new(Degree.Success);
             if (ForcedResult == false) return new(Degree.Fail);
             int delta = Roll - DC;
-            return new(delta switch
+            Degree degree = delta switch
             {
                 >= 10 => Degree.CriticalSuccess,
                 >= 0 => Degree.Success,
                 >= -10 => Degree.Fail,
                 _ => Degree.CriticalFail,
-            });
+            };
+            if (BaseRoll == 20 && degree < Degree.CriticalSuccess) degree++;
+            if (BaseRoll == 1 && degree > Degree.CriticalFail) degree--;
+            return new(degree);
         }
     }
 

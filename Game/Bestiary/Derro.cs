@@ -56,7 +56,7 @@ public class TelekineticProjectile(int range, Dice damage, string pool) : Action
         id = "tk_projectile",
         Name = "telekinetic projectile",
         BaseDamage = damage,
-        Profiency = Proficiencies.Unarmed,
+        Style = WeaponStyle.Exotic, Grip = WeaponGrip.Exotic,
         DamageType = DamageTypes.Blunt,
         Glyph = new('*', ConsoleColor.Cyan),
         Launcher = "tk",

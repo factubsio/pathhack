@@ -45,6 +45,9 @@ public static partial class Input
         ["dismiss"] = new("dismiss", "Dismiss a maintained buff", ArgType.None, _ => DismissAction.DoDismiss(u)),
         ["loot"] = new("loot", "Loot a container on the ground", ArgType.None, _ => LootContainer()),
         ["enhance"] = new("enhance", "Show proficiencies", ArgType.None, _ => ShowEnhance()),
+        ["forge"] = new("forge", "Open rune forge", ArgType.None, _ => DoForge()),
+        ["dip"] = new("dip", "Open rune forge", ArgType.None, _ => DoForge()),
+        ["adjust"] = new("adjust", "Adjust inventory letters", ArgType.None, _ => DoAdjust()),
     };
 
     static readonly Dictionary<char, Command> _commands = new()
@@ -101,9 +104,6 @@ public static partial class Input
         _extCommands["place"] = new("place", "Place a trap", ArgType.String("What trap?"), DoPlace, Hidden: true);
         _extCommands["brickstats"] = new("brickstats", "Dump brick hook stats", ArgType.None, _ => BrickStatsHook.Instance.Dump(), Hidden: true);
         _extCommands["train"] = new("train", "Train a proficiency", ArgType.None, _ => DoTrain(), Hidden: true);
-        _extCommands["forge"] = new("forge", "Open rune forge", ArgType.None, _ => DoForge());
-        _extCommands["dip"] = new("dip", "Open rune forge", ArgType.None, _ => DoForge());
-        _extCommands["adjust"] = new("adjust", "Adjust inventory letters", ArgType.None, _ => DoAdjust());
         _specialCommands.Add(new(ConsoleKey.T, ConsoleModifiers.Control, "Teleport (debug)", DebugTeleport));
         LogicBrick.GlobalHook = BrickStatsHook.Instance;
     }
@@ -140,7 +140,7 @@ public static partial class Input
 
     static void DoTrain()
     {
-        (string Key, string Name)[][] all = [EnhanceWeapons, EnhanceArmor, EnhanceSaves, EnhanceSkills];
+        (string Key, string Name)[][] all = [EnhanceStyles, EnhanceGrips, EnhanceExoticWeapons, EnhanceArmor, EnhanceSaves, EnhanceSkills];
         var menu = new Menu<string>();
         char letter = 'a';
         foreach (var group in all)

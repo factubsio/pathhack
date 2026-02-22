@@ -324,7 +324,7 @@ public static class Dump
                 damage = wpn.BaseDamage.ToString(),
                 damageType = wpn.DamageType.SubCat,
                 hands = wpn.Hands,
-                group = wpn.Profiency,
+                group = $"{wpn.Style}/{wpn.Grip}",
                 weight = def.Weight,
                 material = item.Material.ToString(),
                 description = def.PokedexDescription,

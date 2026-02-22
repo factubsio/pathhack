@@ -238,17 +238,30 @@ public static class Pokedex
 
         if (def is WeaponDef wpn)
         {
-            if (wpn.AltProficiencies?.Length > 0)
-                menu.Add($"Group: {wpn.Profiency} [{string.Join(",", wpn.AltProficiencies)}]");
-            else
-                menu.Add($"Group: {wpn.Profiency}");
-            var (prof, profSource) = u.GetProficiency(wpn);
-            ConsoleColor profColor = prof == ProficiencyLevel.Untrained ? ConsoleColor.Red : ConsoleColor.Gray;
-            menu.Add($"Proficiency: {prof} ({profSource})", profColor);
+            ConsoleColor ProfColor(ProficiencyLevel l) => l switch
+            {
+                ProficiencyLevel.Legendary => ConsoleColor.Magenta,
+                ProficiencyLevel.Master => ConsoleColor.Blue,
+                ProficiencyLevel.Expert => ConsoleColor.Green,
+                ProficiencyLevel.Trained => ConsoleColor.White,
+                _ => ConsoleColor.DarkGray,
+            };
+
+            string C(string text, string key) => $"[fg={ProfColor(u.GetProficiency(key))}]{text}[/]";
+            string capType = wpn.WeaponType != null ? char.ToUpper(wpn.WeaponType[0]) + wpn.WeaponType[1..] : "";
+            string typeStr = wpn.WeaponType != null ? $"{C(capType, wpn.WeaponType)} / " : "";
+            menu.Add($"{typeStr}{C(WeaponStyle.Pretty(wpn.Style), wpn.Style)} / {C(WeaponGrip.Pretty(wpn.Grip), wpn.Grip)}");
 
             string hands = wpn.Hands == 1 ? "One-handed" : "Two-handed";
-            menu.Add($"{hands} {wpn.DamageType.SubCat} weapon.");
+            string throwable = wpn.Launcher != null ? " Throwable." : "";
+            menu.Add($"{hands} {wpn.DamageType.SubCat} weapon.{throwable}");
+            if (wpn.Reach > 1) menu.Add($"Reach {wpn.Reach}.");
             menu.Add($"Base damage: {wpn.BaseDamage}");
+            int ab = u.GetAttackBonus(wpn) + (potencyKnown ? item.Potency : 0);
+            menu.Add($"Attack bonus: {ab:+#;-#;+0}");
+            int profLevel = (int)u.GetProficiency(wpn).Level;
+            menu.Add($"  str {u.StrMod:+#;-#;+0}  prof {profLevel:+#;-#;+0}" +
+                (potencyKnown ? $"  potency {item.Potency:+#;-#;+0}" : ""), ConsoleColor.Cyan);
 
             if (potencyKnown)
             {
@@ -260,12 +273,12 @@ public static class Pokedex
                 if (item.Fundamental?.Brick is RuneBrick fund)
                 {
                     if (fund.IsNull)
-                        menu.Add("Fundamental: [blocked]");
+                        menu.Add("Fundamental: blocked");
                     else
                         menu.Add($"Fundamental: {fund.DisplayName}, {fund.Description}");
                 }
                 else
-                    menu.Add("Fundamental: [empty]");
+                    menu.Add("Fundamental: empty");
             }
 
             if (runesKnown)
@@ -285,19 +298,38 @@ public static class Pokedex
         }
         else if (def is ArmorDef armor)
         {
+            string armorName = armor.Proficiency switch
+            {
+                Proficiencies.NakedArmor => "Unarmored",
+                Proficiencies.LightArmor => "Light armor",
+                Proficiencies.MediumArmor => "Medium armor",
+                Proficiencies.HeavyArmor => "Heavy armor",
+                Proficiencies.Shield => "Shield",
+                _ => armor.Proficiency,
+            };
             var prof = u.GetProficiency(armor.Proficiency);
-            ConsoleColor profColor = prof == ProficiencyLevel.Untrained ? ConsoleColor.Red : ConsoleColor.Gray;
-            menu.Add($"Proficiency: {prof} ({armor.Proficiency})", profColor);
-            menu.Add($"Armor. AC bonus: {armor.ACBonus}");
+            ConsoleColor profColor = prof switch
+            {
+                ProficiencyLevel.Legendary => ConsoleColor.Magenta,
+                ProficiencyLevel.Master => ConsoleColor.Blue,
+                ProficiencyLevel.Expert => ConsoleColor.Green,
+                ProficiencyLevel.Trained => ConsoleColor.White,
+                _ => ConsoleColor.DarkGray,
+            };
+            menu.Add($"{armorName} ({prof})", profColor);
+            menu.Add($"AC bonus: +{armor.ACBonus}");
 
             if (armor.DexCap < 99)
                 menu.Add($"Dex cap: {armor.DexCap}");
+            if (armor.CheckPenalty != 0)
+                menu.Add($"Check penalty: {armor.CheckPenalty}");
         }
 
         menu.Add();
-        menu.Add($"Weighs {def.Weight}. Made of {item.Material}.");
+        string stackable = def.Stackable ? " Stackable." : "";
+        menu.Add($"Weighs {def.Weight}. Made of {item.Material}.{stackable}");
 
-        if (!runesKnown && item.HasEnchantments)
+        if (!runesKnown && item.HasEnchantments && def is not WeaponDef)
         {
             menu.Add("Properties not identified.", ConsoleColor.DarkYellow);
         }

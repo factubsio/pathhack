@@ -8,7 +8,7 @@ public class ThrowBranch(int cd, int range)
         id = "thrown_branch",
         Name = "branch",
         BaseDamage = d(6),
-        Profiency = Proficiencies.Unarmed,
+        Style = WeaponStyle.Exotic, Grip = WeaponGrip.Exotic,
         DamageType = DamageTypes.Blunt,
         Glyph = new('/', ConsoleColor.DarkYellow),
         Launcher = "tree",

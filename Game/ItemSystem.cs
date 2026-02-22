@@ -92,7 +92,8 @@ public enum WeaponCategory { Unarmed, Natural, Item }
 public class WeaponDef : ItemDef
 {
     public required DiceFormula BaseDamage;
-    public required string Profiency; // weapon group
+    public required string Style;
+    public required string Grip;
     public required DamageType DamageType;
     public string? WeaponType; // specific weapon type for feats/sacred weapon
     public int Reach = 1;

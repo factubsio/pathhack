@@ -105,7 +105,7 @@ public class SacredStrikeBrick : LogicBrick
         if (fact.Entity is not Player p) return;
         if (ctx.Source != p) return;
         if (ctx.Weapon?.Def is not WeaponDef w) return;
-        if (w.Profiency != p.Deity?.FavoredWeapon) return;
+        if (w.WeaponType != p.Deity?.FavoredWeapon) return;
         ctx.Check!.Modifiers.Untyped(2, "sacred strike");
     }
 }
@@ -131,7 +131,7 @@ public class SacredWeapon : LogicBrick
         if (player.Deity == null) return;
         if (ctx.Weapon?.Def is not WeaponDef wdef) return;
         if (ctx.Damage.Count == 0) return;
-        if (wdef.Profiency != player.Deity.FavoredWeapon) return;
+        if (wdef.WeaponType != player.Deity.FavoredWeapon) return;
 
         var baseDie = wdef.BaseDamage;
         var stepped = baseDie.StepUp();
@@ -245,9 +245,11 @@ public static partial class ClassDefs
         BasicLevel3Spells.ProtectAcid,
     ];
 
+    public const string WarpriestId = "warpriest";
+
     public static ClassDef Warpriest => new()
     {
-        id = "warpriest",
+        id = WarpriestId,
         Name = "Warpriest",
         Description = "Capable of calling upon the power of the gods in the form of blessings and spells, warpriests blend divine magic with martial skill. They are unflinching bastions of their faith, shouting gospel as they pummel foes into submission, and never shy away from a challenge to their beliefs. While clerics might be subtle and use diplomacy to accomplish their aims, warpriests aren’t above using violence whenever the situation warrants it. In many faiths, warpriests form the core of the church’s martial forces—reclaiming lost relics, rescuing captured clergy, and defending the church’s tenets from all challenges.",
         HpPerLevel = 8,
@@ -268,7 +270,8 @@ public static partial class ClassDefs
                     new GrantProficiency(Proficiencies.Unarmed, ProficiencyLevel.Trained),
                     new GrantProficiency(Proficiencies.LightArmor, ProficiencyLevel.Trained),
                     new GrantProficiency(Proficiencies.MediumArmor, ProficiencyLevel.Trained),
-                    new GrantProficiency(Proficiencies.Bow, ProficiencyLevel.Trained),
+                    new GrantProficiency(WeaponStyle.Simple, ProficiencyLevel.Trained),
+                    new GrantProficiency(WeaponGrip.Light, ProficiencyLevel.Trained),
                     new GrantProficiency("spell_attack", ProficiencyLevel.Trained),
                     new SacredWeapon(),
                     new GrantPool("spell_l1", 2, 20),

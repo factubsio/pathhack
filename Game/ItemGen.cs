@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using Pathhack.Game.Classes;
 
 namespace Pathhack.Game;
 
@@ -56,7 +57,33 @@ public static class ItemGen
     public static Item? GenerateWand(int depth) => PickFrom(Wands.RandomAll, depth);
     public static Item? GenerateBottle(int depth) => PickFrom(Bottles.RandomAll, depth);
     public static Item? GenerateScroll(int depth) => PickFrom(Scrolls.RandomAll, depth);
-    public static Item? GenerateWeapon(int depth) => PickFrom(MundaneArmory.RandomAllWeapons, depth);
+    public static Item? GenerateWeapon(int depth)
+    {
+        var pool = MundaneArmory.RandomAllWeapons;
+        if (pool.Length == 0) return null;
+        var def = pool.Pick();
+
+        // Warpriest's get favoured weapons more frequently
+        if (u.Class.id == ClassDefs.WarpriestId && u.Deity.FavoredWeapon != def.WeaponType && g.Rn2(6) == 0)
+        {
+            var favouritePool = pool.Where(w => w.WeaponType == u.Deity.FavoredWeapon).ToList();
+            if (favouritePool.Count > 0)
+                def = favouritePool.Pick();
+        }
+
+        if (g.Rn2(20) == 0)
+        {
+            var candidates = GeneratableArtifacts.All
+                .Where(a => a.WeaponType == def.WeaponType && !g.GeneratedArtifacts.ContainsKey(a.id))
+                .ToArray();
+            if (candidates.Length > 0)
+            {
+                def = candidates.Pick();
+                g.GeneratedArtifacts[def.id] = lvl.Id;
+            }
+        }
+        return GenerateItem(def, depth);
+    }
     public static Item? GenerateArmor(int depth) => PickFrom(MundaneArmory.RandomAllArmors, depth);
     public static Item? GenerateQuiver(int depth) => PickFrom(MundaneQuivers.RandomQuivers, depth);
     public static Item? GenerateRing(int depth) => PickFrom(MagicRings.RandomAll, depth);
