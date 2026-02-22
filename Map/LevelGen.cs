@@ -661,7 +661,7 @@ public static partial class LevelGen
             var pos = ctx.FindLocationInRoom(room, p => level[p].IsPassable && !level.HasFeature(p) && !level[p].IsStairs);
             if (pos != null)
             {
-                level.GetOrCreateState(pos.Value).Feature = new TileFeature("rune_forge", new('∆', ConsoleColor.Red), "a rune forge");
+                level.PlaceFeature(pos.Value, new TileFeature("rune_forge", new('∆', ConsoleColor.Red), "a rune forge"));
                 Log($"forge: placed at {pos.Value}");
             }
         }

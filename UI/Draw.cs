@@ -454,6 +454,12 @@ public static class Draw
         if (TopLine.Length > 0) g.MessageHistory.Add((TopLine, g.CurrentRound));
     }
 
+    public static void FlushTopLine()
+    {
+        if (TopLineState == TopLineState.PresentMustShow)
+            More(true, TopLine.Length, 0);
+    }
+
     public static void ClearTopLine()
     {
         SaveTopLine();

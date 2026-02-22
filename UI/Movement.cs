@@ -9,6 +9,7 @@ public static class Movement
     public static List<Pos>? TravelPath;
     public static bool DidAutoPickup;
     static int _travelIdx;
+    static Pos _prevPos;
 
     static bool IsInteresting(Pos p) => lvl[p].IsStairs;
 
@@ -77,6 +78,7 @@ public static class Movement
             {
                 // Move onto the threshold, then stop
                 Log.Verbose("movement", $"Moving to doorway/transition at {next}");
+                _prevPos = upos;
                 lvl.MoveUnit(u, next);
                 Stop();
                 return true;
@@ -85,6 +87,7 @@ public static class Movement
 
         // Move
         Log.Verbose("movement", $"Moving from {upos} to {next}");
+        _prevPos = upos;
         lvl.MoveUnit(u, next);
         // Note: MoveUnit already charges energy
 
@@ -124,7 +127,6 @@ public static class Movement
 
             // Only stop for monster directly ahead
             Pos ahead = upos + Dir;
-            Pos behind = upos - Dir;
             if (lvl.InBounds(ahead) && lvl.UnitAt(ahead) is { IsDead: false } m && m != u)
             {
                 Log.Verbose("movement", $"Stop: monster ahead at {ahead}");
@@ -139,7 +141,7 @@ public static class Movement
                 foreach (var d in Pos.AllDirs)
                 {
                     Pos p = upos + d;
-                    if (p == behind) continue;
+                    if (p == _prevPos) continue;
                     if (lvl.InBounds(p) && lvl.CanMoveTo(upos, p, u) && lvl.UnitAt(p) == null)
                         exits.Add(d);
                 }

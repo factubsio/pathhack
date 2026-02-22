@@ -30,13 +30,15 @@ public static class ItemGen
 
     public static Item? GenerateForShop(ShopType type, int depth) => type switch
     {
-        ShopType.Weapon => GenerateWeapon(depth),
-        ShopType.Armor => GenerateItem(ArmorShopPool.Pick(), depth),
+        ShopType.Weapon => g.Rn2(10) == 0 ? GenerateItem(ArmorShopPool.Pick(), depth) : GenerateWeaponOrQuiver(depth),
+        ShopType.Armor => g.Rn2(10) == 0 ? GenerateWeaponOrQuiver(depth) : GenerateItem(ArmorShopPool.Pick(), depth),
         ShopType.Potion => GeneratePotion(depth),
         ShopType.Scroll => GenerateScroll(depth),
         ShopType.Ring => GenerateRing(depth),
         _ => GenerateRandomItem(depth),
     };
+
+    static Item? GenerateWeaponOrQuiver(int depth) => g.Rn2(8) == 0 ? GenerateQuiver(depth) : GenerateWeapon(depth);
 
     public static Item? GenerateRandomItem(int depth)
     {
@@ -260,13 +262,23 @@ public static class ItemGen
         return ItemGenTables.Quality[d][g.Rn2(100)];
     }
 
-    public static void ApplyRune(Item item, RuneBrick rune, bool fundamental)
+    public static bool ApplyRune(Item item, RuneBrick rune, bool fundamental)
     {
+        if (fundamental)
+        {
+            if (item.Fundamental != null) return false;
+        }
+        else
+        {
+            if (item.PropertyRunes.Count >= item.PropertySlots) return false;
+        }
+
         var fact = item.AddFact(rune);
         if (fundamental)
             item.Fundamental = fact;
         else
             item.PropertyRunes.Add(fact);
+        return true;
     }
 
     internal static IDisposable LockNoBlessed() => LockRule(r => r.NoBlessed = true);

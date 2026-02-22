@@ -233,6 +233,7 @@ public class Level(LevelId id, int width, int height)
     public string? FirstIntro;
     public string? ReturnIntro;
     public string? Described;
+    public List<Pos> FeaturePositions = [];
     public int GeometryVersion;
 
     public bool UnderConstruction = true;
@@ -320,6 +321,12 @@ public class Level(LevelId id, int width, int height)
     {
         ref CellState s = ref _state[p.Y * Width + p.X];
         return s ??= new CellState();
+    }
+
+    public void PlaceFeature(Pos p, TileFeature feature)
+    {
+        GetOrCreateState(p).Feature = feature;
+        if (!feature.Hidden) FeaturePositions.Add(p);
     }
 
     public bool UnitAt(Pos p, [NotNullWhen(true)] out IUnit? unit)

@@ -481,6 +481,10 @@ public static partial class Input
 
                 u.Energy -= ActionCosts.OneAction.Value;
             }
+            else
+            {
+                g.pline($"You ready {u.Quiver:the}.");
+            }
         }
         else
             g.pline("You empty your quiver.");
@@ -828,51 +832,28 @@ public static partial class Input
     {
         var menu = new TextMenu();
         menu.AddHeading("Discoveries");
-        
+
+        var groups = AllItems.All
+            .Where(d => d.AppearanceCategory != null && d.IsKnown())
+            .GroupBy(d => d.AppearanceCategory!.Value)
+            .OrderBy(g => g.Key);
+
         bool any = false;
-        foreach (var (cat, label) in new[] { 
-            (AppearanceCategory.Potion, "Potions"),
-            (AppearanceCategory.Bottle, "Bottles"),
-            (AppearanceCategory.Wand, "Wands"),
-            (AppearanceCategory.Scroll, "Scrolls"),
-            (AppearanceCategory.Amulet, "Amulets"),
-            (AppearanceCategory.Boots, "Boots"),
-            (AppearanceCategory.Gloves, "Gloves"),
-            (AppearanceCategory.Cloak, "Cloaks"),
-        })
+        foreach (var group in groups)
         {
-            var identified = GetIdentifiedInCategory(cat);
-            if (identified.Count == 0) continue;
-            
             any = true;
-            menu.AddSubHeading(label);
-            foreach (var def in identified)
+            menu.AddSubHeading($"{group.Key}".Plural());
+            foreach (var def in group)
             {
                 var app = ItemDb.Instance.GetAppearance(def);
                 menu.Add($"  {def.Name} ({app?.Name})");
             }
         }
-        
+
         if (!any)
             menu.Add("You haven't discovered anything yet.");
-        
-        menu.Display();
-    }
 
-    static List<ItemDef> GetIdentifiedInCategory(AppearanceCategory cat)
-    {
-        List<ItemDef> result = [];
-        var all = cat switch
-        {
-            AppearanceCategory.Potion => Potions.All.Cast<ItemDef>(),
-            AppearanceCategory.Bottle => Bottles.All.Cast<ItemDef>(),
-            AppearanceCategory.Wand => Wands.All.Cast<ItemDef>(),
-            AppearanceCategory.Scroll => Scrolls.All.Cast<ItemDef>(),
-            _ => []
-        };
-        foreach (var def in all.Where(d => d.IsKnown()))
-            result.Add(def);
-        return result;
+        menu.Display();
     }
 
     static void CallItem()

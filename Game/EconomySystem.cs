@@ -274,8 +274,20 @@ public class ShopState
     {
         if (item.Stolen) return 0;
         if (item.Def.Price <= 0) return 0;
-        return GetSellPrice(item) / 2;
+        if (!WillBuy(item)) return 0;
+        return GetSellPrice(item) / (Type == ShopType.General ? 3 : 2);
     }
+
+    public bool WillBuy(Item item) => Type switch
+    {
+        ShopType.Weapon or ShopType.Armor => item.Def is WeaponDef or ArmorDef or QuiverDef,
+        ShopType.Potion => item.Def is PotionDef or BottleDef,
+        ShopType.Scroll => item.Def is ScrollDef,
+        ShopType.Ring => item.Def.DefaultEquipSlot is ItemSlots.Ring or ItemSlots.Amulet,
+        ShopType.Food => item.Def is ConsumableDef,
+        ShopType.Wand => item.Def is WandDef,
+        _ => true,
+    };
 
     public void CompleteSale(Item item)
     {

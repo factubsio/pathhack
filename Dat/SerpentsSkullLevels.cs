@@ -144,7 +144,7 @@ public static class SerpentsSkullLevels
                     Pos[] n = [..lootPos.Neighbours()];
                     foreach (var p in n.Shuffled().Take(LevelGen.RnRange(2, 4)))
                     {
-                        b.Level.GetOrCreateState(p).Feature = new("wreckage", wreckage, flotsam.Pick());
+                        b.Level.PlaceFeature(p, new("wreckage", wreckage, flotsam.Pick()));
                     }
                     for (int j = 0; j < LevelGen.RnRange(1, 2); j++)
                     {

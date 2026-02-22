@@ -57,9 +57,11 @@ public static class RuneForge
                             int ci = Math.Clamp(runeScroll, 0, availableRunes.Count - 1);
                             var runeItem = availableRunes[ci];
                             var rd = (RuneItemDef)runeItem.Def;
-                            ItemGen.ApplyRune(item, rd.Rune, fundamental: index == 0);
-                            inv.Remove(runeItem);
-                            RefreshRunes(index);
+                            if (ItemGen.ApplyRune(item, rd.Rune, fundamental: index == 0))
+                            {
+                                inv.Remove(runeItem);
+                                RefreshRunes(index);
+                            }
                         }
                         break;
                     default: break;

@@ -88,7 +88,7 @@ public static class EndShrineLevels
     b.Stair(b['<'], TileType.StairsUp);
 
     b.Level.GetOrCreateState(b['M']).Message = "A faded sign reads: 'Closed by order of the Prelate. Do not enter.'";
-    b.Level.GetOrCreateState(b['M']).Feature = new TileFeature("_lock");
+    b.Level.PlaceFeature(b['M'], new TileFeature("_lock"));
 
     var shrines = b.Marks('_');
     int shrineAltar = LevelGen.Rn2(shrines.Count);
@@ -99,7 +99,7 @@ public static class EndShrineLevels
     {
       if (i == shrineAltar)
       {
-        b.Level.GetOrCreateState(shrines[i]).Feature = new("shrine");
+        b.Level.PlaceFeature(shrines[i], new("shrine"));
       }
       else
       {

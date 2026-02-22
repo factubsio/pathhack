@@ -59,6 +59,7 @@ public record ResolvedLevel(int LocalIndex, SpecialLevel? Template = null)
     public ConsoleColor? WallColor { get; set; }
     public bool NoBranchEntrance { get; set; }
     public ILevelRuntimeBehaviour? Behaviour { get; set; }
+    public HashSet<Glyph> SeenAnnotations { get; } = [];
 
     public IEnumerable<DungeonGenCommand> Commands => GenCommands;
     public void AddCommand(string debug, Action<LevelGenContext> action) => GenCommands.Add(new(action, debug));

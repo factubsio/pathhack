@@ -64,7 +64,7 @@ public static class ListPicker
                 case ConsoleKey.DownArrow or ConsoleKey.J:
                     index = (index + 1) % visible.Count;
                     break;
-                case ConsoleKey.Enter or ConsoleKey.RightArrow or ConsoleKey.L:
+                case ConsoleKey.Enter or ConsoleKey.RightArrow:
                     if (visible.Count > 0 && visible[index].WhyNot == null)
                     {
                         if (custom != null)

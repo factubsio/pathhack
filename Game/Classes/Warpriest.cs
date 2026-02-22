@@ -106,7 +106,7 @@ public class SacredStrikeBrick : LogicBrick
         if (ctx.Source != p) return;
         if (ctx.Weapon?.Def is not WeaponDef w) return;
         if (w.WeaponType != p.Deity?.FavoredWeapon) return;
-        ctx.Check!.Modifiers.Untyped(2, "sacred strike");
+        ctx.Check!.Modifiers.Untyped(p.EffectiveLevel < 10 ? 1 : 2, "sacred strike");
     }
 }
 
@@ -172,7 +172,7 @@ public static class WarpriestFeats
     {
         id = "sacred_strike",
         Name = "Sacred Strike",
-        Description = "+2 attack bonus with your deity's favored weapon.",
+        Description = "+1 attack bonus with your deity's favored weapon, +2 at level 10.",
         Type = FeatType.Class,
         Level = 2,
         Components = [SacredStrikeBrick.Instance]

@@ -103,6 +103,7 @@ public static partial class Input
         _extCommands["spawn"] = new("spawn", "Spawn a monster", ArgType.String("What monster?"), DoSpawn, Hidden: true);
         _extCommands["place"] = new("place", "Place a trap", ArgType.String("What trap?"), DoPlace, Hidden: true);
         _extCommands["brickstats"] = new("brickstats", "Dump brick hook stats", ArgType.None, _ => BrickStatsHook.Instance.Dump(), Hidden: true);
+        _extCommands["bleh"] = new("bleh", "Log a bleh", ArgType.String("Bleh:"), DoBleh, Hidden: true);
         _extCommands["train"] = new("train", "Train a proficiency", ArgType.None, _ => DoTrain(), Hidden: true);
         _specialCommands.Add(new(ConsoleKey.T, ConsoleModifiers.Control, "Teleport (debug)", DebugTeleport));
         LogicBrick.GlobalHook = BrickStatsHook.Instance;
@@ -166,11 +167,26 @@ public static partial class Input
         g.pline($"{skill}: {next}.");
     }
 
+    static void DoBleh(CommandArg arg)
+    {
+        if (arg is not StringArg s || string.IsNullOrWhiteSpace(s.Value)) return;
+        try
+        {
+            using var udp = new System.Net.Sockets.UdpClient();
+            var msg = System.Text.Json.JsonSerializer.Serialize(new { cmd = "add", text = s.Value });
+            var bytes = System.Text.Encoding.UTF8.GetBytes(msg);
+            udp.Send(bytes, bytes.Length, "127.0.0.1", 7331);
+            g.pline("Bleh'd.");
+        }
+        catch { g.pline("Bleh failed (TUI not running?)."); }
+    }
+
     static void DoWish(CommandArg arg)
     {
         if (arg is not StringArg s || string.IsNullOrWhiteSpace(s.Value)) return;
-        var item = Pathhack.Wish.WishParser.Parse(s.Value);
+        var item = Wish.WishParser.Parse(s.Value);
         if (item == null) { g.pline("Nothing happens."); return; }
+        item.Knowledge |= ItemKnowledge.Seen;
         u.Inventory.Add(item);
         g.pline($"{item.InvLet} - {item.DisplayNameWeighted}.");
     }
@@ -374,10 +390,13 @@ public static partial class Input
 
     static void ResetMessageHistory() => _msgHistoryIdx = -1;
 
+    static Pos? _lastTravelTarget;
+
     static void DoTravel()
     {
         g.pline("Where do you want to travel to?");
-        var cursor = PickPosition();
+        var start = _lastTravelTarget is { } lt && lvl.InBounds(lt) ? lt : (Pos?)null;
+        var cursor = PickPosition(start);
         if (cursor == null || cursor == upos) return;
         
         var path = Pathfinding.FindPath(lvl, upos, cursor.Value);
@@ -386,6 +405,7 @@ public static partial class Input
             g.pline("You can't find a path there.");
             return;
         }
+        _lastTravelTarget = cursor;
         Log.Verbose("movement", $"Travel: from={upos} to={cursor} path=[{string.Join(",", PathToPositions(upos, path))}]");
         Movement.StartTravel(path);
     }

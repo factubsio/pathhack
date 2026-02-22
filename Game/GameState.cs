@@ -215,6 +215,14 @@ public class GameState
     {
         DeathReason = reason;
         Running = false;
+
+        if (reason != "Quit" && reason != "Won")
+        {
+            Draw.FlushTopLine();
+            pline(reason);
+            Draw.More(false, reason.Length, 0);
+        }
+
         BlackBox.Record();
         Dump.DumpLog();
         Perf.Dump();
@@ -414,6 +422,7 @@ public class GameState
         PHMonitor.WaitForStartRound();
 
         // === Player phase ===
+        PHContext.Initiator = u;
         u.Energy += 12 - u.EnergyPenalty;
 
         Perf.Start();
@@ -443,6 +452,7 @@ public class GameState
         }
 
         PHMonitor.WaitForEndPlayerTurn();
+        PHContext.Initiator = null;
 
         // === Monster phase (runs on whatever level we're now on) ===
         lvl.SortUnitsByInitiative();
@@ -459,6 +469,7 @@ public class GameState
         foreach (var unit in lvl.LiveUnits)
         {
             if (unit.IsPlayer) continue;
+            PHContext.Initiator = unit;
             while (unit.Energy > 1 && !unit.IsDead)
             {
                 if (!unit.Allows("can_act")) { unit.Energy = 0; break; }
@@ -468,6 +479,7 @@ public class GameState
                 Perf.Stop("MonsterTurn");
             }
         }
+        PHContext.Initiator = null;
 
         FovCalculator.Compute(lvl, upos, u.DarkVisionRadius);
 
@@ -566,6 +578,21 @@ public class GameState
             bdt.Branch.Discovered = true;
         if (lvl.BranchUp is { } bu && lvl.BranchUpTarget is { } but && (upos == bu || lvl.IsVisible(bu)))
             but.Branch.Discovered = true;
+
+        // Record visible features and entered shops for dungeon overview
+        var resolved = lvl.Branch.ResolvedLevels[lvl.Depth - 1];
+        foreach (var fp in lvl.FeaturePositions)
+        {
+            if (!lvl.IsVisible(fp)) continue;
+            var f = lvl.GetState(fp)?.Feature;
+            if (f?.Glyph is { } fg)
+                resolved.SeenAnnotations.Add(fg);
+        }
+        foreach (var room in lvl.Rooms)
+        {
+            if (room is { Entered: true, Type: RoomType.Shop })
+                resolved.SeenAnnotations.Add(new('$', ConsoleColor.Yellow));
+        }
 
         UI.Draw.DrawCurrent();
         Perf.Start();
@@ -790,35 +817,38 @@ public class GameState
                 dmg.Tags.Add(weapon.DamageType.SubCat);
             }
 
+            bool crit = ctx.IsCritSuccess;
+            if (crit) ctx.Damage[0].Double();
+            string hv = crit ? "crit" : "hit";
+            string hvs = crit ? "crits" : "hits";
+
             if (isProjectile)
             {
                 if (defender.IsPlayer)
-                    g.pline($"{with:The} hits you!");
+                    g.pline($"{with:The} {hvs} you!");
                 else if (attacker.IsPlayer)
-                    g.pline($"{with:The} hits {defender:the}.");
+                    g.pline($"{with:The} {hvs} {defender:the}.");
                 else
-                    g.YouObserve(attacker, $"{with:The} hits {defender:the}.");
+                    g.YouObserve(attacker, $"{with:The} {hvs} {defender:the}.");
             }
             else if (attacker.IsPlayer)
             {
-                g.pline($"You hit {defender:the}.");
+                g.pline($"You {hv} {defender:the}.");
             }
             else if (defender.IsPlayer)
             {
                 if (weapon?.Category == WeaponCategory.Item)
-                    g.pline($"{attacker:The} {VTense(attacker, verb)} {attacker:own} {with:bare}!  {attacker:The} hits!");
+                    g.pline($"{attacker:The} {VTense(attacker, verb)} {attacker:own} {with:bare}!  {attacker:The} {hvs}!");
                 else
-                    g.pline($"{attacker:The} hits!");
+                    g.pline($"{attacker:The} {hvs}!");
             }
             else
             {
                 if (weapon?.Category == WeaponCategory.Item)
-                    g.YouObserve(attacker, $"{attacker:The} {VTense(attacker, verb)} {attacker:own} {with:bare}! {attacker:The} hits {defender:the}.");
+                    g.YouObserve(attacker, $"{attacker:The} {VTense(attacker, verb)} {attacker:own} {with:bare}! {attacker:The} {hvs} {defender:the}.");
                 else
-                    g.YouObserve(attacker, $"{attacker:The} hits {defender:the}.");
+                    g.YouObserve(attacker, $"{attacker:The} {hvs} {defender:the}.");
             }
-            if (ctx.Check!.DegreeOfSuccess.Degree == Degree.CriticalSuccess)
-                ctx.Damage[0].Double();
 
             DoDamage(ctx);
 
@@ -866,15 +896,25 @@ public class GameState
         return hit;
     }
 
+    static readonly string[] DeathSounds =
+    [
+        "something die", "a death rattle", "a dying scream", "a thud", "a heavy thud",
+        "something collapse", "a final gasp", "a gurgle", "a body hit the floor",
+        "a pained yelp", "a wet crunch", "something crumple", "a strangled cry",
+        "a faint whimper", "something fall", "a sickening thud", "a sharp cry cut short",
+        "the absence of something", "a muffled thump",
+    ];
+
     public static void DoDamage(PHContext ctx)
     {
         var source = ctx.Source!;
+        var initiator = PHContext.Initiator;
         var target = ctx.Target.Unit!;
 
         LogicBrick.FireOnBeforeDamageRoll(source, ctx);
         LogicBrick.FireOnBeforeDamageIncomingRoll(target, ctx);
 
-        if (source.IsPlayer && target is Monster angry && angry.Peaceful)
+        if (initiator is { IsPlayer: true } && target is Monster angry && angry.Peaceful)
         {
             g.YouObserve(angry, $"{angry:The} gets angry!", $"angry shouting!");
             angry.Peaceful = false;
@@ -944,19 +984,21 @@ public class GameState
         }
 
         LogicBrick.FireOnDamageDone(source, ctx);
+        if (initiator != null && initiator != source)
+            LogicBrick.FireOnDamageDone(initiator, ctx);
         LogicBrick.FireOnDamageTaken(target, ctx);
 
         if (target.HP.IsZero)
         {
             if (target.IsPlayer)
             {
-                g.Done($"Killed by {source}!");
+                g.Done($"Killed by {initiator ?? source}!");
             }
             else
             {
-                if (source.IsPlayer)
+                if (initiator is { IsPlayer: true })
                 {
-                    g.pline($"You kill {target:the}!");
+                    g.YouObserve(target, $"You kill {target:the}!", DeathSounds.Pick());
                     if (target is Monster m)
                     {
                         g.GainExp(20 * Math.Max(1, m.EffectiveLevel), m.Def.Name);
@@ -1152,14 +1194,12 @@ public class GameState
         {
             unit.Inventory.Add(item);
             Log.Structured("pickup", $"{item.Def.Name:item}");
-            if (unit.IsPlayer && item.HasEnchantments && !item.Knowledge.HasFlag(ItemKnowledge.PropChecked))
-                TryIdentifyProps(item);
         }
 
         return price;
     }
 
-    static void TryIdentifyProps(Item item)
+    public static void TryIdentifyProps(Item item)
     {
         item.Knowledge |= ItemKnowledge.PropChecked;
         int dc = 12;

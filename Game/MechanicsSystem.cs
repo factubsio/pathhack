@@ -61,6 +61,7 @@ public sealed class PHContext : IDisposable
     public bool IsCritFail => CheckDegree.Degree == Degree.CriticalFail;
 
     public static PHContext? Current { get; private set; }
+    public static IUnit? Initiator { get; set; }
     public bool Melee => AttackType == AttackType.Melee;
 
     public void Dispose() => Current = Parent;

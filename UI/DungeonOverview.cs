@@ -133,7 +133,7 @@ static class DungeonOverview
         return null;
     }
 
-    record struct SliceRow(string Label, bool Dim, bool IsHere = false, string? LeftAnnot = null, string? RightAnnot = null);
+    record struct SliceRow(string Label, bool Dim, bool IsHere = false, string? LeftAnnot = null, string? RightAnnot = null, Glyph[]? Features = null);
 
     static List<SliceRow> BuildSlice(Branch branch)
     {
@@ -183,7 +183,8 @@ static class DungeonOverview
 
             rows.Add(new(label, !visited, isHere,
                 isEntry && parentName != null ? $"{parentName} ←" : null,
-                visited ? rightAnnot : null));
+                visited ? rightAnnot : null,
+                resolved.SeenAnnotations.Count > 0 ? [..resolved.SeenAnnotations] : null));
         }
 
         if (lastVisited < branch.MaxDepth)
@@ -235,6 +236,12 @@ static class DungeonOverview
             win.At(SliceLeft + 1, y).Write("╱", fg);
             win.At(SliceLeft + 2, y).Write(" ", fg);
             win.At(SliceLeft + 3, y).Write(row.Label.PadRight(SliceWidth - 3), fg);
+            if (row.Features is { } feats)
+            {
+                int fx = SliceLeft + 3 + row.Label.Length + 1;
+                foreach (var glyph in feats)
+                    win.At(fx++, y).Write(glyph.Value.ToString(), glyph.Color);
+            }
             win.At(SliceLeft + SliceWidth, y).Write("╱", fg);
 
             if (row.LeftAnnot is { } la)

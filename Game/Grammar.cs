@@ -44,6 +44,8 @@ public static class Grammar
 
     static string PluralWord(string s)
     {
+        if (PluralWords.Any(p => s.Equals(p, StringComparison.OrdinalIgnoreCase)))
+            return s;
         if (s.EndsWith('s') || s.EndsWith('x') || s.EndsWith("ch") || s.EndsWith("sh"))
             return s + "es";
         if (s.EndsWith('y') && s.Length > 1 && !Vowels.Contains(s[^2]))

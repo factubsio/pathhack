@@ -3,12 +3,12 @@ namespace Pathhack.Game.Bestiary;
 public static class TemplateHelper
 {
     public static readonly HashSet<string> CannotBeUndead = [
-      CreatureTypes.Plant,
-    CreatureTypes.Undead,
-    CreatureTypes.Outsider,
-    CreatureTypes.Construct,
-    CreatureTypes.Ooze,
-  ];
+        CreatureTypes.Plant,
+        CreatureTypes.Undead,
+        CreatureTypes.Outsider,
+        CreatureTypes.Construct,
+        CreatureTypes.Ooze,
+    ];
 
     const AbilityTags MindlessUndeadStrip = AbilityTags.Biological | AbilityTags.Mental | AbilityTags.Holy | AbilityTags.Verbal;
 

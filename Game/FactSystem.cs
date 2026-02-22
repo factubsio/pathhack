@@ -595,6 +595,7 @@ public class Inventory(IUnit owner) : IEnumerable<Item>
             inUse |= 1UL << idx;
             item.Holder = owner;
             Items.Add(item);
+            OnAdded(item);
             return item;
         }
 
@@ -607,9 +608,16 @@ public class Inventory(IUnit owner) : IEnumerable<Item>
                 _lastInvNr = i;
                 item.Holder = owner;
                 Items.Add(item);
+                OnAdded(item);
                 return item;
             }
         }
+    }
+
+    void OnAdded(Item item)
+    {
+        if (owner.IsPlayer && item.HasEnchantments && !item.Knowledge.HasFlag(ItemKnowledge.PropChecked))
+            GameState.TryIdentifyProps(item);
     }
 
     public bool Remove(Item item)
@@ -658,7 +666,7 @@ public class Inventory(IUnit owner) : IEnumerable<Item>
         item = null;
         int idx = LetterToIndex(ch);
         if (idx < 0) return false;
-        bool hasKey = (inUse & (1u << idx)) != 0;
+        bool hasKey = (inUse & (1UL << idx)) != 0;
         if (!hasKey) return false;
         item = Items.First(i => i.InvLet == ch);
         return true;
