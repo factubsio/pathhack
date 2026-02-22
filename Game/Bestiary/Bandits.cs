@@ -141,7 +141,7 @@ public class FencingBuff : LogicBrick
         {
             m.Gold = 0;
             g.YouObserve(m, $"{m:The} disappears into the shadows with your {EconomySystem.Coins}!", "the clinking of coins getting ever fainter");
-            m.IsDead = true;
+            DoRemoveFromPlay(m);
         }
     }
 }

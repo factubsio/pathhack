@@ -13,7 +13,7 @@ public class Ferocity : LogicBrick<DataFlag>
         
         unit.HP.Current = 1;
         X(fact).On = true;
-        g.pline($"{unit:The} refuses to fall!");
+        g.YouObserve(unit, $"{unit:The} refuses to fall!");
     }
 }
 

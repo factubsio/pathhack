@@ -966,54 +966,74 @@ public class GameState
                 else
                     g.YouObserve(source, $"{source:The} kills {target:the}!");
 
-                using (var death = PHContext.Create(source, Target.From(target)))
-                    LogicBrick.FireOnDeath(target, death);
-
-                Log.Structured("death", $"{target.Id:id}{target:name}{target.HitsTaken:hits}{target.MissesTaken:misses}{target.DamageTaken:dmg}");
-
-                // drop inventory
-                foreach (var item in target.Inventory.ToList())
-                    DoDrop(target, item);
-
-                // drop gold
-                if (target is Monster { Gold: > 0 } gm)
-                {
-                    Item.Create(MiscItems.SilverCrest, (int)gm.Gold)
-                        .PlaceAt(target.Pos);
-                }
-
-                // drop corpse
-                if (target is Monster m2 && !m2.NoCorpse && ShouldGenerateCorpse(m2, out var doRespawn))
-                {
-                    var corpse = Item.Create(Foods.Corpse);
-                    corpse.CorpseOf = m2.Def;
-                    if (m2.IsCreature(CreatureTypes.Undead))
-                        corpse.RotTimer = Foods.RotTainted;
-                    else
-                        corpse.RotTimer = m2.Def.StartingRot;
-
-                    if (doRespawn)
-                        corpse.RotTimer = -g.RnRange(15, 30);
-
-                    lvl.PlaceItem(corpse, target.Pos);
-                }
-
-                // release grab
-                if (target.Grabbing is { } victim)
-                {
-                    victim.GrabbedBy = null;
-                    target.Grabbing = null;
-                }
-                if (target.GrabbedBy is { } grabber)
-                {
-                    grabber.Grabbing = null;
-                    target.GrabbedBy = null;
-                }
-
-                target.IsDead = true;
-                lvl.GetOrCreateState(target.Pos).Unit = null;
+                DoDie(target);
             }
         }
+    }
+
+    /// <summary>
+    /// Full death: OnDeath hooks, drop inventory/gold/corpse, remove from play.
+    /// Does NOT handle kill messages or XP — caller's responsibility.
+    /// </summary>
+    public static void DoDie(IUnit target)
+    {
+        using (var death = PHContext.Create(DungeonMaster.Mook, Target.From(target)))
+            LogicBrick.FireOnDeath(target, death);
+
+        Log.Structured("death", $"{target.Id:id}{target:name}{target.HitsTaken:hits}{target.MissesTaken:misses}{target.DamageTaken:dmg}");
+
+        // drop inventory (force — unit is dead, skip equip/curse checks)
+        foreach (var item in target.Inventory.ToList())
+        {
+            target.Inventory.Remove(item);
+            lvl.PlaceItem(item, target.Pos);
+        }
+
+        // drop gold
+        if (target is Monster { Gold: > 0 } gm)
+        {
+            Item.Create(MiscItems.SilverCrest, (int)gm.Gold)
+                .PlaceAt(target.Pos);
+        }
+
+        // drop corpse
+        if (target is Monster m2 && !m2.NoCorpse && ShouldGenerateCorpse(m2, out var doRespawn))
+        {
+            var corpse = Item.Create(Foods.Corpse);
+            corpse.CorpseOf = m2.Def;
+            if (m2.IsCreature(CreatureTypes.Undead))
+                corpse.RotTimer = Foods.RotTainted;
+            else
+                corpse.RotTimer = m2.Def.StartingRot;
+
+            if (doRespawn)
+                corpse.RotTimer = -g.RnRange(15, 30);
+
+            lvl.PlaceItem(corpse, target.Pos);
+        }
+
+        DoRemoveFromPlay(target);
+    }
+
+    /// <summary>
+    /// Mechanical removal from play: clears grabs, cell, marks dead.
+    /// Does NOT drop inventory, corpse, gold, or fire OnDeath hooks.
+    /// </summary>
+    public static void DoRemoveFromPlay(IUnit target)
+    {
+        if (target.Grabbing is { } victim)
+        {
+            victim.GrabbedBy = null;
+            target.Grabbing = null;
+        }
+        if (target.GrabbedBy is { } grabber)
+        {
+            grabber.Grabbing = null;
+            target.GrabbedBy = null;
+        }
+
+        target.IsDead = true;
+        lvl.GetOrCreateState(target.Pos).Unit = null;
     }
 
     /// <summary>

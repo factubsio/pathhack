@@ -206,6 +206,7 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
     public string DisplayNameWeighted => DisplayName + $" {{{EffectiveWeight}}}";
     public string SingleName => CostOf(GetDisplayName(1).An());
     public string RealName => GetRealName(Count);
+    public string RealNameWeighted => GetRealName(Count) + $" {{{EffectiveWeight}}}";
 
     private string CostOf(string displayName)
     {

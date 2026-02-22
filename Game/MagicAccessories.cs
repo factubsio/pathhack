@@ -252,7 +252,7 @@ public class RamBlast() : CooldownAction("Ram Blast", TargetingType.Unit, _ => 4
         var defender = target.Unit!;
         using var ctx = PHContext.Create(unit, target);
 
-        g.pline($"A ball of force hits {defender:the}!");
+        g.YouObserve(defender, $"A ball of force hits {defender:the}!");
 
         DamageRoll dmg = new() { Formula = d(Math.Max(unit.EffectiveLevel / 3, 1), 6) + 2, Type = DamageTypes.Force, HalfOnSave = true };
         ctx.Damage.Add(dmg);
@@ -270,7 +270,7 @@ public class RamBlast() : CooldownAction("Ram Blast", TargetingType.Unit, _ => 4
                 var into = lvl.UnitAt(pushTo);
                 if (into != null)
                 {
-                    g.pline($"{defender:The} {VTense(defender, "slam")} into {into:an}!");
+                    g.YouObserve(defender, $"{defender:The} {VTense(defender, "slam")} into {into:an}!");
                     unit.Energy -= 2;
                     into.Energy -= 2;
                     using (var slamDmg = PHContext.Create(unit, target))
@@ -286,13 +286,13 @@ public class RamBlast() : CooldownAction("Ram Blast", TargetingType.Unit, _ => 4
                 }
                 else
                 {
-                    g.pline($"{defender:The} {VTense(defender, "slide")} backwards.");
+                    g.YouObserve(defender, $"{defender:The} {VTense(defender, "slide")} backwards.");
                     lvl.MoveUnit(defender, pushTo, free: true);
                 }
             }
             else
             {
-                g.pline($"{defender:The} {VTense(defender, "slam")} into a {lvl[pushTo].Type!}");
+                g.YouObserve(defender, $"{defender:The} {VTense(defender, "slam")} into a {lvl[pushTo].Type!}");
                 using var slamDmg = PHContext.Create(unit, target);
                 slamDmg.Damage.Add(SlamDamage);
                 DoDamage(slamDmg);

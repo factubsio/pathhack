@@ -77,7 +77,7 @@ public class GrabOnHit : LogicBrick
         
         attacker.Grabbing = target;
         target.GrabbedBy = attacker;
-        g.pline($"{attacker:The} {VTense(attacker, "grab")} {target:the}!");
+        g.YouObserve(attacker, $"{attacker:The} {VTense(attacker, "grab")} {target:the}!");
     }
 }
 
@@ -98,7 +98,7 @@ public class Constrict(Dice damage) : LogicBrick
 
         using var dmgCtx = PHContext.Create(unit, Target.From(victim));
         dmgCtx.Damage.Add(new DamageRoll { Formula = damage, Type = DamageTypes.Blunt });
-        g.pline($"{unit:The} {VTense(unit, "crush")} {victim:the}!");
+        g.YouObserve(unit, $"{unit:The} {VTense(unit, "crush")} {victim:the}!");
         DoDamage(dmgCtx);
     }
 }

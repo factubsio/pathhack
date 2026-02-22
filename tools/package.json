@@ -1,5 +1,8 @@
 {
   "type": "module",
+  "scripts": {
+    "dump-view": "bun build dump-view.ts --outfile dump-view.js --no-bundle"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.26.0",
     "@types/bun": "^1.3.8",

@@ -97,7 +97,7 @@ public class TelekineticProjectile(int range, Dice damage, string pool) : Action
         var dir = (upos - from).Signed;
         var item = Item.Create(TKProjectile);
 
-        g.pline($"{unit:The} hurls a telekinetic bolt!");
+        g.YouObserve(unit, $"{unit:The} hurls a telekinetic bolt!");
         var landed = DoThrow(unit, item, dir, AttackType.Thrown, from);
         lvl.RemoveItem(item, landed);
     }

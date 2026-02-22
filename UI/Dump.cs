@@ -7,7 +7,7 @@ public static class Dump
     public static void DumpLog()
     {
         // Capture final frame if not already recorded this round
-        BlackBox.Record();
+        BlackBox.Record(revealAll: true);
 
         Level level = g.CurrentLevel!;
         Snapshot[] snapshots = BlackBox.Drain();
@@ -65,8 +65,30 @@ public static class Dump
             };
         }).ToArray();
 
+        static string FormatInventoryItem(Item item)
+        {
+            string name = item.RealNameWeighted;
+            var equippedKv = u.Equipped.FirstOrDefault(kv => kv.Value == item);
+            if (equippedKv is { Key: var slot } && slot != default)
+                name += " " + Input.EquipDescription(item, slot);
+            if (item == u.Quiver)
+                name += " (quivered)";
+            
+            return name;
+        }
+
         // Per-game data
-        var inventory = u.Inventory.Select(i => $"{i.InvLet} - {i.RealName}").ToArray();
+        var sorted = u.Inventory
+            .OrderBy(i => ItemClasses.Order.IndexOf(i.Def.Class))
+            .ThenBy(i => i.InvLet)
+            .GroupBy(i => i.Def.Class);
+
+        List<string> inventory = [];
+        foreach (var grp in sorted)
+        {
+            inventory.Add(Input.ClassDisplayName(grp.Key));
+            inventory.AddRange(grp.Select(FormatInventoryItem));
+        }
         var abilities = u.Actions.Select(a => a.Name).ToArray();
         var feats = u.TakenFeats.ToArray();
         var discoveries = ItemDb.Instance.IdentifiedDefs

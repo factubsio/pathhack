@@ -29,7 +29,7 @@ public class ReleaseTrap() : Trap(TrapType.Release, 0, 99, 0, 0)
                 {
                     m.RemoveStack(StasisBuff.Instance);
                     m.IsAsleep = false;
-                    g.pline($"{m:The} stirs to life!");
+                    g.YouObserve(m, $"{m:The} stirs to life!");
                     return true;
                 }
             }

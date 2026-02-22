@@ -30,7 +30,7 @@ public static class BlackBox
     static int _count;
     static int _lastMessageIndex;
 
-    public static void Record()
+    public static void Record(bool revealAll = false)
     {
         Level level = g.CurrentLevel!;
         int w = level.Width;
@@ -51,7 +51,9 @@ public static class BlackBox
             for (int x = 0; x < w; x++)
             {
                 Pos p = new(x, y);
-                var (cell, v) = Dump.ResolveCellFov(level, p);
+                var (cell, v) = revealAll
+                    ? (Dump.ResolveCell(level, p), 2)
+                    : Dump.ResolveCellFov(level, p);
                 if (Dump.IsWallLike(level, p))
                     v |= 4;
                 chars[y][x] = cell.Ch;

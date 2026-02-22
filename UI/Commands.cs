@@ -48,7 +48,7 @@ public static partial class Input
                 shop.Pay(price);
                 item.Unpaid = false;
                 item.UnitPrice = 0;
-                shop.Stock[item].Unpaid = false;
+                shop.Stock.Remove(item);
                 g.pline($"You bought {item:the} for {price.Crests()}.");
             }
         }
@@ -66,7 +66,7 @@ public static partial class Input
             {
                 item.Unpaid = false;
                 item.UnitPrice = 0;
-                shop.Stock[item].Unpaid = false;
+                shop.Stock.Remove(item);
             }
             g.pline($"You pay {toPay.Crests()}.");
         }
@@ -601,8 +601,8 @@ public static partial class Input
         if (picked.Count == 0) return;
         var item = picked[0];
         var slot = g.DoEquip(u, item);
-        if (slot == GameState.EquipResult.Cursed) return;
-        if (slot == GameState.EquipResult.NoSlot)
+        if (slot == EquipResult.Cursed) return;
+        if (slot == EquipResult.NoSlot)
         {
             g.pline(item.Def.DefaultEquipSlot == ItemSlots.Ring
                 ? "You have no free ring fingers."

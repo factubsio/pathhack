@@ -1,16 +1,16 @@
-// tools/dump-view.ts
 async function load() {
   if (typeof DATA !== "undefined")
     return DATA;
   const resp = await fetch("/dump.json");
   return resp.json();
 }
-var WALL = 1;
-var WALL_VIS = 4;
+const WALL = 1;
+const WALL_VIS = 4;
+const DOOR_CLOSED = 43;
 function isWallLike(frame, x, y) {
   return (frame.vis[y][x] & WALL_VIS) !== 0;
 }
-var BOX = {
+const BOX = {
   0: "─",
   1: "│",
   2: "─",
