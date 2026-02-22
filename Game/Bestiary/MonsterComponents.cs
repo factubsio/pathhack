@@ -254,16 +254,6 @@ public static class NaturalWeapons
         Price = -1,
     };
 
-    public static readonly WeaponDef DogSlicer = new()
-    {
-        Name = "dogslicer",
-        BaseDamage = d(6),
-        DamageType = DamageTypes.Slashing,
-        Style = WeaponStyle.Exotic, Grip = WeaponGrip.Exotic,
-        MeleeVerb = "swing",
-        Price = -1,
-    };
-
     public static readonly WeaponDef Slam_1d4 = new()
     {
         id = "slam_1d4",

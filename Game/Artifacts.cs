@@ -21,6 +21,7 @@ public static partial class GeneratableArtifacts
         Price = 5000,
         Components = [new ObliterationBrick()],
         IsUnique = true,
+        PokedexDescription = "Shatters defenses. Hit: -2 AC stacks on target. Miss: -1 stack. Max 10 stacks, penalty = stacks/2.",
     };
 
     public class ObliterationDebuff : LogicBrick
@@ -78,6 +79,7 @@ public static partial class GeneratableArtifacts
         Price = 5000,
         Components = [new GluttonousBrick()],
         IsUnique = true,
+        PokedexDescription = "Drains life from the living. Deals 1d4 bonus magic damage and heals the wielder for the same. No effect on undead or constructs.",
     };
 
     public class GluttonousBrick : LogicBrick<GluttonousBrick.State>
@@ -131,6 +133,7 @@ public static partial class GeneratableArtifacts
         BUCBias = -2,
         Components = [new OvinrbaaneBrick()],
         IsUnique = true,
+        PokedexDescription = "Enemy of all enemies. +3 attack, +2d6 magic damage. On hit: wielder must save Will DC 12 or be dazed. Cursed.",
     };
 
     public class OvinrbaaneBrick : LogicBrick
@@ -188,6 +191,7 @@ public static partial class GeneratableArtifacts
             new DawnflowerBeam(),
         ],
         IsUnique = true,
+        PokedexDescription = "Sacred blade of Sarenrae. +1d6 fire on hit, +2 attack vs undead. Apply: beam of dawn's light (2d6 fire, +2d6 holy vs undead).",
     };
 
     public class DawnflowerAttackBrick : LogicBrick
@@ -277,6 +281,7 @@ public static partial class GeneratableArtifacts
         Price = 5000,
         Components = [new SovereignBrick()],
         IsUnique = true,
+        PokedexDescription = "Rewards conquest. First hit on a new target grants +1 AC/attack/saves (max 4 stacks, ~4 rounds each).",
     };
 
     public class SovereignMarker : LogicBrick

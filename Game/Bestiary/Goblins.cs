@@ -87,6 +87,17 @@ public class WarChantBuff : LogicBrick
 
 public static class Goblins
 {
+    public static readonly WeaponDef DogSlicer = new()
+    {
+        Name = "dogslicer",
+        BaseDamage = d(6),
+        DamageType = DamageTypes.Slashing,
+        WeaponType = WeaponTypes.Shortbow,
+        Style = WeaponStyle.Carve, Grip = WeaponGrip.Light,
+        MeleeVerb = "swing",
+        Price = -1,
+    };
+
     public static readonly MonsterDef Warrior = new()
     {
         id = "goblin_warrior",
@@ -108,7 +119,7 @@ public static class Goblins
         EthicalAxis = EthicalAxis.Chaotic,
         GrowsInto = () => Basic!,
         Components = [
-            new Equip(NaturalWeapons.DogSlicer),
+            new Equip(DogSlicer),
             new GrantAction(AttackWithWeapon.Instance),
         ],
     };
@@ -210,7 +221,7 @@ public static class Goblins
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
         Components = [
-            new Equip(NaturalWeapons.DogSlicer),
+            new Equip(DogSlicer),
             new GrantAction(AttackWithWeapon.Instance),
         ],
     };
@@ -235,10 +246,11 @@ public static class Goblins
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
         Components = [
-            new Equip(NaturalWeapons.DogSlicer),
+            new Equip(DogSlicer),
             new GrantAction(AttackWithWeapon.Instance),
         ],
     };
+
 
     public static readonly MonsterDef[] All = [Warrior, Chef, Pyro, WarChanter, MediumBoss, Basic];
 }

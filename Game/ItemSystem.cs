@@ -202,7 +202,7 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
         _ => Def.Glyph
     };
 
-    public string DisplayName => CostOf(Count == 1 ? GetDisplayName(Count).An() : GetDisplayName(Count));
+    public string DisplayName => CostOf(IsUnique ? GetDisplayName(Count).The() : Count == 1 ? GetDisplayName(Count).An() : GetDisplayName(Count));
     public string DisplayNameWeighted => DisplayName + $" {{{EffectiveWeight}}}";
     public string SingleName => CostOf(GetDisplayName(1).An());
     public string RealName => GetRealName(Count);

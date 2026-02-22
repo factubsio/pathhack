@@ -149,7 +149,9 @@ public static class ItemGen
         
         if (def is WeaponDef)
         {
-            item.Potency = RollPotency(depth, genLog, maxPotency);
+            int potency = RollPotency(depth, genLog, maxPotency);
+            if (def.IsUnique) potency = Math.Max(potency, 1);
+            item.Potency = potency;
             // fundamental: skip only applies to weapons; armor has no striking/bonus runes (yet).
             if (fundamental)
                 RollFundamental(item, depth, genLog);
@@ -204,7 +206,8 @@ public static class ItemGen
         int roll = g.Rn2(100);
         int quality = ItemGenTables.Fundamental[d][roll];
         
-        if (quality == 0)
+        // Don't block unique items
+        if (quality == 0 && !item.Def.IsUnique)
         {
             ApplyRune(item, NullFundamental.Instance, fundamental: true);
             return;
