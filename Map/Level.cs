@@ -440,7 +440,7 @@ public class Level(LevelId id, int width, int height)
 
         if (lvl.GetState(upos)?.Feature is {} f && !f.Hidden)
         {
-            g.pline($"There is a {f.Desc ?? "something"} here.");
+            g.pline($"You see {f.Desc ?? "something"} here.");
         }
 
         if (items.Count == 0) {}

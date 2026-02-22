@@ -1202,6 +1202,11 @@ public class GameState
     public static void TryIdentifyProps(Item item)
     {
         item.Knowledge |= ItemKnowledge.PropChecked;
+        if (u is null)
+        {
+            item.Knowledge |= ItemKnowledge.PropRunes | ItemKnowledge.PropPotency | ItemKnowledge.PropQuality;
+            return;
+        }
         int dc = 12;
         using var ctx = PHContext.Create(DungeonMaster.Mook, Target.From(u));
         bool passed = CreateAndDoCheck(ctx, "perception", dc, "identify");

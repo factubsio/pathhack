@@ -38,6 +38,7 @@ public class WeaponCurse : LogicBrick
 {
     public static readonly WeaponCurse Instance = new();
     public override string Id => "gremlin:weapon_curse";
+    public override StackMode StackMode => StackMode.ExtendDuration;
     public override bool IsBuff => true;
     public override bool IsActive => true;
     public override string? BuffName => "Pugwampi's Ill Fortune";
@@ -56,10 +57,11 @@ public class JinkinCurse : LogicBrick
 {
     public static readonly JinkinCurse Instance = new();
     public override string Id => "gremlin:jinkin_curse";
+    public override StackMode StackMode => StackMode.ExtendDuration;
     public override bool IsBuff => true;
     public override bool IsActive => true;
     public override string? BuffName => "Jinkin's Ill Fortune";
-    public override StatusDisplay StatusDisplayPriority => StatusDisplay.Severe;
+    public override StatusDisplay StatusDisplayPriority => StatusDisplay.Moderate;
 
     protected override void OnBeforeCheck(Fact fact, PHContext context)
     {
