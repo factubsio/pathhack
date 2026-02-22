@@ -543,6 +543,12 @@ public class GameState
         foreach (var unit in lvl.LiveUnits)
         {
             int regen = unit.NaturalRegen;
+            if (unit.IsPlayer)
+            {
+                const int fullRegenAfter = 45;
+                int elapsed = CurrentRound - unit.LastDamagedOnTurn;
+                regen = regen * Math.Clamp(elapsed, 0, fullRegenAfter) / fullRegenAfter;
+            }
             while (regen > 0)
             {
                 if (Rn2(30) < regen)
@@ -1007,8 +1013,15 @@ public class GameState
                 corpse.RotTimer = m2.Def.StartingRot;
 
             if (doRespawn)
-                corpse.RotTimer = -g.RnRange(15, 30);
+                corpse.RespawnTimer = -g.RnRange(15, 30);
 
+            // transfer marked facts to corpse (e.g. plague etc)
+            foreach (var fact in m2.QueryFacts("transfer_to_corpse"))
+            {
+                corpse.AddFact(fact.Brick);
+            }
+
+            corpse.RespawnTemplate ??= m2.Query("respawn_template") as MonsterTemplate;
             lvl.PlaceItem(corpse, target.Pos);
         }
 

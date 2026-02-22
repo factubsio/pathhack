@@ -701,7 +701,7 @@ public static partial class LevelGen
         // Gold: 1/3 chance
         if (Rn2(3) == 0)
         {
-            var pos = ctx.FindLocationInRoom(room, p => level[p].IsPassable && !level.HasFeature(p));
+            var pos = ctx.FindLocationInRoom(room, p => level[p].IsPassable && !level.HasFeature(p) && !level[p].IsStairs);
             if (pos != null)
             {
                 int amount = 1 + (Rn2(level.EffectiveDepth + 2) + 1) * (Rn2(30) + 1);

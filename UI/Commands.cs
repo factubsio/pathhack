@@ -510,7 +510,7 @@ public static partial class Input
             g.pline($"{picked[0]!.InvLet} - {picked[0]!.Def.Name} (weapon in {HandStr(picked[0]!)}).");
     }
 
-    static void DoSwapWeapon()
+    internal static void DoSwapWeapon()
     {
         var eq = u.Equipped;
         eq.TryGetValue(ItemSlots.MainHandSlot, out var main);

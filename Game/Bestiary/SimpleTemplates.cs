@@ -2,121 +2,152 @@ namespace Pathhack.Game.Bestiary;
 
 public static class TemplateHelper
 {
-  public static readonly HashSet<string> CannotBeUndead = [
-    CreatureTypes.Plant,
+    public static readonly HashSet<string> CannotBeUndead = [
+      CreatureTypes.Plant,
     CreatureTypes.Undead,
     CreatureTypes.Outsider,
     CreatureTypes.Construct,
     CreatureTypes.Ooze,
   ];
 
-  const AbilityTags MindlessUndeadStrip = AbilityTags.Biological | AbilityTags.Mental | AbilityTags.Holy | AbilityTags.Verbal;
+    const AbilityTags MindlessUndeadStrip = AbilityTags.Biological | AbilityTags.Mental | AbilityTags.Holy | AbilityTags.Verbal;
 
-  public static IEnumerable<LogicBrick> StripMindless(IEnumerable<LogicBrick> components) =>
-    components.Where(c => (c.Tags & MindlessUndeadStrip) == 0);
+    public static IEnumerable<LogicBrick> StripMindless(IEnumerable<LogicBrick> components) =>
+      components.Where(c => (c.Tags & MindlessUndeadStrip) == 0);
 
-  public static void MakeUndead(Monster m)
-  {
-    m.OwnMoralAxis = MoralAxis.Evil;
-    if (m.Def.EthicalAxis == EthicalAxis.Lawful) m.OwnEthicalAxis = EthicalAxis.Neutral;
-    m.OwnCreatureType = CreatureTypes.Undead;
-  }
+    public static void MakeUndead(Monster m)
+    {
+        m.OwnMoralAxis = MoralAxis.Evil;
+        if (m.Def.EthicalAxis == EthicalAxis.Lawful) m.OwnEthicalAxis = EthicalAxis.Neutral;
+        m.OwnCreatureType = CreatureTypes.Undead;
+    }
 }
 
 public class SkeletonTemplate() : MonsterTemplate("skeleton")
 {
-  public class SkeletonFacts : LogicBrick
-  {
-    public override string Id => "template:skeleton";
-    protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
+    public class SkeletonFacts : LogicBrick
     {
-      "mindless" => true,
-      _ => null,
-    };
+        public override string Id => "template:skeleton";
+        protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
+        {
+            "mindless" => true,
+            _ => null,
+        };
 
-    protected override void OnBeforeAttackRoll(Fact fact, PHContext ctx)
-    {
-      ctx.Check!.Modifiers.AddModifier(new(ModifierCategory.UntypedStackable, -2, "skeleton"));
+        protected override void OnBeforeAttackRoll(Fact fact, PHContext ctx)
+        {
+            ctx.Check!.Modifiers.AddModifier(new(ModifierCategory.UntypedStackable, -2, "skeleton"));
+        }
+
+        protected override void OnBeforeDamageRoll(Fact fact, PHContext ctx)
+        {
+            foreach (var roll in ctx.Damage)
+                roll.Modifiers.AddModifier(new(ModifierCategory.UntypedStackable, -2, "skeleton"));
+        }
+
+        public static readonly SkeletonFacts Instance = new();
     }
 
-    protected override void OnBeforeDamageRoll(Fact fact, PHContext ctx)
+    // Gems?
+    // public static ItemDef Bones = new()
+    // {
+    //   Price = 1,
+    //   Material = "bone",
+    // };
+
+    public override bool CanApplyTo(MonsterDef def) => !TemplateHelper.CannotBeUndead.Contains(def.CreatureType);
+
+    public override int LevelBonus(MonsterDef def, int level) => Math.Clamp((int)(level * 0.15), 0, 2);
+
+    public override IEnumerable<LogicBrick> GetComponents(MonsterDef def) =>
+      TemplateHelper.StripMindless(def.Components)
+        .Append(SkeletonFacts.Instance)
+        .Append(SimpleDR.Blunt.Lookup(def.BaseLevel));
+    // .Append(new DropOnDeath(Bones, d(4)+4));
+
+    public override void ModifySpawn(Monster m)
     {
-      foreach (var roll in ctx.Damage)
-        roll.Modifiers.AddModifier(new(ModifierCategory.UntypedStackable, -2, "skeleton"));
+        TemplateHelper.MakeUndead(m);
+        m.ItemBonusAC -= 2;
+        m.OwnBrainFlags = m.Def.BrainFlags | MonFlags.NoCorpse;
+
+        m.OwnGlyph = m.Def.Glyph with { Background = ConsoleColor.Gray };
+
+        if (m.Def.IsUnique)
+            m.TemplatedName = $"Skeletal {m.Def.Name}";
+        else
+            m.TemplatedName = $"{m.Def.Name} skeleton";
     }
-
-    public static readonly SkeletonFacts Instance = new();
-  }
-
-  // Gems?
-  // public static ItemDef Bones = new()
-  // {
-  //   Price = 1,
-  //   Material = "bone",
-  // };
-
-  public override bool CanApplyTo(MonsterDef def) => !TemplateHelper.CannotBeUndead.Contains(def.CreatureType);
-
-  public override int LevelBonus(MonsterDef def, int level) => Math.Clamp((int)(level * 0.15), 0, 2);
-
-  public override IEnumerable<LogicBrick> GetComponents(MonsterDef def) =>
-    TemplateHelper.StripMindless(def.Components)
-      .Append(SkeletonFacts.Instance)
-      .Append(SimpleDR.Blunt.Lookup(def.BaseLevel));
-      // .Append(new DropOnDeath(Bones, d(4)+4));
-
-  public override void ModifySpawn(Monster m)
-  {
-    TemplateHelper.MakeUndead(m);
-    m.ItemBonusAC -= 2;
-    m.OwnBrainFlags = m.Def.BrainFlags | MonFlags.NoCorpse;
-
-    m.OwnGlyph = m.Def.Glyph with { Background = ConsoleColor.Gray };
-
-    if (m.Def.IsUnique)
-      m.TemplatedName = $"Skeletal {m.Def.Name}";
-    else
-      m.TemplatedName = $"{m.Def.Name} skeleton";
-  }
 }
 
 public class ZombieTemplate() : MonsterTemplate("zombie")
 {
-  public class ZombieFacts : LogicBrick
-  {
-    public override string Id => "template:zombie";
-    protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
-    {
-      "speed_bonus" => new Modifier(ModifierCategory.UntypedStackable, -4, "zombie"),
-      "mindless" => true,
-      _ => null,
-    };
+    public static readonly ZombieTemplate Instance = new();
 
-    protected override void OnBeforeDamageIncomingRoll(Fact fact, PHContext ctx)
+    public class ZombieFacts : LogicBrick
     {
-      foreach (var dmg in ctx.Damage)
-        if (dmg.Type == DamageTypes.Fire) dmg.Double();
+        public override string Id => "template:zombie";
+        protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
+        {
+            "speed_bonus" => new Modifier(ModifierCategory.UntypedStackable, -4, "zombie"),
+            "mindless" => true,
+            "respawn_from_corpse" => g.Rn2(10) < 3 ? true : null,
+            "respawn_template" => ZombieTemplate.Instance,
+            _ => null,
+        };
+
+        protected override void OnBeforeDamageIncomingRoll(Fact fact, PHContext ctx)
+        {
+            foreach (var dmg in ctx.Damage)
+                if (dmg.Type == DamageTypes.Fire) dmg.Double();
+        }
+
+        protected override void OnAfterAttackRoll(Fact fact, PHContext ctx)
+        {
+            if (!ctx.Check!.Result || !ctx.Melee) return;
+            if (ctx.Target?.Unit is not Monster unit) return;
+            if (TemplateHelper.CannotBeUndead.Contains(unit.Def.CreatureType)) return;
+            if (unit.FindFactOfType<RegenBrick>() != null) return;
+            unit.AddFact(ZombiePlagueBuff.Instance);
+        }
+
+        public static readonly ZombieFacts Instance = new();
     }
 
-    public static readonly ZombieFacts Instance = new();
-  }
+    public override bool CanApplyTo(MonsterDef def) => !TemplateHelper.CannotBeUndead.Contains(def.CreatureType);
 
-  public override bool CanApplyTo(MonsterDef def) => !TemplateHelper.CannotBeUndead.Contains(def.CreatureType);
+    public override int LevelBonus(MonsterDef def, int level) => Math.Clamp((int)(level * 0.2), 1, 3);
 
-  public override int LevelBonus(MonsterDef def, int level) => Math.Clamp((int)(level * 0.2), 1, 3);
+    public override IEnumerable<LogicBrick> GetComponents(MonsterDef def) =>
+      TemplateHelper.StripMindless(def.Components)
+        .Append(ZombieFacts.Instance)
+        .Append(SimpleDR.Slashing.Lookup(def.BaseLevel));
 
-  public override IEnumerable<LogicBrick> GetComponents(MonsterDef def) =>
-    TemplateHelper.StripMindless(def.Components).Append(ZombieFacts.Instance).Append(SimpleDR.Slashing.Lookup(def.BaseLevel));
+    public override void ModifySpawn(Monster m)
+    {
+        TemplateHelper.MakeUndead(m);
 
-  public override void ModifySpawn(Monster m)
-  {
-    TemplateHelper.MakeUndead(m);
+        m.OwnGlyph = m.Def.Glyph with { Background = ConsoleColor.DarkGreen };
 
-    m.OwnGlyph = m.Def.Glyph with { Background = ConsoleColor.DarkGreen };
+        if (m.Def.IsUnique)
+            m.TemplatedName = $"Zombie {m.Def.Name}";
+        else
+            m.TemplatedName = $"{m.Def.Name} zombie";
+    }
 
-    if (m.Def.IsUnique)
-      m.TemplatedName = $"Zombie {m.Def.Name}";
-    else
-      m.TemplatedName = $"{m.Def.Name} zombie";
-  }
+    public class ZombiePlagueBuff : LogicBrick
+    {
+        public static readonly ZombiePlagueBuff Instance = new();
+        public override string Id => "zombie:plague";
+        public override StackMode StackMode => StackMode.Reject;
+
+        protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
+        {
+            // 50/50 to return as a zombie
+            "respawn_from_corpse" => g.Rn2(10) < 5 ? true : null,
+            "transfer_to_corpse" => fact,
+            "respawn_template" => ZombieTemplate.Instance,
+            _ => null,
+        };
+    }
 }

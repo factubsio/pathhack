@@ -186,7 +186,9 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
     // food/corpse state
     public int Eaten;
     public MonsterDef? CorpseOf;
+    public MonsterTemplate? RespawnTemplate;
     public int RotTimer;
+    public int RespawnTimer;
     public int CookProgress;
 
     public int BaseNutrition => CorpseOf?.Nutrition ?? (Def as ConsumableDef)?.Nutrition ?? 0;
@@ -326,6 +328,8 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
         Count -= count;
         var other = new Item(Def)
         {
+            _material = _material,
+            BUC = BUC,
             Count = count,
             Potency = Potency,
             Fundamental = Fundamental,
@@ -348,6 +352,8 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
         if (other.Unpaid != Unpaid) { Log.Verbose("merging", "  fail: Unpaid"); return false; }
         if (other.UnitPrice != UnitPrice) { Log.Verbose("merging", $"  fail: UnitPrice {UnitPrice} vs {other.UnitPrice}"); return false; }
         var mask = Def.RelevantKnowledge;
+        if (other.BUC != BUC) return false;
+        if (other._material != _material) return false;
         if ((other.Knowledge & mask) != (Knowledge & mask)) { Log.Verbose("merging", $"  fail: Knowledge {Knowledge & mask} vs {other.Knowledge & mask}"); return false; }
         if (other.Potency != Potency) { Log.Verbose("merging", $"  fail: Potency {Potency} vs {other.Potency}"); return false; }
         if (!FactsEquivalent(other)) { Log.Verbose("merging", "  fail: FactsEquivalent"); return false; }

@@ -179,7 +179,12 @@ public class ReachAttackVerb() : VerbResponder(ItemVerb.Apply)
 
         if (u.GetWieldedItem() != item)
         {
-            if (g.DoEquip(u, item, free: true) != EquipResult.Ok) return;
+            if (u.Equipped.TryGetValue(ItemSlots.AltSlot, out var alt) && alt == item)
+            {
+                UI.Input.DoSwapWeapon();
+                if (u.GetWieldedItem() != item) return;
+            }
+            else if (g.DoEquip(u, item, free: true) != EquipResult.Ok) return;
         }
 
         var tgt = UI.Input.PickTargetInRange(wep.Reach, filter: m => m.Perception >= PlayerPerception.Detected);

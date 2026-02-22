@@ -69,17 +69,11 @@ public abstract class Activity(string name, Item? targetItem = null)
     }
 }
 
-public class EatActivity : Activity
+public class EatActivity(Item food, bool canChoke) : Activity("eat", food)
 {
-    readonly Item _food;
-    readonly bool _canChoke;
+    readonly Item _food = food;
+    readonly bool _canChoke = canChoke;
     bool _fullWarned;
-
-    public EatActivity(Item food, bool canChoke) : base("eat", food)
-    {
-        _food = food;
-        _canChoke = canChoke;
-    }
 
     public override int TotalTime => _food.CorpseOf is { } m ? m.Size switch
     {
@@ -95,7 +89,7 @@ public class EatActivity : Activity
     public override bool Interruptible => true;
 
     public override void OnInterrupt() =>
-        g.pline($"You stop eating {Grammar.DoNameOne(_food)}.");
+        g.pline($"You stop eating {DoNameOne(_food)}.");
 
     public override bool Tick()
     {
@@ -464,9 +458,10 @@ public static class Foods
         if (u.CurrentActivity?.TargetItem == corpseItem) return false;
         
         corpseItem.RotTimer++;
+        corpseItem.RespawnTimer++;
 
-        // Respawn: negative timer ticking up to 0
-        if (corpseItem.RotTimer == 0 && corpseItem.CorpseOf is { } def)
+        // Respawn: ONLY when it hits 0 (>0 means it never should respawn)
+        if (corpseItem.RespawnTimer == 0 && corpseItem.CorpseOf is { } def)
         {
             Pos origin = floorPos ?? holder!.Pos;
             Pos? spawnPos = null;
@@ -489,7 +484,9 @@ public static class Foods
             {
                 g.Defer(() =>
                 {
-                    var mon = Monster.Spawn(def, "respawn", firstTimeSpawn: false);
+                    var template = corpseItem.RespawnTemplate;
+                    if (template?.CanApplyTo(def) == false) template = null;
+                    var mon = Monster.Spawn(def, "respawn", template: template, firstTimeSpawn: false);
                     lvl.PlaceUnit(mon, spawnPos.Value);
                     // pick up any equipment at the corpse tile
                     foreach (var loot in lvl.ItemsAt(origin))

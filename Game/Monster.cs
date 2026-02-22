@@ -142,7 +142,7 @@ public abstract class MonsterTemplate(string id)
   public virtual void ModifySpawn(Monster m) { }
 
   public static readonly List<MonsterTemplate> All = [
-    new ZombieTemplate(),
+    ZombieTemplate.Instance,
     new SkeletonTemplate(),
   ];
 
