@@ -62,7 +62,7 @@ public class TextMenu
                     pageStarts.Add(i);
                     y = 0;
                 }
-                y += lineH + 1;
+                y += lineH;
             }
         }
 

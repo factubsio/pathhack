@@ -329,25 +329,15 @@ public static class Pokedex
         string stackable = def.Stackable ? " Stackable." : "";
         menu.Add($"Weighs {def.Weight}. Made of {item.Material}.{stackable}");
 
+        if ((def.IsUnique || def.IsKnown()) && def.PokedexDescription != null)
+        {
+            menu.Add();
+            menu.Add(def.PokedexDescription);
+        }
+
         if (!runesKnown && item.HasEnchantments && def is not WeaponDef)
         {
             menu.Add("Properties not identified.", ConsoleColor.DarkYellow);
-        }
-        else if (def.IsKnown())
-        {
-            if (def.PokedexDescription != null)
-            {
-                menu.Add();
-                menu.Add(def.PokedexDescription);
-            }
-            else
-            {
-                foreach (var brick in def.Components.Where(b => b.PokedexDescription != null))
-                {
-                    menu.Add();
-                    menu.Add(brick.PokedexDescription!);
-                }
-            }
         }
 
         menu.Display();
