@@ -30,7 +30,7 @@ List<BranchTemplate> templates = [
             new(new LevelTemplate("jungle_shore", Behaviour: ShoreBehaviour.Instance, Variants: [SerpentsSkullLevels.ShoreBeached, SerpentsSkullLevels.ShoreDebris])),
             new(new LevelTemplate("deep_jungle", Algorithm: CaveAlgorithm.OutdoorCAOpen), Count: 2, CountMax: 3),
             new(new LevelTemplate("saventh_yhi", Behaviour: SerpentsSkullLevels.SaventhYhiBehaviour, Variants: [SerpentsSkullLevels.SaventhYhi_A])),
-            new(new LevelTemplate("ss_underneath", Algorithm: CaveAlgorithm.Drunkard), Count: 2, CountMax: 3),
+            new(new LevelTemplate("ss_underneath", Algorithm: CaveAlgorithm.Drunkard, Behaviour: UnderneathBehaviour.Instance), Count: 2, CountMax: 3),
         ],
     },
 
@@ -226,6 +226,12 @@ if (args.Length > 0 && args[0] == "--spells")
 if (args.Length > 0 && args[0] == "--bricks")
 {
     MonsterTable.PrintBricks(args.Length > 1 ? args[1] : null);
+    return;
+}
+
+if (args.Length > 0 && args[0] == "--weights")
+{
+    MonsterTable.PrintFamilyWeights();
     return;
 }
 

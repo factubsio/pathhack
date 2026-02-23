@@ -451,7 +451,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
     Pos? best = null;
     int bestScore = int.MaxValue;
 
-    foreach (var dir in Pos.AllDirs)
+    foreach (var dir in Pos.AllDirs.Shuffled())
     {
       Pos candidate = mp + dir;
       if (!lvl.InBounds(candidate)) continue;

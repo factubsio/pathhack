@@ -287,3 +287,49 @@ public class ShoreBehaviour : ILevelRuntimeBehaviour
         return resolved.Template == SerpentsSkullLevels.ShoreBeached ? Skeleton : Zombie;
     }
 }
+
+public class UnderneathBehaviour : ILevelRuntimeBehaviour
+{
+    [BehaviourId("ss_underneath")]
+    public static readonly UnderneathBehaviour Instance = new();
+
+    static readonly (MonsterDef Def, int Weight)[] BiasedMephits = [
+        ..Mephits.All.Select(m => (m, m.Name.Contains("mud") || m.Name.Contains("steam") || m.Name.Contains("earth") ? 3 : 1)),
+    ];
+
+    public SpawnPick? PickMonster(Level level, int effectiveLevel, string reason)
+    {
+        int roll = g.Rn2(100);
+
+        // 12%: mephits, biased mud/steam/earth
+        if (roll < 12)
+            return new(BiasedMephits.PickWeighted(x => x.Weight).Def);
+
+        // 8%: elementals
+        if (roll < 20)
+        {
+            var candidates = Elementals.All.Where(m => m.BaseLevel <= effectiveLevel).ToList();
+            var def = MonsterSpawner.PickWeighted(candidates);
+            if (def != null) return new(def);
+        }
+
+        // 20%: charau-ka
+        if (roll < 40)
+        {
+            var candidates = CharauKa.All.Where(m => m.BaseLevel <= effectiveLevel).ToList();
+            var def = MonsterSpawner.PickWeighted(candidates);
+            if (def != null) return new(def);
+        }
+
+        // 20%: bandits
+        if (roll < 60)
+        {
+            var candidates = Bandits.All.Where(m => m.BaseLevel <= effectiveLevel).ToList();
+            var def = MonsterSpawner.PickWeighted(candidates);
+            if (def != null) return new(def);
+        }
+
+        // 40%: normal
+        return null;
+    }
+}

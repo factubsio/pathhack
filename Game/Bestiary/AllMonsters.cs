@@ -18,6 +18,7 @@ public static class AllMonsters
         .. Boggards.All,
         .. Trees.All,
         .. CharauKa.All,
+        .. Mephits.All,
     ];
 
     public static readonly MonsterDef[] ActuallyAll = [

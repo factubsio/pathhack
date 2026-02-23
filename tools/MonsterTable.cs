@@ -4,6 +4,32 @@ using System.Reflection;
 
 public static class MonsterTable
 {
+    public static void PrintFamilyWeights()
+    {
+        var defs = AllMonsters.All.DistinctBy(m => m.id).ToList();
+        int maxLevel = defs.Max(m => m.BaseLevel);
+
+        for (int level = 1; level <= maxLevel; level++)
+        {
+            var eligible = defs.Where(m => m.BaseLevel == level).ToList();
+            if (eligible.Count == 0) continue;
+
+            int totalWeight = eligible.Sum(m => m.SpawnWeight);
+            var families = eligible
+                .GroupBy(m => m.Family ?? "(none)")
+                .Select(g => (Family: g.Key, Weight: g.Sum(m => m.SpawnWeight), Count: g.Count()))
+                .OrderByDescending(f => f.Weight)
+                .ToList();
+
+            Console.WriteLine($"\n=== Level {level} ({eligible.Count} defs, total weight {totalWeight}) ===");
+            foreach (var (fam, weight, count) in families)
+            {
+                double pct = 100.0 * weight / totalWeight;
+                Console.WriteLine($"  {fam,-16} {weight,4}w ({pct,5:F1}%)  [{count} defs]");
+            }
+        }
+    }
+
     public static void Print(string? family)
     {
         var defs = AllMonsters.ActuallyAll
