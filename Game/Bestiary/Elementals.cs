@@ -359,6 +359,8 @@ record ElementalTier(
 
 public static class Elementals
 {
+    public static readonly MonsterFamily Family = new("elemental");
+
     static readonly ElementType[] Types =
     [
         new("air",       ConsoleColor.Cyan,       null,              null),
@@ -487,7 +489,7 @@ public static class Elementals
             id = $"elemental_{elem.Name}_{tier.Prefix}",
             Name = name,
             BrainFlags = MonFlags.NoCorpse,
-            Family = "elemental",
+            Family = Family,
             CreatureType = CreatureTypes.Outsider,
             Subtypes = ["Elemental"],
             Glyph = new(tier.Glyph, elem.Color),
@@ -499,7 +501,6 @@ public static class Elementals
             Unarmed = Slam(tier.Size),
             Size = tier.Size,
             BaseLevel = level,
-            MinDepth = Math.Max(1, level),
             SpawnWeight = 8,
             GroupSize = GroupSize.None,
             MoralAxis = MoralAxis.Neutral,

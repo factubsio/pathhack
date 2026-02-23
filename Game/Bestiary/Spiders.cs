@@ -160,6 +160,8 @@ public class PhaseShift : LogicBrick
 
 public static class Spiders
 {
+    public static readonly MonsterFamily Family = new("spider");
+
     public static readonly MonsterDef OrbWeaver = new()
     {
         id = "orb_weaver",
@@ -173,12 +175,11 @@ public static class Spiders
         Unarmed = NaturalWeapons.Bite_1d3,
         Size = UnitSize.Small,
         BaseLevel = 1,
-        MinDepth = 1,
         MaxDepth = 6,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
-        Family = "spider",
+        Family = Family,
         StartingRot = Foods.RotSpoiled,
         GroupSize = GroupSize.SmallMixed,
         Components = [
@@ -201,12 +202,11 @@ public static class Spiders
         Unarmed = NaturalWeapons.Bite_1d3,
         Size = UnitSize.Tiny,
         BaseLevel = 0,
-        MinDepth = 1,
         MaxDepth = 4,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
-        Family = "spider",
+        Family = Family,
         StartingRot = Foods.RotSpoiled,
         Components = [
             WebImmunity.Instance,
@@ -228,12 +228,11 @@ public static class Spiders
         Unarmed = NaturalWeapons.Bite_1d4,
         Size = UnitSize.Small,
         BaseLevel = 1,
-        MinDepth = 1,
         MaxDepth = 5,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
-        Family = "spider",
+        Family = Family,
         StartingRot = Foods.RotSpoiled,
         Components = [
             WebImmunity.Instance,
@@ -255,12 +254,11 @@ public static class Spiders
         Unarmed = NaturalWeapons.Bite_1d6,
         Size = UnitSize.Medium,
         BaseLevel = 2,
-        MinDepth = 2,
         MaxDepth = 7,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
-        Family = "spider",
+        Family = Family,
         StartingRot = Foods.RotSpoiled,
         Components = [
             WebImmunity.Instance,
@@ -282,11 +280,10 @@ public static class Spiders
         Unarmed = NaturalWeapons.Bite_1d6,
         Size = UnitSize.Large,
         BaseLevel = 4,
-        MinDepth = 4,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
-        Family = "spider",
+        Family = Family,
         StartingRot = Foods.RotSpoiled,
         Components = [
             WebImmunity.Instance,
@@ -309,11 +306,10 @@ public static class Spiders
         Unarmed = NaturalWeapons.Bite_1d8,
         Size = UnitSize.Large,
         BaseLevel = 5,
-        MinDepth = 6,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
-        Family = "spider",
+        Family = Family,
         StartingRot = Foods.RotSpoiled,
         Components = [
             WebImmunity.Instance,
@@ -336,11 +332,10 @@ public static class Spiders
         Unarmed = NaturalWeapons.Bite_2d6,
         Size = UnitSize.Huge,
         BaseLevel = 6,
-        MinDepth = 7,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
-        Family = "spider",
+        Family = Family,
         StartingRot = Foods.RotSpoiled,
         Components = [
             WebImmunity.Instance,
@@ -362,11 +357,10 @@ public static class Spiders
         Unarmed = NaturalWeapons.Bite_2d6,
         Size = UnitSize.Gargantuan,
         BaseLevel = 8,
-        MinDepth = 9,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
-        Family = "spider",
+        Family = Family,
         StartingRot = Foods.RotSpoiled,
         Components = [
             WebImmunity.Instance,
@@ -388,11 +382,10 @@ public static class Spiders
         Unarmed = NaturalWeapons.Bite_2d10,
         Size = UnitSize.Gargantuan,
         BaseLevel = 11,
-        MinDepth = 12,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
-        Family = "spider",
+        Family = Family,
         StartingRot = Foods.RotSpoiled,
         Components = [
             WebImmunity.Instance,

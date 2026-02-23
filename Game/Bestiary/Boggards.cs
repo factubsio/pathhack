@@ -70,6 +70,8 @@ public class Croak(int cd) : CooldownAction("Croak", TargetingType.None, _ => cd
 
 public static class Boggards
 {
+    public static readonly MonsterFamily Family = new("boggard");
+
     static readonly EquipSet LightWeapon = EquipSet.OneOf(MundaneArmory.Club, MundaneArmory.Spear);
     static readonly EquipSet MediumWeapon = EquipSet.OneOf(MundaneArmory.Spear, MundaneArmory.Mace, MundaneArmory.Flail);
     static readonly EquipSet HeavyWeapon = EquipSet.OneOf(MundaneArmory.Flail, MundaneArmory.Battleaxe, MundaneArmory.Greatclub);
@@ -86,7 +88,7 @@ public static class Boggards
         {
             id = id,
             Name = name,
-            Family = "boggard",
+            Family = Family,
             CreatureType = CreatureTypes.Humanoid,
             Subtypes = [CreatureSubtypes.Amphibious],
             Glyph = new('@', color),
@@ -97,7 +99,6 @@ public static class Boggards
             Unarmed = unarmed ?? NaturalWeapons.Bite_1d3,
             Size = UnitSize.Medium,
             BaseLevel = level,
-            MinDepth = level,
             MaxDepth = 12,
             GroupSize = group,
             SpawnWeight = spawnWeight,

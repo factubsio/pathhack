@@ -249,6 +249,7 @@ public class GameState
     public bool SeeAllMonsters { get; set; }
     public bool GlobalHatred { get; set; }
     public Dictionary<string, Branch> Branches { get; set; } = [];
+    public SpawnBag SpawnBag { get; } = new(AllMonsters.All);
     public Dictionary<LevelId, Level> Levels { get; } = [];
     public Dictionary<string, int> Vanquished { get; } = [];
     public Level? CurrentLevel { get; set; }

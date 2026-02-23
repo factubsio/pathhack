@@ -49,7 +49,7 @@ public class WarChant(string pool = "war_chant") : ActionBrick("Goblin War Chant
 
         g.YouObserve(unit, $"{unit:The} sings a war chant!", "a war chant");
 
-        string? family = (unit as Monster)?.Def.Family;
+        MonsterFamily? family = (unit as Monster)?.Def.Family;
         if (family == null) return;
 
         foreach (var ally in lvl.LiveUnits)
@@ -87,6 +87,8 @@ public class WarChantBuff : LogicBrick
 
 public static class Goblins
 {
+    public static readonly MonsterFamily Family = new("goblin");
+
     public static readonly WeaponDef DogSlicer = new()
     {
         Name = "dogslicer",
@@ -111,9 +113,8 @@ public static class Goblins
         Unarmed = NaturalWeapons.Fist,
         Size = UnitSize.Small,
         BaseLevel = -1,
-        MinDepth = 1,
         MaxDepth = 3,
-        Family = "goblin",
+        Family = Family,
         CreatureType = CreatureTypes.Humanoid,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
@@ -137,9 +138,8 @@ public static class Goblins
         Unarmed = NaturalWeapons.Fist,
         Size = UnitSize.Small,
         BaseLevel = 1,
-        MinDepth = 1,
         MaxDepth = 4,
-        Family = "goblin",
+        Family = Family,
         CreatureType = CreatureTypes.Humanoid,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
@@ -161,9 +161,8 @@ public static class Goblins
         Unarmed = NaturalWeapons.Fist,
         Size = UnitSize.Small,
         BaseLevel = 1,
-        MinDepth = 1,
         MaxDepth = 4,
-        Family = "goblin",
+        Family = Family,
         CreatureType = CreatureTypes.Humanoid,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
@@ -187,9 +186,8 @@ public static class Goblins
         Unarmed = NaturalWeapons.Fist,
         Size = UnitSize.Small,
         BaseLevel = 1,
-        MinDepth = 1,
         MaxDepth = 4,
-        Family = "goblin",
+        Family = Family,
         CreatureType = CreatureTypes.Humanoid,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
@@ -214,9 +212,8 @@ public static class Goblins
         Size = UnitSize.Small,
         BaseLevel = 3,
         SpawnWeight = 0,
-        MinDepth = 2,
         MaxDepth = 5,
-        Family = "goblin",
+        Family = Family,
         CreatureType = CreatureTypes.Humanoid,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
@@ -239,9 +236,8 @@ public static class Goblins
         Unarmed = NaturalWeapons.Fist,
         Size = UnitSize.Small,
         BaseLevel = 1,
-        MinDepth = 1,
         MaxDepth = 3,
-        Family = "goblin",
+        Family = Family,
         CreatureType = CreatureTypes.Humanoid,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,

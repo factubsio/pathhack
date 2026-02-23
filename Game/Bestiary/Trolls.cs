@@ -49,6 +49,8 @@ public class ShedArmorDebuff : LogicBrick
 
 public static class Trolls
 {
+    public static readonly MonsterFamily Family = new("troll");
+
     // Common outfits
     public static readonly EquipSet TrollWeapons = EquipSet.Weighted(
         (3, null),
@@ -77,7 +79,7 @@ public static class Trolls
         {
             id = id,
             Name = name,
-            Family = "troll",
+            Family = Family,
             CreatureType = CreatureTypes.Humanoid,
             Subtypes = ["giant"],
             Glyph = new('T', color),
@@ -87,7 +89,6 @@ public static class Trolls
             DamageBonus = dmg,
             Size = size,
             BaseLevel = level,
-            MinDepth = level,
             Unarmed = bite,
             LandMove = speed ?? ActionCosts.LandMove25,
             MoralAxis = MoralAxis.Evil,

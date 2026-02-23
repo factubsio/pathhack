@@ -194,7 +194,7 @@ if (args.Length > 2 && args[0] == "--gen-dungeons" && int.TryParse(args[1], out 
 if (args.Length > 1 && args[0] == "--test-family")
 {
     string family = args[1];
-    var monsters = AllMonsters.All.Where(m => m.Family == family).OrderBy(m => m.BaseLevel).ToArray();
+    var monsters = AllMonsters.All.Where(m => m.Family.Name == family).OrderBy(m => m.BaseLevel).ToArray();
     if (monsters.Length == 0)
     {
         Console.WriteLine($"No monsters with family '{family}'");

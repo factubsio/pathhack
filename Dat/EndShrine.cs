@@ -15,7 +15,7 @@ public static class EndShrineLevels
   private static readonly MonsterDef ShrineAttendant = new()
   {
     Name = "Shrine Attendant",
-    Family = "construct",
+    Family = MonsterFamily.Construct,
     CreatureType = CreatureTypes.Construct,
     AttackBonus = 1,
     DamageBonus = 0,
@@ -37,7 +37,7 @@ public static class EndShrineLevels
   private static readonly MonsterDef WrongShrineGuardian = new()
   {
     Name = "Shrine Guardian",
-    Family = "construct",
+    Family = MonsterFamily.Construct,
     CreatureType = CreatureTypes.Construct,
     AttackBonus = 40,
     DamageBonus = 10,

@@ -2,6 +2,8 @@ namespace Pathhack.Game.Bestiary;
 
 public static class Orcs
 {
+    public static readonly MonsterFamily Family = new("orc");
+
     static readonly LogicBrick[] CommonArmor = [
         EquipSet.Roll(OrcishArmory.ChainMail, 40),
         EquipSet.Roll(MundaneArmory.LeatherArmor, 40),
@@ -17,7 +19,7 @@ public static class Orcs
     {
         id = "orc_scrapper",
         Name = "orc scrapper",
-        Family = "orc",
+        Family = Family,
         CreatureType = CreatureTypes.Humanoid,
         Glyph = new('o', ConsoleColor.DarkGreen),
         HpPerLevel = 8,
@@ -28,7 +30,6 @@ public static class Orcs
         Unarmed = NaturalWeapons.Fist,
         Size = UnitSize.Medium,
         BaseLevel = 0,
-        MinDepth = 1,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
         Components = [
@@ -42,7 +43,7 @@ public static class Orcs
     {
         id = "orc_veteran",
         Name = "orc veteran",
-        Family = "orc",
+        Family = Family,
         CreatureType = CreatureTypes.Humanoid,
         Glyph = new('o', ConsoleColor.Green),
         HpPerLevel = 8,
@@ -53,7 +54,6 @@ public static class Orcs
         Unarmed = NaturalWeapons.Fist,
         Size = UnitSize.Medium,
         BaseLevel = 1,
-        MinDepth = 2,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
         Components = [
@@ -68,7 +68,7 @@ public static class Orcs
     {
         id = "orc_commander",
         Name = "orc commander",
-        Family = "orc",
+        Family = Family,
         CreatureType = CreatureTypes.Humanoid,
         Glyph = new('o', ConsoleColor.Yellow),
         HpPerLevel = 8,
@@ -79,7 +79,6 @@ public static class Orcs
         Unarmed = NaturalWeapons.Fist,
         Size = UnitSize.Medium,
         BaseLevel = 2,
-        MinDepth = 4,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
         Components = [
@@ -93,7 +92,7 @@ public static class Orcs
     {
         id = "orc_rampager",
         Name = "orc rampager",
-        Family = "orc",
+        Family = Family,
         CreatureType = CreatureTypes.Humanoid,
         Glyph = new('o', ConsoleColor.Red),
         HpPerLevel = 8,
@@ -104,7 +103,6 @@ public static class Orcs
         Unarmed = NaturalWeapons.Fist,
         Size = UnitSize.Medium,
         BaseLevel = 4,
-        MinDepth = 6,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
         Components = [
@@ -118,7 +116,7 @@ public static class Orcs
     {
         id = "orc_gamekeeper",
         Name = "orc gamekeeper",
-        Family = "orc",
+        Family = Family,
         CreatureType = CreatureTypes.Humanoid,
         Glyph = new('o', ConsoleColor.DarkYellow),
         HpPerLevel = 8,
@@ -129,7 +127,6 @@ public static class Orcs
         Unarmed = NaturalWeapons.Fist,
         Size = UnitSize.Medium,
         BaseLevel = 4,
-        MinDepth = 6,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
         Components = [
@@ -143,7 +140,7 @@ public static class Orcs
     {
         id = "orc_doomsayer",
         Name = "orc doomsayer",
-        Family = "orc",
+        Family = Family,
         CreatureType = CreatureTypes.Humanoid,
         Glyph = new('o', ConsoleColor.Magenta),
         HpPerLevel = 8,
@@ -154,7 +151,6 @@ public static class Orcs
         Unarmed = NaturalWeapons.Fist,
         Size = UnitSize.Medium,
         BaseLevel = 5,
-        MinDepth = 8,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
         Components = [
@@ -167,7 +163,7 @@ public static class Orcs
     {
         id = "orc_veteran_master",
         Name = "orc veteran master",
-        Family = "orc",
+        Family = Family,
         CreatureType = CreatureTypes.Humanoid,
         Glyph = new('o', ConsoleColor.DarkMagenta),
         HpPerLevel = 8,
@@ -178,7 +174,6 @@ public static class Orcs
         Unarmed = NaturalWeapons.Fist,
         Size = UnitSize.Medium,
         BaseLevel = 10,
-        MinDepth = 12,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
         Components = [

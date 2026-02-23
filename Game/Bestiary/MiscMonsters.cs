@@ -30,11 +30,14 @@ public class Thorns(Dice damage, DamageType type) : LogicBrick
 
 public static class MiscMonsters
 {
+    public static readonly MonsterFamily RatFamily = new("rat");
+    public static readonly MonsterFamily PlantFamily = new("plant");
+
     public static readonly MonsterDef Rat = new()
     {
         id = "rat",
         Name = "rat",
-        Family = "rat",
+        Family = RatFamily,
         CreatureType = CreatureTypes.Beast,
         Glyph = new('r', ConsoleColor.DarkGray),
         HpPerLevel = 4,
@@ -45,7 +48,6 @@ public static class MiscMonsters
         Unarmed = NaturalWeapons.Bite_1d3,
         Size = UnitSize.Tiny,
         BaseLevel = 0,
-        MinDepth = 1,
         MaxDepth = 2,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
@@ -58,7 +60,7 @@ public static class MiscMonsters
     {
         id = "thorn_bush",
         Name = "thorn bush",
-        Family = "plant",
+        Family = PlantFamily,
         Glyph = new('{', ConsoleColor.Green),
         HpPerLevel = 6,
         AC = -2,
@@ -68,7 +70,6 @@ public static class MiscMonsters
         Unarmed = NaturalWeapons.Fist,
         Size = UnitSize.Small,
         BaseLevel = 1,
-        MinDepth = 1,
         MaxDepth = 5,
         MoralAxis = MoralAxis.Neutral,
         CreatureType = CreatureTypes.Plant,

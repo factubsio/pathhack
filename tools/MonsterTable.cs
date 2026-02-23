@@ -16,7 +16,7 @@ public static class MonsterTable
 
             int totalWeight = eligible.Sum(m => m.SpawnWeight);
             var families = eligible
-                .GroupBy(m => m.Family ?? "(none)")
+                .GroupBy(m => m.Family?.Name ?? "(none)")
                 .Select(g => (Family: g.Key, Weight: g.Sum(m => m.SpawnWeight), Count: g.Count()))
                 .OrderByDescending(f => f.Weight)
                 .ToList();
@@ -33,7 +33,7 @@ public static class MonsterTable
     public static void Print(string? family)
     {
         var defs = AllMonsters.ActuallyAll
-            .Where(m => family == null || m.Family.Contains(family, StringComparison.InvariantCultureIgnoreCase))
+            .Where(m => family == null || m.Family.Name.Contains(family, StringComparison.InvariantCultureIgnoreCase))
             .DistinctBy(m => m.id)
             .OrderBy(m => m.BaseLevel)
             .ThenBy(m => m.Name);
@@ -60,7 +60,7 @@ public static class MonsterTable
                 GroupSize.LargeMixed => "LM",
                 _ => ""
             };
-            Console.WriteLine($"{m.Name,-24} {m.BaseLevel,3} {m.HpPerLevel,4} {m.AC.Combined,3} {m.AttackBonus,3} {m.DamageBonus,3} {m.LandMove.Value,4} {m.Size,-8} {m.Family ?? "",-10} {grp,-6} {actStr}");
+            Console.WriteLine($"{m.Name,-24} {m.BaseLevel,3} {m.HpPerLevel,4} {m.AC.Combined,3} {m.AttackBonus,3} {m.DamageBonus,3} {m.LandMove.Value,4} {m.Size,-8} {m.Family?.Name ?? "",-10} {grp,-6} {actStr}");
         }
     }
 

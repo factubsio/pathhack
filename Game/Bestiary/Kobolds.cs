@@ -2,11 +2,13 @@ namespace Pathhack.Game.Bestiary;
 
 public static class Kobolds
 {
+    public static readonly MonsterFamily Family = new("kobold");
+
     public static readonly MonsterDef Basic = new()
     {
         id = "kobold",
         Name = "kobold",
-        Family = "kobold",
+        Family = Family,
         CreatureType = CreatureTypes.Humanoid,
         Glyph = new('k', ConsoleColor.DarkYellow),
         HpPerLevel = 6,
@@ -17,7 +19,6 @@ public static class Kobolds
         Unarmed = NaturalWeapons.Fist,
         Size = UnitSize.Small,
         BaseLevel = -1,
-        MinDepth = 1,
         MaxDepth = 3,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Lawful,
@@ -32,7 +33,7 @@ public static class Kobolds
     {
         id = "kobold_scout",
         Name = "kobold scout",
-        Family = "kobold",
+        Family = Family,
         CreatureType = CreatureTypes.Humanoid,
         Glyph = new('k', ConsoleColor.Green),
         HpPerLevel = 6,
@@ -43,7 +44,6 @@ public static class Kobolds
         Unarmed = NaturalWeapons.Fist,
         Size = UnitSize.Small,
         BaseLevel = 0,
-        MinDepth = 1,
         MaxDepth = 4,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Lawful,
@@ -59,7 +59,7 @@ public static class Kobolds
     {
         id = "kobold_warrior",
         Name = "kobold warrior",
-        Family = "kobold",
+        Family = Family,
         CreatureType = CreatureTypes.Humanoid,
         Glyph = new('k', ConsoleColor.Red),
         HpPerLevel = 6,
@@ -70,7 +70,6 @@ public static class Kobolds
         Unarmed = NaturalWeapons.Fist,
         Size = UnitSize.Small,
         BaseLevel = 1,
-        MinDepth = 2,
         MaxDepth = 5,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Lawful,

@@ -84,6 +84,13 @@ public record struct MonsterAC(int Combined, int FlatFooted)
   public static implicit operator MonsterAC(int ac) => new(ac, ac);
 }
 
+public record class MonsterFamily(string Name, int DepthOffset = 0)
+{
+    public static readonly MonsterFamily Construct = new("construct");
+    public static readonly MonsterFamily Human = new("human");
+    public static readonly MonsterFamily Undead = new("undead");
+}
+
 public class MonsterDef : BaseDef
 {
   public MonsterBrain? Brain;
@@ -100,12 +107,11 @@ public class MonsterDef : BaseDef
   public UnitSize Size = UnitSize.Small;
   public int BaseLevel = 1;
   public int SpawnWeight = 10;
-  public int MinDepth = 1;
   public bool IsUnique = false;
   public bool Peaceful = false;
   public bool Stationary = false;
   public int MaxDepth = 99;
-  public required string Family;
+  public required MonsterFamily Family;
   public Action<Monster>? OnChat;
   public required MoralAxis MoralAxis;
   public required EthicalAxis EthicalAxis;

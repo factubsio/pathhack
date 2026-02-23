@@ -93,6 +93,8 @@ public class ShriekingFrenzyPassive : LogicBrick
 
 public static class CharauKa
 {
+    public static readonly MonsterFamily Family = new("charau-ka");
+
     static readonly EquipSet BasicWeapons = EquipSet.Weighted(
         (2, null),
         (4, MundaneArmory.Club),
@@ -104,13 +106,13 @@ public static class CharauKa
         LogicBrick[] components, int hp = 5, int ac = 0, int ab = 0, int dmg = 0,
         GroupSize group = GroupSize.SmallMixed, int spawnWeight = 10,
         MonFlags flags = MonFlags.None, Func<MonsterDef>? growsInto = null,
-        UnitSize size = UnitSize.Small, int minDepth = 3, int maxDepth = 10)
+        UnitSize size = UnitSize.Small, int maxDepth = 10)
     {
         return new MonsterDef
         {
             id = id,
             Name = name,
-            Family = "charau-ka",
+            Family = Family,
             CreatureType = CreatureTypes.Humanoid,
             Subtypes = [],
             Glyph = new('Y', color),
@@ -121,7 +123,6 @@ public static class CharauKa
             Unarmed = NaturalWeapons.Bite_1d3,
             Size = size,
             BaseLevel = level,
-            MinDepth = minDepth,
             MaxDepth = maxDepth,
             GroupSize = group,
             SpawnWeight = spawnWeight,

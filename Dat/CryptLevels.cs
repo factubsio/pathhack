@@ -6,7 +6,7 @@ public static class CryptLevels
     {
         id = "asar",
         Name = "Asar",
-        Family = "undead",
+        Family = MonsterFamily.Undead,
         CreatureType = CreatureTypes.Undead,
         Glyph = new('Z', ConsoleColor.Magenta),
         HpPerLevel = 8,

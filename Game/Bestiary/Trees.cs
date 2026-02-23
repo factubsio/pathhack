@@ -336,6 +336,8 @@ public class HeartrotDisease() : AfflictionBrick(16, "fortitude")
 
 public static class Trees
 {
+    public static readonly MonsterFamily Family = new("tree");
+
     static MonsterDef T(string id, string name, int level, ConsoleColor color,
         LogicBrick[] components, int hp = 8, int ac = 0, int ab = 0, int dmg = 0,
         int spawnWeight = 10, UnitSize size = UnitSize.Huge,
@@ -346,7 +348,7 @@ public static class Trees
         {
             id = id,
             Name = name,
-            Family = "tree",
+            Family = Family,
             CreatureType = CreatureTypes.Plant,
             Glyph = new('±', color),
             HpPerLevel = hp,
@@ -356,7 +358,6 @@ public static class Trees
             Unarmed = unarmed ?? NaturalWeapons.Slam_1d6,
             Size = size,
             BaseLevel = level,
-            MinDepth = level,
             MaxDepth = 99,
             SpawnWeight = spawnWeight,
             MoralAxis = MoralAxis.Neutral,

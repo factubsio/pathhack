@@ -349,7 +349,7 @@ public static class EconomySystem
     public static readonly MonsterDef Shopkeeper = new()
     {
         Name = "shopkeeper",
-        Family = "human",
+        Family = MonsterFamily.Human,
         CreatureType = CreatureTypes.Humanoid,
         Glyph = new('@', ConsoleColor.White),
         HpPerLevel = 15,

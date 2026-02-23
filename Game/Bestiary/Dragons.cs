@@ -147,6 +147,8 @@ public class AlignmentPeaceful(EthicalAxis ethical, MoralAxis moral) : LogicBric
 
 public static class Dragons
 {
+    public static readonly MonsterFamily Family = new("dragon", DepthOffset: 2);
+
     static readonly DragonColor[] Colors =
     [
         // Chromatic
@@ -213,7 +215,7 @@ public static class Dragons
         {
             id = $"dragon_{color.Name}_{age.Name}",
             Name = name,
-            Family = "dragon",
+            Family = Family,
             CreatureType = CreatureTypes.Dragon,
             Glyph = new(glyph, color.GlyphColor),
             HpPerLevel = age.HpPerLevel,
@@ -224,7 +226,6 @@ public static class Dragons
             Unarmed = bite,
             Size = size,
             BaseLevel = level,
-            MinDepth = Math.Max(1, level + 2),
             MoralAxis = color.Moral,
             EthicalAxis = color.Ethical,
             Components =

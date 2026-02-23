@@ -49,7 +49,7 @@ public class AmbushTrap(int depth) : Trap(TrapType.Ambush, depth, detectDelta: -
         }
     }
 
-    private static bool IsAmbusher(MonsterDef m) => m.Family == "bandit" && m != Bandits.Cutpurse;
+    private static bool IsAmbusher(MonsterDef m) => m.Family == Bandits.Family && m != Bandits.Cutpurse;
 }
 
 public class LongRangeAdvantage() : LogicBrick
@@ -181,7 +181,7 @@ public class BanditHealAlly(Dice heal, int range, string pool, int cd)
 
     Monster? FindAlly(IUnit unit)
     {
-        string? family = (unit as Monster)?.Def.Family;
+        MonsterFamily? family = (unit as Monster)?.Def.Family;
         Monster? best = null;
         double bestPct = 1.0;
         foreach (var m in lvl.LiveUnits)
@@ -199,6 +199,8 @@ public class BanditHealAlly(Dice heal, int range, string pool, int cd)
 
 public static class Bandits
 {
+    public static readonly MonsterFamily Family = new("bandit");
+
     // --- Equipment sets ---
 
     static readonly EquipSet LightWeapon = EquipSet.OneOf(MundaneArmory.Dagger, MundaneArmory.Shortsword);
@@ -217,7 +219,7 @@ public static class Bandits
         {
             id = id,
             Name = name,
-            Family = "bandit",
+            Family = Family,
             CreatureType = CreatureTypes.Humanoid,
             Glyph = new('@', color),
             HpPerLevel = hp,
@@ -227,7 +229,6 @@ public static class Bandits
             Unarmed = NaturalWeapons.Fist,
             Size = UnitSize.Medium,
             BaseLevel = level,
-            MinDepth = 1,
             MaxDepth = maxDepth,
             GroupSize = group,
             SpawnWeight = spawnWeight,

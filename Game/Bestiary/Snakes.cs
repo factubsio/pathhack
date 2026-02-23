@@ -105,11 +105,13 @@ public class Constrict(Dice damage) : LogicBrick
 
 public static class Snakes
 {
+    public static readonly MonsterFamily Family = new("snake");
+
     public static readonly MonsterDef Viper = new()
     {
         id = "viper",
         Name = "viper",
-        Family = "snake",
+        Family = Family,
         StartingRot = Foods.RotSpoiled,
         Glyph = new('S', ConsoleColor.White),
         HpPerLevel = 4,
@@ -120,7 +122,6 @@ public static class Snakes
         Unarmed = NaturalWeapons.Bite_1d4,
         Size = UnitSize.Tiny,
         BaseLevel = -1,
-        MinDepth = 1,
         MaxDepth = 4,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
@@ -136,7 +137,7 @@ public static class Snakes
     {
         id = "sea_snake",
         Name = "sea snake",
-        Family = "snake",
+        Family = Family,
         StartingRot = Foods.RotSpoiled,
         Glyph = new('S', ConsoleColor.Cyan),
         HpPerLevel = 6,
@@ -147,7 +148,6 @@ public static class Snakes
         Unarmed = NaturalWeapons.Bite_1d4,
         Size = UnitSize.Small,
         BaseLevel = 1,
-        MinDepth = 1,
         MaxDepth = 6,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
@@ -162,7 +162,7 @@ public static class Snakes
     {
         id = "giant_viper",
         Name = "giant viper",
-        Family = "snake",
+        Family = Family,
         StartingRot = Foods.RotSpoiled,
         Glyph = new('S', ConsoleColor.Green),
         HpPerLevel = 8,
@@ -173,7 +173,6 @@ public static class Snakes
         Unarmed = NaturalWeapons.Bite_1d6,
         Size = UnitSize.Medium,
         BaseLevel = 3,
-        MinDepth = 3,
         MaxDepth = 8,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
@@ -188,7 +187,7 @@ public static class Snakes
     {
         id = "prince_cobra",
         Name = "prince cobra",
-        Family = "snake",
+        Family = Family,
         StartingRot = Foods.RotSpoiled,
         Glyph = new('S', ConsoleColor.Yellow),
         HpPerLevel = 8,
@@ -199,7 +198,6 @@ public static class Snakes
         Unarmed = NaturalWeapons.Bite_1d6,
         Size = UnitSize.Medium,
         BaseLevel = 5,
-        MinDepth = 5,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
@@ -214,7 +212,7 @@ public static class Snakes
     {
         id = "crown_prince_cobra",
         Name = "crown prince cobra",
-        Family = "snake",
+        Family = Family,
         StartingRot = Foods.RotSpoiled,
         Glyph = new('S', ConsoleColor.Yellow),
         HpPerLevel = 8,
@@ -225,7 +223,6 @@ public static class Snakes
         Unarmed = NaturalWeapons.Bite_1d8,
         Size = UnitSize.Medium,
         BaseLevel = 6,
-        MinDepth = 6,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
@@ -240,7 +237,7 @@ public static class Snakes
     {
         id = "queen_consort_cobra",
         Name = "queen consort cobra",
-        Family = "snake",
+        Family = Family,
         StartingRot = Foods.RotSpoiled,
         Glyph = new('S', ConsoleColor.DarkYellow),
         HpPerLevel = 10,
@@ -251,7 +248,6 @@ public static class Snakes
         Unarmed = NaturalWeapons.Bite_1d8,
         Size = UnitSize.Large,
         BaseLevel = 7,
-        MinDepth = 7,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
@@ -265,7 +261,7 @@ public static class Snakes
     {
         id = "king_cobra",
         Name = "king cobra",
-        Family = "snake",
+        Family = Family,
         StartingRot = Foods.RotSpoiled,
         Glyph = new('S', ConsoleColor.Red),
         HpPerLevel = 10,
@@ -276,7 +272,6 @@ public static class Snakes
         Unarmed = NaturalWeapons.Bite_2d6,
         Size = UnitSize.Large,
         BaseLevel = 8,
-        MinDepth = 8,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
@@ -291,7 +286,7 @@ public static class Snakes
     {
         id = "giant_anaconda",
         Name = "giant anaconda",
-        Family = "snake",
+        Family = Family,
         StartingRot = Foods.RotSpoiled,
         Glyph = new('S', ConsoleColor.Magenta),
         HpPerLevel = 12,
@@ -302,7 +297,6 @@ public static class Snakes
         Unarmed = NaturalWeapons.Bite_2d10,
         Size = UnitSize.Huge,
         BaseLevel = 9,
-        MinDepth = 10,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,
@@ -317,7 +311,7 @@ public static class Snakes
     {
         id = "emperor_cobra",
         Name = "emperor cobra",
-        Family = "snake",
+        Family = Family,
         StartingRot = Foods.RotSpoiled,
         Glyph = new('S', ConsoleColor.Magenta),
         HpPerLevel = 10,
@@ -328,7 +322,6 @@ public static class Snakes
         Unarmed = NaturalWeapons.Bite_2d6,
         Size = UnitSize.Large,
         BaseLevel = 10,
-        MinDepth = 12,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
         CreatureType = CreatureTypes.Beast,

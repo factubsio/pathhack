@@ -73,6 +73,8 @@ record MephitType(
 
 public static class Mephits
 {
+    public static readonly MonsterFamily Family = new("mephit");
+
     static readonly MephitType[] Types =
     [
         new("fire",      ConsoleColor.Red,        DamageTypes.Fire,     BreathShape.Cone, DamageTypes.Fire),
@@ -105,7 +107,7 @@ public static class Mephits
     {
         id = $"mephit_{type.Name}",
         Name = $"{type.Name} mephit",
-        Family = "mephit",
+        Family = Family,
         BrainFlags = MonFlags.NoCorpse,
         CreatureType = CreatureTypes.Outsider,
         Subtypes = ["Elemental"],
@@ -117,7 +119,6 @@ public static class Mephits
         LandMove = ActionCosts.LandMove20,
         Size = UnitSize.Small,
         BaseLevel = 3,
-        MinDepth = 2,
         SpawnWeight = 10,
         GroupSize = GroupSize.SmallMixed,
         MoralAxis = MoralAxis.Neutral,

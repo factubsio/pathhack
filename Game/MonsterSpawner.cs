@@ -1,5 +1,72 @@
 namespace Pathhack.Game;
 
+public class SpawnBag
+{
+    const int LevelOffset = 1; // BaseLevel -1 → bit 0
+
+    record struct FamilyEntry(MonsterFamily Family, MonsterDef[] Defs, uint LevelMask);
+
+    readonly FamilyEntry[] _entries;
+    readonly int[] _tokens;
+    int _cursor;
+
+    public SpawnBag(IEnumerable<MonsterDef> defs)
+    {
+        _entries = defs
+            .GroupBy(m => m.Family)
+            .Select(g =>
+            {
+                uint mask = 0;
+                foreach (var m in g)
+                    mask |= 1u << (m.BaseLevel + LevelOffset);
+                return new FamilyEntry(g.Key, g.ToArray(), mask);
+            })
+            .ToArray();
+        _tokens = new int[_entries.Length];
+        Refill();
+    }
+
+    void Refill()
+    {
+        for (int i = 0; i < _tokens.Length; i++) _tokens[i] = i;
+        g.Shuffle(_tokens.AsSpan());
+        _cursor = 0;
+    }
+
+    static uint RangeMask(int lo, int hi)
+    {
+        lo = Math.Max(0, lo + LevelOffset);
+        hi += LevelOffset;
+        if (hi < lo || lo >= 32) return 0;
+        hi = Math.Min(hi, 31);
+        return ((1u << (hi - lo + 1)) - 1) << lo;
+    }
+
+    public (MonsterFamily Family, MonsterDef[] Defs)? Draw(int depth, int playerLevel)
+    {
+        if (_cursor >= _tokens.Length) Refill();
+
+        int minLevel = depth / 6;
+        int maxLevel = (depth + playerLevel) / 2;
+
+        while (_cursor < _tokens.Length)
+        {
+            ref var entry = ref _entries[_tokens[_cursor++]];
+            int effectiveMax = Math.Min(maxLevel, depth - entry.Family.DepthOffset);
+            uint mask = RangeMask(minLevel, effectiveMax);
+            if ((entry.LevelMask & mask) != 0)
+            {
+                if (_cursor * 10 >= _tokens.Length * 7)
+                    Refill();
+                return (entry.Family, entry.Defs);
+            }
+        }
+
+        Refill();
+        return null;
+    }
+}
+
 public static class MonsterSpawner
 {
     const int RuntimeSpawnFrequency = 70;
@@ -143,15 +210,24 @@ public static class MonsterSpawner
         int minLevel = depth / 6;
         int maxLevel = (depth + playerLevel) / 2;
 
-        var candidates = AllMonsters.All
-            .Where(m => depth >= m.MinDepth && m.BaseLevel >= minLevel && m.BaseLevel <= maxLevel
-                && (filter == null || filter(m)))
-            .ToList();
+        bool eligible(MonsterDef m) => m.BaseLevel >= minLevel && m.BaseLevel <= maxLevel
+            && depth >= m.BaseLevel + m.Family.DepthOffset
+            && (filter == null || filter(m));
 
-        var pick = PickWeighted(candidates);
+        // Try bag-drawn family first
+        var draw = g.SpawnBag.Draw(depth, playerLevel);
+        var pick = draw != null ? PickWeighted(draw.Value.Defs.Where(eligible).ToList()) : null;
+
+        // Fallback to full pool
+        pick ??= PickWeighted(AllMonsters.All.Where(eligible).ToList());
+
+        // Reroll if pick is too far below player level
         int gap = pick != null ? playerLevel - pick.BaseLevel : 0;
         if ((gap > 2 && g.Rn2(2) == 0) || (gap > 1 && g.Rn2(3) == 0))
-            pick = PickWeighted(candidates) ?? pick;
+        {
+            var reroll = g.SpawnBag.Draw(depth, playerLevel);
+            pick = (reroll != null ? PickWeighted(reroll.Value.Defs.Where(eligible).ToList()) : null) ?? pick;
+        }
         return pick;
     }
 

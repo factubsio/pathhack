@@ -105,6 +105,8 @@ public class TelekineticProjectile(int range, Dice damage, string pool) : Action
 
 public static class Derro
 {
+    public static readonly MonsterFamily Family = new("derro");
+
     public static readonly MonsterDef Punk = new()
     {
         id = "derro_punk",
@@ -120,7 +122,7 @@ public static class Derro
         BaseLevel = 1,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
-        Family = "derro",
+        Family = Family,
         CreatureType = CreatureTypes.Humanoid,
         GroupSize = GroupSize.SmallMixed,
         Components = [
@@ -147,7 +149,7 @@ public static class Derro
         BaseLevel = 2,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
-        Family = "derro",
+        Family = Family,
         CreatureType = CreatureTypes.Humanoid,
         Components = [
             new EquipSet(new Outfit(1, new OutfitItem(MundaneArmory.Club))),
@@ -172,7 +174,7 @@ public static class Derro
         BaseLevel = 3,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
-        Family = "derro",
+        Family = Family,
         CreatureType = CreatureTypes.Humanoid,
         Components = [
             new EquipSet(new Outfit(1, new OutfitItem(MundaneArmory.SpikedClub))),
@@ -196,7 +198,7 @@ public static class Derro
         BaseLevel = 4,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
-        Family = "derro",
+        Family = Family,
         CreatureType = CreatureTypes.Humanoid,
         Components = [
             new EquipSet(new Outfit(1, new OutfitItem(MundaneArmory.Quarterstaff))),

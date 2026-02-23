@@ -108,6 +108,8 @@ public class DrunkenDodge : LogicBrick
 // --- Monster Definitions ---
 public static class Gremlins
 {
+    public static readonly MonsterFamily Family = new("gremlin");
+
     private static readonly LogicBrick[] CommonEquip = [
         EquipSet.Roll(MundaneArmory.Dagger, 50),
         new GrantAction(AttackWithWeapon.Instance),
@@ -117,7 +119,7 @@ public static class Gremlins
     {
         id = "mitflit",
         Name = "mitflit",
-        Family = "gremlin",
+        Family = Family,
         CreatureType = CreatureTypes.Fey,
         Glyph = new('m', ConsoleColor.Blue),
         HpPerLevel = 5,
@@ -128,7 +130,6 @@ public static class Gremlins
         Unarmed = NaturalWeapons.Fist,
         Size = UnitSize.Small,
         BaseLevel = -1,
-        MinDepth = 1,
         MaxDepth = 3,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
@@ -145,7 +146,7 @@ public static class Gremlins
     {
         id = "pugwampi",
         Name = "pugwampi",
-        Family = "gremlin",
+        Family = Family,
         CreatureType = CreatureTypes.Fey,
         Glyph = new('m', ConsoleColor.Yellow),
         HpPerLevel = 6,
@@ -169,7 +170,7 @@ public static class Gremlins
     {
         id = "jinkin",
         Name = "jinkin",
-        Family = "gremlin",
+        Family = Family,
         CreatureType = CreatureTypes.Fey,
         Glyph = new('m', ConsoleColor.Magenta),
         HpPerLevel = 6,
@@ -192,7 +193,7 @@ public static class Gremlins
     {
         id = "nuglub",
         Name = "nuglub",
-        Family = "gremlin",
+        Family = Family,
         CreatureType = CreatureTypes.Fey,
         Glyph = new('m', ConsoleColor.Red),
         HpPerLevel = 7,
@@ -215,7 +216,7 @@ public static class Gremlins
     {
         id = "grimple",
         Name = "grimple",
-        Family = "gremlin",
+        Family = Family,
         CreatureType = CreatureTypes.Fey,
         Glyph = new('m', ConsoleColor.DarkGreen),
         HpPerLevel = 5,
@@ -239,7 +240,7 @@ public static class Gremlins
     {
         id = "drunk_jinkin",
         Name = "very drunk jinkin",
-        Family = "gremlin",
+        Family = Family,
         CreatureType = CreatureTypes.Fey,
         Glyph = new('m', ConsoleColor.DarkMagenta),
         HpPerLevel = 6,

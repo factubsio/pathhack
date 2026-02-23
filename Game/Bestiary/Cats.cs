@@ -2,11 +2,13 @@ namespace Pathhack.Game.Bestiary;
 
 public static class Cats
 {
+    public static readonly MonsterFamily Family = new("cat");
+
     public static readonly MonsterDef Cheetah = new()
     {
         id = "cheetah",
         Name = "cheetah",
-        Family = "cat",
+        Family = Family,
         Glyph = new('f', ConsoleColor.Yellow),
         HpPerLevel = 5,
         AC = -1,
@@ -16,7 +18,6 @@ public static class Cats
         Unarmed = NaturalWeapons.Bite_1d4,
         Size = UnitSize.Medium,
         BaseLevel = 2,
-        MinDepth = 2,
         MaxDepth = 6,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
@@ -33,7 +34,7 @@ public static class Cats
     {
         id = "leopard",
         Name = "leopard",
-        Family = "cat",
+        Family = Family,
         Glyph = new('f', ConsoleColor.Yellow),
         HpPerLevel = 6,
         AC = 0,
@@ -43,7 +44,6 @@ public static class Cats
         Unarmed = NaturalWeapons.Bite_1d6,
         Size = UnitSize.Medium,
         BaseLevel = 2,
-        MinDepth = 2,
         MaxDepth = 6,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
@@ -58,7 +58,7 @@ public static class Cats
     {
         id = "panther",
         Name = "panther",
-        Family = "cat",
+        Family = Family,
         Glyph = new('f', ConsoleColor.DarkGray),
         HpPerLevel = 7,
         AC = -1,
@@ -68,7 +68,6 @@ public static class Cats
         Unarmed = NaturalWeapons.Bite_1d6,
         Size = UnitSize.Medium,
         BaseLevel = 3,
-        MinDepth = 3,
         MaxDepth = 7,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
@@ -82,7 +81,7 @@ public static class Cats
     {
         id = "lion",
         Name = "lion",
-        Family = "cat",
+        Family = Family,
         Glyph = new('f', ConsoleColor.DarkYellow),
         HpPerLevel = 8,
         AC = 1,
@@ -92,7 +91,6 @@ public static class Cats
         Unarmed = NaturalWeapons.Bite_1d8,
         Size = UnitSize.Large,
         BaseLevel = 3,
-        MinDepth = 4,
         MaxDepth = 8,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
@@ -107,7 +105,7 @@ public static class Cats
     {
         id = "tiger",
         Name = "tiger",
-        Family = "cat",
+        Family = Family,
         Glyph = new('f', ConsoleColor.Red),
         HpPerLevel = 8,
         AC = 1,
@@ -117,7 +115,6 @@ public static class Cats
         Unarmed = NaturalWeapons.Bite_1d8,
         Size = UnitSize.Large,
         BaseLevel = 4,
-        MinDepth = 5,
         MaxDepth = 10,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
@@ -132,7 +129,7 @@ public static class Cats
     {
         id = "smilodon",
         Name = "smilodon",
-        Family = "cat",
+        Family = Family,
         Glyph = new('f', ConsoleColor.Magenta),
         HpPerLevel = 8,
         AC = 1,
@@ -142,7 +139,6 @@ public static class Cats
         Unarmed = NaturalWeapons.Bite_2d6,
         Size = UnitSize.Large,
         BaseLevel = 7,
-        MinDepth = 8,
         MaxDepth = 15,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,

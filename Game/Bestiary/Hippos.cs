@@ -14,11 +14,13 @@ namespace Pathhack.Game.Bestiary;
 
 public static class Hippos
 {
+    public static readonly MonsterFamily Family = new("hippo");
+
     public static readonly MonsterDef Hippo = new()
     {
         id = "hippo",
         Name = "hippo",
-        Family = "hippo",
+        Family = Family,
         Glyph = new('q', ConsoleColor.Gray),
         HpPerLevel = 8,
         AC = 0,
@@ -28,7 +30,6 @@ public static class Hippos
         Unarmed = NaturalWeapons.Bite_1d8,
         Size = UnitSize.Medium,
         BaseLevel = 3,
-        MinDepth = 3,
         MaxDepth = 8,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
@@ -40,7 +41,7 @@ public static class Hippos
     {
         id = "hungry_hippo",
         Name = "hungry hippo",
-        Family = "hippo",
+        Family = Family,
         Glyph = new('q', ConsoleColor.DarkYellow),
         HpPerLevel = 8,
         AC = 1,
@@ -50,7 +51,6 @@ public static class Hippos
         Unarmed = NaturalWeapons.Bite_2d8,
         Size = UnitSize.Large,
         BaseLevel = 5,
-        MinDepth = 5,
         MaxDepth = 10,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
@@ -62,7 +62,7 @@ public static class Hippos
     {
         id = "hungry_hungry_hippo",
         Name = "hungry hungry hippo",
-        Family = "hippo",
+        Family = Family,
         Glyph = new('q', ConsoleColor.Yellow),
         HpPerLevel = 8,
         AC = 1,
@@ -72,7 +72,6 @@ public static class Hippos
         Unarmed = NaturalWeapons.Bite_2d8,
         Size = UnitSize.Large,
         BaseLevel = 7,
-        MinDepth = 7,
         MaxDepth = 12,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
@@ -84,7 +83,7 @@ public static class Hippos
     {
         id = "hungrier_hippo",
         Name = "even hungrier hippo",
-        Family = "hippo",
+        Family = Family,
         Glyph = new('q', ConsoleColor.Red),
         HpPerLevel = 8,
         AC = 2,
@@ -94,7 +93,6 @@ public static class Hippos
         Unarmed = NaturalWeapons.Bite_2d10,
         Size = UnitSize.Large,
         BaseLevel = 9,
-        MinDepth = 9,
         MaxDepth = 15,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
@@ -105,7 +103,7 @@ public static class Hippos
     {
         id = "hungriest_hippo",
         Name = "The Hungriest Hippo",
-        Family = "hippo",
+        Family = Family,
         Glyph = new('q', ConsoleColor.Magenta),
         HpPerLevel = 8,
         AC = 2,
@@ -116,7 +114,6 @@ public static class Hippos
         Size = UnitSize.Large,
         BaseLevel = 12,
         SpawnWeight = 0, // unique
-        MinDepth = 12,
         MaxDepth = 99,
         MoralAxis = MoralAxis.Evil,
         EthicalAxis = EthicalAxis.Chaotic,
