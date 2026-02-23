@@ -15,171 +15,55 @@ public static class Orcs
         new Ferocity(),
     ];
 
-    public static readonly MonsterDef OrcScrapper = new()
+    static MonsterDef O(string id, string name, int level, ConsoleColor color,
+        LogicBrick[] extra, int ac = 0, int ab = 0, int dmg = 0)
     {
-        id = "orc_scrapper",
-        Name = "orc scrapper",
-        Family = Family,
-        CreatureType = CreatureTypes.Humanoid,
-        Glyph = new('o', ConsoleColor.DarkGreen),
-        HpPerLevel = 8,
-        AC = 0,
-        AttackBonus = 0,
-        DamageBonus = 3,
-        LandMove = ActionCosts.LandMove25,
-        Unarmed = NaturalWeapons.Fist,
-        Size = UnitSize.Medium,
-        BaseLevel = 0,
-        MoralAxis = MoralAxis.Evil,
-        EthicalAxis = EthicalAxis.Chaotic,
-        Components = [
-            ..Common,
-            new Equip(OrcishArmory.KnuckleDagger),
-            EquipSet.Roll(MundaneArmory.Spear, 30),
-        ],
-    };
+        return new MonsterDef
+        {
+            id = id,
+            Name = name,
+            Family = Family,
+            CreatureType = CreatureTypes.Humanoid,
+            Glyph = new('o', color),
+            HpPerLevel = 8,
+            AC = ac,
+            AttackBonus = ab,
+            DamageBonus = dmg,
+            LandMove = ActionCosts.LandMove25,
+            Unarmed = NaturalWeapons.Fist,
+            Size = UnitSize.Medium,
+            BaseLevel = level,
+            MoralAxis = MoralAxis.Evil,
+            EthicalAxis = EthicalAxis.Chaotic,
+            Components = [..Common, ..extra],
+        };
+    }
 
-    public static readonly MonsterDef OrcVeteran = new()
-    {
-        id = "orc_veteran",
-        Name = "orc veteran",
-        Family = Family,
-        CreatureType = CreatureTypes.Humanoid,
-        Glyph = new('o', ConsoleColor.Green),
-        HpPerLevel = 8,
-        AC = 2,
-        AttackBonus = 0,
-        DamageBonus = 4,
-        LandMove = ActionCosts.LandMove25,
-        Unarmed = NaturalWeapons.Fist,
-        Size = UnitSize.Medium,
-        BaseLevel = 1,
-        MoralAxis = MoralAxis.Evil,
-        EthicalAxis = EthicalAxis.Chaotic,
-        Components = [
-            ..Common,
-            new Equip(OrcishArmory.Necksplitter),
-            EquipSet.Roll(MundaneArmory.Shortsword, 50),
-            EquipSet.Roll(MundaneArmory.Spear, 30),
-        ],
-    };
+    public static readonly MonsterDef OrcScrapper = O("orc_scrapper", "orc scrapper", 0, ConsoleColor.DarkGreen,
+        [new Equip(OrcishArmory.KnuckleDagger), EquipSet.Roll(MundaneArmory.Spear, 30)],
+        dmg: 3);
 
-    public static readonly MonsterDef OrcCommander = new()
-    {
-        id = "orc_commander",
-        Name = "orc commander",
-        Family = Family,
-        CreatureType = CreatureTypes.Humanoid,
-        Glyph = new('o', ConsoleColor.Yellow),
-        HpPerLevel = 8,
-        AC = 2,
-        AttackBonus = 2,
-        DamageBonus = 4,
-        LandMove = ActionCosts.LandMove25,
-        Unarmed = NaturalWeapons.Fist,
-        Size = UnitSize.Medium,
-        BaseLevel = 2,
-        MoralAxis = MoralAxis.Evil,
-        EthicalAxis = EthicalAxis.Chaotic,
-        Components = [
-            ..Common,
-            new Equip(MundaneArmory.Greatclub),
-            EquipSet.Roll(MundaneArmory.Spear, 50),
-        ],
-    };
+    public static readonly MonsterDef OrcVeteran = O("orc_veteran", "orc veteran", 1, ConsoleColor.Green,
+        [new Equip(OrcishArmory.Necksplitter), EquipSet.Roll(MundaneArmory.Shortsword, 50), EquipSet.Roll(MundaneArmory.Spear, 30)],
+        ac: 2, dmg: 4);
 
-    public static readonly MonsterDef OrcRampager = new()
-    {
-        id = "orc_rampager",
-        Name = "orc rampager",
-        Family = Family,
-        CreatureType = CreatureTypes.Humanoid,
-        Glyph = new('o', ConsoleColor.Red),
-        HpPerLevel = 8,
-        AC = 1,
-        AttackBonus = 2,
-        DamageBonus = 9,
-        LandMove = ActionCosts.LandMove25,
-        Unarmed = NaturalWeapons.Fist,
-        Size = UnitSize.Medium,
-        BaseLevel = 4,
-        MoralAxis = MoralAxis.Evil,
-        EthicalAxis = EthicalAxis.Chaotic,
-        Components = [
-            ..Common,
-            new Equip(OrcishArmory.Necksplitter),
-            EquipSet.Roll(MundaneArmory.Longbow, 60),
-        ],
-    };
+    public static readonly MonsterDef OrcCommander = O("orc_commander", "orc commander", 2, ConsoleColor.Yellow,
+        [new Equip(MundaneArmory.Greatclub), EquipSet.Roll(MundaneArmory.Spear, 50)],
+        ac: 2, ab: 2, dmg: 4);
 
-    public static readonly MonsterDef OrcGamekeeper = new()
-    {
-        id = "orc_gamekeeper",
-        Name = "orc gamekeeper",
-        Family = Family,
-        CreatureType = CreatureTypes.Humanoid,
-        Glyph = new('o', ConsoleColor.DarkYellow),
-        HpPerLevel = 8,
-        AC = 2,
-        AttackBonus = 2,
-        DamageBonus = 9,
-        LandMove = ActionCosts.LandMove25,
-        Unarmed = NaturalWeapons.Fist,
-        Size = UnitSize.Medium,
-        BaseLevel = 4,
-        MoralAxis = MoralAxis.Evil,
-        EthicalAxis = EthicalAxis.Chaotic,
-        Components = [
-            ..Common,
-            new Equip(MundaneArmory.Whip),
-            EquipSet.Roll(MundaneArmory.Bola, 80),
-        ],
-    };
+    public static readonly MonsterDef OrcRampager = O("orc_rampager", "orc rampager", 4, ConsoleColor.Red,
+        [new Equip(OrcishArmory.Necksplitter), EquipSet.Roll(MundaneArmory.Longbow, 60)],
+        ac: 1, ab: 2, dmg: 9);
 
-    public static readonly MonsterDef OrcDoomsayer = new()
-    {
-        id = "orc_doomsayer",
-        Name = "orc doomsayer",
-        Family = Family,
-        CreatureType = CreatureTypes.Humanoid,
-        Glyph = new('o', ConsoleColor.Magenta),
-        HpPerLevel = 8,
-        AC = 2,
-        AttackBonus = 1,
-        DamageBonus = 3,
-        LandMove = ActionCosts.LandMove25,
-        Unarmed = NaturalWeapons.Fist,
-        Size = UnitSize.Medium,
-        BaseLevel = 5,
-        MoralAxis = MoralAxis.Evil,
-        EthicalAxis = EthicalAxis.Chaotic,
-        Components = [
-            ..Common,
-            new Equip(MundaneArmory.Flail),
-        ],
-    };
+    public static readonly MonsterDef OrcGamekeeper = O("orc_gamekeeper", "orc gamekeeper", 4, ConsoleColor.DarkYellow,
+        [new Equip(MundaneArmory.Whip), EquipSet.Roll(MundaneArmory.Bola, 80)],
+        ac: 2, ab: 2, dmg: 9);
 
-    public static readonly MonsterDef OrcVeteranMaster = new()
-    {
-        id = "orc_veteran_master",
-        Name = "orc veteran master",
-        Family = Family,
-        CreatureType = CreatureTypes.Humanoid,
-        Glyph = new('o', ConsoleColor.DarkMagenta),
-        HpPerLevel = 8,
-        AC = 2,
-        AttackBonus = 2,
-        DamageBonus = 13,
-        LandMove = ActionCosts.LandMove25,
-        Unarmed = NaturalWeapons.Fist,
-        Size = UnitSize.Medium,
-        BaseLevel = 10,
-        MoralAxis = MoralAxis.Evil,
-        EthicalAxis = EthicalAxis.Chaotic,
-        Components = [
-            ..Common,
-            new Equip(MundaneArmory.BoStaff),
-            EquipSet.Roll(MundaneArmory.Longbow, 70),
-        ],
-    };
+    public static readonly MonsterDef OrcDoomsayer = O("orc_doomsayer", "orc doomsayer", 5, ConsoleColor.Magenta,
+        [new Equip(MundaneArmory.Flail)],
+        ac: 2, ab: 1, dmg: 3);
+
+    public static readonly MonsterDef OrcVeteranMaster = O("orc_veteran_master", "orc veteran master", 10, ConsoleColor.DarkMagenta,
+        [new Equip(MundaneArmory.BoStaff), EquipSet.Roll(MundaneArmory.Longbow, 70)],
+        ac: 2, ab: 2, dmg: 13);
 }

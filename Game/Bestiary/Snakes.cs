@@ -107,230 +107,75 @@ public static class Snakes
 {
     public static readonly MonsterFamily Family = new("snake");
 
-    public static readonly MonsterDef Viper = new()
+    static MonsterDef S(string id, string name, int level, ConsoleColor color,
+        LogicBrick[] components, int hp = 8, int ac = 0, int ab = 0, int dmg = 0,
+        UnitSize size = UnitSize.Medium, int maxDepth = 99,
+        WeaponDef? unarmed = null, ActionCost? speed = null,
+        Func<MonsterDef>? growsInto = null)
     {
-        id = "viper",
-        Name = "viper",
-        Family = Family,
-        StartingRot = Foods.RotSpoiled,
-        Glyph = new('S', ConsoleColor.White),
-        HpPerLevel = 4,
-        AC = 0,
-        AttackBonus = 1,
-        DamageBonus = -2,
-        LandMove = ActionCosts.LandMove25,
-        Unarmed = NaturalWeapons.Bite_1d4,
-        Size = UnitSize.Tiny,
-        BaseLevel = -1,
-        MaxDepth = 4,
-        MoralAxis = MoralAxis.Neutral,
-        EthicalAxis = EthicalAxis.Neutral,
-        CreatureType = CreatureTypes.Beast,
-        GrowsInto = () => GiantViper!,
-        Components = [
-            new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d4)),
-            SnakeVenomLesser.DC10.OnHit(),
-        ],
-    };
+        return new MonsterDef
+        {
+            id = id,
+            Name = name,
+            Family = Family,
+            CreatureType = CreatureTypes.Beast,
+            Glyph = new('S', color),
+            HpPerLevel = hp,
+            AC = ac,
+            AttackBonus = ab,
+            DamageBonus = dmg,
+            LandMove = speed ?? ActionCosts.LandMove25,
+            Unarmed = unarmed ?? NaturalWeapons.Bite_1d6,
+            Size = size,
+            BaseLevel = level,
+            MaxDepth = maxDepth,
+            StartingRot = Foods.RotSpoiled,
+            MoralAxis = MoralAxis.Neutral,
+            EthicalAxis = EthicalAxis.Neutral,
+            GrowsInto = growsInto,
+            Components = components,
+        };
+    }
 
-    public static readonly MonsterDef SeaSnake = new()
-    {
-        id = "sea_snake",
-        Name = "sea snake",
-        Family = Family,
-        StartingRot = Foods.RotSpoiled,
-        Glyph = new('S', ConsoleColor.Cyan),
-        HpPerLevel = 6,
-        AC = 0,
-        AttackBonus = 1,
-        DamageBonus = -1,
-        LandMove = ActionCosts.LandMove25,
-        Unarmed = NaturalWeapons.Bite_1d4,
-        Size = UnitSize.Small,
-        BaseLevel = 1,
-        MaxDepth = 6,
-        MoralAxis = MoralAxis.Neutral,
-        EthicalAxis = EthicalAxis.Neutral,
-        CreatureType = CreatureTypes.Beast,
-        Components = [
-            new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d4)),
-            SnakeVenomLesser.DC10.OnHit(),
-        ],
-    };
+    public static readonly MonsterDef Viper = S("viper", "viper", -1, ConsoleColor.White,
+        [new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d4)), SnakeVenomLesser.DC10.OnHit()],
+        hp: 4, ab: 1, dmg: -2, size: UnitSize.Tiny, maxDepth: 4,
+        unarmed: NaturalWeapons.Bite_1d4, growsInto: () => GiantViper!);
 
-    public static readonly MonsterDef GiantViper = new()
-    {
-        id = "giant_viper",
-        Name = "giant viper",
-        Family = Family,
-        StartingRot = Foods.RotSpoiled,
-        Glyph = new('S', ConsoleColor.Green),
-        HpPerLevel = 8,
-        AC = 0,
-        AttackBonus = 0,
-        DamageBonus = 1,
-        LandMove = ActionCosts.LandMove25,
-        Unarmed = NaturalWeapons.Bite_1d6,
-        Size = UnitSize.Medium,
-        BaseLevel = 3,
-        MaxDepth = 8,
-        MoralAxis = MoralAxis.Neutral,
-        EthicalAxis = EthicalAxis.Neutral,
-        CreatureType = CreatureTypes.Beast,
-        Components = [
-            new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d6)),
-            SnakeVenomLesser.DC12.OnHit(),
-        ],
-    };
+    public static readonly MonsterDef SeaSnake = S("sea_snake", "sea snake", 1, ConsoleColor.Cyan,
+        [new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d4)), SnakeVenomLesser.DC10.OnHit()],
+        hp: 6, ab: 1, dmg: -1, size: UnitSize.Small, maxDepth: 6,
+        unarmed: NaturalWeapons.Bite_1d4);
 
-    public static readonly MonsterDef PrinceCobra = new()
-    {
-        id = "prince_cobra",
-        Name = "prince cobra",
-        Family = Family,
-        StartingRot = Foods.RotSpoiled,
-        Glyph = new('S', ConsoleColor.Yellow),
-        HpPerLevel = 8,
-        AC = 0,
-        AttackBonus = 0,
-        DamageBonus = 2,
-        LandMove = ActionCosts.LandMove25,
-        Unarmed = NaturalWeapons.Bite_1d6,
-        Size = UnitSize.Medium,
-        BaseLevel = 5,
-        MoralAxis = MoralAxis.Neutral,
-        EthicalAxis = EthicalAxis.Neutral,
-        CreatureType = CreatureTypes.Beast,
-        GrowsInto = () => CrownPrinceCobra!,
-        Components = [
-            new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d6)),
-            SnakeVenomGreater.DC13.OnHit(),
-        ],
-    };
+    public static readonly MonsterDef GiantViper = S("giant_viper", "giant viper", 3, ConsoleColor.Green,
+        [new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d6)), SnakeVenomLesser.DC12.OnHit()],
+        dmg: 1, maxDepth: 8);
 
-    public static readonly MonsterDef CrownPrinceCobra = new()
-    {
-        id = "crown_prince_cobra",
-        Name = "crown prince cobra",
-        Family = Family,
-        StartingRot = Foods.RotSpoiled,
-        Glyph = new('S', ConsoleColor.Yellow),
-        HpPerLevel = 8,
-        AC = 1,
-        AttackBonus = 0,
-        DamageBonus = 3,
-        LandMove = ActionCosts.LandMove25,
-        Unarmed = NaturalWeapons.Bite_1d8,
-        Size = UnitSize.Medium,
-        BaseLevel = 6,
-        MoralAxis = MoralAxis.Neutral,
-        EthicalAxis = EthicalAxis.Neutral,
-        CreatureType = CreatureTypes.Beast,
-        GrowsInto = () => KingCobra!,
-        Components = [
-            new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d8)),
-            SnakeVenomGreater.DC14.OnHit(),
-        ],
-    };
+    public static readonly MonsterDef PrinceCobra = S("prince_cobra", "prince cobra", 5, ConsoleColor.Yellow,
+        [new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d6)), SnakeVenomGreater.DC13.OnHit()],
+        dmg: 2, growsInto: () => CrownPrinceCobra!);
 
-    public static readonly MonsterDef QueenConsortCobra = new()
-    {
-        id = "queen_consort_cobra",
-        Name = "queen consort cobra",
-        Family = Family,
-        StartingRot = Foods.RotSpoiled,
-        Glyph = new('S', ConsoleColor.DarkYellow),
-        HpPerLevel = 10,
-        AC = 1,
-        AttackBonus = 1,
-        DamageBonus = 4,
-        LandMove = ActionCosts.LandMove25,
-        Unarmed = NaturalWeapons.Bite_1d8,
-        Size = UnitSize.Large,
-        BaseLevel = 7,
-        MoralAxis = MoralAxis.Neutral,
-        EthicalAxis = EthicalAxis.Neutral,
-        CreatureType = CreatureTypes.Beast,
-        Components = [
-            new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d8)),
-            SnakeVenomGreater.DC14.OnHit(),
-        ],
-    };
+    public static readonly MonsterDef CrownPrinceCobra = S("crown_prince_cobra", "crown prince cobra", 6, ConsoleColor.Yellow,
+        [new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d8)), SnakeVenomGreater.DC14.OnHit()],
+        ac: 1, dmg: 3, unarmed: NaturalWeapons.Bite_1d8, growsInto: () => KingCobra!);
 
-    public static readonly MonsterDef KingCobra = new()
-    {
-        id = "king_cobra",
-        Name = "king cobra",
-        Family = Family,
-        StartingRot = Foods.RotSpoiled,
-        Glyph = new('S', ConsoleColor.Red),
-        HpPerLevel = 10,
-        AC = 1,
-        AttackBonus = 1,
-        DamageBonus = 5,
-        LandMove = ActionCosts.LandMove25,
-        Unarmed = NaturalWeapons.Bite_2d6,
-        Size = UnitSize.Large,
-        BaseLevel = 8,
-        MoralAxis = MoralAxis.Neutral,
-        EthicalAxis = EthicalAxis.Neutral,
-        CreatureType = CreatureTypes.Beast,
-        GrowsInto = () => EmperorCobra!,
-        Components = [
-            new GrantAction(new NaturalAttack(NaturalWeapons.Bite_2d6)),
-            SnakeVenomGreater.DC15.OnHit(),
-        ],
-    };
+    public static readonly MonsterDef QueenConsortCobra = S("queen_consort_cobra", "queen consort cobra", 7, ConsoleColor.DarkYellow,
+        [new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d8)), SnakeVenomGreater.DC14.OnHit()],
+        hp: 10, ac: 1, ab: 1, dmg: 4, size: UnitSize.Large, unarmed: NaturalWeapons.Bite_1d8);
 
-    public static readonly MonsterDef GiantAnaconda = new()
-    {
-        id = "giant_anaconda",
-        Name = "giant anaconda",
-        Family = Family,
-        StartingRot = Foods.RotSpoiled,
-        Glyph = new('S', ConsoleColor.Magenta),
-        HpPerLevel = 12,
-        AC = 1,
-        AttackBonus = 1,
-        DamageBonus = 7,
-        LandMove = ActionCosts.StandardLandMove,
-        Unarmed = NaturalWeapons.Bite_2d10,
-        Size = UnitSize.Huge,
-        BaseLevel = 9,
-        MoralAxis = MoralAxis.Neutral,
-        EthicalAxis = EthicalAxis.Neutral,
-        CreatureType = CreatureTypes.Beast,
-        Components = [
-            new GrantAction(new NaturalAttack(NaturalWeapons.Bite_2d10)),
-            GrabOnHit.Instance,
-            Constrict.Large,
-        ],
-    };
+    public static readonly MonsterDef KingCobra = S("king_cobra", "king cobra", 8, ConsoleColor.Red,
+        [new GrantAction(new NaturalAttack(NaturalWeapons.Bite_2d6)), SnakeVenomGreater.DC15.OnHit()],
+        hp: 10, ac: 1, ab: 1, dmg: 5, size: UnitSize.Large, unarmed: NaturalWeapons.Bite_2d6,
+        growsInto: () => EmperorCobra!);
 
-    public static readonly MonsterDef EmperorCobra = new()
-    {
-        id = "emperor_cobra",
-        Name = "emperor cobra",
-        Family = Family,
-        StartingRot = Foods.RotSpoiled,
-        Glyph = new('S', ConsoleColor.Magenta),
-        HpPerLevel = 10,
-        AC = 2,
-        AttackBonus = 2,
-        DamageBonus = 6,
-        LandMove = ActionCosts.LandMove25,
-        Unarmed = NaturalWeapons.Bite_2d6,
-        Size = UnitSize.Large,
-        BaseLevel = 10,
-        MoralAxis = MoralAxis.Neutral,
-        EthicalAxis = EthicalAxis.Neutral,
-        CreatureType = CreatureTypes.Beast,
-        Components = [
-            new GrantAction(new NaturalAttack(NaturalWeapons.Bite_2d6)),
-            SnakeVenomGreater.DC17.OnHit(),
-            // TODO: FlareHood fear aura
-        ],
-    };
+    public static readonly MonsterDef GiantAnaconda = S("giant_anaconda", "giant anaconda", 9, ConsoleColor.Magenta,
+        [new GrantAction(new NaturalAttack(NaturalWeapons.Bite_2d10)), GrabOnHit.Instance, Constrict.Large],
+        hp: 12, ac: 1, ab: 1, dmg: 7, size: UnitSize.Huge,
+        speed: ActionCosts.StandardLandMove, unarmed: NaturalWeapons.Bite_2d10);
+
+    public static readonly MonsterDef EmperorCobra = S("emperor_cobra", "emperor cobra", 10, ConsoleColor.Magenta,
+        [new GrantAction(new NaturalAttack(NaturalWeapons.Bite_2d6)), SnakeVenomGreater.DC17.OnHit()],
+        hp: 10, ac: 2, ab: 2, dmg: 6, size: UnitSize.Large, unarmed: NaturalWeapons.Bite_2d6);
 
     public static readonly MonsterDef[] All = [
         Viper, SeaSnake, GiantViper,

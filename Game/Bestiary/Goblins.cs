@@ -100,153 +100,54 @@ public static class Goblins
         Price = -1,
     };
 
-    public static readonly MonsterDef Warrior = new()
+    static MonsterDef G(string id, string name, int level, ConsoleColor color,
+        LogicBrick[] components, int hp = 6, int ac = 0, int ab = 0, int dmg = 0,
+        int maxDepth = 4, int spawnWeight = 10, Func<MonsterDef>? growsInto = null)
     {
-        id = "goblin_warrior",
-        Name = "goblin warrior",
-        Glyph = new('g', ConsoleColor.Green),
-        HpPerLevel = 5,
-        AC = 0,
-        AttackBonus = 0,
-        DamageBonus = -1,
-        LandMove = ActionCosts.LandMove20,
-        Unarmed = NaturalWeapons.Fist,
-        Size = UnitSize.Small,
-        BaseLevel = -1,
-        MaxDepth = 3,
-        Family = Family,
-        CreatureType = CreatureTypes.Humanoid,
-        MoralAxis = MoralAxis.Evil,
-        EthicalAxis = EthicalAxis.Chaotic,
-        GrowsInto = () => Basic!,
-        Components = [
-            new Equip(DogSlicer),
-            new GrantAction(AttackWithWeapon.Instance),
-        ],
-    };
+        return new MonsterDef
+        {
+            id = id,
+            Name = name,
+            Family = Family,
+            CreatureType = CreatureTypes.Humanoid,
+            Glyph = new('g', color),
+            HpPerLevel = hp,
+            AC = ac,
+            AttackBonus = ab,
+            DamageBonus = dmg,
+            LandMove = ActionCosts.LandMove20,
+            Unarmed = NaturalWeapons.Fist,
+            Size = UnitSize.Small,
+            BaseLevel = level,
+            MaxDepth = maxDepth,
+            SpawnWeight = spawnWeight,
+            MoralAxis = MoralAxis.Evil,
+            EthicalAxis = EthicalAxis.Chaotic,
+            GrowsInto = growsInto,
+            Components = components,
+        };
+    }
 
-    public static readonly MonsterDef Chef = new()
-    {
-        id = "goblin_chef",
-        Name = "goblin chef",
-        Glyph = new('g', ConsoleColor.Yellow),
-        HpPerLevel = 6,
-        AC = 0,
-        AttackBonus = 0,
-        DamageBonus = 0,
-        LandMove = ActionCosts.LandMove20,
-        Unarmed = NaturalWeapons.Fist,
-        Size = UnitSize.Small,
-        BaseLevel = 1,
-        MaxDepth = 4,
-        Family = Family,
-        CreatureType = CreatureTypes.Humanoid,
-        MoralAxis = MoralAxis.Evil,
-        EthicalAxis = EthicalAxis.Chaotic,
-        Components = [
-            new GrantAction(AttackWithWeapon.Instance),
-        ],
-    };
+    public static readonly MonsterDef Warrior = G("goblin_warrior", "goblin warrior", -1, ConsoleColor.Green,
+        [new Equip(DogSlicer), new GrantAction(AttackWithWeapon.Instance)],
+        hp: 5, dmg: -1, maxDepth: 3, growsInto: () => Basic!);
 
-    public static readonly MonsterDef Pyro = new()
-    {
-        id = "goblin_pyro",
-        Name = "goblin pyro",
-        Glyph = new('g', ConsoleColor.Red),
-        HpPerLevel = 6,
-        AC = 0,
-        AttackBonus = 0,
-        DamageBonus = 0,
-        LandMove = ActionCosts.LandMove20,
-        Unarmed = NaturalWeapons.Fist,
-        Size = UnitSize.Small,
-        BaseLevel = 1,
-        MaxDepth = 4,
-        Family = Family,
-        CreatureType = CreatureTypes.Humanoid,
-        MoralAxis = MoralAxis.Evil,
-        EthicalAxis = EthicalAxis.Chaotic,
-        Components = [
-            new GrantPool("fire_breath", 2, 50),
-            new GrantAction(new FireBreath(2, d(6), 12)),
-            new GrantAction(AttackWithWeapon.Instance),
-        ],
-    };
+    public static readonly MonsterDef Chef = G("goblin_chef", "goblin chef", 1, ConsoleColor.Yellow,
+        [new GrantAction(AttackWithWeapon.Instance)]);
 
-    public static readonly MonsterDef WarChanter = new()
-    {
-        id = "goblin_war_chanter",
-        Name = "goblin war chanter",
-        Glyph = new('g', ConsoleColor.Magenta),
-        HpPerLevel = 6,
-        AC = 0,
-        AttackBonus = 0,
-        DamageBonus = 0,
-        LandMove = ActionCosts.LandMove20,
-        Unarmed = NaturalWeapons.Fist,
-        Size = UnitSize.Small,
-        BaseLevel = 1,
-        MaxDepth = 4,
-        Family = Family,
-        CreatureType = CreatureTypes.Humanoid,
-        MoralAxis = MoralAxis.Evil,
-        EthicalAxis = EthicalAxis.Chaotic,
-        Components = [
-            new GrantPool("war_chant", 1, 30),
-            new GrantAction(new WarChant()),
-            new GrantAction(AttackWithWeapon.Instance),
-        ],
-    };
+    public static readonly MonsterDef Pyro = G("goblin_pyro", "goblin pyro", 1, ConsoleColor.Red,
+        [new GrantPool("fire_breath", 2, 50), new GrantAction(new FireBreath(2, d(6), 12)), new GrantAction(AttackWithWeapon.Instance)]);
 
-    public static readonly MonsterDef MediumBoss = new()
-    {
-        id = "medium_boss_goblin",
-        Name = "medium boss goblin",
-        Glyph = new('g', ConsoleColor.DarkYellow),
-        HpPerLevel = 8,
-        AC = 2,
-        AttackBonus = 2,
-        DamageBonus = 2,
-        LandMove = ActionCosts.LandMove20,
-        Unarmed = NaturalWeapons.Fist,
-        Size = UnitSize.Small,
-        BaseLevel = 3,
-        SpawnWeight = 0,
-        MaxDepth = 5,
-        Family = Family,
-        CreatureType = CreatureTypes.Humanoid,
-        MoralAxis = MoralAxis.Evil,
-        EthicalAxis = EthicalAxis.Chaotic,
-        Components = [
-            new Equip(DogSlicer),
-            new GrantAction(AttackWithWeapon.Instance),
-        ],
-    };
+    public static readonly MonsterDef WarChanter = G("goblin_war_chanter", "goblin war chanter", 1, ConsoleColor.Magenta,
+        [new GrantPool("war_chant", 1, 30), new GrantAction(new WarChant()), new GrantAction(AttackWithWeapon.Instance)]);
 
-    public static readonly MonsterDef Basic = new()
-    {
-        id = "goblin",
-        Name = "goblin",
-        Glyph = new('g', ConsoleColor.White),
-        HpPerLevel = 6,
-        AC = 0,
-        AttackBonus = 0,
-        DamageBonus = -1,
-        LandMove = ActionCosts.LandMove20,
-        Unarmed = NaturalWeapons.Fist,
-        Size = UnitSize.Small,
-        BaseLevel = 1,
-        MaxDepth = 3,
-        Family = Family,
-        CreatureType = CreatureTypes.Humanoid,
-        MoralAxis = MoralAxis.Evil,
-        EthicalAxis = EthicalAxis.Chaotic,
-        Components = [
-            new Equip(DogSlicer),
-            new GrantAction(AttackWithWeapon.Instance),
-        ],
-    };
+    public static readonly MonsterDef MediumBoss = G("medium_boss_goblin", "medium boss goblin", 3, ConsoleColor.DarkYellow,
+        [new Equip(DogSlicer), new GrantAction(AttackWithWeapon.Instance)],
+        hp: 8, ac: 2, ab: 2, dmg: 2, maxDepth: 5, spawnWeight: 0);
 
+    public static readonly MonsterDef Basic = G("goblin", "goblin", 1, ConsoleColor.White,
+        [new Equip(DogSlicer), new GrantAction(AttackWithWeapon.Instance)],
+        dmg: -1, maxDepth: 3);
 
     public static readonly MonsterDef[] All = [Warrior, Chef, Pyro, WarChanter, MediumBoss, Basic];
 }

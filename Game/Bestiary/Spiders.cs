@@ -162,237 +162,75 @@ public static class Spiders
 {
     public static readonly MonsterFamily Family = new("spider");
 
-    public static readonly MonsterDef OrbWeaver = new()
+    static MonsterDef S(string id, string name, int level, ConsoleColor color,
+        LogicBrick[] components, int hp = 8, int ac = 0, int ab = 0, int dmg = 0,
+        UnitSize size = UnitSize.Medium, int maxDepth = 99,
+        GroupSize group = GroupSize.None, char glyph = 's',
+        WeaponDef? unarmed = null, ActionCost? speed = null)
     {
-        id = "orb_weaver",
-        Name = "orb weaver",
-        Glyph = new('s', ConsoleColor.Yellow),
-        HpPerLevel = 5,
-        AC = 0,
-        AttackBonus = 0,
-        DamageBonus = 0,
-        LandMove = ActionCosts.StandardLandMove,
-        Unarmed = NaturalWeapons.Bite_1d3,
-        Size = UnitSize.Small,
-        BaseLevel = 1,
-        MaxDepth = 6,
-        MoralAxis = MoralAxis.Neutral,
-        EthicalAxis = EthicalAxis.Neutral,
-        CreatureType = CreatureTypes.Beast,
-        Family = Family,
-        StartingRot = Foods.RotSpoiled,
-        GroupSize = GroupSize.SmallMixed,
-        Components = [
-            new GrantAction(WebSpit.Instance),
-            new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d3)),
-            WebImmunity.Instance,
-        ],
-    };
+        return new MonsterDef
+        {
+            id = id,
+            Name = name,
+            Family = Family,
+            CreatureType = CreatureTypes.Beast,
+            Glyph = new(glyph, color),
+            HpPerLevel = hp,
+            AC = ac,
+            AttackBonus = ab,
+            DamageBonus = dmg,
+            LandMove = speed ?? ActionCosts.StandardLandMove,
+            Unarmed = unarmed ?? NaturalWeapons.Bite_1d6,
+            Size = size,
+            BaseLevel = level,
+            MaxDepth = maxDepth,
+            GroupSize = group,
+            StartingRot = Foods.RotSpoiled,
+            MoralAxis = MoralAxis.Neutral,
+            EthicalAxis = EthicalAxis.Neutral,
+            Components = [WebImmunity.Instance, ..components],
+        };
+    }
 
-    public static readonly MonsterDef ScarletSpider = new()
-    {
-        id = "scarlet_spider",
-        Name = "scarlet spider",
-        Glyph = new('s', ConsoleColor.Red),
-        HpPerLevel = 4,
-        AC = 1,
-        AttackBonus = 1,
-        DamageBonus = -2,
-        LandMove = ActionCosts.StandardLandMove,
-        Unarmed = NaturalWeapons.Bite_1d3,
-        Size = UnitSize.Tiny,
-        BaseLevel = 0,
-        MaxDepth = 4,
-        MoralAxis = MoralAxis.Neutral,
-        EthicalAxis = EthicalAxis.Neutral,
-        CreatureType = CreatureTypes.Beast,
-        Family = Family,
-        StartingRot = Foods.RotSpoiled,
-        Components = [
-            WebImmunity.Instance,
-            new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d3)),
-            SpiderVenom.DC10.OnHit(),
-        ],
-    };
+    public static readonly MonsterDef OrbWeaver = S("orb_weaver", "orb weaver", 1, ConsoleColor.Yellow,
+        [new GrantAction(WebSpit.Instance), new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d3))],
+        hp: 5, size: UnitSize.Small, maxDepth: 6, group: GroupSize.SmallMixed,
+        unarmed: NaturalWeapons.Bite_1d3);
 
-    public static readonly MonsterDef GiantCrabSpider = new()
-    {
-        id = "giant_crab_spider",
-        Name = "giant crab spider",
-        Glyph = new('s', ConsoleColor.DarkYellow),
-        HpPerLevel = 6,
-        AC = 0,
-        AttackBonus = -1,
-        DamageBonus = 2,
-        LandMove = ActionCosts.StandardLandMove,
-        Unarmed = NaturalWeapons.Bite_1d4,
-        Size = UnitSize.Small,
-        BaseLevel = 1,
-        MaxDepth = 5,
-        MoralAxis = MoralAxis.Neutral,
-        EthicalAxis = EthicalAxis.Neutral,
-        CreatureType = CreatureTypes.Beast,
-        Family = Family,
-        StartingRot = Foods.RotSpoiled,
-        Components = [
-            WebImmunity.Instance,
-            new GrantAction(WebSpit.Instance),
-            new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d4)),
-        ],
-    };
+    public static readonly MonsterDef ScarletSpider = S("scarlet_spider", "scarlet spider", 0, ConsoleColor.Red,
+        [new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d3)), SpiderVenom.DC10.OnHit()],
+        hp: 4, ac: 1, ab: 1, dmg: -2, size: UnitSize.Tiny, maxDepth: 4,
+        unarmed: NaturalWeapons.Bite_1d3);
 
-    public static readonly MonsterDef GiantSpider = new()
-    {
-        id = "giant_spider",
-        Name = "giant spider",
-        Glyph = new('s', ConsoleColor.Gray),
-        HpPerLevel = 8,
-        AC = 0,
-        AttackBonus = 0,
-        DamageBonus = 0,
-        LandMove = ActionCosts.StandardLandMove,
-        Unarmed = NaturalWeapons.Bite_1d6,
-        Size = UnitSize.Medium,
-        BaseLevel = 2,
-        MaxDepth = 7,
-        MoralAxis = MoralAxis.Neutral,
-        EthicalAxis = EthicalAxis.Neutral,
-        CreatureType = CreatureTypes.Beast,
-        Family = Family,
-        StartingRot = Foods.RotSpoiled,
-        Components = [
-            WebImmunity.Instance,
-            new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d6)),
-            SpiderVenom.DC11.OnHit(),
-        ],
-    };
+    public static readonly MonsterDef GiantCrabSpider = S("giant_crab_spider", "giant crab spider", 1, ConsoleColor.DarkYellow,
+        [new GrantAction(WebSpit.Instance), new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d4))],
+        hp: 6, ab: -1, dmg: 2, size: UnitSize.Small, maxDepth: 5,
+        unarmed: NaturalWeapons.Bite_1d4);
 
-    public static readonly MonsterDef GiantBlackWidow = new()
-    {
-        id = "giant_black_widow",
-        Name = "giant black widow",
-        Glyph = new('s', ConsoleColor.DarkRed),
-        HpPerLevel = 8,
-        AC = 0,
-        AttackBonus = 0,
-        DamageBonus = 0,
-        LandMove = ActionCosts.StandardLandMove,
-        Unarmed = NaturalWeapons.Bite_1d6,
-        Size = UnitSize.Large,
-        BaseLevel = 4,
-        MoralAxis = MoralAxis.Neutral,
-        EthicalAxis = EthicalAxis.Neutral,
-        CreatureType = CreatureTypes.Beast,
-        Family = Family,
-        StartingRot = Foods.RotSpoiled,
-        Components = [
-            WebImmunity.Instance,
-            new GrantAction(WebSpit.Instance),
-            new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d6)),
-            SpiderVenom.DC13.OnHit(),
-        ],
-    };
+    public static readonly MonsterDef GiantSpider = S("giant_spider", "giant spider", 2, ConsoleColor.Gray,
+        [new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d6)), SpiderVenom.DC11.OnHit()],
+        maxDepth: 7);
 
-    public static readonly MonsterDef PhaseSpider = new()
-    {
-        id = "phase_spider",
-        Name = "phase spider",
-        Glyph = new('s', ConsoleColor.Cyan),
-        HpPerLevel = 8,
-        AC = -1,
-        AttackBonus = 0,
-        DamageBonus = 0,
-        LandMove = ActionCosts.StandardLandMove,
-        Unarmed = NaturalWeapons.Bite_1d8,
-        Size = UnitSize.Large,
-        BaseLevel = 5,
-        MoralAxis = MoralAxis.Neutral,
-        EthicalAxis = EthicalAxis.Neutral,
-        CreatureType = CreatureTypes.Beast,
-        Family = Family,
-        StartingRot = Foods.RotSpoiled,
-        Components = [
-            WebImmunity.Instance,
-            new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d8)),
-            SpiderVenom.DC13.OnHit(),
-            PhaseShift.Instance,
-        ],
-    };
+    public static readonly MonsterDef GiantBlackWidow = S("giant_black_widow", "giant black widow", 4, ConsoleColor.DarkRed,
+        [new GrantAction(WebSpit.Instance), new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d6)), SpiderVenom.DC13.OnHit()],
+        size: UnitSize.Large);
 
-    public static readonly MonsterDef OgreSpider = new()
-    {
-        id = "ogre_spider",
-        Name = "ogre spider",
-        Glyph = new('S', ConsoleColor.DarkGray),
-        HpPerLevel = 8,
-        AC = 1,
-        AttackBonus = 0,
-        DamageBonus = 1,
-        LandMove = ActionCosts.StandardLandMove,
-        Unarmed = NaturalWeapons.Bite_2d6,
-        Size = UnitSize.Huge,
-        BaseLevel = 6,
-        MoralAxis = MoralAxis.Neutral,
-        EthicalAxis = EthicalAxis.Neutral,
-        CreatureType = CreatureTypes.Beast,
-        Family = Family,
-        StartingRot = Foods.RotSpoiled,
-        Components = [
-            WebImmunity.Instance,
-            new GrantAction(new NaturalAttack(NaturalWeapons.Bite_2d6)),
-            SpiderVenom.DC13.OnHit(),
-        ],
-    };
+    public static readonly MonsterDef PhaseSpider = S("phase_spider", "phase spider", 5, ConsoleColor.Cyan,
+        [new GrantAction(new NaturalAttack(NaturalWeapons.Bite_1d8)), SpiderVenom.DC13.OnHit(), PhaseShift.Instance],
+        ac: -1, size: UnitSize.Large, unarmed: NaturalWeapons.Bite_1d8);
 
-    public static readonly MonsterDef GiantTarantula = new()
-    {
-        id = "giant_tarantula",
-        Name = "giant tarantula",
-        Glyph = new('S', ConsoleColor.DarkYellow),
-        HpPerLevel = 8,
-        AC = 1,
-        AttackBonus = 0,
-        DamageBonus = 0,
-        LandMove = ActionCosts.StandardLandMove,
-        Unarmed = NaturalWeapons.Bite_2d6,
-        Size = UnitSize.Gargantuan,
-        BaseLevel = 8,
-        MoralAxis = MoralAxis.Neutral,
-        EthicalAxis = EthicalAxis.Neutral,
-        CreatureType = CreatureTypes.Beast,
-        Family = Family,
-        StartingRot = Foods.RotSpoiled,
-        Components = [
-            WebImmunity.Instance,
-            new GrantAction(new NaturalAttack(NaturalWeapons.Bite_2d6)),
-            SpiderVenom.DC14.OnHit(),
-        ],
-    };
+    public static readonly MonsterDef OgreSpider = S("ogre_spider", "ogre spider", 6, ConsoleColor.DarkGray,
+        [new GrantAction(new NaturalAttack(NaturalWeapons.Bite_2d6)), SpiderVenom.DC13.OnHit()],
+        ac: 1, dmg: 1, size: UnitSize.Huge, glyph: 'S', unarmed: NaturalWeapons.Bite_2d6);
 
-    public static readonly MonsterDef GoliathSpider = new()
-    {
-        id = "goliath_spider",
-        Name = "goliath spider",
-        Glyph = new('S', ConsoleColor.Magenta),
-        HpPerLevel = 8,
-        AC = -1,
-        AttackBonus = -2,
-        DamageBonus = 0,
-        LandMove = ActionCosts.LandMove25,
-        Unarmed = NaturalWeapons.Bite_2d10,
-        Size = UnitSize.Gargantuan,
-        BaseLevel = 11,
-        MoralAxis = MoralAxis.Neutral,
-        EthicalAxis = EthicalAxis.Neutral,
-        CreatureType = CreatureTypes.Beast,
-        Family = Family,
-        StartingRot = Foods.RotSpoiled,
-        Components = [
-            WebImmunity.Instance,
-            new GrantAction(new NaturalAttack(NaturalWeapons.Bite_2d10)),
-            SpiderVenom.DC17.OnHit(),
-        ],
-    };
+    public static readonly MonsterDef GiantTarantula = S("giant_tarantula", "giant tarantula", 8, ConsoleColor.DarkYellow,
+        [new GrantAction(new NaturalAttack(NaturalWeapons.Bite_2d6)), SpiderVenom.DC14.OnHit()],
+        ac: 1, size: UnitSize.Gargantuan, glyph: 'S', unarmed: NaturalWeapons.Bite_2d6);
+
+    public static readonly MonsterDef GoliathSpider = S("goliath_spider", "goliath spider", 11, ConsoleColor.Magenta,
+        [new GrantAction(new NaturalAttack(NaturalWeapons.Bite_2d10)), SpiderVenom.DC17.OnHit()],
+        ac: -1, ab: -2, size: UnitSize.Gargantuan, glyph: 'S',
+        speed: ActionCosts.LandMove25, unarmed: NaturalWeapons.Bite_2d10);
 
     public static readonly MonsterDef[] All = [
         OrbWeaver, ScarletSpider, GiantCrabSpider, GiantSpider, GiantBlackWidow,

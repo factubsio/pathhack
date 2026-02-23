@@ -4,150 +4,65 @@ public static class Cats
 {
     public static readonly MonsterFamily Family = new("cat");
 
-    public static readonly MonsterDef Cheetah = new()
+    static MonsterDef C(string id, string name, int level, ConsoleColor color,
+        LogicBrick[] components, int hp = 8, int ac = 0, int ab = 0, int dmg = 0,
+        UnitSize size = UnitSize.Medium, int maxDepth = 99,
+        ActionCost? speed = null, WeaponDef? unarmed = null,
+        GroupSize group = GroupSize.None)
     {
-        id = "cheetah",
-        Name = "cheetah",
-        Family = Family,
-        Glyph = new('f', ConsoleColor.Yellow),
-        HpPerLevel = 5,
-        AC = -1,
-        AttackBonus = -1,
-        DamageBonus = 0,
-        LandMove = 6,
-        Unarmed = NaturalWeapons.Bite_1d4,
-        Size = UnitSize.Medium,
-        BaseLevel = 2,
-        MaxDepth = 6,
-        MoralAxis = MoralAxis.Neutral,
-        EthicalAxis = EthicalAxis.Neutral,
-        CreatureType = CreatureTypes.Beast,
-        Components = [
+        return new MonsterDef
+        {
+            id = id,
+            Name = name,
+            Family = Family,
+            CreatureType = CreatureTypes.Beast,
+            Glyph = new('f', color),
+            HpPerLevel = hp,
+            AC = ac,
+            AttackBonus = ab,
+            DamageBonus = dmg,
+            LandMove = speed ?? ActionCosts.StandardLandMove,
+            Unarmed = unarmed ?? NaturalWeapons.Bite_1d6,
+            Size = size,
+            BaseLevel = level,
+            MaxDepth = maxDepth,
+            GroupSize = group,
+            MoralAxis = MoralAxis.Neutral,
+            EthicalAxis = EthicalAxis.Neutral,
+            Components = components,
+        };
+    }
+
 #pragma warning disable BEE008 // full attack is preferred over quick bite in this case
-            new GrantAction(new FullAttack("maul", NaturalWeapons.Bite_1d4, NaturalWeapons.Claw_1d2, NaturalWeapons.Claw_1d2)),
+    public static readonly MonsterDef Cheetah = C("cheetah", "cheetah", 2, ConsoleColor.Yellow,
+        [new GrantAction(new FullAttack("maul", NaturalWeapons.Bite_1d4, NaturalWeapons.Claw_1d2, NaturalWeapons.Claw_1d2)),
+         new GrantAction(QuickBite.Instance)],
+        hp: 5, ac: -1, ab: -1, maxDepth: 6, speed: (ActionCost)6, unarmed: NaturalWeapons.Bite_1d4);
 #pragma warning restore BEE008
-            new GrantAction(QuickBite.Instance),
-        ],
-    };
 
-    public static readonly MonsterDef Leopard = new()
-    {
-        id = "leopard",
-        Name = "leopard",
-        Family = Family,
-        Glyph = new('f', ConsoleColor.Yellow),
-        HpPerLevel = 6,
-        AC = 0,
-        AttackBonus = 0,
-        DamageBonus = -1,
-        LandMove = ActionCosts.StandardLandMove,
-        Unarmed = NaturalWeapons.Bite_1d6,
-        Size = UnitSize.Medium,
-        BaseLevel = 2,
-        MaxDepth = 6,
-        MoralAxis = MoralAxis.Neutral,
-        EthicalAxis = EthicalAxis.Neutral,
-        CreatureType = CreatureTypes.Beast,
-        Components = [
-            new GrantAction(Pounce.Instance),
-            new GrantAction(new FullAttack("maul", NaturalWeapons.Bite_1d4, NaturalWeapons.Claw_1d2, NaturalWeapons.Claw_1d2)),
-        ],
-    };
+    public static readonly MonsterDef Leopard = C("leopard", "leopard", 2, ConsoleColor.Yellow,
+        [new GrantAction(Pounce.Instance),
+         new GrantAction(new FullAttack("maul", NaturalWeapons.Bite_1d4, NaturalWeapons.Claw_1d2, NaturalWeapons.Claw_1d2))],
+        hp: 6, dmg: -1, maxDepth: 6);
 
-    public static readonly MonsterDef Panther = new()
-    {
-        id = "panther",
-        Name = "panther",
-        Family = Family,
-        Glyph = new('f', ConsoleColor.DarkGray),
-        HpPerLevel = 7,
-        AC = -1,
-        AttackBonus = 0,
-        DamageBonus = 0,
-        LandMove = ActionCosts.LandMove25,
-        Unarmed = NaturalWeapons.Bite_1d6,
-        Size = UnitSize.Medium,
-        BaseLevel = 3,
-        MaxDepth = 7,
-        MoralAxis = MoralAxis.Neutral,
-        EthicalAxis = EthicalAxis.Neutral,
-        CreatureType = CreatureTypes.Beast,
-        Components = [
-            new GrantAction(new FullAttack("maul", NaturalWeapons.Bite_1d6, NaturalWeapons.Claw_1d2, NaturalWeapons.Claw_1d2)),
-        ],
-    };
+    public static readonly MonsterDef Panther = C("panther", "panther", 3, ConsoleColor.DarkGray,
+        [new GrantAction(new FullAttack("maul", NaturalWeapons.Bite_1d6, NaturalWeapons.Claw_1d2, NaturalWeapons.Claw_1d2))],
+        hp: 7, ac: -1, maxDepth: 7, speed: ActionCosts.LandMove25);
 
-    public static readonly MonsterDef Lion = new()
-    {
-        id = "lion",
-        Name = "lion",
-        Family = Family,
-        Glyph = new('f', ConsoleColor.DarkYellow),
-        HpPerLevel = 8,
-        AC = 1,
-        AttackBonus = 0,
-        DamageBonus = 0,
-        LandMove = ActionCosts.LandMove20,
-        Unarmed = NaturalWeapons.Bite_1d8,
-        Size = UnitSize.Large,
-        BaseLevel = 3,
-        MaxDepth = 8,
-        MoralAxis = MoralAxis.Neutral,
-        EthicalAxis = EthicalAxis.Neutral,
-        CreatureType = CreatureTypes.Beast,
-        GroupSize = GroupSize.Small,
-        Components = [
-            new GrantAction(new FullAttack("maul", NaturalWeapons.Bite_1d8, NaturalWeapons.Claw_1d2, NaturalWeapons.Claw_1d2)),
-        ],
-    };
+    public static readonly MonsterDef Lion = C("lion", "lion", 3, ConsoleColor.DarkYellow,
+        [new GrantAction(new FullAttack("maul", NaturalWeapons.Bite_1d8, NaturalWeapons.Claw_1d2, NaturalWeapons.Claw_1d2))],
+        ac: 1, size: UnitSize.Large, maxDepth: 8, speed: ActionCosts.LandMove20,
+        unarmed: NaturalWeapons.Bite_1d8, group: GroupSize.Small);
 
-    public static readonly MonsterDef Tiger = new()
-    {
-        id = "tiger",
-        Name = "tiger",
-        Family = Family,
-        Glyph = new('f', ConsoleColor.Red),
-        HpPerLevel = 8,
-        AC = 1,
-        AttackBonus = 1,
-        DamageBonus = 0,
-        LandMove = ActionCosts.StandardLandMove,
-        Unarmed = NaturalWeapons.Bite_1d8,
-        Size = UnitSize.Large,
-        BaseLevel = 4,
-        MaxDepth = 10,
-        MoralAxis = MoralAxis.Neutral,
-        EthicalAxis = EthicalAxis.Neutral,
-        CreatureType = CreatureTypes.Beast,
-        Components = [
-            new GrantAction(Pounce.Instance),
-            new GrantAction(new FullAttack("maul", NaturalWeapons.Bite_1d8, NaturalWeapons.Claw_1d3, NaturalWeapons.Claw_1d3)),
-        ],
-    };
+    public static readonly MonsterDef Tiger = C("tiger", "tiger", 4, ConsoleColor.Red,
+        [new GrantAction(Pounce.Instance),
+         new GrantAction(new FullAttack("maul", NaturalWeapons.Bite_1d8, NaturalWeapons.Claw_1d3, NaturalWeapons.Claw_1d3))],
+        ac: 1, ab: 1, size: UnitSize.Large, maxDepth: 10, unarmed: NaturalWeapons.Bite_1d8);
 
-    public static readonly MonsterDef Smilodon = new()
-    {
-        id = "smilodon",
-        Name = "smilodon",
-        Family = Family,
-        Glyph = new('f', ConsoleColor.Magenta),
-        HpPerLevel = 8,
-        AC = 1,
-        AttackBonus = 1,
-        DamageBonus = 1,
-        LandMove = ActionCosts.StandardLandMove,
-        Unarmed = NaturalWeapons.Bite_2d6,
-        Size = UnitSize.Large,
-        BaseLevel = 7,
-        MaxDepth = 15,
-        MoralAxis = MoralAxis.Neutral,
-        EthicalAxis = EthicalAxis.Neutral,
-        CreatureType = CreatureTypes.Beast,
-        Components = [
-            new GrantAction(Pounce.Instance),
-            new GrantAction(new FullAttack("maul", NaturalWeapons.Bite_2d6, NaturalWeapons.Claw_1d4, NaturalWeapons.Claw_1d4)),
-        ],
-    };
+    public static readonly MonsterDef Smilodon = C("smilodon", "smilodon", 7, ConsoleColor.Magenta,
+        [new GrantAction(Pounce.Instance),
+         new GrantAction(new FullAttack("maul", NaturalWeapons.Bite_2d6, NaturalWeapons.Claw_1d4, NaturalWeapons.Claw_1d4))],
+        ac: 1, ab: 1, dmg: 1, size: UnitSize.Large, maxDepth: 15, unarmed: NaturalWeapons.Bite_2d6);
 
     public static readonly MonsterDef[] All = [Cheetah, Leopard, Panther, Lion, Tiger, Smilodon];
 }

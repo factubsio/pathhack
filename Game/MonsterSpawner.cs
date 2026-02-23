@@ -23,7 +23,7 @@ public class SpawnBag
             })
             .ToArray();
         _tokens = new int[_entries.Length];
-        Refill();
+        _cursor = _tokens.Length; // first Draw() triggers Refill()
     }
 
     void Refill()
@@ -218,16 +218,28 @@ public static class MonsterSpawner
         var draw = g.SpawnBag.Draw(depth, playerLevel);
         var pick = draw != null ? PickWeighted(draw.Value.Defs.Where(eligible).ToList()) : null;
 
-        // Fallback to full pool
-        pick ??= PickWeighted(AllMonsters.All.Where(eligible).ToList());
+        string source = "bag";
+        if (pick == null && draw != null)
+        {
+            source = "bag→fallback";
+            pick = PickWeighted(AllMonsters.All.Where(eligible).ToList());
+        }
+        else if (pick == null)
+        {
+            source = "fallback(bag empty)";
+            pick = PickWeighted(AllMonsters.All.Where(eligible).ToList());
+        }
 
         // Reroll if pick is too far below player level
         int gap = pick != null ? playerLevel - pick.BaseLevel : 0;
         if ((gap > 2 && g.Rn2(2) == 0) || (gap > 1 && g.Rn2(3) == 0))
         {
             var reroll = g.SpawnBag.Draw(depth, playerLevel);
-            pick = (reroll != null ? PickWeighted(reroll.Value.Defs.Where(eligible).ToList()) : null) ?? pick;
+            var rerollPick = reroll != null ? PickWeighted(reroll.Value.Defs.Where(eligible).ToList()) : null;
+            if (rerollPick != null) { pick = rerollPick; source = "reroll"; }
         }
+
+        Log.Structured("pick_monster", $"{depth:depth}{playerLevel:cl}{minLevel:min_level}{maxLevel:max_level}{draw?.Family.Name:bag}{source:source}{pick?.Name:pick}");
         return pick;
     }
 
