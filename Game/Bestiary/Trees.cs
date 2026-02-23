@@ -157,7 +157,7 @@ public class DazeAura : LogicBrick
 
     protected override void OnRoundStart(Fact fact)
     {
-        if (fact.Entity is not IUnit unit || !unit.Allows("can_act")) return;
+        if (fact.Entity is not IUnit unit || unit.CannotAct) return;
         int dc = unit.GetSpellDC();
         foreach (var tgt in unit.Pos.Neighbours().Select(lvl.UnitAt))
         {
@@ -176,7 +176,7 @@ public class AnimateTrees(int chance, MonsterDef[] pool) : LogicBrick
 
     protected override void OnRoundStart(Fact fact)
     {
-        if (fact.Entity is not Monster unit || !unit.CanSeeYou || !unit.Allows("can_act")) return;
+        if (fact.Entity is not Monster unit || !unit.CanSeeYou || unit.CannotAct) return;
 
         int trees = unit.Pos.Neighbours().Count(p => lvl.InBounds(p) && lvl[p].Type == TileType.Tree);
         int effectiveChance = trees > 0 ? chance / 2 : chance;
@@ -255,7 +255,7 @@ public class GallowsRaise(int range) : LogicBrick<GallowsRaise.State>
 
     protected override void OnRoundStart(Fact fact)
     {
-        if (fact.Entity is not Monster unit || !unit.Allows("can_act")) return;
+        if (fact.Entity is not Monster unit || unit.CannotAct) return;
         var state = X(fact);
 
         // Spawn ripe zombies

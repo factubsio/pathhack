@@ -1,7 +1,69 @@
 namespace Pathhack.Dat;
 
+
 public static class SerpentsSkullLevels
 {
+    public static readonly SpecialLevel SaventhYhi_A = new("saventh_yhi_a", """
+±±±±±±±±±±±±±±±±±±±±±±±±±±±~~~~~~~~~~~,,,,,,,,,,,,,,,,~~~~~~~~,,,,,±±±±±±±±±±±±±
+±±,,,,,,,,,,,,,,,,,,,,,,,,,~~~~~~~~~~~,,,,,,666666,,,,~~~~~~~~~~~,,,±±±±±±±±±±±±
+±±,,,,,,,,22222,,,,,~~~~~~#~~~~~~~~~~~,,,,,,666666,,,,,,,~~~~~~~~~~,,,,±±±±±±±±±
+±±±,,,,,,,22222,,~~~~~~~~~#~,,,,,,~~~~~~~~,,666666,,777777,,~~~~~~~~~~,,,±±±±±±±
+±±±,,....,22222,,~~~~~~~,,,,,,,,,,,,~~~~~~~~666+66,,777777,,,,~~~~~~~~~~,±±±±±±±
+±±±,3+33.,22222,,~~~~~,,.0000000.,,,,,~~~~~~~,,,,,,,777777,,,,,,~~~~~~~,,±±±±±±±
+±±,,3333.,22+22,~~~~~,,,.0000000.,,,,,~~~~~~~,,,,,,,77+777,,,,,,,,,~~~,,±±±±±±±±
+±±,,3333.....,,~~~~~~,,,.0000000.,,,,,,~~~~~~~~~,,,,,,,,,,,,,,,,,,,,,,,±±±±±±±±±
+±±±,3333,,,,.,~~~~~~~,,,.000+000.,,,,,,,~~~~~~~~~~~~,,,,,,,,,,,,,,,,,,,±±±±±±±±±
+±±±,3333,,,,.########............,,,,,,,,~~~~~~~~~~~~~,,,,,,,,,,,,,,,,,±±±±±±±±±
+±±±,,,,,,,,,.########..................>,~~~~~~~~~~~~~,,,,,,,,,,,,,,,,,±±±±±±±±±
+±±,,44444,,,.~~~~~~~~,,,.111+111.,,,,,,,,~~~~~~~~~~~~~,,,±±±±,,,,,,,,,,,±±±±±±±,
+±±,,44444,,,.,,~~~~~~,,,.1111111.,,,,,,,~~~~~~~~~~~~~~,±±±±±±,,,,,,,,,,,,,,,,,,,
+±±±,4444+....,,,~~~~~,,,.1111111.,,,,,,~~~~~~~~~~~~,,,,±±±±±±,,,,~~~~~~~~~,,,,,,
+±±±,44444,,,.,,,,~~~~~,,.1111111.,,,,~~~~~~~~~~~,,,,±±±±±±±±,,,~~~~~~~~~~~,,,,,,
+±±±,,........,,,,~~~~~~,,,,,,,,,,,,~~~~~~~~~~,,,,±±±±±±±±,,,,~~~~~~~~~~~~,,,,,,,
+±±,,,.55555555,,,~~~~~~~~,,,,,,,,~~~~~~~~~~,,,±±±±±±,,,,,,~~~~~~~~~~~~~,,,,,,,,,
+±±,,,.+5555555,,,,,~~~~~~~~~##~~~~~~~~~~,,,,±±±±±,,,,~~~~~~~~~~~~~,,,,,,,,,,,,,,
+±±±,,,55555555,,,,,,,,,~~~~~##~~~~~,,,,,,,,±±±±,,,~~~~~~~~~~~~~~,,,,,,,,,,,,,,,,
+±±±,,,55555555,,,,,,,,,,,,,,,,,,,,,,,±±±±±±±±±±,~~~~~~~~~~~~~,,,,,,,,,,,,,<,,,,,
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±~~~~~~~~~~~,,,,,,,,,,,,,,,,,,,,,
+""",
+
+    PostRender: b =>
+    {
+        b.Stair(b['<'], TileType.StairsUp);
+        b.Stair(b['>'], TileType.StairsDown);
+
+        b.Level.SpawnFlags |= SpawnFlags.Anywhere;
+
+        foreach (var room in b.Level.Rooms)
+        {
+            if (g.Rn2(5) > 1)
+            {
+                room.Type = RoomType.Shop;
+                LevelGen.FillShop(b.Context, room);
+
+                // oh no, apeman got there first
+                if (g.Rn2(3) == 0)
+                {
+                    if (room.Resident is {} shk)
+                       DoDie(shk, b.Level);
+
+                    for (int i = 0; i < g.RnRange(1, 3); i++)
+                    {
+                        var pos = b.Level.FindLocationInRoom(room, p => b.Level.NoUnit(p));
+                        if (pos == null) continue;
+                        MonsterSpawner.SpawnAndPlace(b.Level, "ape stealers", CharauKa.All.Pick(), allowTemplate: false, pos: pos, noGroup: true);
+                    }
+                }
+            }
+        }
+    })
+    {
+        HasStairsUp = true,
+        HasStairsDown = true,
+        SolidRooms = [0, 1, 2, 3],
+        NoRoomAssignment = true,
+    };
+
     public static readonly SpecialLevel ShoreBeached = new("ss_shore_beached", """
 ,,,,,,,,,,,,,,±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±,,,,,
 ,,,,,,,,,,,,,,,,±±±±±±±±±±±±±±±±±±±±±±±±±±±±±,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
@@ -25,9 +87,6 @@ public static class SerpentsSkullLevels
 ,,,,,,,,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ,,,,,,,,~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """,
-
-
-
         PostRender: b =>
         {
             b.Level.Outdoors = true;
@@ -69,6 +128,7 @@ public static class SerpentsSkullLevels
         HasPortalToParent = true,
         HasStairsDown = true,
         SolidRooms = [0, 1, 2],
+        NoRoomAssignment = true,
     };
 
     public static readonly SpecialLevel ShoreDebris = new("ss_shore_debris", """
@@ -168,6 +228,16 @@ public static class SerpentsSkullLevels
         HasPortalToParent = true,
         HasStairsDown = true,
     };
+    public static readonly ILevelRuntimeBehaviour SaventhYhiBehaviour = new SaventhYhiBehaviour();
+}
+
+public class SaventhYhiBehaviour : ILevelRuntimeBehaviour
+{
+    public SpawnPick? PickMonster(Level level, int effectiveLevel, string reason)
+    {
+        if (g.Rn2(10) < 6) return new(CharauKa.All.Pick(), null);
+        return new(null, null);
+    }
 }
 
 public class ShoreBehaviour : ILevelRuntimeBehaviour

@@ -806,6 +806,7 @@ public interface IUnit : IEntity, IFormattable
     public int HitsTaken { get; set; }
     public int MissesTaken { get; set; }
     public int DamageTaken { get; set; }
+    bool CannotAct { get; }
 }
 
 public class ChargePool(int max, DiceFormula regenRate)
@@ -839,6 +840,7 @@ public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) :
     public abstract EthicalAxis EthicalAxis { get; }
     public abstract bool IsCreature(string? type = null, string? subtype = null);
 
+
     public int HitsTaken { get; set; }
     public int MissesTaken { get; set; }
     public int DamageTaken { get; set; }
@@ -851,6 +853,7 @@ public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) :
     public Dictionary<ActionBrick, object?> ActionData { get; } = [];
 
     public bool CanSee => Allows(CommonQueries.See);
+    public bool CannotAct => !Allows("can_act");
 
     public override IEnumerable<Fact> GetAllFacts(PHContext? ctx)
     {

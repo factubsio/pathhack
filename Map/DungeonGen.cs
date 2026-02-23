@@ -8,7 +8,7 @@ public record LevelTemplate(
     ILevelRuntimeBehaviour? Behaviour = null,
     CaveAlgorithm? Algorithm = null,
     CaveAlgorithm[]? AlgorithmPool = null,
-    string[]? Variants = null,
+    SpecialLevel[]? Variants = null,
     ConsoleColor? WallColor = null,
     ConsoleColor? FloorColor = null,
     bool Outdoors = false,
@@ -358,8 +358,7 @@ public static class DungeonResolver
 
     static ResolvedLevel ResolveLevel(LevelTemplate? t, BranchTemplate branch, int index)
     {
-        string? variant = t?.Variants != null ? Pick(t.Variants) : null;
-        SpecialLevel? spec = LevelGen.GetTemplate(variant);
+        SpecialLevel? spec = t?.Variants != null ? Pick(t.Variants) : null;
 
         CaveAlgorithm? algo = t?.Algorithm
             ?? (t?.AlgorithmPool is { } pool ? pool[Rn2(pool.Length)] : null);

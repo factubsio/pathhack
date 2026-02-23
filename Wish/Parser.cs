@@ -28,13 +28,20 @@ public static partial class WishParser
                 matches.Add(def);
 
         if (matches.Count == 1) return matches[0];
-        if (matches.Count > 1)
-        {
-            g.pline($"Ambiguous: {string.Join(", ", matches.Select(d => d.Name))}");
-            return null;
-        }
+        if (matches.Count > 1) return PickMonsterMenu(matches);
 
         return null;
+    }
+
+    static MonsterDef? PickMonsterMenu(List<MonsterDef> matches)
+    {
+        Menu<MonsterDef> menu = new();
+        menu.Add("Which monster?", LineStyle.Heading);
+        char letter = 'a';
+        foreach (var def in matches)
+            menu.Add(letter++, def.Name, def);
+        var picked = menu.Display(MenuMode.PickOne);
+        return picked.FirstOrDefault();
     }
 
     public static Item? Parse(string input)

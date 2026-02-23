@@ -552,7 +552,7 @@ public static class Draw
             quiverState = $" Q:{u.Quiver.Charges}/{u.Quiver.MaxCharges}";
 
         // Line 0: location, gold, round, energy, quiver
-        string statusLine = $"{level.Branch.Name}:{level.EffectiveDepth} $:{u.Gold} R:{g.CurrentRound} E:{u.Energy}{quiverState}";
+        string statusLine = $"{level.Branch.Name}:{level.Depth} $:{u.Gold} R:{g.CurrentRound} E:{u.Energy}{quiverState}";
         StatusWin.At(0, 0).Write(statusLine.PadRight(ScreenWidth));
 
         // Line 1: HP, AC, CL, XP

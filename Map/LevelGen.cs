@@ -93,6 +93,7 @@ public static partial class LevelGen
             {
                 Log($"GenSpecial: {special.Id}");
                 GenSpecial(ctx, special);
+                ctx.NoRoomAssignment = special.NoRoomAssignment;
                 Log("GenSpecial done");
             }
             else if ((ForceAlgorithm ?? resolved.Algorithm) is { } algo)
@@ -168,7 +169,7 @@ public static partial class LevelGen
                 Log("PopulateRooms done");
             }
 
-            bool anywhere = ctx.level.SpawnFlags.HasFlag(SpawnFlags.Anywhere);
+            bool anywhere = ctx.level.SpawnFlags.HasFlag(SpawnFlags.Anywhere) && ctx.level.SpawnFlags.HasFlag(SpawnFlags.Initial);
             if (ctx.level.Rooms.Count == 0 || anywhere)
             {
                 Log($"PopulateCave (roomless={ctx.level.Rooms.Count == 0}, anywhere={anywhere})...");
@@ -187,8 +188,6 @@ public static partial class LevelGen
         }
     }
 
-    public static SpecialLevel? GetTemplate(string? name) => name == null ? null : SpecialLevels.TryGetValue(name, out var level) ? level : null;
-
     static void BakeBaseLit(Level level)
     {
         foreach (var room in level.Rooms)
@@ -206,24 +205,6 @@ public static partial class LevelGen
                 if (level[p].Type != TileType.Rock) level.BaseLit[p] = true;
             }
     }
-
-    internal static readonly Dictionary<string, SpecialLevel> SpecialLevels = new()
-    {
-        ["everflame_tomb"] = Dat.CryptLevels.EverflameEnd,
-        ["bigroom_rect"] = Dat.BigRoomLevels.Rectangle,
-        ["bigroom_oval"] = Dat.BigRoomLevels.Oval,
-        ["sanctuary_1"] = Dat.EndShrineLevels.EndShrine1,
-        ["trunau_home"] = Dat.TrunauLevels.Home,
-        ["trunau_siege"] = Dat.TrunauLevels.Siege,
-        ["trunau_tomb"] = Dat.TrunauLevels.Tomb,
-        ["redlake_outer"] = Dat.TrunauLevels.FortOuter,
-        ["redlake_inner"] = Dat.TrunauLevels.RedlakeInner,
-        ["ss_shore_beached"] = Dat.SerpentsSkullLevels.ShoreBeached,
-        ["ss_shore_debris"] = Dat.SerpentsSkullLevels.ShoreDebris,
-    };
-    
-    static SpecialLevel? FindSpecialLevel(string id) => 
-        SpecialLevels.GetValueOrDefault(id);
 
     static void LogLevelVerbose(Level level) { if (!QuietLog) LogLevel(level); }
 
@@ -613,7 +594,7 @@ public static partial class LevelGen
 
     }
 
-    static void PopulateRooms(LevelGenContext ctx)
+    public static void PopulateRooms(LevelGenContext ctx)
     {
         foreach (var room in ctx.level.Rooms)
         {
@@ -718,7 +699,7 @@ public static partial class LevelGen
         }
     }
     
-    static void FillShop(LevelGenContext ctx, Room room)
+    public static void FillShop(LevelGenContext ctx, Room room)
     {
         var level = ctx.level;
         

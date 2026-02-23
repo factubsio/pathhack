@@ -6,6 +6,7 @@ public record SpecialLevel(string Id, string Map, Action<LevelBuilder>? PreRende
     public bool HasPortalToParent = false;
     public bool HasStairsUp = false;
     public bool HasStairsDown = false;
+    public bool NoRoomAssignment = false;
 
     public string? Name { get; init; }
     public string DisplayName => Name ?? Id;

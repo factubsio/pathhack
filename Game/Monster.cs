@@ -353,8 +353,6 @@ public class Monster : Unit<MonsterDef>, IFormattable
           : m.OwnCreatureType ?? def.CreatureType;
     using var ctx = PHContext.Create(m, Target.None);
     LogicBrick.FireOnSpawn(m, ctx);
-    if (g.DebugMode)
-      m.HP.Current = m.HP.Current / 4;
     Log.Muted = false;
     string[] facts = m.LiveFacts.Select(f => f.Brick.Id).ToArray();
     string[] equip = m.Equipped.Values.Select(i => i.ToString()).ToArray();

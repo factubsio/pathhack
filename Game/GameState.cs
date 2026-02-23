@@ -472,7 +472,7 @@ public class GameState
             PHContext.Initiator = unit;
             while (unit.Energy > 1 && !unit.IsDead)
             {
-                if (!unit.Allows("can_act")) { unit.Energy = 0; break; }
+                if (unit.CannotAct) { unit.Energy = 0; break; }
 
                 Perf.Start();
                 MonsterTurn(unit);
@@ -1023,18 +1023,20 @@ public class GameState
     /// Full death: OnDeath hooks, drop inventory/gold/corpse, remove from play.
     /// Does NOT handle kill messages or XP — caller's responsibility.
     /// </summary>
-    public static void DoDie(IUnit target)
+    public static void DoDie(IUnit target, Level? level = null)
     {
         using (var death = PHContext.Create(DungeonMaster.Mook, Target.From(target)))
             LogicBrick.FireOnDeath(target, death);
 
         Log.Structured("death", $"{target.Id:id}{target:name}{target.HitsTaken:hits}{target.MissesTaken:misses}{target.DamageTaken:dmg}");
 
+        level ??= lvl;
+
         // drop inventory (force — unit is dead, skip equip/curse checks)
         foreach (var item in target.Inventory.ToList())
         {
             target.Inventory.Remove(item);
-            lvl.PlaceItem(item, target.Pos);
+            level.PlaceItem(item, target.Pos);
         }
 
         // drop gold
@@ -1064,7 +1066,7 @@ public class GameState
             }
 
             corpse.RespawnTemplate ??= m2.Query("respawn_template") as MonsterTemplate;
-            lvl.PlaceItem(corpse, target.Pos);
+            level.PlaceItem(corpse, target.Pos);
         }
 
         DoRemoveFromPlay(target);
@@ -1074,7 +1076,7 @@ public class GameState
     /// Mechanical removal from play: clears grabs, cell, marks dead.
     /// Does NOT drop inventory, corpse, gold, or fire OnDeath hooks.
     /// </summary>
-    public static void DoRemoveFromPlay(IUnit target)
+    public static void DoRemoveFromPlay(IUnit target, Level? level = null)
     {
         if (target.Grabbing is { } victim)
         {
@@ -1088,7 +1090,7 @@ public class GameState
         }
 
         target.IsDead = true;
-        lvl.GetOrCreateState(target.Pos).Unit = null;
+        (level ?? lvl).GetOrCreateState(target.Pos).Unit = null;
     }
 
     /// <summary>

@@ -131,7 +131,7 @@ public class AttackWithWeapon() : ActionBrick("attack_with_weapon")
                 unit.Unequip(ItemSlots.MainHandSlot);
                 unit.Unequip(ItemSlots.OffHandSlot);
                 unit.Equip(d.Weapon!);
-                g.YouObserve(unit, $"{unit:The} switches to {unit:own} {d.Weapon!}");
+                g.YouObserve(unit, $"{unit:The} switches to {unit:own} {d.Weapon!:bare}");
                 break;
 
             case Act.Shoot:

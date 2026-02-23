@@ -106,4 +106,6 @@ public class DungeonMaster : Entity<BaseDef>, IUnit, IFormattable
     public bool CanSee => true;
     public Item? Quiver => null;
 
+    public bool CannotAct => false;
+
 }

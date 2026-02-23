@@ -40,8 +40,8 @@ public class EquipSet(params Outfit[] outfits) : LogicBrick
     public static EquipSet OneOf(params ItemDef[] items) =>
         new([.. items.Select(i => new Outfit(1, new OutfitItem(i)))]);
 
-    public static EquipSet Roll(ItemDef item, int chance) =>
-        new(new Outfit(1, new OutfitItem(item, chance)));
+    public static EquipSet Roll(ItemDef item, int chance, DiceFormula? count = null) =>
+        new(new Outfit(1, new OutfitItem(item, chance, count)));
 
     public static EquipSet WithCount(ItemDef item, DiceFormula count) =>
         new(new Outfit(1, new OutfitItem(item, Count: count)));
@@ -71,6 +71,7 @@ public class EquipSet(params Outfit[] outfits) : LogicBrick
             context.Source!.Equip(item);
         }
     }
+
 }
 
 public static class NaturalWeapons

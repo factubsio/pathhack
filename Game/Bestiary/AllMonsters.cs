@@ -3,6 +3,7 @@ namespace Pathhack.Game.Bestiary;
 public static class AllMonsters
 {
     public static readonly MonsterDef[] All = [
+        .. Derro.All,
         .. Goblins.All,
         .. Kobolds.All,
         .. Gremlins.All,
@@ -16,12 +17,12 @@ public static class AllMonsters
         .. Bandits.All,
         .. Boggards.All,
         .. Trees.All,
+        .. CharauKa.All,
     ];
 
     public static readonly MonsterDef[] ActuallyAll = [
         .. All,
         .. Hippos.All,
-        .. Derro.All,
         DummyThings.Dummy,
     ];
 }

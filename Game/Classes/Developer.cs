@@ -264,6 +264,23 @@ public class ConfuseSelf() : ActionBrick("Confuse Self")
     }
 }
 
+public class Weaken() : ActionBrick("Weaken All")
+{
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target) => true;
+
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
+    {
+        int count = 0;
+        foreach (var m in lvl.LiveUnits)
+        {
+            if (m.IsPlayer) continue;
+            m.HP.Current = Math.Max(1, m.HP.Current / 4);
+            count++;
+        }
+        g.pline($"{count} monsters weakened.");
+    }
+}
+
 public static partial class ClassDefs
 {
     public static ClassDef Developer => new()
@@ -287,7 +304,12 @@ public static partial class ClassDefs
             {
                 Grants = [
                     new GrantProficiency(Proficiencies.Unarmed, ProficiencyLevel.Legendary),
-                    new GrantProficiency(Proficiencies.HeavyBlade, ProficiencyLevel.Legendary),
+
+                    new GrantProficiency(WeaponGrip.Light, ProficiencyLevel.Legendary),
+                    new GrantProficiency(WeaponGrip.Heavy, ProficiencyLevel.Legendary),
+                    new GrantProficiency(WeaponGrip.Polearm, ProficiencyLevel.Legendary),
+                    new GrantProficiency(WeaponGrip.Great, ProficiencyLevel.Legendary),
+
                     new GrantProficiency(Proficiencies.LightArmor, ProficiencyLevel.Legendary),
                     new GrantProficiency(Proficiencies.MediumArmor, ProficiencyLevel.Legendary),
                     new GrantProficiency(Proficiencies.HeavyArmor, ProficiencyLevel.Legendary),
@@ -346,6 +368,7 @@ public static partial class ClassDefs
             p.AddAction(new UncurseInventory());
             p.AddAction(new TogglePhasing());
             p.AddAction(new ConfuseSelf());
+            p.AddAction(new Weaken());
             p.AddAction(new GotoLevel());
             foreach (var blessing in Blessings.All)
                 blessing.ApplyMinor(p);

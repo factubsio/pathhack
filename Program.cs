@@ -27,9 +27,10 @@ List<BranchTemplate> templates = [
     new("meaty1", "Meaty 1", Color: ConsoleColor.DarkYellow,
         DefaultAlgorithmPool: [CaveAlgorithm.Worley, CaveAlgorithm.WorleyWarren, CaveAlgorithm.CA]) {
         Linear = [
-            new(new LevelTemplate("jungle_shore", Behaviour: ShoreBehaviour.Instance, Variants: ["ss_shore_beached", "ss_shore_debris"])),
-            new(new LevelTemplate("deep_jungle", Algorithm: CaveAlgorithm.OutdoorCAOpen)),
-            new(Count: 5),
+            new(new LevelTemplate("jungle_shore", Behaviour: ShoreBehaviour.Instance, Variants: [SerpentsSkullLevels.ShoreBeached, SerpentsSkullLevels.ShoreDebris])),
+            new(new LevelTemplate("deep_jungle", Algorithm: CaveAlgorithm.OutdoorCAOpen), Count: 2, CountMax: 3),
+            new(new LevelTemplate("saventh_yhi", Behaviour: SerpentsSkullLevels.SaventhYhiBehaviour, Variants: [SerpentsSkullLevels.SaventhYhi_A])),
+            new(new LevelTemplate("ss_underneath", Algorithm: CaveAlgorithm.Drunkard), Count: 2, CountMax: 3),
         ],
     },
 
@@ -58,8 +59,8 @@ List<BranchTemplate> templates = [
     new("dungeon", "Dungeon", Color: ConsoleColor.Yellow) {
         DepthRange = (18, 22),
         Constraints = [
-            new(new LevelTemplate("sanctuary", Variants: ["sanctuary_1"], NoBranchEntrance: true), Depth: (-1, -1)),
-            new(new LevelTemplate("bigroom", Variants: ["bigroom_rect", "bigroom_oval"]), Depth: (11, 15), Probability: 0),
+            new(new LevelTemplate("sanctuary", Variants: [EndShrineLevels.EndShrine1], NoBranchEntrance: true), Depth: (-1, -1)),
+            new(new LevelTemplate("bigroom", Variants: [BigRoomLevels.Oval, BigRoomLevels.Rectangle]), Depth: (11, 15), Probability: 0),
             new(BranchId: "quest", Depth: (7, 9)),
             new(BranchId: "meaty1", Depth: (1, 3)),
             new(BranchId: "meaty2", Depth: (10, 12)),
