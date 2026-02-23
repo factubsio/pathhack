@@ -448,7 +448,7 @@ public static class Trees
         flags: MonFlags.PrefersCasting,
         components: [
             SimpleDR.Slashing.Lookup(9),
-            new GrantPool("spell_l1", 2, 20),
+            ..GrantPool.StandardLevel1Caster,
             new GrantSpell(BasicLevel1Spells.MagicMissile),
             new GrantAction(new FullAttack("witch", NaturalWeapons.Tendril_1d6, NaturalWeapons.Tendril_1d6)),
             new GrantAction(new NaturalAttack(NaturalWeapons.Tendril_1d6)),
@@ -459,8 +459,7 @@ public static class Trees
         flags: MonFlags.PrefersCasting,
         components: [
             SimpleDR.Slashing.Lookup(13),
-            new GrantPool("spell_l1", 2, 15),
-            new GrantPool("spell_l2", 1, 20),            new GrantSpell(BasicLevel1Spells.MagicMissile),
+            ..GrantPool.StandardLevel2Caster,
             new GrantSpell(BasicLevel2Spells.HoldPerson),
             new GrantSpell(BasicLevel2Spells.ScorchingRay),
             new GrantAction(new FullAttack("witch", NaturalWeapons.Tendril_1d6, NaturalWeapons.Tendril_1d6, NaturalWeapons.Tendril_1d6)),
@@ -472,9 +471,7 @@ public static class Trees
         flags: MonFlags.PrefersCasting,
         components: [
             SimpleDR.Slashing.Lookup(17),
-            new GrantPool("spell_l1", 2, 12),
-            new GrantPool("spell_l2", 2, 15),
-            new GrantPool("spell_l3", 2, 20),
+            ..GrantPool.Spells((2, 12), (2, 15), (2, 20)),
             new GrantSpell(BasicLevel1Spells.MagicMissile),
             new GrantSpell(BasicLevel2Spells.HoldPerson),
             new GrantSpell(BasicLevel2Spells.ScorchingRay),

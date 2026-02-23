@@ -160,7 +160,7 @@ public static class Boggards
         flags: MonFlags.PrefersCasting,
         components: [
             new Equip(MundaneArmory.Club),
-            new GrantPool("spell_l1", 2, 20),
+            ..GrantPool.StandardLevel1Caster,
             new GrantSpell(BasicLevel1Spells.Grease),
             new GrantSpell(BasicLevel1Spells.FalseLifeLesser),
             new GrantAction(new TonguePull(22)),
@@ -172,8 +172,7 @@ public static class Boggards
         flags: MonFlags.PrefersCasting,
         components: [
             new Equip(MundaneArmory.Quarterstaff),
-            new GrantPool("spell_l1", 1, 15),
-            new GrantPool("spell_l2", 1, 20),
+            ..GrantPool.Spells((1, 15), (1, 20)),
             new GrantSpell(BasicLevel1Spells.BurningHands),
             new GrantSpell(BasicLevel1Spells.FalseLifeLesser),
             new GrantSpell(BasicLevel2Spells.AcidArrow),

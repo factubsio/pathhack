@@ -151,7 +151,7 @@ public static class Trolls
         NaturalWeapons.Bite_1d6, NaturalWeapons.Claw_1d4, RegenBrick.FireOrAcid,
         extra: [
             CasterWeapon,
-            new GrantPool("spell_l1", 2, 20),
+            ..GrantPool.StandardLevel1Caster,
             new GrantSpell(BasicLevel1Spells.MagicMissile),
         ],
         color: ConsoleColor.DarkYellow);
@@ -160,8 +160,7 @@ public static class Trolls
         NaturalWeapons.Bite_1d8, NaturalWeapons.Claw_1d6, RegenBrick.FireOrAcid,
         extra: [
             CasterWeapon,
-            new GrantPool("spell_l1", 2, 15),
-            new GrantPool("spell_l2", 1, 25),
+            ..GrantPool.StandardLevel2Caster,
             new GrantSpell(BasicLevel1Spells.BurningHands),
             new GrantSpell(BasicLevel2Spells.AcidArrow),
         ], ac: 0, ab: 0,
@@ -171,8 +170,7 @@ public static class Trolls
         NaturalWeapons.Bite_1d8, NaturalWeapons.Claw_1d6, RegenBrick.FireOrAcid,
         extra: [
             CasterWeapon,
-            new GrantPool("spell_l1", 3, 12),
-            new GrantPool("spell_l2", 2, 20),
+            ..GrantPool.Spells((3, 12), (2, 20), (1, 22)),
             new GrantSpell(BasicLevel1Spells.CureLightWounds),
             new GrantSpell(BasicLevel1Spells.MagicMissile),
             new GrantSpell(BasicLevel1Spells.BurningHands),

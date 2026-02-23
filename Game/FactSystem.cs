@@ -1126,6 +1126,12 @@ public class GrantSpell(SpellBrickBase spell) : LogicBrick
 public class GrantPool(string name, int max, DiceFormula regenRate) : LogicBrick
 {
     public override string Id => $"grant_pool+{name}";
+
+    internal static IEnumerable<GrantPool> Spells(params (int Count, int Cooldown)[] levels) => levels.Select((x, lvl) => new GrantPool($"spell_l{lvl+1}", x.Count, x.Cooldown));
+
+    internal static IEnumerable<GrantPool> StandardLevel1Caster => Spells((2, 20));
+    internal static IEnumerable<GrantPool> StandardLevel2Caster => Spells((2, 15), (1, 25));
+
     protected override void OnFactAdded(Fact fact)
     {
         Log.Write($"on fact added pool {name} to {fact.Entity}");

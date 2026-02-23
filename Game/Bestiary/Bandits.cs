@@ -323,7 +323,7 @@ public static class Bandits
         hp: 4, ac: -1, ab: -1, flags: MonFlags.PrefersCasting, growsInto: () => Mage!,
         components: [
             new Equip(MundaneArmory.Quarterstaff),
-            new GrantPool("spell_l1", 2, 20),
+            ..GrantPool.StandardLevel1Caster,
             new GrantSpell(BasicLevel1Spells.MagicMissile),
             new GrantSpell(BasicLevel1Spells.Grease),
             new GrantAction(AttackWithWeapon.Instance),
@@ -333,8 +333,7 @@ public static class Bandits
         hp: 4, ac: -1, ab: -1, flags: MonFlags.PrefersCasting,
         components: [
             new Equip(MundaneArmory.Quarterstaff),
-            new GrantPool("spell_l1", 2, 15),
-            new GrantPool("spell_l2", 1, 25),
+            ..GrantPool.StandardLevel2Caster,
             new GrantSpell(BasicLevel1Spells.MagicMissile),
             new GrantSpell(BasicLevel1Spells.BurningHands),
             new GrantSpell(BasicLevel1Spells.Shield),
@@ -348,8 +347,7 @@ public static class Bandits
             new Equip(MundaneArmory.Mace),
             MediumArmor,
             new GrantPool("bandit_heal", 3, 12),
-            new GrantPool("spell_l1", 2, 15),
-            new GrantPool("spell_l2", 1, 25),
+            ..GrantPool.StandardLevel2Caster,
             new GrantAction(new BanditHealAlly(d(8) + 4, 5, "bandit_heal", 6)),
             new GrantSpell(BasicLevel1Spells.BurningHands),
             new GrantSpell(BasicLevel2Spells.HoldPerson),

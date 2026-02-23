@@ -172,9 +172,11 @@ public static class CharauKa
     public static readonly MonsterDef Acolyte = CK("charau_ka_acolyte", "charau-ka acolyte", 6, ConsoleColor.DarkYellow,
         flags: MonFlags.PrefersCasting,
         components: [
+            ..GrantPool.StandardLevel1Caster,
+            new GrantSpell(BasicLevel1Spells.Grease),
+            new GrantSpell(BasicLevel1Spells.MagicMissile),
             new Equip(MundaneArmory.Club),
             new GrantAction(AttackWithWeapon.Instance),
-            // TODO: spells, heal ally
         ]);
 
     public static readonly MonsterDef Butcher = CK("charau_ka_butcher", "charau-ka butcher", 7, ConsoleColor.Blue,
@@ -194,7 +196,7 @@ public static class CharauKa
             // TODO: spells, channel negative energy, madness aura
         ]);
 
-    public static readonly MonsterDef Derhii = CK("derhii", "derhii", 7, ConsoleColor.Blue,
+    public static readonly MonsterDef Derhii = CK("derhii", "derhii", 10, ConsoleColor.Blue,
         size: UnitSize.Large,
         group: GroupSize.Small,
         components: [
@@ -205,6 +207,6 @@ public static class CharauKa
         ]);
 
     public static readonly MonsterDef[] All = [
-        Mook, Warrior, Savage, Tracker, Acolyte, Butcher, HighPriest, Derhii,
+        Mook, Warrior, Savage, Tracker, Acolyte, Butcher, Derhii,
     ];
 }
