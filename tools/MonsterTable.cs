@@ -38,8 +38,8 @@ public static class MonsterTable
             .OrderBy(m => m.BaseLevel)
             .ThenBy(m => m.Name);
 
-        Console.WriteLine($"{"Name",-24} {"Lvl",3} {"HP/L",4} {"AC",3} {"AB",3} {"Dmg",3} {"Move",4} {"Size",-8} {"Family",-10} {"Group",-6} Actions");
-        Console.WriteLine(new string('-', 120));
+        Console.WriteLine($"{"Name",-24} {"Lvl",3} {"HP/L",4} {"AC",3} {"AB",3} {"Dmg",3} {"Move",4} {"Size",-8} {"Family",-10} {"Type",-12} {"Group",-6} Actions");
+        Console.WriteLine(new string('-', 135));
 
         foreach (var m in defs)
         {
@@ -60,8 +60,20 @@ public static class MonsterTable
                 GroupSize.LargeMixed => "LM",
                 _ => ""
             };
-            Console.WriteLine($"{m.Name,-24} {m.BaseLevel,3} {m.HpPerLevel,4} {m.AC.Combined,3} {m.AttackBonus,3} {m.DamageBonus,3} {m.LandMove.Value,4} {m.Size,-8} {m.Family?.Name ?? "",-10} {grp,-6} {actStr}");
+            Console.WriteLine($"{m.Name,-24} {m.BaseLevel,3} {m.HpPerLevel,4} {m.AC.Combined,3} {m.AttackBonus,3} {m.DamageBonus,3} {m.LandMove.Value,4} {m.Size,-8} {m.Family?.Name ?? "",-10} {m.CreatureType,-12} {grp,-6} {actStr}");
         }
+    }
+
+    public static void PrintStats()
+    {
+        var defs = AllMonsters.ActuallyAll.DistinctBy(m => m.id).ToList();
+        var byType = defs.GroupBy(m => m.CreatureType).OrderByDescending(g => g.Count());
+
+        Console.WriteLine($"{"CreatureType",-20} {"Count",5}");
+        Console.WriteLine(new string('-', 27));
+        foreach (var g in byType)
+            Console.WriteLine($"{g.Key,-20} {g.Count(),5}");
+        Console.WriteLine($"{"TOTAL",-20} {defs.Count,5}");
     }
 
     public static void PrintItems(string? filter)

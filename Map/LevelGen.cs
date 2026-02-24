@@ -647,8 +647,8 @@ public static partial class LevelGen
             }
         }
 
-        // Monster: 1/3 chance
-        if (Rn2(3) == 0)
+        // Monster: 1/2 chance
+        if (Rn2(2) == 0)
         {
             var pos = ctx.FindLocationInRoom(room, p => level.NoUnit(p) && !level[p].IsStairs);
             if (pos != null)

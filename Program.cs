@@ -211,6 +211,12 @@ if (args.Length > 0 && args[0] == "--monsters")
     return;
 }
 
+if (args.Length > 0 && args[0] == "--monster-stats")
+{
+    MonsterTable.PrintStats();
+    return;
+}
+
 if (args.Length > 0 && args[0] == "--items")
 {
     MonsterTable.PrintItems(args.Length > 1 ? args[1] : null);
