@@ -245,7 +245,7 @@ public static class CookingUtil
 {
     public static void SpillVomit(IUnit? unit, Pos pos)
     {
-        var area = new GreaseArea("vomit", unit, 12, 8) { Tiles = [pos] };
+        var area = new GreaseArea("vomit", unit, 12, 8) { TileSet = [pos] };
         lvl.CreateArea(area);
     }
 

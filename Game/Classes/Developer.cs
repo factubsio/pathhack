@@ -52,7 +52,7 @@ public class GreaseAround() : ActionBrick("grease test")
 
     public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
     {
-        var area = new GreaseArea("Grease", unit, 14, 6) { Tiles = [..unit.Pos.Neighbours().Where(p => !lvl[p].IsStructural)] };
+        var area = new GreaseArea("Grease", unit, 14, 6) { TileSet = [..unit.Pos.Neighbours().Where(p => !lvl[p].IsStructural)] };
         lvl.CreateArea(area);
     }
 }

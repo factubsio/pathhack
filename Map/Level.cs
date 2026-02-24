@@ -214,6 +214,7 @@ public class Level(LevelId id, int width, int height)
     public readonly Dictionary<Pos, Trap> Traps = [];
     public List<Room> Rooms { get; } = [];
     private List<Area> Areas { get; } = [];
+    private List<Swarm> Swarms { get; } = [];
     public List<(Item Corpse, Pos Pos)> Corpses { get; } = [];
     public Pos? StairsUp { get; set; }
     public Pos? StairsDown { get; set; }
@@ -224,6 +225,7 @@ public class Level(LevelId id, int width, int height)
     
     public long LastExitTurn { get; set; }
     public IReadOnlyList<Area> AllAreas => Areas;
+    public IEnumerable<Swarm> AllSwarms => Swarms.Where(s => !s.IsDead);
 
     public SpawnFlags SpawnFlags = SpawnFlags.Default;
     public bool Outdoors;
@@ -695,11 +697,13 @@ public class Level(LevelId id, int width, int height)
     internal void ReapDead() => Units.RemoveAll(x => x.IsDead);
     internal void SortUnitsByInitiative() => Units.Sort((a, b) => b.Initiative.CompareTo(a.Initiative));
 
+    internal void CreateSwarm(Swarm swarm) => Swarms.Add(swarm);
+
     internal void CreateArea(Area area)
     {
         // TODO: same-type areas can overlap — should only apply effects once per type per tile per round
         Areas.Add(area);
-        foreach (var m in area.Tiles.Select(UnitAt))
+        foreach (var m in area.TileSet.Select(UnitAt))
         {
             if (m == null) continue;
             area.HandleMove(m);

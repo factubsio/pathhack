@@ -101,7 +101,7 @@ public class MagmaTrail : LogicBrick
         if (fact.Entity is not Monster m) return;
         if (m.PrevPos == Pos.Invalid || m.PrevPos == m.Pos) return;
         if (g.Rn2(5) != 0) return;
-        var area = new FirePatchArea(m, 8) { Tiles = [m.PrevPos] };
+        var area = new FirePatchArea(m, 8) { TileSet = [m.PrevPos] };
         lvl.CreateArea(area);
     }
 }
@@ -318,7 +318,7 @@ public class MudPool() : CooldownAction("mud pool", TargetingType.None, _ => 12)
     {
         g.YouObserve(unit, $"{unit:The} {VTense(unit, "ooze")} mud everywhere!", "a squelching sound");
         using var tiles = lvl.CollectCircle(unit.Pos, 1, andCenter: true);
-        var area = new MudSlowArea(unit, unit.GetSpellDC(), 8) { Tiles = [.. tiles] };
+        var area = new MudSlowArea(unit, unit.GetSpellDC(), 8) { TileSet = [.. tiles] };
         lvl.CreateArea(area);
     }
 }
@@ -334,7 +334,7 @@ public class LavaPuddle(int radius) : CooldownAction("lava puddle", TargetingTyp
         g.YouObserve(unit, $"{unit:The} {VTense(unit, "spew")} molten rock!", "a hiss of lava");
         using var tiles = lvl.CollectCircle(unit.Pos, radius, andCenter: true);
         Draw.AnimateFlash(tiles, new Glyph('≈', ConsoleColor.Red));
-        var area = new FirePatchArea(unit, 6) { Tiles = [.. tiles] };
+        var area = new FirePatchArea(unit, 6) { TileSet = [.. tiles] };
         lvl.CreateArea(area);
     }
 }

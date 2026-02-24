@@ -1,87 +1,16 @@
 namespace Pathhack.Game.Bestiary;
 
-public enum BreathShape { Cone, Line }
-
-public class BreathWeapon(BreathShape shape, DamageType damageType, ConsoleColor color, string pool = "dragon_breath") : ActionBrick("breath weapon", tags: AbilityTags.Biological)
+public static class DragonBreath
 {
-    public override ActionPlan CanExecute(IUnit unit, object? data, Target target)
+    public static Dice Scaling(int level)
     {
-        if (!unit.HasCharge(pool, out var whyNot)) return new(false, whyNot);
-        if (unit is not Monster m || !m.CanSeeYou) return new(false, "can't see target");
-        if (unit.Pos.ChebyshevDist(target.Pos!.Value) > Range(unit)) return new(false, "out of range");
-
-        if (shape == BreathShape.Line)
-        {
-            var delta = target.Pos!.Value - unit.Pos;
-            if (delta.X != 0 && delta.Y != 0 && Math.Abs(delta.X) != Math.Abs(delta.Y)) return new(false, "not in line");
-        }
-
-        return true;
-    }
-
-    int Range(IUnit unit) => shape == BreathShape.Cone ? 3 + unit.EffectiveLevel / 4 : 5 + unit.EffectiveLevel / 3;
-
-    Dice BreathDamage(IUnit unit)
-    {
-        int lvl = unit.EffectiveLevel;
-        int dice = Math.Max(1, lvl / 2);
-        int faces = lvl >= 16 ? 10 : 8;
+        int dice = Math.Max(1, level / 2);
+        int faces = level >= 16 ? 10 : 8;
         return d(dice, faces);
     }
 
-    static string BreathName(DamageType dt) => dt.SubCat switch
-    {
-        "cold" => "frost",
-        "shock" => "lightning",
-        _ => dt.SubCat,
-    };
-
-    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
-    {
-        unit.TryUseCharge(pool);
-        Pos dir = (target.Pos!.Value - unit.Pos).Signed;
-        int range = Range(unit);
-        string name = BreathName(damageType);
-
-        if (shape == BreathShape.Cone)
-        {
-            using var cone = lvl.CollectCone(unit.Pos, dir, range);
-            Draw.AnimateFlash(cone, new Glyph('≈', color));
-            g.YouObserve(unit, $"{unit:The} breathes {name}!", $"a blast of {name}");
-            HitArea(unit, cone, name);
-        }
-        else
-        {
-            List<Pos> line = [];
-            foreach (var pos in lvl.CollectLine(unit.Pos, dir, range))
-            {
-                if (!lvl[pos].IsPassable) break;
-                line.Add(pos);
-            }
-            if (line.Count > 0)
-                Draw.AnimateBeam(unit.Pos, line[^1], new Glyph('*', color));
-            g.YouObserve(unit, $"{unit:The} breathes {name}!", $"a blast of {name}");
-            HitArea(unit, line, name);
-        }
-    }
-
-    void HitArea(IUnit unit, IEnumerable<Pos> area, string name)
-    {
-        int dc = unit.GetSpellDC();
-        Dice damage = BreathDamage(unit);
-
-        foreach (var pos in area)
-        {
-            var victim = lvl.UnitAt(pos);
-            if (victim.IsNullOrDead() || victim == unit) continue;
-
-            using var ctx = PHContext.Create(unit, Target.From(victim));
-            CheckReflex(ctx, dc, damageType.SubCat);
-            ctx.Damage = [new DamageRoll { Formula = damage, Type = damageType, HalfOnSave = true }];
-            if (victim.IsPlayer) g.pline($"You are engulfed in {name}!");
-            DoDamage(ctx);
-        }
-    }
+    public static BreathAttack Create(BreathShape shape, DamageType damageType, ConsoleColor color) =>
+        new(shape, damageType, color, _ => 12, Scaling, shape == BreathShape.Line ? 6 : 4);
 }
 
 public record DragonColor(
@@ -209,7 +138,7 @@ public static class Dragons
             _ => NaturalWeapons.Claw_1d3,
         };
 
-        BreathWeapon breath = new(color.BreathShape, color.BreathType, color.GlyphColor);
+        BreathAttack breath = DragonBreath.Create(color.BreathShape, color.BreathType, color.GlyphColor);
 
         return new MonsterDef
         {
@@ -231,7 +160,6 @@ public static class Dragons
             Components =
             [
                 AlignmentPeaceful.For(color.Ethical, color.Moral),
-                new GrantPool("dragon_breath", 1, 12),
                 new GrantAction(breath),
                 new GrantAction(new FullAttack("dragon", bite, claw, claw)),
                 EnergyResist.Dynamic(color.BreathType),

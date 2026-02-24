@@ -45,6 +45,7 @@ public sealed class PHContext : IDisposable
     public DiceFormula HealFormula;
     public Modifiers HealModifiers = new();
     public int HealedAmount;
+    public bool MagicalHeal;
     public string? DeathReason;
     public bool SilentCheck;
     public bool SilentDamage;
@@ -334,6 +335,7 @@ public class DamageRoll
 
     public bool HalfOnSave;
     public bool DoubleOnFail;
+    public bool IsAttuned;
 
     public bool Negated { get; private set; }
     public bool Halved { get; private set; }
@@ -515,6 +517,7 @@ public static class DamageTypes
     public static readonly DamageType Anarchic = new("spirit", A_Chaos);
 
     public static readonly DamageType Poison = new("poison", "_");
+    public static readonly DamageType Bleed = new("bleed", "bleed");
 
     public const string A_Good = "good";
     public const string A_Evil = "evil";

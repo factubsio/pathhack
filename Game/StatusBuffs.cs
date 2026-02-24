@@ -123,6 +123,42 @@ public class StunnedBuff : LogicBrick
   protected override object? OnQuery(Fact fact, string key, string? arg) => key == "can_act" && !fact.Entity.Has(CommonQueries.StunImmune) ? false : null;
 }
 
+public class BleedBuff : LogicBrick
+{
+    public static readonly BleedBuff Instance = new();
+    public override string Id => "bleed";
+    public override bool IsBuff => true;
+    public override bool IsActive => true;
+    public override string? BuffName => "Bleed";
+    public override StackMode StackMode => StackMode.ExtendStacks;
+    public override int MaxStacks => 10;
+    public override StatusDisplay StatusDisplayPriority => StatusDisplay.Severe;
+
+    protected override void OnRoundStart(Fact fact)
+    {
+        if (fact.Entity is not IUnit unit) return;
+        if (unit.Has(CommonQueries.BleedImmune)) { fact.Remove(); return; }
+
+        using var ctx = PHContext.Create(fact.Source ?? DungeonMaster.Mook, Target.From(unit));
+        ctx.Damage.Add(new DamageRoll { Formula = d(fact.Stacks, 4), Type = DamageTypes.Bleed });
+        DoDamage(ctx);
+    }
+
+    protected override void OnFactAdded(Fact fact)
+    {
+        if (fact.Entity is IUnit unit)
+            g.YouObserve(unit, $"{unit:The} {VTense(unit, "start")} bleeding!");
+    }
+
+    protected override void OnAfterHealReceived(Fact fact, PHContext ctx)
+    {
+        if (!ctx.MagicalHeal) return;
+        fact.Remove();
+        if (ctx.Target.Unit is { } unit)
+            g.YouObserve(unit, $"{unit:The} {VTense(unit, "staunch")} the wound.");
+    }
+}
+
 public static class CommonQueries
 {
     public const string StunImmune = "stun_immunity";

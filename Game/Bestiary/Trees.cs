@@ -236,7 +236,7 @@ public class SpawnFirePatches(int cd, int range)
     {
         if (target.Unit == null) return;
         g.YouObserve(unit, $"{unit:The} {VTense(unit, "ignite")} the ground beneath {target.Unit:the}!", "a whoosh of flames");
-        var area = new FirePatchArea(unit, 6) { Tiles = [target.Unit.Pos] };
+        var area = new FirePatchArea(unit, 6) { TileSet = [target.Unit.Pos] };
         lvl.CreateArea(area);
     }
 }

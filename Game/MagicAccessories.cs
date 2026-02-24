@@ -83,7 +83,7 @@ public class FastHealingBuff : LogicBrick
     protected override void OnRoundStart(Fact fact)
     {
         if (fact.Entity is not IUnit unit) return;
-        g.DoHeal(unit, unit, 1);
+        g.DoHeal(unit, unit, 1, magical: false);
     }
 }
 

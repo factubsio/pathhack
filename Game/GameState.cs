@@ -488,6 +488,17 @@ public class GameState
         Draw.DrawCurrent();
         Perf.Stop("Draw");
 
+        foreach (var swarm in lvl.AllSwarms)
+            swarm.Tick();
+
+        foreach (var area in lvl.AllAreas)
+            area.Tick();
+        lvl.CleanupAreas();
+
+        Perf.Start();
+        Draw.DrawCurrent();
+        Perf.Stop("Draw");
+
         CleanupFacts();
 
         // OnRoundEnd for all units
@@ -506,10 +517,6 @@ public class GameState
             entity.ExpireFacts();
             LogicBrick.FireOnRoundEnd(entity);
         }
-
-        foreach (var area in lvl.AllAreas)
-            area.Tick();
-        lvl.CleanupAreas();
 
         // tick corpses on floor
         for (int i = lvl.Corpses.Count - 1; i >= 0; i--)
@@ -671,10 +678,11 @@ public class GameState
             Draw.Blit();
     }
 
-    public void DoHeal(IUnit source, IUnit target, DiceFormula formula)
+    public void DoHeal(IUnit source, IUnit target, DiceFormula formula, bool magical = true)
     {
         using var ctx = PHContext.Create(source, new Target(target, target.Pos));
         ctx.HealFormula = formula;
+        ctx.MagicalHeal = magical;
 
         LogicBrick.FireOnBeforeHealGiven(source, ctx);
         LogicBrick.FireOnBeforeHealReceived(target, ctx);

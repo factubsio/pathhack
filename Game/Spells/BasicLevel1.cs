@@ -76,7 +76,7 @@ public static class BasicLevel1Spells
       {
         g.YouObserve(c, "Greasy, yum!", "something squelches");
         var center = t.Pos!.Value;
-        var area = new GreaseArea("Grease", c, c.GetSpellDC(), 6) { Tiles = [..center.CardinalNeighbours(true)] };
+        var area = new GreaseArea("Grease", c, c.GetSpellDC(), 6) { TileSet = [..center.CardinalNeighbours(true)] };
         lvl.CreateArea(area);
       }, TargetingType.Pos, maxRange: 4);
 

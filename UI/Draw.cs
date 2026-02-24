@@ -237,10 +237,12 @@ public static class Draw
 
     public static void DrawLevel(Level level)
     {
-        Area?[,] areaMap = new Area?[level.Width, level.Height];
+        IArea?[,] areaMap = new IArea?[level.Width, level.Height];
         foreach (var area in level.AllAreas.OrderBy(a => a.ZOrder))
-            foreach (var p in area.Tiles)
+            foreach (var p in area.TileSet)
                 areaMap[p.X, p.Y] = area;
+        foreach (var swarm in level.AllSwarms.OrderBy(s => s.ZOrder))
+            areaMap[swarm.Where.X, swarm.Where.Y] = swarm;
 
         for (int y = 0; y < level.Height; y++)
         {

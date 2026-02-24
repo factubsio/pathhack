@@ -787,6 +787,25 @@ public static partial class Input
         }
         else if (key.KeyChar == '>')
         {
+            if (lvl.AllSwarms.FirstOrDefault(s => s.Where == upos) is {} swarm)
+            {
+                if (g.Rn2(3) == 0)
+                {
+                    if (swarm.Damage(1))
+                    {
+                        g.pline("You hack wildly! The swarm fades away.");
+                    }
+                    else
+                    {
+                        g.pline("You hack some of the swarm away from you!");
+                    }
+                }
+                else
+                    g.pline("You try to hack at the swarm, but there are too many!");
+
+                return;
+            }
+
             if (lvl[upos].Type == TileType.StairsDown || lvl[upos].Type == TileType.BranchDown || lvl.HasHole(upos))
                 g.Portal(u);
             else if (lvl[upos].IsStairs)
