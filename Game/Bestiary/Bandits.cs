@@ -104,7 +104,7 @@ public class StealCrestsOnHit : LogicBrick
 
         // fence time: ~1 round per 50 gold, min 3, max 20
         int fenceTime = Math.Clamp((int)(stolen / 50), 3, 20);
-        g.Defer(() => m.AddFact(FencingBuff.Instance, fenceTime));
+        g.Defer(() => m.AddFact(FencingBuff.Instance, null, fenceTime));
     }
 }
 
@@ -155,7 +155,7 @@ public class DazeOnHit : LogicBrick
     {
         if (!ctx.Check!.Result || !ctx.Melee) return;
         if (ctx.Target?.Unit is { } target && !target.Has(CommonQueries.DazeImmune))
-            target.AddFact(DazedBuff.Instance, 1);
+            target.AddFact(DazedBuff.Instance, ctx.Source, 1);
     }
 }
 

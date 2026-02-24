@@ -61,7 +61,7 @@ public static class BasicLevel2Spells
                 ctx.Damage.Add(new() { Formula = d(2, 8), Type = DamageTypes.Force, HalfOnSave = true });
                 DoDamage(ctx);
                 if (!saved && !victim.IsDead)
-                    victim.AddFact(StunnedBuff.Instance.Timed(), 1);
+                    victim.AddFact(StunnedBuff.Instance.Timed(), c, 1);
             }
         }, TargetingType.Pos, maxRange: 6);
 
@@ -93,7 +93,7 @@ public static class BasicLevel2Spells
             if (!CheckWill(ctx, c.GetSpellDC(), "hold person"))
             {
                 g.YouObserve(target, $"{target:The} {VTense(target, "freeze")} in place!");
-                target.AddFact(ParalyzedBuff.Instance.Timed(), 3 + c.CasterLevel / 4);
+                target.AddFact(ParalyzedBuff.Instance.Timed(), c, 3 + c.CasterLevel / 4);
             }
             else
             {
@@ -179,7 +179,7 @@ public static class BasicLevel2Spells
                         if (!CheckFort(sizzleCtx, unit.GetSpellDC(), "acid arrow sizzle"))
                         {
                             g.YouObserve(unit, $"{unit:The} is covered in acid!", "something scream!");
-                            unit.AddFact(AcidBurnBuff.Instance, 4);
+                            unit.AddFact(AcidBurnBuff.Instance, c, 4);
                         }
                     }
                     else
@@ -206,7 +206,7 @@ public class ResistEnergyBuff(string name, DamageType element) : MaintainedBuff(
     {
         base.OnFactAdded(fact);
         if (fact.Entity is IUnit unit)
-            unit.AddFact(EnergyResist.Dynamic(element));
+            unit.AddFact(EnergyResist.Dynamic(element), null);
     }
 
     protected override void OnFactRemoved(Fact fact)

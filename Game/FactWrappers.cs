@@ -36,7 +36,7 @@ public class ApplyWhenEquipped(LogicBrick brick) : LogicBrick
   public override string Id => $"on_equip+{brick.Id}";
   public static ApplyWhenEquipped For(LogicBrick brick) => WrapperHelper<ApplyWhenEquipped, LogicBrick>.For(brick, brick => new(brick));
 
-  protected override void OnEquip(Fact fact, PHContext ctx) => ctx.Source?.AddFact(brick);
+  protected override void OnEquip(Fact fact, PHContext ctx) => ctx.Source?.AddFact(brick, null);
 
   protected override void OnUnequip(Fact fact, PHContext ctx) => ctx.Source?.RemoveStack(brick);
 }
@@ -56,7 +56,7 @@ public class ApplyAfflictionOnHit(AfflictionBrick affliction) : LogicBrick
     using var saveCtx = PHContext.Create(ctx.Source!, Target.From(target));
     bool saved = CreateAndDoCheck(saveCtx, affliction.SaveKey, affliction.DC, affliction.BuffName ?? "unknown_affliction");
     if (!saved)
-      target.AddFact(affliction);
+      target.AddFact(affliction, ctx.Source);
   }
 }
 
@@ -65,7 +65,7 @@ public class TimedFact(LogicBrick brick) : LogicBrick
     public override string Id => $"timed+{brick.Id}";
     public static TimedFact For(LogicBrick brick) => WrapperHelper<TimedFact, LogicBrick>.For(brick, brick => new(brick));
 
-    protected override void OnFactAdded(Fact fact) => fact.Entity.AddFact(brick);
+    protected override void OnFactAdded(Fact fact) => fact.Entity.AddFact(brick, fact.Source);
 
     protected override void OnFactRemoved(Fact fact) => fact.Entity.RemoveStack(brick);
 }

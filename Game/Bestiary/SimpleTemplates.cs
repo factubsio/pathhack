@@ -108,7 +108,7 @@ public class ZombieTemplate() : MonsterTemplate("zombie")
             if (ctx.Target?.Unit is not Monster unit) return;
             if (TemplateHelper.CannotBeUndead.Contains(unit.Def.CreatureType)) return;
             if (unit.FindFactOfType<RegenBrick>() != null) return;
-            unit.AddFact(ZombiePlagueBuff.Instance);
+            unit.AddFact(ZombiePlagueBuff.Instance, ctx.Source);
         }
 
         public static readonly ZombieFacts Instance = new();

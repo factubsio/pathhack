@@ -127,7 +127,7 @@ public class SpiderVenom(int dc) : AfflictionBrick(dc, "poison")
         if (stage >= 5)
         {
             int duration = (stage - 3) / 2;
-            unit.AddFact(ParalyzedBuff.Instance.Timed(), duration);
+            unit.AddFact(ParalyzedBuff.Instance.Timed(), null, duration);
             g.YouObserve(unit, $"{unit:The} {VTense(unit, "seize")} up!");
         }
     }

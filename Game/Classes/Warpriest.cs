@@ -33,19 +33,19 @@ public static class Fervor
             switch (picks[0])
             {
                 case "Flaming":
-                    weapon.AddFact(WeaponDamageRider.FlamingD8, 12);
+                    weapon.AddFact(WeaponDamageRider.FlamingD8, null, 12);
                     break;
                 case "Freeze":
-                    weapon.AddFact(WeaponDamageRider.FreezeD8, 12);
+                    weapon.AddFact(WeaponDamageRider.FreezeD8, null, 12);
                     break;
                 case "Shock":
-                    weapon.AddFact(WeaponDamageRider.ShockD8, 12);
+                    weapon.AddFact(WeaponDamageRider.ShockD8, null, 12);
                     break;
                 case "Holy":
-                    weapon.AddFact(WeaponDamageRider.HolyD8, 12);
+                    weapon.AddFact(WeaponDamageRider.HolyD8, null, 12);
                     break;
                 case "Unholy":
-                    weapon.AddFact(WeaponDamageRider.UnholyD8, 12);
+                    weapon.AddFact(WeaponDamageRider.UnholyD8, null, 12);
                     break;
             }
         }
@@ -328,7 +328,7 @@ public static partial class ClassDefs
                 var weapon = ItemGen.GenerateItem(weaponDef, depth: 1, maxPotency: 1, propertyRunes: false);
                 p.Inventory.Add(weapon).Identify();
                 p.Equip(weapon);
-                p.AddFact(new GrantProficiency(p.Deity.FavoredWeapon, ProficiencyLevel.Trained));
+                p.AddFact(new GrantProficiency(p.Deity.FavoredWeapon, ProficiencyLevel.Trained), null);
             }
             var armor = ItemGen.GenerateItem(MundaneArmory.LeatherArmor);
             p.Inventory.Add(armor).Identify();

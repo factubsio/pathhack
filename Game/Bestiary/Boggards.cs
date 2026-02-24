@@ -63,7 +63,7 @@ public class Croak(int cd) : CooldownAction("Croak", TargetingType.None, _ => cd
 
             using var ctx = PHContext.Create(unit, Target.From(tgt));
             if (!CheckWill(ctx, dc, "croak"))
-                tgt.AddFact(ConfusedBuff.Instance, duration: 3);
+                tgt.AddFact(ConfusedBuff.Instance, unit, duration: 3);
         }
     }
 }

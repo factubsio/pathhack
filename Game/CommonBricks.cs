@@ -250,7 +250,7 @@ public class ApplyFactOnAttackHit(LogicBrick toApply, int? duration = null) : Lo
     protected override void OnAfterAttackRoll(Fact fact, PHContext context)
     {
         if (context.Check!.Result)
-            context.Target?.Unit?.AddFact(toApply, duration);
+            context.Target?.Unit?.AddFact(toApply, context.Source, duration);
     }
 }
 

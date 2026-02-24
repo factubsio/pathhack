@@ -147,7 +147,7 @@ public static class Progression
         var entry = p.Class?.Progression.ElementAtOrDefault(newLevel - 1);
         if (entry != null)
             foreach (var brick in entry.Grants)
-                p.AddFact(brick);
+                p.AddFact(brick, null);
 
         p.CharacterLevel = newLevel;
         int hpGain = p.Class!.HpPerLevel;

@@ -1063,7 +1063,7 @@ public class GameState
             // transfer marked facts to corpse (e.g. plague etc)
             foreach (var fact in m2.QueryFacts("transfer_to_corpse"))
             {
-                corpse.AddFact(fact.Brick);
+                corpse.AddFact(fact.Brick, fact.Source);
             }
 
             corpse.RespawnTemplate ??= m2.Query("respawn_template") as MonsterTemplate;

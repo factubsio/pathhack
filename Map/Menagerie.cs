@@ -102,7 +102,7 @@ public static class Menagerie
             Pos center = new(col * cellW + cellW / 2, row * cellH + cellH / 2);
             var mon = Monster.Spawn(monsters[idx], "menagerie");
             mon.IsAsleep = true;
-            mon.AddFact(StasisBuff.Instance);
+            mon.AddFact(StasisBuff.Instance, null);
             level.PlaceUnit(mon, center);
 
             // place release trap one tile south of center (or north if no room)

@@ -366,7 +366,7 @@ public static class PHMonitor
             if (!MasonryYard.TryResolve(brickId, out var brick)) { Log.Write($"monitor: unknown brick '{brickId}'"); return; }
             int? duration = cmd["duration"]?.GetValue<int>();
             int stacks = cmd["stacks"]?.GetValue<int>() ?? 1;
-            u.AddFact(brick!, duration, stacks);
+            u.AddFact(brick!, null, duration, stacks);
         }
         else if (cmd["spell"]?.GetValue<string>() is { } spellName)
         {

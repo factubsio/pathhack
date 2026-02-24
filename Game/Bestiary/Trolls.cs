@@ -30,7 +30,7 @@ public class ShedArmorAction() : ActionBrick("Shed Armor", tags: AbilityTags.Ben
         int missing = unit.HP.Max - unit.HP.Current;
         int heal = missing * 7 / 10;
         g.DoHeal(unit, unit, heal);
-        unit.AddFact(ShedArmorDebuff.Instance);
+        unit.AddFact(ShedArmorDebuff.Instance, null);
         g.YouObserve(unit, $"{unit:The} roars in pain then rips off its armor, it looks haler... too hale, where are those arms coming from???", "a roar of pain and anger");
     }
 }

@@ -42,7 +42,7 @@ public class DazeAction(int range, int dc, string pool) : ActionBrick("Daze")
         {
             g.pline($"{msg}!");
         }
-        u.AddFact(DazedBuff.Instance, 1);
+        u.AddFact(DazedBuff.Instance, unit, 1);
     }
 }
 

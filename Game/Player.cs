@@ -221,7 +221,7 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
 
         p.BaseAttributes = cls.StartingStats;
 
-        p.AddFact(PlayerSkills.Instance);
+        p.AddFact(PlayerSkills.Instance, null);
         p.AddAction(DismissAction.Instance);
 
         // Apply ancestry boosts

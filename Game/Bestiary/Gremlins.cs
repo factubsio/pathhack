@@ -28,7 +28,7 @@ public class CurseWeaponInRange(int range) : ActionBrick("Curse Weapon")
     {
         if (!unit.TryUseCharge(Resource)) return;
         var weapon = u.GetWieldedItem();
-        weapon.AddFact(WeaponCurse.Instance, duration: CurseDuration);
+        weapon.AddFact(WeaponCurse.Instance, unit, duration: CurseDuration);
         g.YouObserve(unit, $"{unit:The} curses your {weapon:bare}!", $"something curse your {weapon:bare}!", 100);
     }
 }
@@ -307,7 +307,7 @@ public class VeryDrunkJinkinBrain : MonsterBrain
                 // yucky yucky
                 if (CheckFort(ctx, 14, "nauseated")) return true;
                 g.YouObserve(tgt, $"{tgt:The} can barely hold {tgt:own} own lunch down.");
-                tgt.AddFact(NauseatedBuff.Instance.Timed(), duration: 4);
+                tgt.AddFact(NauseatedBuff.Instance.Timed(), m, duration: 4);
             }
         }
         else if (roll < 50)

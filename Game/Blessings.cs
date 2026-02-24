@@ -86,7 +86,7 @@ public static class Blessings
         Description = "Radiate holy light that burns the unholy.",
         ApplyMinor = unit =>
         {
-            unit.AddFact(LogicHelpers.ModifierBrick("light_radius", ModifierCategory.UntypedStackable, 1, "sun"));
+            unit.AddFact(LogicHelpers.ModifierBrick("light_radius", ModifierCategory.UntypedStackable, 1, "sun"), null);
             unit.AddAction(new SunBlessingMinor());
         }
     };
@@ -96,7 +96,7 @@ public static class Blessings
         Id = "luck",
         Name = "Luck",
         Description = "Fortune favors you.",
-        ApplyMinor = unit => unit.AddFact(new LuckBlessingPassive())
+        ApplyMinor = unit => unit.AddFact(new LuckBlessingPassive(), null)
     };
 
     public static readonly BlessingDef Darkness = new()
@@ -135,7 +135,7 @@ public class FireBlessingMinor() : BlessingAction("Fire Blessing")
     {
         int duration = (unit is Player p ? p.CharacterLevel : 1) + 5 + g.Rn1(1, 10);
         var weapon = unit.GetWieldedItem();
-        weapon?.AddFact(WeaponDamageRider.FlamingD4, duration: duration);
+        weapon?.AddFact(WeaponDamageRider.FlamingD4, null, duration: duration);
     }
 }
 
@@ -159,7 +159,7 @@ public class WarBlessingAction() : BlessingAction("War Blessing")
 {
     protected override void Execute(IUnit unit, Target target, object? plan = null)
     {
-        unit.AddFact(WarBlessingBuff.Instance, 20);
+        unit.AddFact(WarBlessingBuff.Instance, null, 20);
         g.pline("To war!");
     }
 }
@@ -169,7 +169,7 @@ public class StrengthBlessingMinor() : BlessingAction("Strength (minor)")
     protected override void Execute(IUnit unit, Target target, object? plan = null)
     {
         g.pline("Divine might surges through you!");
-        unit.AddFact(StrengthBuff.Plus4.Timed(), duration: d(10).Roll() + 10);
+        unit.AddFact(StrengthBuff.Plus4.Timed(), null, duration: d(10).Roll() + 10);
     }
 }
 
@@ -191,7 +191,7 @@ public class LawBlessingMinor() : BlessingAction("Law Blessing (minor)")
     protected override void Execute(IUnit unit, Target target, object? plan = null)
     {
         g.pline("Law buff on");
-        unit.AddFact(LawBuff.Instance, duration: 10);
+        unit.AddFact(LawBuff.Instance, null, duration: 10);
     }
 }
 
@@ -317,7 +317,7 @@ public class DarknessBlessingMinor() : BlessingAction("Darkness Blessing", Targe
         {
             var victim = lvl.UnitAt(pos);
             if (victim.IsNullOrDead() || victim == unit) continue;
-            victim.AddFact(BlindBuff.Instance.Timed(), duration: BlindDuration);
+            victim.AddFact(BlindBuff.Instance.Timed(), unit, duration: BlindDuration);
             if (unit.IsPlayer)
                 g.pline($"{victim:The} is blinded!");
         }

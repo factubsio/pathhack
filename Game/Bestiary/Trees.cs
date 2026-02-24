@@ -145,7 +145,7 @@ public class ConfusingMoan(int cd, int range)
         int dc = unit.GetSpellDC();
         using var ctx = PHContext.Create(unit, Target.From(target.Unit));
         if (!CheckWill(ctx, dc, "confusing moan"))
-            target.Unit.AddFact(ConfusedBuff.Instance, duration: 3);
+            target.Unit.AddFact(ConfusedBuff.Instance, unit, duration: 3);
     }
 }
 
@@ -164,7 +164,7 @@ public class DazeAura : LogicBrick
             if (tgt == null || tgt.Has(CommonQueries.DazeImmune)) continue;
             using var ctx = PHContext.Create(unit, Target.From(tgt));
             if (!CheckWill(ctx, dc, "daze aura"))
-                tgt.AddFact(DazedBuff.Instance, 1);
+                tgt.AddFact(DazedBuff.Instance, unit, 1);
         }
     }
 }
@@ -330,7 +330,7 @@ public class HeartrotDisease() : AfflictionBrick(16, "fortitude")
         var stage = Stage(fact);
         if (stage < 2 || g.Rn2(stage >= 4 ? 3 : 6) != 0) return;
         if (unit.Has(CommonQueries.DazeImmune)) return;
-        unit.AddFact(DazedBuff.Instance, 1);
+        unit.AddFact(DazedBuff.Instance, fact.Source, 1);
     }
 }
 

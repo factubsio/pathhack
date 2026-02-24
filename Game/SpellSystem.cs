@@ -46,7 +46,7 @@ public class ActivateMaintainedSpell(string name, int level, string description,
     if (unit.TryUseCharge(Pool))
     {
       act(unit);
-      unit.AddFact(buff);
+      unit.AddFact(buff, null);
     }
   }
 }

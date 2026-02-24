@@ -93,7 +93,7 @@ public static class BasicLevel3Spells
       (c, _) =>
       {
         int pool = 10 + c.CasterLevel * 5;
-        c.AddFact(brick, pool);
+        c.AddFact(brick, c, pool);
         g.YouObserveSelf(c, $"You feel protected from {type.SubCat}. ({pool} absorbed)", $"{c:The} shimmers with protection.", "a warm hum");
       }, tags: AbilityTags.Beneficial);
 }

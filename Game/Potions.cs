@@ -31,11 +31,11 @@ public static partial class Potions
                 if (g.YouObserve(user, $"{user:The} {VTense(user, "feel")} better.")) def.SetKnown();
                 break;
             case var _ when def == Speed:
-                user.AddFact(SpeedBuff.Instance.Timed(), 8 + g.Rn2(10));
+                user.AddFact(SpeedBuff.Instance.Timed(), null, 8 + g.Rn2(10));
                 if (g.YouObserve(user, $"{user:The} {VTense(user, "speed")} up!")) def.SetKnown();
                 break;
             case var _ when def == Paralysis:
-                user.AddFact(ParalyzedBuff.Instance.Timed(), 5 + g.Rn2(10));
+                user.AddFact(ParalyzedBuff.Instance.Timed(), null, 5 + g.Rn2(10));
                 if (g.YouObserve(user, $"{user:The} {VTense(user, "freeze")} in place!")) def.SetKnown();
                 break;
             case var _ when def == Antivenom:
@@ -53,7 +53,7 @@ public static partial class Potions
                     g.pline("You feel briefly nauseous.");
                 break;
             case var _ when def == Omen:
-                user.AddFact(OmenBuff.Instance, 3);
+                user.AddFact(OmenBuff.Instance, null, 3);
                 if (user.IsPlayer) g.pline("You glimpse possible futures.");
                 def.SetKnown();
                 break;
@@ -70,7 +70,7 @@ public static partial class Potions
                 }
                 break;
             case var _ when def == LesserInvisibility:
-                user.AddFact(LesserInvisibilityBuff.Instance.Timed(), 20 + g.Rn2(20));
+                user.AddFact(LesserInvisibilityBuff.Instance.Timed(), null, 20 + g.Rn2(20));
                 if (g.YouObserve(user, $"{user:The} {VTense(user, "fade")} from view.")) def.SetKnown();
                 break;
         }

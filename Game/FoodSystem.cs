@@ -219,7 +219,7 @@ public class CookCarefulActivity : Activity
 
             if (Foods.IsTainted(_corpse))
             {
-                u.AddFact(FoodPoisoning.Instance, count: 2);
+                u.AddFact(FoodPoisoning.Instance, null, count: 2);
                 g.pline("Your tummy starts rumbling.");
             }
             else if (Foods.IsSpoiled(_corpse))
@@ -227,7 +227,7 @@ public class CookCarefulActivity : Activity
                 using var ctx = PHContext.Create(DungeonMaster.Mook, Target.From(u));
                 if (!CheckFort(ctx, 11, "food poisoning"))
                 {
-                    u.AddFact(FoodPoisoning.Instance, count: 1);
+                    u.AddFact(FoodPoisoning.Instance, null, count: 1);
                     g.pline("You are not sure that was a great idea.");
                 }
             }

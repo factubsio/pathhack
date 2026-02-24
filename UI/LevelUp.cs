@@ -20,7 +20,7 @@ public static partial class Input
 
         if (classEntry != null)
             foreach (var brick in classEntry.Grants)
-                u.AddFact(brick);
+                u.AddFact(brick, null);
 
         if (classEntry?.Selections != null)
         {
@@ -130,7 +130,7 @@ public static partial class Input
             {
                 u.TakenFeats.Add(feat.id);
                 foreach (var brick in feat.Components)
-                    u.AddFact(brick);
+                    u.AddFact(brick, null);
             }
         }
     }

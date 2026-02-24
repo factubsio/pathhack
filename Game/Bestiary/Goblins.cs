@@ -57,7 +57,7 @@ public class WarChant(string pool = "war_chant") : ActionBrick("Goblin War Chant
             if (ally is not Monster m) continue;
             if (m.Def.Family != family) continue;
             if (unit.Pos.ChebyshevDist(ally.Pos) > Range) continue;
-            m.AddFact(WarChantBuff.Instance, duration: Duration);
+            m.AddFact(WarChantBuff.Instance, unit, duration: Duration);
         }
     }
 }

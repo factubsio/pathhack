@@ -214,7 +214,7 @@ public abstract class AfflictionBrick(int dc, string? tag = null) : LogicBrick<A
     if (saved)
       unit.RemoveStack(this);
     else
-      unit.AddFact(this);
+      unit.AddFact(this, fact.Source);
   }
 
   protected virtual void OnCured(IUnit unit) => g.pline($"{unit:The} {VTense(unit, "feel")} better.");
@@ -314,6 +314,6 @@ public class DazedBuff : LogicBrick
     protected override void OnFactRemoved(Fact fact)
     {
         if (fact.Entity is IUnit unit)
-            g.Defer(() => unit.AddFact(DazeImmunity.Instance, 4));
+            g.Defer(() => unit.AddFact(DazeImmunity.Instance, null, 4));
     }
 }

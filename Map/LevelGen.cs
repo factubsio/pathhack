@@ -721,7 +721,7 @@ public static partial class LevelGen
 
             // Find interior tile adjacent to door
             var shk = Monster.Spawn(EconomySystem.Shopkeeper, "shop");
-            var fact = shk.AddFact(ShopkeeperBrick.Instance);
+            var fact = shk.AddFact(ShopkeeperBrick.Instance, null);
             var state = fact.As<ShopState>();
             state.Type = ShopTypes.Roll();
             shk.ProperName = ShopTypes.PickName(state.Type);

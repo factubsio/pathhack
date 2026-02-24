@@ -1,0 +1,193 @@
+note: a lot of the heals-from/"vulnerable to" is a bit yolo, we may need to tweak the dmg system
+
+
+Wax (CR 3) — fire rider on slam, fire slows, cold heals, vulnerable to fire
+  notes: clean fit.
+
+
+Carrion (CR 4) — stench aura (nauseate), disease on hit, cold/fire slows, electricity hastes
+  notes: stench aura via OnRoundStart checking neighbours. disease on hit is a bit harsh?
+
+
+Junk (CR 4) — discorporates into swarm, disease (tetanus), fast healing near debris
+  notes: on death summon swarm (need swam but under construction)
+
+
+Mask (CR 4) — ranged mind control (mask on face: dominate or suffocate), swarm form, sees invisible
+  notes: how do we dominate?
+
+
+Ice (CR 5) — cold breath, cold contact damage (hurts melee attackers), death explosion, electricity slows, cold heals, vulnerable to fire
+  notes: clean fit.
+
+
+Blood (CR 6) — amorphous (squeeze through gaps), blood drain (heals self), grab+constrict, vulnerable to bleed
+  notes: grab constrict, heal on constrict damage
+
+
+Wood (CR 6) — splinter burst AoE, cold heals, vulnerable to fire
+  notes: clean fit.
+
+
+Flesh (CR 7) — berserk (cumulative 1%/round, attacks anything), cold/fire slows, electricity heals
+  notes: berserk can be a +ab, +dmg, % chance to attach not-the-you
+
+
+Bone (CR 8) — bone prison (ranged grapple cage), healing magic slows, negative energy heals, raise dead removes DR+immunity
+  notes: bone prison is immobilize-at-range, trap, similar to web (we already have some stuff that summons webs, do we new trap type for flavour), raise dead on itsel fis simple, need to monster def np
+
+
+Glass (CR 8) — spell reflection 1/1d4 rounds, bleed, dazzle aura, cold slows, fire heals
+  notes: we need to implemebt bleed, we need to make sure PHContext can carry "this is a spell", dazzle aura can be a daze with DC
+
+
+Marrowstone (CR 8) — necrotic aura (buffs nearby undead), negative energy slam damage, kills create ghouls, positive energy disables abilities
+  notes: on dealing damage -> create weak ghoul
+
+
+Sand (CR 9) — grab+constrict, disarms weapons on hit, sand blast cone (fire+blunt+blind), vulnerable to electricity
+  notes: disarm needs unequip-and-drop mechanic, think relatively simple
+
+
+Coral (CR 9) — bleed, fast healing in water, water spells heal, transmute rock to mud slows
+  notes: rock to mud should be an active IT has, if target is next to wall remove wall and add some mud area pools
+
+
+Alchemical (CR 9) — random element on hit (acid/cold/elec/fire/sicken/entangle), ranged bombs (8d6 random), splash damage when meleed, vulnerable to sonic
+  notes: think pretty simple, bomb damage way too high
+
+
+Clay (CR 10) — cursed wounds (healing blocked), haste self, berserk, disintegrate slows, acid heals
+  notes: cursed wounds we can do as a disease so you make multiple DC to cure it, haste possibly not?
+
+
+Lead (CR 10) — poison cloud when hit through DR, anti-divination aura, fire disables abilities, electricity heals
+  notes: on damage taken spawn area on player, fine
+
+
+Magnetite (CR 10) — magnetic pull aura (30ft), disarm on hit, grapple metal-wearers, fire disables abilities, electricity heals
+  notes: pull hero in like sticky tongue, check if armor/weapon is iron, 
+
+
+Equine Bone (CR 10) — bone golem variant, horse-shaped, trample, staggering stomp
+  notes: stomp aoe is simple, trample we can do as "when adjacent do some extra damage to the target on round end"
+
+
+Panthereon (CR 11) — clay variant, cursed wounds, eye beam (fire+blind), haste self, true seeing, electricity heals
+  notes: eye beam is a line attack, fine. true seeing fine
+
+
+Stone (CR 11) — slow aura burst, transmute rock to mud slows, transmute mud to rock heals, stone to flesh removes immunity 1 round
+  notes: mud is easy, slow is cd action as well
+
+
+Crystal (CR 11) — psychic magic (mind thrust, explode head), psychic amplification aura, shatter slows, fire heals
+  notes: mind thrus tis ranged attack, amplification is eh
+
+
+Robot (CR 11) — electricity shockwave AoE, rend constructs, electricity hastes+berserks
+  notes: electricity shockwave, otherwise yolo
+
+
+Clockwork (CR 12) — wall of gears form (15d6 to pass through), grind on grapple, death burst, grease hastes, rust staggers
+  notes: moveing in an adjancent square should do damage (not 15d6 though?)
+
+
+Obsidian (CR 12) — heavy bleed (2d6), jagged body (bleed on melee contact), obsidian spray cone, death explosion, fire sharpens claws, cold suppresses bleed
+  notes: bleed yeah, bleed on melee yeah, cone yeah, death yeah
+
+
+Fossil (CR 12) — petrification on hit (Dex drain to stone), transmute rock to mud slows, stone to flesh removes DR+petrify
+  notes: petrification is a new system, do we want to do actual petrififcaciton nh style?
+
+
+Iron (CR 13) — poison breath, powerful blows (1.5x str, 19-20 crit), electricity slows, fire heals
+  notes: poison line, pretty much nh
+
+
+Shadow (CR 14) — shadow aura (dims light 60ft, +6 deflection AC, counters light/dark spells), Str damage breath, stealth in dim light, air walk
+  notes: light-reduction aura needs light system interaction. Str damage needs ability damage system.
+
+
+Brass (CR 14) — incendiary cloud breath, death explosion, sees invisible, cold slows, fire heals
+  notes: incendiary cloud is an Area (acter the breath). clean fit.
+
+
+Inubrix (CR 14) — phases through iron/steel (ignores metal armor), negative energy breath (stagger+neg level), razor claws 18-20 crit, air walk, true seeing, fire slows, cold heals
+  notes: need level drain, maybe give him armor shred on claws? too mean? needs erosion?
+
+
+Cannon (CR 15) — ranged cannon (6d6, 100ft range), blasting critical (crit slam = free cannon shot), water disables cannon
+  notes: yeah big boy, slow, cd?
+
+
+Gold (CR 15) — prismatic surge on hit (random: fire/acid/elec/poison/petrify/insanity), death fumes, cold slows, fire reduces DR but hastes
+  notes: for nwo we can do damage, we'll think about petrify
+
+
+Mithral (CR 16) — fluid form (30ft reach, squeeze through cracks), quickness (extra move action), evasion, Spring Attack, slow spell removes quickness, haste spell heals
+  notes: long-neck (attack at range), quick is fine
+
+
+Dragonhide (CR 16) — breath weapon (type varies by dragon head), berserk (2%/round, rampages with +8 str), modular grafts
+  notes: randomly pick a head type on spawn
+
+
+Behemoth (CR 17) — Colossal, castle on back, earthquake stomp, trample, transmute rock to mud slows, acid heals
+  notes: multi-tile monster is a big system. earthquake stomp and trample like the horse one
+
+
+Ioun (CR 17) — sockets ioun stones for powers+HP, steals orbiting ioun stones from nearby creatures, force missile surge
+  notes: nahhhh
+
+
+Noqual (CR 18) — anti-magic aura (60ft concentration check), spell sunder on hit (dispels buffs), construct bane, spell absorption heals+hastes, electricity slows
+  notes: anti-magic aura is cool, need to work out how,. spell sunder is cool need to implement dispell in general
+
+
+Viridium (CR 18) — disease on all attacks (leprosy: Cha+Con), 4 attacks, heal spell damages it, remove disease staggers
+  notes: pretty simple
+
+
+Adamantine (CR 19) — indestructible (fast healing at 0hp, needs vorpal to kill), armor sunder on crit, transmute metal to wood slows
+  notes: hard gate on vorpal weapon. could be frustrating without one. fast healing at 0hp means literally unkillable otherwise.
+
+
+Quantium (CR 20) — 240ft line (30d6 mixed energy), paired golems that know each other's location, cold or electricity slows (varies by color)
+  notes: seems cool, need a bit of special brain maybe, probably a flag "always spawn in pairs", on round start fire a beam and add a fact to the other it already has a beam
+
+
+Quintessence (CR 20) — energy drain, soul siphon (kills anything at negative HP within 100ft, heals golem), fast healing 20, fly
+  notes: not sure if this is meaningful for us, can steal spell slots and drain hp maybe?
+
+
+Templates: IGNORE FOR NOW:
+
+Energized (+2 CR) — elemental aura, energy discharge AoE, energy damage on attacks, applies to any golem
+  notes: clean MonsterTemplate.
+
+Fiend-Infused (CR 13) — template, hellfire touch (half fire half unholy), berserk liberation (60ft explosion), slow aura, fast healing, intelligent
+  notes: template via MonsterTemplate. "intelligent" — does AI differentiate?
+
+
+Hell Engine (+1 CR) — hellfire breath (fire+unholy), banishing strike (dismisses extraplanar), summon devils, contract powered weakness
+  notes: banishing strike — are there extraplanar units? summon devils needs summon system.
+
+
+Sentient Wax (CR 4) — wax golem that gained intelligence, class levels, impersonates a person, tries to kill and replace the original
+  notes: impersonation/replacement is a narrative mechanic, hard to express in nh.
+
+
+Toy (CR 5) — clockwork junk golem variant, disease, discorporate into clockwork swarm
+  notes: same swarm issue as Junk.
+
+
+Recurring system dependencies:
+- Ability damage/drain (Str, Dex, etc.)
+- Petrification system
+- Level drain
+- Armor/weapon material tracking
+- Forced movement
+- Swarm form / discorporate
+- Berserk AI (attack anything including allies)
+- Transmute rock/mud terrain

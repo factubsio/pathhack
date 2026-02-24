@@ -56,7 +56,7 @@ public static partial class GeneratableArtifacts
             for (int i = 0; i < add; i++)
             {
                 if ((existing?.Stacks ?? 0) >= 10) break;
-                target.AddFact(ObliterationDebuff.Instance);
+                target.AddFact(ObliterationDebuff.Instance, ctx.Source);
                 existing ??= target.FindFact(ObliterationDebuff.Instance);
             }
         }
@@ -164,7 +164,7 @@ public static partial class GeneratableArtifacts
                 g.YouObserveSelf(wielder,
                     "Ovinrbaane's fury overwhelms you!",
                     $"{wielder:The} staggers, eyes glazed!");
-                wielder.AddFact(DazedBuff.Instance, 1);
+                wielder.AddFact(DazedBuff.Instance, wielder, 1);
             }
         }
     }
@@ -232,7 +232,7 @@ public static partial class GeneratableArtifacts
             var dir = Input.PickDirection();
             if (dir == null) return;
 
-            item.AddFact(DawnflowerBeamIsSleeping.Instance, 30);
+            item.AddFact(DawnflowerBeamIsSleeping.Instance, null, 30);
             g.pline("Dawn's light shoots forth!");
 
             foreach (var step in Beam.Fire(wielder.Pos, dir.Value, canBounce: false, g.RnRange(6, 10)))
@@ -331,8 +331,8 @@ public static partial class GeneratableArtifacts
             var existing = wielder.FindFact(SovereignBuff.Instance);
             if (existing != null && existing.Stacks >= 4) return;
 
-            target.AddFact(SovereignMarker.Instance, 4);
-            wielder.AddFact(SovereignBuff.Instance.Timed(), 4);
+            target.AddFact(SovereignMarker.Instance, wielder, 4);
+            wielder.AddFact(SovereignBuff.Instance.Timed(), wielder, 4);
 
             g.YouObserveSelf(wielder,
                 "You feel Sovereign's authority grow!",

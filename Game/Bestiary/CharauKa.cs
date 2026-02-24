@@ -35,7 +35,7 @@ public class AerialCharge() : CooldownAction("charau_ka:aerial_charge", Targetin
 
         g.YouObserve(unit, $"{unit:The} charges {target.Unit!:the} through the air!", "a whoosh, a stomping crash");
         DoWeaponAttack(unit, target.Unit!, unit.GetWieldedItem(), attackBonus: 2);
-        unit.AddFact(ChargeLowAc.Instance, 2);
+        unit.AddFact(ChargeLowAc.Instance, null, 2);
 
         unit.Energy -= ActionCosts.OneAction.Value;
     }
@@ -66,7 +66,7 @@ public class ShriekingFrenzyBuff : LogicBrick
                 g.YouObserve(unit, $"{unit:The} staggers, exhausted.");
                 g.Defer(() =>
                 {
-                    unit.AddFact(DazedBuff.Instance, 2);
+                    unit.AddFact(DazedBuff.Instance, null, 2);
                 });
             }
         }
@@ -86,7 +86,7 @@ public class ShriekingFrenzyPassive : LogicBrick
         if (unit.HP.Current == unit.HP.Max) return;
         if (unit.CannotAct) return;
 
-        unit.AddFact(ShriekingFrenzyBuff.Instance, 3);
+        unit.AddFact(ShriekingFrenzyBuff.Instance, null, 3);
         g.YouObserve(unit, $"{unit:The} begins shrieking wildly!", "a terrible shrieking");
     }
 }

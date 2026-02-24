@@ -273,7 +273,7 @@ public static class ItemGen
             if (item.PropertyRunes.Count >= item.PropertySlots) return false;
         }
 
-        var fact = item.AddFact(rune);
+        var fact = item.AddFact(rune, null);
         if (fundamental)
             item.Fundamental = fact;
         else

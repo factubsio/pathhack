@@ -312,7 +312,7 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
     {
         Item item = new(def) { Count = count };
         if (def is WeaponDef { Reach: > 1 })
-            item.AddFact(ReachAttackVerb.Instance);
+            item.AddFact(ReachAttackVerb.Instance, null);
         return item;
     }
 

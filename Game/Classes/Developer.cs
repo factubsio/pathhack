@@ -41,7 +41,7 @@ public class BlindSelf() : ActionBrick("Blind Self")
     
     public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
     {
-        unit.AddFact(BlindBuff.Instance.Timed(), duration: 5);
+        unit.AddFact(BlindBuff.Instance.Timed(), null, duration: 5);
         g.pline("You blind yourself!");
     }
 }
@@ -63,7 +63,7 @@ public class PoisonSelf() : ActionBrick("Poison Self")
 
     public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
     {
-        unit.AddFact(SpiderVenom.DC100);
+        unit.AddFact(SpiderVenom.DC100, null);
         g.pline("You inject yourself with spider venom!");
     }
 }
@@ -74,11 +74,11 @@ public class GrantProtection() : ActionBrick("Grant Protection")
 
     public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
     {
-        unit.AddFact(ProtectionBrick.Fire, count: 20);
-        unit.AddFact(ProtectionBrick.Cold, count: 20);
-        unit.AddFact(ProtectionBrick.Shock, count: 20);
-        unit.AddFact(ProtectionBrick.Acid, count: 20);
-        unit.AddFact(ProtectionBrick.Phys, count: 20);
+        unit.AddFact(ProtectionBrick.Fire, null, count: 20);
+        unit.AddFact(ProtectionBrick.Cold, null, count: 20);
+        unit.AddFact(ProtectionBrick.Shock, null, count: 20);
+        unit.AddFact(ProtectionBrick.Acid, null, count: 20);
+        unit.AddFact(ProtectionBrick.Phys, null, count: 20);
         g.pline("You are protected from the elements!");
     }
 }
@@ -260,7 +260,7 @@ public class ConfuseSelf() : ActionBrick("Confuse Self")
 
     public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
     {
-        unit.AddFact(ConfusedBuff.Instance, duration: 5);
+        unit.AddFact(ConfusedBuff.Instance, null, duration: 5);
     }
 }
 

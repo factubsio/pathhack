@@ -35,7 +35,7 @@ public interface IEntity
     public IEnumerable<Fact> GetAllFacts(PHContext? ctx);
     public IEnumerable<Fact> GetOwnFacts();
     public void CleanupMarkedFacts();
-    public Fact AddFact(LogicBrick brick, int? duration = null, int count = 1);
+    public Fact AddFact(LogicBrick brick, IUnit? source, int? duration = null, int count = 1);
     public Fact? FindFact(LogicBrick brick);
     public Fact? FindFactOfType<T>();
     public void RemoveStack(LogicBrick brick, int count = 1);
@@ -51,9 +51,10 @@ public interface IEntity
     int EffectiveLevel { get; }
 }
 
-public class Fact(IEntity entity, LogicBrick brick, object? data)
+public class Fact(IEntity entity, IUnit? source, LogicBrick brick, object? data)
 {
     public IEntity Entity => entity;
+    public IUnit? Source { get; set; } = source;
     public LogicBrick Brick { get; set; } = brick;
     public object? Data => data;
     public bool MarkedForRemoval;
@@ -354,7 +355,7 @@ public abstract class SimpleToggleAction(string name, LogicBrick fact) : ActionB
         DataFlag dat = (DataFlag)data!;
         dat.On = !dat.On;
         if (dat.On)
-            unit.AddFact(fact);
+            unit.AddFact(fact, unit);
         else
             unit.RemoveStack(fact);
     }
@@ -397,7 +398,7 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
     {
         Def = def;
         foreach (var c in components)
-            AddFact(c);
+            AddFact(c, null);
     }
     private readonly List<Fact> Facts = [];
     public int FactCount => Facts.Count;
@@ -429,7 +430,7 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
             // killed with this weapon", if it's like an artifact stack of
             // spears?
             // regardles,s this is ... a bit of an edge case that we at least can worry about when we find it?
-            Facts.Add(new(this, fact.Brick, fact.Data));
+            Facts.Add(new(this, fact.Source, fact.Brick, fact.Data));
         }
     }
 
@@ -447,7 +448,7 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
         return null;
     }
 
-    public Fact AddFact(LogicBrick brick, int? duration = null, int count = 1)
+    public Fact AddFact(LogicBrick brick, IUnit? source, int? duration = null, int count = 1)
     {
         var existing = GetFact(brick, true);
         if (existing != null && brick.StackMode == StackMode.Reject)
@@ -457,6 +458,7 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
             if (existing != null)
             {
                 existing.Stacks = Math.Min(existing.Brick.MaxStacks, existing.Stacks + count);
+                existing.Source = source;
                 LogicBrick.FireOnStackAdded(existing.Brick, existing);
                 return existing;
             }
@@ -468,6 +470,7 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
                 if (count > existing.Stacks)
                 {
                     existing.Stacks = Math.Min(existing.Brick.MaxStacks, count);
+                    existing.Source = source;
                     LogicBrick.FireOnStackAdded(existing.Brick, existing);
                 }
                 return existing;
@@ -476,7 +479,7 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
 
         if (existing == null || brick.StackMode == StackMode.Independent)
         {
-            var fact = new Fact(this, brick, brick.CreateData());
+            var fact = new Fact(this, source, brick, brick.CreateData());
             if (duration.HasValue)
                 fact.ExpiresAt = g.CurrentRound + duration.Value;
             Facts.Add(fact);
@@ -495,6 +498,7 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
         {
             int existingExpiresAt = existing.ExpiresAt.GetValueOrDefault(0);
             existing.ExpiresAt = Math.Max(existingExpiresAt, g.CurrentRound + duration.Value);
+            existing.Source = source;
         }
         return existing;
     }

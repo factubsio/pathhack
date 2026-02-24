@@ -142,7 +142,7 @@ public static class BasicLevel1Spells
         if (!CheckWill(ctx, c.GetSpellDC(), "command"))
         {
           g.pline($"{target:The} {VTense(target, "turn")} to flee!");
-          target.AddFact(FleeingBuff.Instance.Timed(), 3 + c.CasterLevel / 3);
+          target.AddFact(FleeingBuff.Instance.Timed(), c, 3 + c.CasterLevel / 3);
         }
         else
         {
@@ -229,7 +229,7 @@ public class GreaseArea(string name, IUnit? source, int dc, int duration) : Area
     if (!CheckReflex(ctx, dc, "difficult_terrain"))
     {
       g.pline($"{unit:The} {slips} on some {name} and {VTense(unit, "fall")}!");
-      unit.AddFact(ProneBuff.Instance.Timed(), 1);
+      unit.AddFact(ProneBuff.Instance.Timed(), null, 1);
     }
     else
     {
