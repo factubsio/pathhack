@@ -10,6 +10,7 @@ public class BottleDef : ItemDef
         AppearanceCategory = Game.AppearanceCategory.Bottle;
         Stackable = true;
         Weight = 10;
+        Material = Materials.Glass;
     }
 }
 

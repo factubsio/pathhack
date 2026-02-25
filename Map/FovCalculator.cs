@@ -78,7 +78,7 @@ public static class FovCalculator
         560,  // 33
     ];
 
-    static bool InCircle(int col, int row, int radius)
+    internal static bool InCircle(int col, int row, int radius)
     {
         if (radius < 1) return col == 0 && row == 0;
         if (radius > MaxRadius) radius = MaxRadius;

@@ -18,12 +18,12 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
     public override int NaturalRegen => (int)((10 + 3 * CharacterLevel) * Query<double>("natural_regen_mult", null, MergeStrategy.Min, 1.0));
 
     public int GetAttribute(AbilityStat stat) => BaseAttributes.Get(stat) + QueryModifiers($"stat/{stat}").Calculate();
-    public int Str => BaseAttributes.Str + QueryModifiers("stat/Str").Calculate();
-    public int Dex => BaseAttributes.Dex + QueryModifiers("stat/Dex").Calculate();
-    public int Con => BaseAttributes.Con + QueryModifiers("stat/Con").Calculate();
-    public int Int => BaseAttributes.Int + QueryModifiers("stat/Int").Calculate();
-    public int Wis => BaseAttributes.Wis + QueryModifiers("stat/Wis").Calculate();
-    public int Cha => BaseAttributes.Cha + QueryModifiers("stat/Cha").Calculate();
+    public int Str => Math.Clamp(BaseAttributes.Str + QueryModifiers("stat/Str").Calculate(), 1, 100);
+    public int Dex => Math.Clamp(BaseAttributes.Dex + QueryModifiers("stat/Dex").Calculate(), 1, 100);
+    public int Con => Math.Clamp(BaseAttributes.Con + QueryModifiers("stat/Con").Calculate(), 1, 100);
+    public int Int => Math.Clamp(BaseAttributes.Int + QueryModifiers("stat/Int").Calculate(), 1, 100);
+    public int Wis => Math.Clamp(BaseAttributes.Wis + QueryModifiers("stat/Wis").Calculate(), 1, 100);
+    public int Cha => Math.Clamp(BaseAttributes.Cha + QueryModifiers("stat/Cha").Calculate(), 1, 100);
     public override int StrMod => Mod(Str);
     public int DexMod => Mod(Dex);
     public int ConMod => Mod(Con);
@@ -67,8 +67,8 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
     {
         get
         {
-            int cost = ActionCosts.StandardLandMove.Value - QueryModifiers("speed_bonus").Calculate();
-            double mult = Query("speed_mult", null, MergeStrategy.Replace, 1.0);
+            int cost = ActionCosts.StandardLandMove.Value - QueryModifiers(CommonQueries.SpeedModifiersFlat).Calculate();
+            double mult = 1.0 + Query<double>(CommonQueries.SpeedBonusMul, null, MergeStrategy.Max, 0.0) - Query<double>(CommonQueries.SpeedPenaltyMul, null, MergeStrategy.Max, 0.0);
             cost = (int)(cost / mult);
             return Encumbrance > Encumbrance.Unencumbered
                 ? cost + cost / 5

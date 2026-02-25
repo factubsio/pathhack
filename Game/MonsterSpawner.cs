@@ -197,13 +197,8 @@ public static class MonsterSpawner
         }
     }
 
-    static Pos? FindAdjacentEmpty(Level level, Pos origin)
-    {
-        var candidates = origin.Neighbours()
-            .Where(p => level.InBounds(p) && level.NoUnit(p) && level[p].IsPassable)
-            .ToList();
-        return candidates.Count > 0 ? candidates[g.Rn2(candidates.Count)] : null;
-    }
+    static Pos? FindAdjacentEmpty(Level level, Pos origin) =>
+        level.RandomFreeAdjacent(origin, out var result) ? result : null;
 
     public static MonsterDef? PickMonster(int depth, int playerLevel, Func<MonsterDef, bool>? filter = null)
     {

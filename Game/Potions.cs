@@ -8,6 +8,7 @@ public class PotionDef : ItemDef
         AppearanceCategory = Game.AppearanceCategory.Potion;
         Stackable = true;
         Weight = 10;
+        Material = Materials.Glass;
     }
 }
 
@@ -86,7 +87,7 @@ public class SpeedBuff : LogicBrick
 
     protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
     {
-        "speed_mult" => 1.5,
+        CommonQueries.SpeedBonusMul => 0.5,
         _ => null
     };
 }

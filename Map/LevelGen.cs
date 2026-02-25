@@ -50,6 +50,7 @@ public static partial class LevelGen
 
     public static SpecialLevel? ForcedLevel1;
     public static MonsterDef[]? MenagerieMonsters;
+    public static bool UseArena;
     public static bool MonitorAttached;
 
     public static Level Generate(LevelId id, int gameSeed)
@@ -75,9 +76,10 @@ public static partial class LevelGen
                 return ctx.level;
             }
 
-            if (MonitorAttached)
+            if (MonitorAttached || UseArena)
             {
                 Arena.Generate(ctx);
+                BakeBaseLit(ctx.level);
                 ctx.level.UnderConstruction = false;
                 return ctx.level;
             }

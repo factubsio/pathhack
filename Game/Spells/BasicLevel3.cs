@@ -111,7 +111,7 @@ public class FlyLesserBuff() : MaintainedBuff("spell_l3")
   protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
   {
     CreatureTags.Flying => true,
-    "speed_bonus" => new Modifier(ModifierCategory.UntypedStackable, fact.Stacks == 1 ? -4 : 0, "lesser fly"),
+    CommonQueries.SpeedModifiersFlat => new Modifier(ModifierCategory.UntypedStackable, fact.Stacks == 1 ? -4 : 0, "lesser fly"),
     _ => null
   };
 }

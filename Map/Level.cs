@@ -576,6 +576,37 @@ public class Level(LevelId id, int width, int height)
 
     internal bool NoUnit(Pos pos) => UnitAt(pos) == null;
 
+    public bool FirstFreeAdjacent(Pos pos, out Pos result, object? flags = null)
+    {
+        foreach (var n in pos.Neighbours())
+        {
+            if (InBounds(n) && this[n].IsPassable && NoUnit(n))
+            { result = n; return true; }
+        }
+        result = Pos.Invalid;
+        return false;
+    }
+
+    public bool RandomFreeAdjacent(Pos pos, out Pos result, object? flags = null)
+    {
+        Span<Pos> buf = stackalloc Pos[8];
+        int count = 0;
+        foreach (var n in pos.Neighbours())
+        {
+            if (InBounds(n) && this[n].IsPassable && NoUnit(n))
+                buf[count++] = n;
+        }
+        if (count == 0) { result = Pos.Invalid; return false; }
+        result = buf[g.Rn2(count)];
+        return true;
+    }
+
+    public IEnumerable<IUnit> AdjacentUnits(Pos pos)
+    {
+        foreach (var n in pos.Neighbours())
+            if (UnitAt(n) is { } unit) yield return unit;
+    }
+
     public IReadOnlyList<Item> ItemsAt(Pos p) => GetState(p)?.Items ?? (IReadOnlyList<Item>)[];
 
     public void PlaceItem(Item item, Pos p)

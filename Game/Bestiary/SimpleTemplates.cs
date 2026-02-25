@@ -25,6 +25,8 @@ public static class TemplateHelper
 
 public class SkeletonTemplate() : MonsterTemplate("skeleton")
 {
+    public static readonly SkeletonTemplate Instance = new();
+
     public class SkeletonFacts : LogicBrick
     {
         public override string Id => "template:skeleton";
@@ -89,7 +91,7 @@ public class ZombieTemplate() : MonsterTemplate("zombie")
         public override string Id => "template:zombie";
         protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
         {
-            "speed_bonus" => new Modifier(ModifierCategory.UntypedStackable, -4, "zombie"),
+            CommonQueries.SpeedModifiersFlat => new Modifier(ModifierCategory.UntypedStackable, -4, "zombie"),
             "mindless" => true,
             "respawn_from_corpse" => g.Rn2(10) < 3 ? true : null,
             "respawn_template" => ZombieTemplate.Instance,

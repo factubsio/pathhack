@@ -150,7 +150,7 @@ public static class Pokedex
         menu.Add($"{m.Def.Size}");
         menu.Add();
         menu.Add($"AC {m.GetAC()}; HP {m.Def.HpPerLevel}");
-        var speed = m.QueryModifiers("speed_bonus");
+        var speed = m.QueryModifiers(CommonQueries.SpeedModifiersFlat);
         Log.Write($"speed: {speed}");
         menu.Add($"Movement: {SpeedDesc(m.LandMove)}");
         menu.Add();

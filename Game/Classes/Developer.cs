@@ -188,6 +188,23 @@ public class SleepTarget() : ActionBrick("Sleep Target", TargetingType.Unit)
     }
 }
 
+public class ToggleGodlikeAB() : SimpleToggleAction("Godlike AB", GodlikeAB.Instance);
+
+public class GodlikeAB : LogicBrick
+{
+    public static readonly GodlikeAB Instance = new();
+    public override string Id => "debug:godlike_ab";
+    public override bool IsBuff => true;
+    public override string? BuffName => "Godlike AB";
+    public override StackMode StackMode => StackMode.Reject;
+
+    protected override void OnBeforeAttackRoll(Fact fact, PHContext ctx)
+    {
+        if (ctx.Source != fact.Entity) return;
+        ctx.Check!.Modifiers.Untyped(30, "debug");
+    }
+}
+
 public class GotoLevel() : ActionBrick("Goto Level")
 {
     public override ActionPlan CanExecute(IUnit unit, object? data, Target target) => true;
@@ -288,7 +305,7 @@ public static partial class ClassDefs
         id = "developer",
         Name = "Developer",
         Description = "Knows the [fg=cyan]source[/fg]. [b]Debug mode[/b] enabled. Can see hidden things and break the rules.",
-        HpPerLevel = 99,
+        HpPerLevel = 4000,
         KeyAbility = AbilityStat.Int,
         StartingStats = new()
         {
@@ -403,6 +420,7 @@ public static partial class ClassDefs
             p.AddAction(new CurseInventory());
             p.AddAction(new UncurseInventory());
             p.AddAction(new TogglePhasing());
+            p.AddAction(new ToggleGodlikeAB());
             p.AddAction(new ConfuseSelf());
             p.AddAction(new Weaken());
             p.AddAction(new GotoLevel());

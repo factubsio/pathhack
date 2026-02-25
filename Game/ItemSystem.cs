@@ -428,10 +428,19 @@ public static class Materials
     public const string Iron = "iron";
     public const string Silver = "silver";
     public const string Gold = "gold";
+    public const string Metal = "metal"; //generic non ferrous
     public const string ColdIron = "cold_iron";
     public const string Adamantine = "adamantine";
 
     public const string Leather = "leather";
+    public const string Glass = "glass";
+    public const string Gemstone = "gem";
+    public const string Stone = "rock";
+    public const string Bone = "bone";
+    public const string Paper = "paper";
+    public const string Wood = "wood";
+    public const string Organic = "organic";
+    public const string Ceramic = "ceramic";
 }
 
 public static class ItemSlots

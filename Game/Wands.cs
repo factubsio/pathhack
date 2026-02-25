@@ -13,6 +13,7 @@ public class WandDef : ItemDef
         AppearanceCategory = Game.AppearanceCategory.Wand;
         Stackable = false;
         Weight = 7;
+        Material = Materials.Wood;
     }
 }
 

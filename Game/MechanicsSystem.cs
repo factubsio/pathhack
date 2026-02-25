@@ -522,6 +522,8 @@ public static class DamageTypes
     public static readonly DamageType Poison = new("poison", "_");
     public static readonly DamageType Bleed = new("bleed", "bleed");
 
+    public static readonly DamageType Psychic = new("spirit", A_Psychic);
+
     public const string A_Good = "good";
     public const string A_Evil = "evil";
 
@@ -529,6 +531,8 @@ public static class DamageTypes
     public const string A_Law = "law";
     public const string A_Positive = "positive";
     public const string A_Negative = "negative";
+
+    public const string A_Psychic = "psychic";
 
     public const string P_Slashing = "slashing";
     public const string P_Piercing = "piercing";

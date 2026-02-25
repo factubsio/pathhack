@@ -61,7 +61,7 @@ public static class CreatureSubtypes
 public enum GroupSize { None, Small, SmallMixed, Large, LargeMixed }
 
 [Flags]
-public enum MonFlags
+public enum MonFlags : ulong
 {
     None            = 0,
     PrefersCasting  = 1 << 0,
@@ -69,6 +69,7 @@ public enum MonFlags
     WaitsForPlayer  = 1 << 2,
     Cowardly        = 1 << 3,
     NoCorpse        = 1 << 4,
+    ToleratesUndead = 1 << 5,
 }
 
 public enum Approach { Undirected, Approach, Flee }
@@ -122,6 +123,8 @@ public class MonsterDef : BaseDef
   public MonFlags BrainFlags = MonFlags.None;
   public Func<MonsterDef>? GrowsInto;
 
+  public MonsterDef WithBrain(MonsterBrain brain) { Brain = brain; return this; }
+
   string? _creatureTypeKey;
   public string CreatureTypeKey => _creatureTypeKey ??= Subtypes.Count == 0
       ? CreatureType
@@ -149,7 +152,7 @@ public abstract class MonsterTemplate(string id)
 
   public static readonly List<MonsterTemplate> All = [
     ZombieTemplate.Instance,
-    new SkeletonTemplate(),
+    SkeletonTemplate.Instance,
   ];
 
 }
@@ -169,7 +172,11 @@ public class Monster : Unit<MonsterDef>, IFormattable
     if (g.GlobalHatred) return true;
     bool aUndead = a.IsCreature(CreatureTypes.Undead);
     bool bUndead = b.IsCreature(CreatureTypes.Undead);
-    if (aUndead != bUndead) return true;
+
+
+    if ((aUndead && !b.EffectiveBrainFlags.HasFlag(MonFlags.ToleratesUndead)) || (bUndead && !a.EffectiveBrainFlags.HasFlag(MonFlags.ToleratesUndead)))
+        return true;
+
     return false;
   }
 
@@ -303,8 +310,8 @@ public class Monster : Unit<MonsterDef>, IFormattable
   {
       get
       {
-          int cost = Def.LandMove.Value - QueryModifiers("speed_bonus").Calculate();
-          double mult = Query<double>("speed_mult", null, MergeStrategy.Replace, 1.0);
+          int cost = Def.LandMove.Value - QueryModifiers(CommonQueries.SpeedModifiersFlat).Calculate();
+          double mult = 1.0 + Query<double>(CommonQueries.SpeedBonusMul, null, MergeStrategy.Max, 0.0) - Query<double>(CommonQueries.SpeedPenaltyMul, null, MergeStrategy.Max, 0.0);
           return (int)(cost / mult);
       }
   }
@@ -584,7 +591,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
 
     return action.Targeting switch
     {
-      TargetingType.Direction => new(null, (targetPos - Pos).Signed),
+      TargetingType.Direction => new(targetUnit, (targetPos - Pos).Signed),
       TargetingType.Unit when CanSee(this, targetUnit) => new(targetUnit, targetPos),
       TargetingType.Pos => new(null, targetPos),
       TargetingType.None => new(targetUnit, targetPos),

@@ -191,6 +191,11 @@ if (args.Length > 2 && args[0] == "--gen-dungeons" && int.TryParse(args[1], out 
     return;
 }
 
+if (args.Length > 0 && args[0] == "--arena")
+{
+    LevelGen.UseArena = true;
+}
+
 if (args.Length > 1 && args[0] == "--test-family")
 {
     string family = args[1];

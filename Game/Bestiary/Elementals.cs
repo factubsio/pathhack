@@ -68,7 +68,7 @@ public class NumbingColdDebuff : LogicBrick
     public override StatusDisplay StatusDisplayPriority => StatusDisplay.Moderate;
     public override StackMode StackMode => StackMode.ExtendDuration;
 
-    protected override object? OnQuery(Fact fact, string key, string? arg) => key.NumWhen("speed_mult", 0.7);
+    protected override object? OnQuery(Fact fact, string key, string? arg) => key.NumWhen(CommonQueries.SpeedPenaltyMul, 0.3);
 }
 
 /// <summary>Bonus to attack vs units wearing metal armor.</summary>
@@ -108,8 +108,9 @@ public class MagmaTrail : LogicBrick
 
 
 /// <summary>Fire area that damages units standing in it.</summary>
-public class FirePatchArea(IUnit? source, int duration) : Area(duration)
+public class FirePatchArea(IUnit? source, int duration, Dice? damage = null) : Area(duration)
 {
+    readonly Dice _damage = damage ?? d(4);
     public override string Name => "fire";
     public override Glyph Glyph => new('≈', ConsoleColor.Red);
 
@@ -125,7 +126,7 @@ public class FirePatchArea(IUnit? source, int duration) : Area(duration)
     {
         if (unit == source || unit.HasFact(EnergyResist.Fire.Immune)) return;
         using var ctx = PHContext.Create(source, Target.From(unit));
-        ctx.Damage.Add(new DamageRoll { Formula = d(4), Type = DamageTypes.Fire });
+        ctx.Damage.Add(new DamageRoll { Formula = _damage, Type = DamageTypes.Fire });
         g.YouObserve(unit, $"{unit:The} {VTense(unit, "burn")} in the flames!");
         DoDamage(ctx);
     }
@@ -264,10 +265,9 @@ public class NumbingCold() : CooldownAction("numbing cold", TargetingType.None, 
         g.YouObserve(unit, $"A wave of numbing cold radiates from {unit:the}!", "a bone-chilling cold");
         int dc = unit.GetSpellDC();
 
-        foreach (var pos in unit.Pos.Neighbours())
+        foreach (var victim in lvl.AdjacentUnits(unit.Pos))
         {
-            var victim = lvl.UnitAt(pos);
-            if (victim == null || victim == unit) continue;
+            if (victim == unit) continue;
 
             using var ctx = PHContext.Create(unit, Target.From(victim));
             if (!CheckFort(ctx, dc, "cold"))

@@ -105,6 +105,14 @@ public readonly record struct Pos(int X, int Y) : IFormattable
         if (andSelf) yield return this;
     }
 
+    internal IEnumerable<Pos> InRange(int n)
+    {
+        for (int dy = -n; dy <= n; dy++)
+            for (int dx = -n; dx <= n; dx++)
+                if ((dx != 0 || dy != 0) && FovCalculator.InCircle(dx, dy, n))
+                    yield return new(X + dx, Y + dy);
+    }
+
     internal string RelativeTo(Pos p)
     {
         Pos dir = (this - p).Signed;
@@ -120,6 +128,26 @@ public readonly record struct Pos(int X, int Y) : IFormattable
             (-1, -1) => "NW",
             _ => "here",
         };
+    }
+
+    /// Bresenham line from `from` to `to`, excluding both endpoints.
+    public static List<Pos> LineBetween(Pos from, Pos to)
+    {
+        List<Pos> result = [];
+        int x0 = from.X, y0 = from.Y, x1 = to.X, y1 = to.Y;
+        int dx = Math.Abs(x1 - x0), dy = Math.Abs(y1 - y0);
+        int sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+        int err = dx - dy;
+
+        while (true)
+        {
+            int e2 = err * 2;
+            if (e2 > -dy) { err -= dy; x0 += sx; }
+            if (e2 < dx) { err += dx; y0 += sy; }
+            if (x0 == x1 && y0 == y1) break;
+            result.Add(new(x0, y0));
+        }
+        return result;
     }
 }
 

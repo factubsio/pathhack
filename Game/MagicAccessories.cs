@@ -143,7 +143,7 @@ public class BootsOfSpeedBuff : LogicBrick
     public override bool RequiresEquipped => true;
 
     protected override object? OnQuery(Fact fact, string key, string? arg) =>
-        key == "speed_bonus" ? new Modifier(ModifierCategory.ItemBonus, 2, "boots of speed") : null;
+        key == CommonQueries.SpeedModifiersFlat ? new Modifier(ModifierCategory.ItemBonus, 2, "boots of speed") : null;
 }
 
 public class FumbleBuff : LogicBrick

@@ -76,7 +76,7 @@ public class FleetBrick : LogicBrick
 {
     public override string Id => "fleet";
     protected override object? OnQuery(Fact fact, string key, string? arg) =>
-        key == "speed_bonus" ? new Modifier(ModifierCategory.CircumstanceBonus, fact.Entity.EffectiveLevel >= 10 ? 3 : 2, "fleet") : null;
+        key == CommonQueries.SpeedModifiersFlat ? new Modifier(ModifierCategory.CircumstanceBonus, fact.Entity.EffectiveLevel >= 10 ? 3 : 2, "fleet") : null;
 }
 
 internal static class LevelScaling

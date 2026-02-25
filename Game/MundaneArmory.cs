@@ -503,6 +503,7 @@ public static partial class MundaneArmory
         Components = [new ArmorBrick(1, 4)],
         Weight = 25,
         Price = 20,
+        Material = Materials.Leather,
     };
 
     public static readonly ArmorDef ChainShirt = new()
@@ -531,6 +532,7 @@ public static partial class MundaneArmory
         Components = [new ArmorBrick(3, 2)],
         Weight = 50,
         Price = 20,
+        Material = Materials.Leather,
     };
 
     public static readonly ArmorDef Breastplate = new()

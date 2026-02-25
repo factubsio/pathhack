@@ -693,9 +693,10 @@ public class GameState
         LogicBrick.FireOnBeforeHealReceived(target, ctx);
 
         int roll = ctx.HealFormula.Roll() + ctx.HealModifiers.Calculate();
-        int actual = target.HP.Heal(roll);
-        if (actual > 0)
+        int actual = roll;
+        if (roll > 0)
         {
+            actual = target.HP.Heal(roll);
             ctx.HealedAmount = actual;
             LogicBrick.FireOnAfterHealReceived(target, ctx);
         }
@@ -1012,6 +1013,8 @@ public class GameState
                 act.OnInterrupt();
                 u.CurrentActivity = null;
             }
+
+            g.pline($"[-{damage} hp]");
         }
 
         LogicBrick.FireOnDamageDone(source, ctx);

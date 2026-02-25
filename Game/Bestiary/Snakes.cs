@@ -13,7 +13,7 @@ public class SnakeVenomLesser(int dc) : AfflictionBrick(dc, "poison")
     public override DiceFormula TickInterval => d(10) + 10;
     public override int? AutoCureMax => 600;
 
-    protected override void DoPeriodicEffect(IUnit unit, int stage)
+    protected override void DoPeriodicEffect(Fact fact, IUnit unit, int stage)
     {
         using var ctx = PHContext.Create(unit, Target.From(unit));
         ctx.Damage.Add(new DamageRoll { Formula = d(4), Type = DamageTypes.Poison });
@@ -41,7 +41,7 @@ public class SnakeVenomGreater(int dc) : AfflictionBrick(dc, "poison")
     public override DiceFormula TickInterval => d(10) + 10;
     public override int? AutoCureMax => 800;
 
-    protected override void DoPeriodicEffect(IUnit unit, int stage)
+    protected override void DoPeriodicEffect(Fact fact, IUnit unit, int stage)
     {
         using var ctx = PHContext.Create(unit, Target.From(unit));
         DiceFormula formula = stage >= 5 ? d(2, 6) : stage >= 3 ? d(8) : d(6);
@@ -87,6 +87,8 @@ public class Constrict(Dice damage) : LogicBrick
     public static readonly Constrict Small = new(d(6));
     public static readonly Constrict Medium = new(d(8));
     public static readonly Constrict Large = new(d(10) + 7);
+    public static readonly Constrict Heavy = new(d(2, 8));
+    public static readonly Constrict Crushing = new(d(4, 8));
     
     public override string? PokedexDescription => $"Constrict {damage}";
     public override bool IsActive => true;

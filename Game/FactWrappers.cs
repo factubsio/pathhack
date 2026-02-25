@@ -52,6 +52,7 @@ public class ApplyAfflictionOnHit(AfflictionBrick affliction) : LogicBrick
     if (!ctx.Check!.Result) return;
     var target = ctx.Target.Unit;
     if (target == null) return;
+    if (affliction.ImmunityKey is { } key && target.Has(key)) return;
 
     using var saveCtx = PHContext.Create(ctx.Source!, Target.From(target));
     bool saved = CreateAndDoCheck(saveCtx, affliction.SaveKey, affliction.DC, affliction.BuffName ?? "unknown_affliction");

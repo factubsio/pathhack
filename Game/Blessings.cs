@@ -149,7 +149,7 @@ public class WarBlessingBuff : LogicBrick
     protected override void OnBeforeAttackRoll(Fact fact, PHContext context)
     {
         if (context.Source != fact.Entity) return;
-        int adjacent = context.Source.Pos.Neighbours().Count(x => lvl.UnitAt(x) != null);
+        int adjacent = lvl.AdjacentUnits(context.Source.Pos).Count();
         int bonus = Math.Max(adjacent, 4);
         context.Check!.Modifiers.Mod(ModifierCategory.CircumstanceBonus, bonus, "war");
     }

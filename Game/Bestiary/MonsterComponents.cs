@@ -303,6 +303,18 @@ public static class NaturalWeapons
         Price = -1,
     };
 
+    public static readonly WeaponDef Slam_4d8 = new()
+    {
+        id = "slam_4d8",
+        Name = "slam",
+        BaseDamage = d(4, 8),
+        DamageType = DamageTypes.Blunt,
+        Style = WeaponStyle.Exotic, Grip = WeaponGrip.Exotic,
+        Category = WeaponCategory.Natural,
+        MeleeVerb = "slam",
+        Price = -1,
+    };
+
     public static readonly WeaponDef Branch_1d6 = new()
     {
         id = "branch_1d6",

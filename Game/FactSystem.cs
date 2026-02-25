@@ -106,6 +106,7 @@ public enum FactDisplayMode
 
 public enum StatusDisplay
 {
+    Lethal = -1,   // will die: petrification
     Critical = 0,  // can't act: paralyzed, stunned, dazed
     Severe = 1,    // major impairment: blind, confused, nauseated, fleeing
     Moderate = 2,  // significant: prone, silenced

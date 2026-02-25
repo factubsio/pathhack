@@ -37,7 +37,7 @@ public class ProneBuff : LogicBrick
   protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
   {
     "ac" => new Modifier(ModifierCategory.UntypedStackable, -2, "prone"),
-    "speed_mult" => 0.5,
+    CommonQueries.SpeedPenaltyMul => 0.5,
     _ => null
   };
 }
@@ -134,6 +134,15 @@ public class BleedBuff : LogicBrick
     public override int MaxStacks => 10;
     public override StatusDisplay StatusDisplayPriority => StatusDisplay.Severe;
 
+    public static bool TryApplyBleed(IUnit source, IUnit target, int stacks)
+    {
+        if (target.Has(CommonQueries.BleedImmune)) return false;
+        using var ctx = PHContext.Create(source, Target.From(target));
+        if (CheckFort(ctx, source.GetSpellDC(), "bleed")) return false;
+        target.AddFact(Instance, source, count: stacks);
+        return true;
+    }
+
     protected override void OnRoundStart(Fact fact)
     {
         if (fact.Entity is not IUnit unit) return;
@@ -170,7 +179,12 @@ public static class CommonQueries
     public const string PoisonImmune = "poison_immunity";
     public const string ConfusionImmune = "confusion_immunity";
     public const string DifficultTerrainImmune = "difficult_terrain_immunity";
+    public const string PetrificationImmune = "petrification_immunity";
     public const string See = "can_see";
+
+    public const string SpeedPenaltyMul = "speed_pen";
+    public const string SpeedBonusMul = "speed_bon";
+    public const string SpeedModifiersFlat = "speed_bonus";
 }
 
 public class AfflictionData
@@ -195,6 +209,7 @@ public abstract class AfflictionBrick(int dc, string? tag = null) : LogicBrick<A
   public abstract DiceFormula TickInterval { get; }
   public virtual int? AutoCureMax => null;
   public virtual string SaveKey => "fortitude_save";
+  public virtual string? ImmunityKey => null;
 
   public override string? BuffName => AfflictionName;
   public override int MaxStacks => MaxStage + 1;
@@ -204,7 +219,7 @@ public abstract class AfflictionBrick(int dc, string? tag = null) : LogicBrick<A
           ? (a.DC > DC ? a : this)
           : null;
 
-  protected abstract void DoPeriodicEffect(IUnit unit, int stage);
+  protected abstract void DoPeriodicEffect(Fact fact, IUnit unit, int stage);
   protected abstract object? DoQuery(int stage, string key, string? arg);
 
   protected static int Stage(Fact fact) => fact.Stacks - 1;
@@ -222,7 +237,7 @@ public abstract class AfflictionBrick(int dc, string? tag = null) : LogicBrick<A
   {
     int stage = Stage(fact);
     if (stage > 0)
-      DoPeriodicEffect((IUnit)fact.Entity, stage);
+      DoPeriodicEffect(fact, (IUnit)fact.Entity, stage);
   }
 
   protected override void OnRoundStart(Fact fact)
@@ -375,13 +390,8 @@ public class BleedOnHit(int stacks) : LogicBrick
     protected override void OnAfterAttackRoll(Fact fact, PHContext ctx)
     {
         if (!ctx.Check!.Result || !ctx.Melee) return;
-        if (ctx.Target?.Unit is not { } target || target.Has(CommonQueries.BleedImmune)) return;
-
-        int dc = ((IUnit)fact.Entity).GetSpellDC();
-        using var fctx = PHContext.Create((IUnit)fact.Entity, Target.From(target));
-        if (!CheckFort(fctx, dc, "bleed")) return;
-
-        target.AddFact(BleedBuff.Instance, ctx.Source, count: stacks);
+        if (ctx.Target?.Unit is not { } target) return;
+        BleedBuff.TryApplyBleed((IUnit)fact.Entity, target, stacks);
     }
 
     public static readonly BleedOnHit S1 = new(1);
@@ -446,7 +456,7 @@ public class CursedWoundsBuff : LogicBrick
     protected override void OnFactAdded(Fact fact)
     {
         if (fact.Entity is IUnit unit)
-            g.YouObserveSelf(unit, "Your feel extremely itchy.", $"{unit:The} wounds don't seem to close!");
+            g.YouObserveSelf(unit, "You feel extremely itchy.", $"{unit:The} wounds don't seem to close!");
     }
 
     protected override void OnFactRemoved(Fact fact)
@@ -469,8 +479,16 @@ public class CursedWoundsOnHit : LogicBrick
 
         int dc = ((IUnit)fact.Entity).GetSpellDC();
         using var fctx = PHContext.Create((IUnit)fact.Entity, Target.From(target));
-        if (!CheckFort(fctx, dc, "cursed wounds")) return;
+        if (CheckFort(fctx, dc, "cursed wounds")) return;
 
         target.AddFact(CursedWoundsBuff.Instance, ctx.Source, 12);
     }
+}
+
+public class TrueSeeingBuff : LogicBrick
+{
+    public static readonly TrueSeeingBuff Instance = new();
+    public override string Id => "true_seeing";
+
+    protected override object? OnQuery(Fact fact, string key, string? arg) => key.TrueWhen("see_invisible");
 }

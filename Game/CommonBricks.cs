@@ -189,6 +189,7 @@ public class SimpleDR(int amount, string bypass) : LogicBrick
   public static readonly SimpleDRRamp Evil = new(DamageTypes.A_Evil);
   public static readonly SimpleDRRamp Chaotic = new(DamageTypes.A_Chaos);
   public static readonly SimpleDRRamp Lawful = new(DamageTypes.A_Law);
+  public static readonly SimpleDRRamp None = new("-");
 }
 
 public static class DRHelper
@@ -261,6 +262,7 @@ public class MeleeDamageRider(string name, DamageType type, Dice dice) : LogicBr
     public static readonly MeleeDamageRider Fire_1d4 = new("fire", DamageTypes.Fire, d(4));
     public static readonly MeleeDamageRider Acid_2d6 = new("acid_2d6", DamageTypes.Acid, d(2, 6));
 
+    public static readonly MeleeDamageRider Anarchic_2d8 = new("anarchic", DamageTypes.Anarchic, d(2, 8));
     public static readonly MeleeDamageRider Random_3d4 = new("random_3d4", default, d(3, 4));
 
     static readonly DamageType[] RandomElements = [DamageTypes.Fire, DamageTypes.Cold, DamageTypes.Shock, DamageTypes.Acid];

@@ -97,49 +97,55 @@ public static class Draw
     {
         var dir = (to - from).Signed;
 
-        (char beamChar, bool dec) = (dir.X, dir.Y) switch
+        char beamChar;
+        bool dec;
+        if (glyph.Value is not ' ' and not '\0')
         {
-            (0, _) => ('x', true),
-            (_, 0) => ('q', true),
-            (1, 1) or (-1, -1) => ('╲', false),
-            _ => ('╱', false),
-        };
+            beamChar = glyph.Value;
+            dec = false;
+        }
+        else
+        {
+            (beamChar, dec) = (dir.X, dir.Y) switch
+            {
+                (0, _) => ('x', true),
+                (_, 0) => ('q', true),
+                (1, 1) or (-1, -1) => ('╲', false),
+                _ => ('╱', false),
+            };
+        }
+
+        var tiles = Pos.LineBetween(from, to);
 
         using var handle = WM.CreateTransient(MapWidth, MapHeight, x: 0, y: 1, z: 10);
         var ov = handle.Window;
 
         if (pulse)
         {
-            Pos p = from + dir;
-            while (p != to + dir)
+            foreach (var p in tiles)
             {
                 if (lvl.IsVisible(p))
                     ov[p.X, p.Y] = new Cell(beamChar, glyph.Color, Dec: dec);
-                p += dir;
             }
             Blit();
             Thread.Sleep(delayMs * 3);
 
-            p = from + dir;
-            while (p != to + dir)
+            foreach (var p in tiles)
             {
                 if (lvl.IsVisible(p))
                     ov[p.X, p.Y] = Cell.Empty;
                 Blit();
                 Thread.Sleep(delayMs);
-                p += dir;
             }
         }
         else
         {
-            Pos p = from + dir;
-            while (p != to + dir)
+            foreach (var p in tiles)
             {
                 if (lvl.IsVisible(p))
                     ov[p.X, p.Y] = new Cell(beamChar, glyph.Color, Dec: dec);
                 Blit();
                 Thread.Sleep(delayMs);
-                p += dir;
             }
         }
 
@@ -580,7 +586,7 @@ public static class Draw
     {
         StatusWin.At(0, row).Write("".PadRight(ScreenWidth));
 
-        List<(string text, ConsoleColor color, int priority, int? remaining)> entries = [];
+        List<(string text, ConsoleColor color, int priority, int? remaining, CellStyle style)> entries = [];
 
         // Hunger
         var hunger = Hunger.GetState(u.Nutrition);
@@ -595,7 +601,7 @@ public static class Draw
                 HungerState.Fainting => (ConsoleColor.Red, (int)StatusDisplay.Critical),
                 _ => (ConsoleColor.Gray, (int)StatusDisplay.Low),
             };
-            entries.Add((label, color, pri, null));
+            entries.Add((label, color, pri, null, CellStyle.None));
         }
 
         // Buffs from player and inventory
@@ -617,7 +623,7 @@ public static class Draw
         int col = 0;
         int shown = 0;
         int total = entries.Count;
-        foreach (var (text, color, _, _) in entries)
+        foreach (var (text, color, _, _, style) in entries)
         {
             int needed = (shown > 0 ? 2 : 0) + text.Length; // "  " separator
             // Reserve space for overflow indicator
@@ -630,13 +636,13 @@ public static class Draw
                 break;
             }
             if (shown > 0) col += 2; // gap
-            StatusWin.At(col, row).Write(text, color);
+            StatusWin.At(col, row).Write(text, color, style: style);
             col += text.Length;
             shown++;
         }
     }
 
-    static (string text, ConsoleColor color, int priority, int? remaining) BuffEntry(Fact fact)
+    static (string text, ConsoleColor color, int priority, int? remaining, CellStyle style) BuffEntry(Fact fact)
     {
         string name = fact.Brick.BuffName ?? fact.Brick.GetType().Name;
         int? rem = fact.RemainingRounds;
@@ -648,6 +654,7 @@ public static class Draw
 
         var color = fact.Brick.StatusDisplayPriority switch
         {
+            StatusDisplay.Lethal => ConsoleColor.Red,
             StatusDisplay.Critical => ConsoleColor.Red,
             StatusDisplay.Severe => ConsoleColor.Red,
             StatusDisplay.Moderate => ConsoleColor.Yellow,
@@ -657,7 +664,8 @@ public static class Draw
             _ => ConsoleColor.Gray,
         };
 
-        return (text, color, (int)fact.Brick.StatusDisplayPriority, rem);
+        var style = fact.Brick.StatusDisplayPriority == StatusDisplay.Lethal ? CellStyle.Reverse : CellStyle.None;
+        return (text, color, (int)fact.Brick.StatusDisplayPriority, rem, style);
     }
 
     static void DrawStatLine(int row)

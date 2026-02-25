@@ -408,6 +408,7 @@ public class ConsumableDef : ItemDef
     {
         Glyph = new(ItemClasses.Food, ConsoleColor.DarkYellow);
         Stackable = true;
+        Material = Materials.Organic;
     }
 }
 
@@ -471,14 +472,8 @@ public static class Foods
             }
             else
             {
-                foreach (var n in origin.Neighbours())
-                {
-                    if (lvl.InBounds(n) && lvl[n].IsPassable && lvl.NoUnit(n))
-                    {
-                        spawnPos = n;
-                        break;
-                    }
-                }
+                if (lvl.FirstFreeAdjacent(origin, out var adj))
+                    spawnPos = adj;
             }
             if (spawnPos != null)
             {
@@ -527,7 +522,7 @@ public class FoodPoisoning() : AfflictionBrick(11, "fortitude")
     public override int MaxStage => 5;
     public override DiceFormula TickInterval => d(30, 10);
 
-    protected override void DoPeriodicEffect(IUnit unit, int stage)
+    protected override void DoPeriodicEffect(Fact fact, IUnit unit, int stage)
     {
         var msg = stage switch
         {

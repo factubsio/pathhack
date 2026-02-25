@@ -18,6 +18,7 @@ public class ScrollDef : ItemDef
         AppearanceCategory = Game.AppearanceCategory.Scroll;
         Stackable = true;
         Weight = 5;
+        Material = Materials.Paper;
     }
 }
 

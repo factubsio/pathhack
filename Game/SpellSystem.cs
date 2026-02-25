@@ -66,6 +66,16 @@ public abstract class MaintainedBuff(string pool) : LogicBrick
 
   protected override void OnFactAdded(Fact fact) => (fact.Entity as IUnit)?.GetPool(pool)?.Lock();
   protected override void OnFactRemoved(Fact fact) => (fact.Entity as IUnit)?.GetPool(pool)?.Unlock();
+
+  protected override void OnRoundStart(Fact fact)
+  {
+    if (fact.Entity is not IUnit unit) return;
+    if (unit.Allows("can_speak")) return;
+    using var ctx = PHContext.Create(DungeonMaster.WithDC(12), Target.From(unit));
+    if (CheckWill(ctx, 12, "maintain spell")) return;
+    g.YouObserveSelf(unit, "You lose concentration!", $"{unit:The} loses concentration!");
+    fact.Remove();
+  }
 }
 
 public class DismissAction() : ActionBrick("Dismiss")

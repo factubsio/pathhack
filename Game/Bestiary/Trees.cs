@@ -120,7 +120,7 @@ public class TossMonster(int cd)
     static Monster? FindAmmo(IUnit unit)
     {
         if (unit is not Monster me) return null;
-        foreach (var m in unit.Pos.Neighbours().Select(lvl.UnitAt).OfType<Monster>().Where(m => m.Def.Size < me.Def.Size))
+        foreach (var m in lvl.AdjacentUnits(unit.Pos).OfType<Monster>().Where(m => m.Def.Size < me.Def.Size))
             return m;
         return null;
     }
@@ -159,9 +159,9 @@ public class DazeAura : LogicBrick
     {
         if (fact.Entity is not IUnit unit || unit.CannotAct) return;
         int dc = unit.GetSpellDC();
-        foreach (var tgt in unit.Pos.Neighbours().Select(lvl.UnitAt))
+        foreach (var tgt in lvl.AdjacentUnits(unit.Pos))
         {
-            if (tgt == null || tgt.Has(CommonQueries.DazeImmune)) continue;
+            if (tgt.Has(CommonQueries.DazeImmune)) continue;
             using var ctx = PHContext.Create(unit, Target.From(tgt));
             if (!CheckWill(ctx, dc, "daze aura"))
                 tgt.AddFact(DazedBuff.Instance, unit, 1);
@@ -299,7 +299,7 @@ public class HeartrotDisease() : AfflictionBrick(16, "fortitude")
     public override int MaxStage => 4;
     public override DiceFormula TickInterval => d(25, 10);
 
-    protected override void DoPeriodicEffect(IUnit unit, int stage)
+    protected override void DoPeriodicEffect(Fact fact, IUnit unit, int stage)
     {
         var msg = stage switch
         {

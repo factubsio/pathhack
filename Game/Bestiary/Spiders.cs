@@ -119,7 +119,7 @@ public class SpiderVenom(int dc) : AfflictionBrick(dc, "poison")
     public override DiceFormula TickInterval => d(6, 6) + 10;
     public override int? AutoCureMax => 1200;
 
-    protected override void DoPeriodicEffect(IUnit unit, int stage)
+    protected override void DoPeriodicEffect(Fact fact, IUnit unit, int stage)
     {
         if (stage == 1 && unit.IsPlayer) //FIXME YouObserveSelf?
             g.pline($"{unit:The} {VTense(unit, "feel")} woozy from spider venom!");
@@ -135,7 +135,7 @@ public class SpiderVenom(int dc) : AfflictionBrick(dc, "poison")
     protected override object? DoQuery(int stage, string key, string? arg) => key switch
     {
         Check.Reflex => new Modifier(ModifierCategory.StatusPenalty, -(stage + 1) / 2, "spider venom"),
-        "speed_bonus" when stage >= 3 => new Modifier(ModifierCategory.StatusPenalty, -2 * ((stage - 1) / 2), "spider venom"),
+        CommonQueries.SpeedModifiersFlat when stage >= 3 => new Modifier(ModifierCategory.StatusPenalty, -2 * ((stage - 1) / 2), "spider venom"),
         _ => null
     };
 }
