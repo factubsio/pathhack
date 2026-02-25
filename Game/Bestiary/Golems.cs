@@ -623,6 +623,7 @@ public class BleedRetaliation(int stacks) : LogicBrick
     {
         if (fact.Entity is not IUnit owner) return;
         if (ctx.Source is not IUnit attacker || attacker.IsDM || !ctx.Melee) return;
+        if (attacker.Pos.ChebyshevDist(owner.Pos) > 1) return;
         if (!BleedBuff.TryApplyBleed(owner, attacker, stacks)) return;
         g.YouObserveSelf(attacker, "You cut yourself on jagged obsidian!", null);
     }
@@ -1887,7 +1888,7 @@ public class QuantiumBrain : MonsterBrain
             var (_, color) = BeamElements[i];
             Pos from = i % 2 == 0 ? secondary.Pos : primary.Pos;
             Pos to = i % 2 == 0 ? primary.Pos : secondary.Pos;
-            Draw.AnimateBeam(from, to, new Glyph('Ϟ', color), delayMs: 20, pulse: true);
+            Draw.AnimateBeam(from, to, new Glyph('Ϟ', color), delayMs: 20, pulse: true, includeTo: false);
         }
 
         // single damage pass per victim

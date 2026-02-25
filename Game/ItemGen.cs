@@ -81,7 +81,7 @@ public static class ItemGen
             if (candidates.Length > 0)
             {
                 def = candidates.Pick();
-                g.GeneratedArtifacts[def.id] = lvl.Id;
+                g.GeneratedArtifacts[def.id] = lvl?.Id ?? new LevelId(g.Branches["dungeon"], 1);
             }
         }
         return GenerateItem(def, depth);

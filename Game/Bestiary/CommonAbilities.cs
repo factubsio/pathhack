@@ -56,7 +56,7 @@ public class BreathAttack(
         else
         {
             g.YouObserve(source, $"{source:The} {VTense(source, verb)} {name}!", $"a blast of {name}");
-            Beam.Cast(source.Pos, dir, "breath", new('*', color), range,
+            Beam.Cast(source.Pos, dir, "breath", new(' ', color), range,
                 BeamFlags.None, victim =>
                 {
                     onHit(victim);

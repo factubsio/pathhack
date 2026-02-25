@@ -130,8 +130,8 @@ public readonly record struct Pos(int X, int Y) : IFormattable
         };
     }
 
-    /// Bresenham line from `from` to `to`, excluding both endpoints.
-    public static List<Pos> LineBetween(Pos from, Pos to)
+    /// Bresenham line (from,to]. Set includeTo to false for (from,to).
+    public static List<Pos> LineBetween(Pos from, Pos to, bool includeTo = true)
     {
         List<Pos> result = [];
         int x0 = from.X, y0 = from.Y, x1 = to.X, y1 = to.Y;
@@ -147,6 +147,7 @@ public readonly record struct Pos(int X, int Y) : IFormattable
             if (x0 == x1 && y0 == y1) break;
             result.Add(new(x0, y0));
         }
+        if (includeTo) result.Add(to);
         return result;
     }
 }

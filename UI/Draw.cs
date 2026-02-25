@@ -93,7 +93,7 @@ public static class Draw
         WM.Register(StatusWin);
     }
 
-    public static void AnimateBeam(Pos from, Pos to, Glyph glyph, int delayMs = 30, bool pulse = false)
+    public static void AnimateBeam(Pos from, Pos to, Glyph glyph, int delayMs = 30, bool pulse = false, bool includeTo = true)
     {
         var dir = (to - from).Signed;
 
@@ -115,7 +115,7 @@ public static class Draw
             };
         }
 
-        var tiles = Pos.LineBetween(from, to);
+        var tiles = Pos.LineBetween(from, to, includeTo);
 
         using var handle = WM.CreateTransient(MapWidth, MapHeight, x: 0, y: 1, z: 10);
         var ov = handle.Window;
@@ -269,7 +269,13 @@ public static class Draw
                             continue;
                         case PlayerPerception.Unease:
                             int warnLevel = Math.Clamp(m.EffectiveLevel / 4, 1, 5);
-                            MapWin[x, y] = new((char)('0' + warnLevel), ConsoleColor.Magenta);
+                            ConsoleColor warnColor = warnLevel switch
+                            {
+                                1 => ConsoleColor.White,
+                                2 or 3 or 4 => ConsoleColor.Red,
+                                _ => ConsoleColor.Magenta,
+                            };
+                            MapWin[x, y] = new((char)('0' + warnLevel), warnColor);
                             continue;
                         case PlayerPerception.Guess:
                             MapWin[x, y] = new('?', ConsoleColor.DarkMagenta);
@@ -563,7 +569,7 @@ public static class Draw
         string statusLine = $"{level.Branch.Name}:{level.Depth} $:{u.Gold} R:{g.CurrentRound} E:{u.Energy}{quiverState}";
         StatusWin.At(0, 0).Write(statusLine.PadRight(ScreenWidth));
 
-        // Line 1: HP, AC, CL, XP
+        // Line 1: HP, AC, CL, XP (text)
         int nextLvl = u.CharacterLevel + 1;
         int needed = Progression.XpForLevel(nextLvl) - Progression.XpForLevel(u.CharacterLevel);
         int progress = u.XP - Progression.XpForLevel(u.CharacterLevel);
@@ -575,11 +581,37 @@ public static class Draw
         StatusWin.At(prefix.Length, 1).Write(xpStr, style: pendingLvl ? CellStyle.Reverse : CellStyle.None);
         DrawSpellPips();
 
+        // Line 2: HP bar + stats
         if (StatusHeight >= 3)
-            DrawStatLine(2);
+        {
+            StatusWin.At(0, 2).Write("[", ConsoleColor.Gray);
+            DrawHpBar(1, 2, u.HP.Current, u.HP.Max);
+            StatusWin.At(9, 2).Write("] ", ConsoleColor.Gray);
+            DrawStatLine(2, 11);
+        }
 
         if (StatusHeight >= 4)
             DrawStatusEffects(3);
+    }
+
+    static readonly char[] BarChars = [' ', '▏', '▎', '▍', '▌', '▋', '▊', '▉'];
+    const int BarWidth = 8;
+    const int StepsPerCell = 7;
+    const int TotalSteps = BarWidth * StepsPerCell;
+
+    static void DrawHpBar(int x, int y, int current, int max)
+    {
+        double pct = max > 0 ? Math.Clamp((double)current / max, 0, 1) : 0;
+        int filled = (int)Math.Round(pct * TotalSteps);
+        ConsoleColor color = pct > 0.66 ? ConsoleColor.Green
+                           : pct > 0.33 ? ConsoleColor.Yellow
+                           : ConsoleColor.Red;
+
+        for (int i = 0; i < BarWidth; i++)
+        {
+            int cellSteps = Math.Clamp(filled - i * StepsPerCell, 0, StepsPerCell);
+            StatusWin.At(x + i, y).Write(BarChars[cellSteps].ToString(), color);
+        }
     }
 
     static void DrawStatusEffects(int row)
@@ -668,12 +700,12 @@ public static class Draw
         return (text, color, (int)fact.Brick.StatusDisplayPriority, rem, style);
     }
 
-    static void DrawStatLine(int row)
+    static void DrawStatLine(int row, int startCol = 0)
     {
         string stats = $"Str:{u.Str} Dex:{u.Dex} Con:{u.Con} Int:{u.Int} Wis:{u.Wis} Cha:{u.Cha}";
-        StatusWin.At(0, row).Write(stats.PadRight(ScreenWidth));
+        StatusWin.At(startCol, row).Write(stats.PadRight(ScreenWidth - startCol));
 
-        int col = stats.Length;
+        int col = startCol + stats.Length;
 
         // Encumbrance
         if (u.Encumbrance != Encumbrance.Unencumbered)

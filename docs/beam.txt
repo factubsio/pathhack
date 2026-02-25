@@ -95,7 +95,7 @@ ScorchingRay (pattern B — attack roll):
   steps but handles reflection internally.
 
 MagicMissile:
-  Beam.Cast(c.Pos, dir, new() { Glyph = new('*', Magenta), Bounce = BounceMode.Walls }, victim =>
+  Beam.Cast(c.Pos, dir, new() { Glyph = new(' ', Magenta), Bounce = BounceMode.Walls }, victim =>
   {
       g.YouObserve(victim, $"The magic missile hits {victim:the}.");
       using var ctx = PHContext.Create(c, Target.From(victim));
@@ -105,7 +105,7 @@ MagicMissile:
   });
 
 Dawnflower:
-  Beam.Cast(wielder.Pos, dir, new() { Glyph = new('*', Yellow), Pulse = true }, target =>
+  Beam.Cast(wielder.Pos, dir, new() { Glyph = new(' ', Yellow), Pulse = true }, target =>
   {
       using var ctx = PHContext.Create(wielder, Target.From(target));
       ctx.Damage.Add(new() { Formula = d(2, 6), Type = DamageTypes.Fire });

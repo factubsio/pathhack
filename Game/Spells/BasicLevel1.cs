@@ -39,7 +39,7 @@ public static class BasicLevel1Spells
         int missiles = Math.Min(4, 1 + c.CasterLevel / 3);
         g.YouObserve(c, $"{c:The} {VTense(c, "cast")} magic missile!", "a magical hum");
 
-        Beam.Cast(c.Pos, t.Pos.Value, "magic missile", new('*', ConsoleColor.Magenta), g.RnRange(6, 10),
+        Beam.Cast(c.Pos, t.Pos.Value, "magic missile", new(' ', ConsoleColor.Magenta), g.RnRange(6, 10),
             BeamFlags.BounceOnWall | BeamFlags.Reflectable, unit =>
             {
                 g.YouObserve(unit, $"The magic missile hits {unit:the}.");

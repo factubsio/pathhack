@@ -235,7 +235,7 @@ public static partial class GeneratableArtifacts
             item.AddFact(DawnflowerBeamIsSleeping.Instance, null, 30);
             g.pline("Dawn's light shoots forth!");
 
-            Beam.Cast(wielder.Pos, dir.Value, "beam", new('*', ConsoleColor.Yellow), g.RnRange(6, 10),
+            Beam.Cast(wielder.Pos, dir.Value, "beam", new(' ', ConsoleColor.Yellow), g.RnRange(6, 10),
                 BeamFlags.Reflectable, target =>
                 {
                     using var ctx = PHContext.Create(wielder, Target.From(target));

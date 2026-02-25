@@ -291,7 +291,7 @@ public class SparkZap() : CooldownAction("spark zap", TargetingType.Direction, _
 
         g.YouObserve(unit, $"{unit:The} {VTense(unit, "zap")} a bolt of lightning!", "a crack of thunder");
 
-        Beam.Cast(unit.Pos, dir, "bolt", new('*', ConsoleColor.Yellow), 6,
+        Beam.Cast(unit.Pos, dir, "bolt", new(' ', ConsoleColor.Yellow), 6,
             BeamFlags.Reflectable, victim =>
             {
                 if (victim == unit) return BeamHit.Continue;

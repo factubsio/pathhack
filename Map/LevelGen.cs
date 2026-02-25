@@ -196,7 +196,6 @@ public static partial class LevelGen
         {
             if (!room.Lit) continue;
             foreach (var p in room.Interior) level.BaseLit[p] = true;
-            foreach (var p in room.Border) level.BaseLit[p] = true;
         }
 
         if (level.Outdoors)

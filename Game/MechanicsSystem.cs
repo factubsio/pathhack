@@ -340,6 +340,7 @@ public class DamageRoll
     public bool Negated { get; private set; }
     public bool Halved { get; private set; }
     public bool Doubled { get; private set; }
+    public bool CritDamage { get; set; } //x 1.25
 
     private int _extraDice = 0;
     public int ExtraDice
@@ -368,6 +369,7 @@ public class DamageRoll
             if (Halved && Doubled) { } // cancel
             else if (Halved) raw = Math.Max(1, raw / 2);
             else if (Doubled) raw *= 2;
+            if (CritDamage && !Doubled) raw = (int)(raw * 1.25);
             ProtectionUsed = Math.Min(Protection, raw);
             int afterProt = raw - ProtectionUsed;
             return Math.Max(0, afterProt - _dr);

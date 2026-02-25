@@ -835,7 +835,7 @@ public class GameState
             }
 
             bool crit = ctx.IsCritSuccess;
-            if (crit) ctx.Damage[0].Double();
+            if (crit) ctx.Damage[0].CritDamage = true;
             string hv = crit ? "crit" : "hit";
             string hvs = crit ? "crits" : "hits";
 
@@ -1229,6 +1229,15 @@ public class GameState
 
         if (item.Def == MiscItems.SilverCrest && unit is Player p)
         {
+            if (price == 0 && unit.IsPlayer && maybeRoom is {} goldRoom && goldRoom.Type == RoomType.Shop)
+            {
+                var shop = goldRoom.Resident?.FindFact(ShopkeeperBrick.Instance)?.As<ShopState>();
+                if (shop != null)
+                {
+                    shop.Bill += item.Count;
+                    price = item.Count;
+                }
+            }
             p.Gold += item.Count;
         }
         else

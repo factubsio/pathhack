@@ -11,7 +11,7 @@ public static class BasicLevel2Spells
 
             g.YouObserve(c, $"{c:The} {VTense(c, "shoot")} a scorching ray!", "a searing hiss");
 
-            Beam.Cast(c.Pos, dir, "ray", new('*', ConsoleColor.Red), g.RnRange(6, 10),
+            Beam.Cast(c.Pos, dir, "ray", new(' ', ConsoleColor.Red), g.RnRange(6, 10),
                 BeamFlags.Reflectable, unit =>
                 {
                     using var ctx = PHContext.Create(c, Target.From(unit));
@@ -152,7 +152,7 @@ public static class BasicLevel2Spells
 
                     if (DoAttackRoll(ctx, 0))
                     {
-                        g.YouObserve(unit, $"It hits {unit:the}!", "it hit something!");
+                        g.YouObserve(unit, $"The acid arrow hits {unit:the}!", "it hit something!");
                         DoDamage(ctx);
 
                         if (unit.IsDead) return BeamHit.Stop;
@@ -165,7 +165,7 @@ public static class BasicLevel2Spells
                         }
                         return BeamHit.Stop;
                     }
-                    g.YouObserve(unit, $"It misses {unit:the}!");
+                    g.YouObserve(unit, $"The acid arrow misses {unit:the}!");
                     return BeamHit.Continue;
                 }, projectile: true);
 

@@ -124,24 +124,35 @@ public static class FovCalculator
         // player
         ScanShadowcast(level, level.Lit, origin, lightRadius);
 
-        // Visiblity = lit & in_los, later telepathy, warning, etc (thoug we
-        // need a separate bitmask or something since it shouldnt' show the tile
-        // they are on?)
+        // Visibility: two-pass. First non-opaque (lit + LOS), then opaque
+        // (LOS + visible non-opaque neighbour). Walls only show from the inside.
         level.ClearVisible();
         int visCount = 0;
         if (u.CanSee)
         {
+            // Pass 1: non-opaque tiles
             for (int y = 0; y < level.Height; y++)
+            for (int x = 0; x < level.Width; x++)
             {
-                for (int x = 0; x < level.Width; x++)
+                Pos p = new(x, y);
+                if (!level.IsOpaque(p) && level.HasLOS(p) && level.IsLit(p))
                 {
-                    Pos p = new(x, y);
-                    if (level.HasLOS(p) && level.IsLit(p))
-                    {
-                        level.SetVisible(p);
-                        level.UpdateMemory(p);
-                        visCount++;
-                    }
+                    level.SetVisible(p);
+                    level.UpdateMemory(p);
+                    visCount++;
+                }
+            }
+
+            // Pass 2: opaque tiles visible if adjacent non-opaque tile is visible
+            for (int y = 0; y < level.Height; y++)
+            for (int x = 0; x < level.Width; x++)
+            {
+                Pos p = new(x, y);
+                if (level.IsOpaque(p) && level.HasLOS(p) && HasVisibleNeighbour(level, p))
+                {
+                    level.SetVisible(p);
+                    level.UpdateMemory(p);
+                    visCount++;
                 }
             }
         }
@@ -154,6 +165,14 @@ public static class FovCalculator
         }
 
         Perf.Stop("FovCompute");
+    }
+
+    static bool HasVisibleNeighbour(Level level, Pos p)
+    {
+        foreach (var n in p.Neighbours())
+            if (level.InBounds(n) && !level.IsOpaque(n) && level.IsVisible(n))
+                return true;
+        return false;
     }
 
     public static void ScanShadowcast(Level level, TileBitset target, Pos origin, int radius, bool includeWalls = true)

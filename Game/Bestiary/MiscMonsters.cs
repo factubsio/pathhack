@@ -13,6 +13,7 @@ public class Thorns(Dice damage, DamageType type) : LogicBrick
     {
         if (context.Source is not IUnit attacker || attacker.IsDM || !context.Melee) return;
         var defender = context.Target.Unit!;
+        if (attacker.Pos.ChebyshevDist(defender.Pos) > 1) return;
 
         Target target = new(attacker, attacker.Pos);
         using var ctx = PHContext.Create(defender, target);

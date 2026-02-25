@@ -71,7 +71,7 @@ public class SkeletonTemplate() : MonsterTemplate("skeleton")
     {
         TemplateHelper.MakeUndead(m);
         m.ItemBonusAC -= 2;
-        m.OwnBrainFlags = m.Def.BrainFlags | MonFlags.NoCorpse;
+        m.OwnBrainFlags = m.Def.BrainFlags | MonFlags.NoCorpse | MonFlags.ToleratesUndead;
 
         m.OwnGlyph = m.Def.Glyph with { Background = ConsoleColor.Gray };
 
@@ -130,6 +130,7 @@ public class ZombieTemplate() : MonsterTemplate("zombie")
         TemplateHelper.MakeUndead(m);
 
         m.OwnGlyph = m.Def.Glyph with { Background = ConsoleColor.DarkGreen };
+        m.OwnBrainFlags = m.Def.BrainFlags | MonFlags.ToleratesUndead;
 
         if (m.Def.IsUnique)
             m.TemplatedName = $"Zombie {m.Def.Name}";

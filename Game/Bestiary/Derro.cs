@@ -12,7 +12,7 @@ public class TKAttackBonus(int bonus) : LogicBrick
     }
 }
 
-public class DazeAction(int range, int dc, string pool) : ActionBrick("Daze")
+public class DazeAction(int range, int dc, string pool) : ActionBrick("Daze", tags: AbilityTags.Mental)
 {
     public const string Resource = "daze";
 
@@ -46,9 +46,9 @@ public class DazeAction(int range, int dc, string pool) : ActionBrick("Daze")
     }
 }
 
-public class TelekineticProjectile(int range, Dice damage, string pool) : ActionBrick("Telekinetic Projectile")
+public class TelekineticProjectile(int range, Dice damage, string pool) : ActionBrick("Telekinetic Projectile", tags: AbilityTags.Mental)
 {
-    internal static readonly TelekineticProjectile Minor = new(6, d(6), Resource);
+    internal static readonly TelekineticProjectile Minor = new(6, d(4), Resource);
     public const string Resource = "tk_projectile";
 
     readonly WeaponDef TKProjectile = new()
@@ -115,7 +115,7 @@ public static class Derro
         HpPerLevel = 6,
         AC = 0,
         AttackBonus = 0,
-        DamageBonus = 0,
+        DamageBonus = -1,
         LandMove = ActionCosts.StandardLandMove,
         Unarmed = NaturalWeapons.Fist,
         Size = UnitSize.Small,
@@ -142,7 +142,7 @@ public static class Derro
         HpPerLevel = 6,
         AC = 0,
         AttackBonus = 0,
-        DamageBonus = 1,
+        DamageBonus = -1,
         LandMove = ActionCosts.StandardLandMove,
         Unarmed = NaturalWeapons.Fist,
         Size = UnitSize.Small,
@@ -167,7 +167,7 @@ public static class Derro
         HpPerLevel = 7,
         AC = 0,
         AttackBonus = 0,
-        DamageBonus = 2,
+        DamageBonus = 0,
         LandMove = ActionCosts.StandardLandMove,
         Unarmed = NaturalWeapons.Fist,
         Size = UnitSize.Small,
@@ -200,9 +200,13 @@ public static class Derro
         EthicalAxis = EthicalAxis.Chaotic,
         Family = Family,
         CreatureType = CreatureTypes.Humanoid,
+        BrainFlags = MonFlags.PrefersCasting,
         Components = [
             new EquipSet(new Outfit(1, new OutfitItem(MundaneArmory.Quarterstaff))),
             new GrantAction(AttackWithWeapon.Instance),
+            ..GrantPool.StandardLevel1Caster,
+            new GrantSpell(BasicLevel1Spells.MagicMissile),
+            new GrantSpell(BasicLevel1Spells.BurningHands),
         ],
     };
 

@@ -49,10 +49,11 @@ public static partial class Wands
 
     public static void DoEffect(WandDef def, IUnit user, Pos dir)
     {
-        def.Spell.Execute(DungeonMaster.As(user, -4), null, Target.From(dir));
-        if (!def.IsKnown() && g.YouObserve(user, $"{user:The} {VTense(user, "zap")} a {def.Name}"))
+        if (!def.IsKnown() && YouCanObserve(user))
         {
+            g.pline($"{user:The} {VTense(user, "zap")} a {def.Name}");
             def.SetKnown();
         }
+        def.Spell.Execute(DungeonMaster.As(user, -4), null, Target.From(dir));
     }
 }
