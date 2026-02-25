@@ -203,8 +203,8 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
     public override string ToString() => "you";
     public override string ToString(string? format, IFormatProvider? provider) => format switch
     {
-        "Own" => "Your",
-        "own" => "your",
+        "Own" or "Possessive" => "Your",
+        "own" or "possessive" => "your",
         "The" or "An" => "You",
         _ => "you",
     };

@@ -336,6 +336,8 @@ public class Monster : Unit<MonsterDef>, IFormattable
     "An" => ProperName ?? (Def.IsUnique ? RealName : RealName.An().Capitalize()),
     "own" => Self switch { Game.Pronoun.Male => "his", Game.Pronoun.Female => "her", _ => "their" },
     "Own" => Self switch { Game.Pronoun.Male => "His", Game.Pronoun.Female => "Her", _ => "Their" },
+    "possessive" => ToString("the", null).Possessive(),
+    "Possessive" => ToString("The", null).Possessive(),
     _ => RealName,
   };
 

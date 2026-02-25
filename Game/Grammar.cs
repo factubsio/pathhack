@@ -19,6 +19,8 @@ public static class Grammar
 
     public static string The(this string s) => "the " + s;
 
+    public static string Possessive(this string s) => s.EndsWith('s') ? $"{s}'" : $"{s}'s";
+
     public static string Capitalize(this string s) => 
         string.IsNullOrEmpty(s) ? s : char.ToUpper(s[0]) + s[1..];
 

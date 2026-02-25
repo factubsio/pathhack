@@ -313,8 +313,12 @@ public static partial class ClassDefs
                     new GrantProficiency(Proficiencies.LightArmor, ProficiencyLevel.Legendary),
                     new GrantProficiency(Proficiencies.MediumArmor, ProficiencyLevel.Legendary),
                     new GrantProficiency(Proficiencies.HeavyArmor, ProficiencyLevel.Legendary),
+
                     new GrantPool("spell_l1", 5, 1),
                     new GrantPool("spell_l2", 5, 1),
+                    new GrantPool("spell_l3", 5, 1),
+                    new GrantPool("spell_l4", 5, 1),
+                    new GrantPool("spell_l5", 5, 1),
                 ],
             },
         ],
@@ -323,7 +327,39 @@ public static partial class ClassDefs
             var sword = ItemGen.GenerateItem(MundaneArmory.Longsword, 100, -3);
             p.Inventory.Add(sword);
 
+            p.AddSpell(BasicLevel1Spells.MagicMissile);
+            p.AddSpell(BasicLevel1Spells.BurningHands);
+            p.AddSpell(BasicLevel1Spells.CureLightWounds);
+            p.AddSpell(BasicLevel1Spells.FalseLifeLesser);
+            p.AddSpell(BasicLevel1Spells.Command);
+            p.AddSpell(BasicLevel1Spells.Grease);
+            p.AddSpell(BasicLevel1Spells.Light);
+            p.AddSpell(BasicLevel1Spells.Shield);
+            p.AddSpell(BasicLevel1Spells.ProtFromChaos);
+            p.AddSpell(BasicLevel1Spells.ProtFromEvil);
+            p.AddSpell(BasicLevel1Spells.ProtFromLaw);
+            p.AddSpell(BasicLevel1Spells.ProtFromGood);
+
             p.AddSpell(BasicLevel2Spells.AcidArrow);
+            p.AddSpell(BasicLevel2Spells.ScorchingRay);
+            p.AddSpell(BasicLevel2Spells.SoundBurst);
+            p.AddSpell(BasicLevel2Spells.HoldPerson);
+            p.AddSpell(BasicLevel2Spells.DelayPoison);
+            p.AddSpell(BasicLevel2Spells.DimensionDoor);
+            p.AddSpell(BasicLevel2Spells.ResistAcid);
+            p.AddSpell(BasicLevel2Spells.ResistCold);
+            p.AddSpell(BasicLevel2Spells.ResistShock);
+            p.AddSpell(BasicLevel2Spells.ResistFire);
+
+            p.AddSpell(BasicLevel3Spells.Fireball);
+            p.AddSpell(BasicLevel3Spells.VampiricTouch);
+            p.AddSpell(BasicLevel3Spells.FalseLife);
+            p.AddSpell(BasicLevel3Spells.Heroism);
+            p.AddSpell(BasicLevel3Spells.FlyLesser);
+            p.AddSpell(BasicLevel3Spells.ProtectAcid);
+            p.AddSpell(BasicLevel3Spells.ProtectShock);
+            p.AddSpell(BasicLevel3Spells.ProtectCold);
+            p.AddSpell(BasicLevel3Spells.ProtectFire);
             
             // Test striking rune
             var strikingSword = Item.Create(MundaneArmory.Longsword);

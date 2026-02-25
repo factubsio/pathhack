@@ -1,54 +1,17 @@
 namespace Pathhack.Game;
 
-public record struct BeamStep(Pos SegmentStart, Pos Pos, int Bounces, bool WillBounce, bool IsLast);
+public enum BeamHit { Stop, Continue }
 
-public class Beam(Pos start, Pos dir, bool canBounce = false, int maxRange = 12) : IEnumerable<BeamStep>
+[Flags]
+public enum BeamFlags
 {
-    public static Beam Fire(Pos start, Pos dir, bool canBounce = false, int maxRange = 12) =>
-        new(start, dir, canBounce, maxRange);
+    None        = 0,
+    BounceOnWall = 1,
+    Reflectable  = 2,
+}
 
-    public IEnumerator<BeamStep> GetEnumerator()
-    {
-        Pos pos = start;
-        Pos segmentStart = start;
-        Pos d = dir.Signed;
-        int bounces = 0;
-
-        for (int i = 0; i < maxRange; i++)
-        {
-            Pos next = pos + d;
-            
-            if (!lvl.InBounds(next)) yield break;
-            
-            if (!lvl[next].IsPassable)
-            {
-                if (!canBounce)
-                {
-                    if (pos != start)
-                        yield return new BeamStep(segmentStart, pos, bounces, false, true);
-                    yield break;
-                }
-                
-                // Yield current pos with WillBounce before changing direction
-                yield return new BeamStep(segmentStart, pos, bounces, true, i == maxRange - 1);
-                
-                d = Bounce(pos, next, d);
-                bounces++;
-                segmentStart = pos;
-                next = pos + d;
-                
-                // Log.Write($"After bounce: pos={pos} d={d} next={next} passable={lvl.InBounds(next) && lvl[next].IsPassable}");
-                
-                if (!lvl.InBounds(next) || !lvl[next].IsPassable) yield break;
-            }
-
-            pos = next;
-            yield return new BeamStep(segmentStart, pos, bounces, false, i == maxRange - 1);
-        }
-    }
-
-    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
-
+public static class Beam
+{
     static Pos Bounce(Pos lastPos, Pos wallPos, Pos dir)
     {
         // Cardinal directions just reverse
@@ -59,20 +22,94 @@ public class Beam(Pos start, Pos dir, bool canBounce = false, int maxRange = 12)
         Pos flipX = new(-dir.X, dir.Y);  // flip X, keep Y
         Pos flipY = new(dir.X, -dir.Y);  // keep X, flip Y
         
-        // Check if we can continue in just X or just Y direction from lastPos
-        Pos hCheck = lastPos + new Pos(dir.X, 0);  // one step in X only
-        Pos vCheck = lastPos + new Pos(0, dir.Y);  // one step in Y only
+        Pos hCheck = lastPos + new Pos(dir.X, 0);
+        Pos vCheck = lastPos + new Pos(0, dir.Y);
         
         bool hClear = lvl.InBounds(hCheck) && lvl[hCheck].IsPassable;
         bool vClear = lvl.InBounds(vCheck) && lvl[vCheck].IsPassable;
         
-        // Log.Write($"Bounce: lastPos={lastPos} wallPos={wallPos} dir={dir} hCheck={hCheck}({hClear}) vCheck={vCheck}({vClear})");
-        
-        // If X is clear, keep X (flip Y). If Y is clear, keep Y (flip X).
         if (hClear && !vClear) return flipY;
         if (vClear && !hClear) return flipX;
         if (hClear && vClear) return g.Rn2(2) == 0 ? flipX : flipY;
         
         return new(-dir.X, -dir.Y);
+    }
+
+    public static Pos? Cast(
+        Pos origin, Pos dir, string name, Glyph glyph, int range,
+        BeamFlags flags,
+        Func<IUnit, BeamHit> onHit,
+        bool pulse = false,
+        bool projectile = false,
+        Action<Pos>? onTile = null)
+    {
+        Pos pos = origin;
+        Pos segmentStart = origin;
+        Pos d = dir.Signed;
+        Pos? last = null;
+        bool bounce = flags.HasFlag(BeamFlags.BounceOnWall);
+        bool reflectable = flags.HasFlag(BeamFlags.Reflectable);
+
+        void Animate(Pos from, Pos to)
+        {
+            if (projectile) Draw.AnimateProjectile(from, to, glyph);
+            else Draw.AnimateBeam(from, to, glyph, pulse: pulse);
+        }
+
+        for (int i = 0; i < range; i++)
+        {
+            Pos next = pos + d;
+
+            if (!lvl.InBounds(next)) break;
+
+            if (!lvl[next].IsPassable)
+            {
+                if (!bounce) break;
+
+                if (pos != origin)
+                    Animate(segmentStart, pos);
+
+                d = Bounce(pos, next, d);
+                segmentStart = pos;
+                next = pos + d;
+
+                if (!lvl.InBounds(next) || !lvl[next].IsPassable) break;
+            }
+
+            pos = next;
+            last = pos;
+            onTile?.Invoke(pos);
+
+            var unit = lvl.UnitAt(pos);
+            if (unit != null)
+            {
+                if (reflectable)
+                {
+                    var reflection = unit.Query<Func<IUnit, string>>("reflection");
+                    if (reflection != null)
+                    {
+                        Animate(segmentStart, pos);
+                        g.YouObserve(unit, $"The {name} {reflection(unit)}.");
+                        d = new(-d.X, -d.Y);
+                        segmentStart = pos;
+                        continue;
+                    }
+                }
+
+                Animate(segmentStart, pos);
+                BeamHit result = onHit(unit);
+
+                if (result == BeamHit.Stop)
+                    return pos;
+
+                segmentStart = pos;
+                continue;
+            }
+        }
+
+        if (last != null && segmentStart != last)
+            Animate(segmentStart, last.Value);
+
+        return last;
     }
 }

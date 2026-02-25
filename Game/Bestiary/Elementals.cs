@@ -287,28 +287,21 @@ public class SparkZap() : CooldownAction("spark zap", TargetingType.Direction, _
     protected override void Execute(IUnit unit, Target target, object? plan = null)
     {
         Pos dir = target.Pos!.Value;
-        List<Pos> line = [];
-        foreach (var pos in lvl.CollectLine(unit.Pos, dir, 6))
-        {
-            if (!lvl[pos].IsPassable) break;
-            line.Add(pos);
-        }
-        if (line.Count > 0)
-            Draw.AnimateBeam(unit.Pos, line[^1], new Glyph('*', ConsoleColor.Yellow), pulse: true);
+        int dc = unit.GetSpellDC();
+
         g.YouObserve(unit, $"{unit:The} {VTense(unit, "zap")} a bolt of lightning!", "a crack of thunder");
 
-        int dc = unit.GetSpellDC();
-        foreach (var pos in line)
-        {
-            var victim = lvl.UnitAt(pos);
-            if (victim == null || victim == unit) continue;
-
-            using var ctx = PHContext.Create(unit, Target.From(victim));
-            CheckReflex(ctx, dc, "shock");
-            ctx.Damage.Add(new DamageRoll { Formula = d(2, 6), Type = DamageTypes.Shock, HalfOnSave = true });
-            DoDamage(ctx);
-        }
-        AreaSystem.AffectTiles(lvl, DamageTypes.Shock, line);
+        Beam.Cast(unit.Pos, dir, "bolt", new('*', ConsoleColor.Yellow), 6,
+            BeamFlags.Reflectable, victim =>
+            {
+                if (victim == unit) return BeamHit.Continue;
+                using var ctx = PHContext.Create(unit, Target.From(victim));
+                CheckReflex(ctx, dc, "shock");
+                ctx.Damage.Add(new DamageRoll { Formula = d(2, 6), Type = DamageTypes.Shock, HalfOnSave = true });
+                DoDamage(ctx);
+                return BeamHit.Continue;
+            }, pulse: true,
+            onTile: AreaSystem.OnTile(DamageTypes.Shock));
     }
 }
 

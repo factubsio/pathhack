@@ -39,35 +39,22 @@ public static class BasicLevel1Spells
         int missiles = Math.Min(4, 1 + c.CasterLevel / 3);
         g.YouObserve(c, $"{c:The} {VTense(c, "cast")} magic missile!", "a magical hum");
 
-        var range = g.RnRange(6, 10);
-        Log.Write($"beam: range:{range}");
-
-        foreach (var step in Beam.Fire(c.Pos, t.Pos.Value, canBounce: true, range))
-        {
-          var unit = lvl.UnitAt(step.Pos);
-
-          if (unit != null)
-          {
-            Draw.AnimateBeam(step.SegmentStart, step.Pos, new Glyph('*', ConsoleColor.Magenta));
-            g.YouObserve(unit, $"The magic missile hits {unit:the}.");
-            using var ctx = PHContext.Create(c, Target.From(unit));
-            for (int i = 0; i < missiles; i++)
+        Beam.Cast(c.Pos, t.Pos.Value, "magic missile", new('*', ConsoleColor.Magenta), g.RnRange(6, 10),
+            BeamFlags.BounceOnWall | BeamFlags.Reflectable, unit =>
             {
-              ctx.Damage.Add(new()
-              {
-                Formula = d(6) + 2 + unit.EffectiveLevel / 4,
-                Type = DamageTypes.Magic,
-              });
-            }
-            DoDamage(ctx);
-            return;
-          }
-
-          if (step.WillBounce || step.IsLast)
-          {
-            Draw.AnimateBeam(step.SegmentStart, step.Pos, new Glyph('*', ConsoleColor.Magenta));
-          }
-        }
+                g.YouObserve(unit, $"The magic missile hits {unit:the}.");
+                using var ctx = PHContext.Create(c, Target.From(unit));
+                for (int i = 0; i < missiles; i++)
+                {
+                    ctx.Damage.Add(new()
+                    {
+                        Formula = d(6) + 2 + unit.EffectiveLevel / 4,
+                        Type = DamageTypes.Magic,
+                    });
+                }
+                DoDamage(ctx);
+                return BeamHit.Stop;
+            });
       }, TargetingType.Direction);
 
   public static readonly SpellBrick Grease = new("Grease", 1,

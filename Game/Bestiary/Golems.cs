@@ -138,14 +138,14 @@ public class DeathExplosion(DamageType type, Dice damage, int radius, ConsoleCol
         g.YouObserve(unit, $"{unit:The} explodes in a burst of {name}!", $"an explosion of {name}");
         int dc = unit.GetSpellDC();
 
-        BreathAttack.CollectBreath(BreathShape.Burst, unit, Pos.Zero, radius, color, name, (pos, victim) =>
+        BreathAttack.CollectBreath(BreathShape.Burst, unit, Pos.Zero, radius, color, name, victim =>
         {
-            if (victim == null || victim == unit) return;
+            if (victim == unit) return;
             using var ctx = PHContext.Create(unit, Target.From(victim));
             CheckReflex(ctx, dc, type.SubCat);
             ctx.Damage.Add(new DamageRoll { Formula = damage, Type = type, HalfOnSave = true });
             DoDamage(ctx);
-        }, afterAll: tiles => AreaSystem.AffectTiles(lvl, type, tiles));
+        }, AreaSystem.OnTile(type));
     }
 
     public static readonly DeathExplosion Cold_3d6_R1 = new(DamageTypes.Cold, d(3, 6), 1, ConsoleColor.Cyan);
@@ -245,14 +245,14 @@ public class SplinterBurst(Dice damage, int radius) : LogicBrick
         g.YouObserve(unit, $"{unit:The} {VTense(unit, "splinter")} violently!", "a crack of splintering wood");
         int dc = unit.GetSpellDC();
 
-        BreathAttack.CollectBreath(BreathShape.Burst, unit, Pos.Zero, radius, ConsoleColor.DarkYellow, "splinters", (pos, victim) =>
+        BreathAttack.CollectBreath(BreathShape.Burst, unit, Pos.Zero, radius, ConsoleColor.DarkYellow, "splinters", victim =>
         {
-            if (victim == null || victim == unit) return;
+            if (victim == unit) return;
             using var dmgCtx = PHContext.Create(unit, Target.From(victim));
             CheckReflex(dmgCtx, dc, "slashing");
             dmgCtx.Damage.Add(new DamageRoll { Formula = damage, Type = DamageTypes.Slashing, HalfOnSave = true });
             DoDamage(dmgCtx);
-        }, afterAll: tiles => AreaSystem.AffectTiles(lvl, DamageTypes.Slashing, tiles));
+        }, AreaSystem.OnTile(DamageTypes.Slashing));
     }
 
     public static readonly SplinterBurst Instance = new(d(2, 6), 1);
@@ -426,7 +426,8 @@ public static class Golems
         [
             SlowedByElement.Cold,
             HealsFromElement.Fire,
-            // TODO: spell reflection, bleed on hit, dazzle aura
+            new QueryBrick("reflection", (IUnit unit) => $"bounces off {unit:possessive} polished surface"),
+            // bleed on hit
         ], unarmed: NaturalWeapons.Slam_1d6);
 
     public static readonly MonsterDef Marrowstone = G("marrowstone", "marrowstone golem", 8, ConsoleColor.DarkGray,

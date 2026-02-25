@@ -11,13 +11,9 @@ public static class BasicLevel2Spells
 
             g.YouObserve(c, $"{c:The} {VTense(c, "shoot")} a scorching ray!", "a searing hiss");
 
-            Pos last = c.Pos;
-            foreach (var step in Beam.Fire(c.Pos, dir, canBounce: false, g.RnRange(6, 10)))
-            {
-                var unit = lvl.UnitAt(step.Pos);
-                if (unit != null)
+            Beam.Cast(c.Pos, dir, "ray", new('*', ConsoleColor.Red), g.RnRange(6, 10),
+                BeamFlags.Reflectable, unit =>
                 {
-                    Draw.AnimateBeam(step.SegmentStart, step.Pos, new Glyph('*', ConsoleColor.Red));
                     using var ctx = PHContext.Create(c, Target.From(unit));
                     ctx.Spell = ScorchingRay;
                     ctx.Damage.Add(new() { Formula = d(4, 6), Type = DamageTypes.Fire });
@@ -25,17 +21,11 @@ public static class BasicLevel2Spells
                     {
                         g.YouObserve(unit, $"The ray hits {unit:the}!", "something sizzles!");
                         DoDamage(ctx);
+                        return BeamHit.Stop;
                     }
-                    else
-                    {
-                        g.YouObserve(unit, $"The ray misses {unit:the}!");
-                    }
-                    return;
-                }
-                last = step.Pos;
-                if (step.WillBounce || step.IsLast)
-                    Draw.AnimateBeam(step.SegmentStart, step.Pos, new Glyph('*', ConsoleColor.Red), pulse: true);
-            }
+                    g.YouObserve(unit, $"The ray misses {unit:the}!");
+                    return BeamHit.Continue;
+                });
         }, TargetingType.Direction);
 
     public static readonly SpellBrick SoundBurst = new("Sound burst", 2,
@@ -147,17 +137,10 @@ public static class BasicLevel2Spells
             if (t.Pos == null) return;
             Pos dir = t.Pos.Value;
 
-            var range = g.RnRange(6, 10);
-            int dc = c.GetSpellDC();
-
             g.YouObserve(c, $"{c:The} {VTense(c, "fling")} an acid arrow!", "a hissing sound");
 
-            Pos last = c.Pos;
-            foreach (var step in Beam.Fire(c.Pos, t.Pos.Value, canBounce: false, range))
-            {
-                var unit = lvl.UnitAt(step.Pos);
-
-                if (unit != null)
+            Beam.Cast(c.Pos, dir, "arrow", new(dir.Char, ConsoleColor.Green), g.RnRange(6, 10),
+                BeamFlags.None, unit =>
                 {
                     using var ctx = PHContext.Create(c, Target.From(unit));
                     ctx.Spell = AcidArrow;
@@ -167,14 +150,12 @@ public static class BasicLevel2Spells
                         Type = DamageTypes.Acid,
                     });
 
-                    Draw.AnimateProjectile(c.Pos, unit.Pos, new(dir.Char, ConsoleColor.Green));
-
                     if (DoAttackRoll(ctx, 0))
                     {
                         g.YouObserve(unit, $"It hits {unit:the}!", "it hit something!");
                         DoDamage(ctx);
 
-                        if (unit.IsDead) return;
+                        if (unit.IsDead) return BeamHit.Stop;
 
                         using var sizzleCtx = PHContext.Dupe();
                         if (!CheckFort(sizzleCtx, unit.GetSpellDC(), "acid arrow sizzle"))
@@ -182,18 +163,11 @@ public static class BasicLevel2Spells
                             g.YouObserve(unit, $"{unit:The} is covered in acid!", "something scream!");
                             unit.AddFact(AcidBurnBuff.Instance, c, 4);
                         }
+                        return BeamHit.Stop;
                     }
-                    else
-                    {
-                        g.YouObserve(unit, $"It misses {unit:the}!");
-                    }
-                    return;
-                }
-
-                last = step.Pos;
-            }
-
-            Draw.AnimateProjectile(c.Pos, last, new(dir.Char, ConsoleColor.Green));
+                    g.YouObserve(unit, $"It misses {unit:the}!");
+                    return BeamHit.Continue;
+                }, projectile: true);
 
         }, TargetingType.Direction);
 }

@@ -235,12 +235,9 @@ public static partial class GeneratableArtifacts
             item.AddFact(DawnflowerBeamIsSleeping.Instance, null, 30);
             g.pline("Dawn's light shoots forth!");
 
-            foreach (var step in Beam.Fire(wielder.Pos, dir.Value, canBounce: false, g.RnRange(6, 10)))
-            {
-                var target = lvl.UnitAt(step.Pos);
-                if (target != null)
+            Beam.Cast(wielder.Pos, dir.Value, "beam", new('*', ConsoleColor.Yellow), g.RnRange(6, 10),
+                BeamFlags.Reflectable, target =>
                 {
-                    Draw.AnimateBeam(step.SegmentStart, step.Pos, new Glyph('*', ConsoleColor.Yellow), pulse: true);
                     using var ctx = PHContext.Create(wielder, Target.From(target));
                     ctx.Damage.Add(new DamageRoll { Formula = d(2, 6), Type = DamageTypes.Fire });
                     if (target.IsCreature(CreatureTypes.Undead))
@@ -253,13 +250,8 @@ public static partial class GeneratableArtifacts
                         g.YouObserve(target, $"The light hits {target:the}!", "a sizzle");
                     }
                     DoDamage(ctx);
-
-                    break;
-                }
-
-                if (step.IsLast)
-                    Draw.AnimateBeam(step.SegmentStart, step.Pos, new Glyph('*', ConsoleColor.Yellow), pulse: true);
-            }
+                    return BeamHit.Stop;
+                }, pulse: true);
 
             wielder.Energy -= ActionCosts.OneAction.Value;
         }

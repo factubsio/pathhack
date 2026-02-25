@@ -1,6 +1,3 @@
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-
 namespace Pathhack.Map;
 
 public interface IArea
@@ -145,16 +142,21 @@ public abstract class Swarm(string name, Glyph glyph, int wounds, Pos where) : I
 
 public static class AreaSystem
 {
+    public static Action<Pos> OnTile(DamageType type) => pos => AffectTile(lvl, type, pos);
+
+    public static void AffectTile(Level lvl, DamageType type, Pos pos)
+    {
+        foreach (var swarm in lvl.AllSwarms)
+        {
+            if (swarm.Where != pos) continue;
+            if (swarm.Damage(2))
+                g.YouObserve(pos, $"The {swarm.Name} scatters into nothing!", "frantic skittering, then silence");
+        }
+    }
+
     public static void AffectTiles(Level lvl, DamageType type, IEnumerable<Pos> tiles)
     {
         foreach (var pos in tiles)
-        {
-            foreach (var swarm in lvl.AllSwarms)
-            {
-                if (swarm.Where != pos) continue;
-                if (swarm.Damage(2))
-                    g.YouObserve(pos, $"The {swarm.Name} scatters into nothing!", "frantic skittering, then silence");
-            }
-        }
+            AffectTile(lvl, type, pos);
     }
 }

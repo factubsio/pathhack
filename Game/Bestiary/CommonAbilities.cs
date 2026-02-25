@@ -28,7 +28,7 @@ public class BreathAttack(
         _ => dt.SubCat,
     };
 
-    public static void CollectBreath(BreathShape shape, IUnit source, Pos dir, int range, ConsoleColor color, string name, Action<Pos, IUnit?> action, Action<IEnumerable<Pos>>? afterAll = null)
+    public static void CollectBreath(BreathShape shape, IUnit source, Pos dir, int range, ConsoleColor color, string name, Action<IUnit> onHit, Action<Pos>? onTile = null)
     {
         if (shape == BreathShape.Cone)
         {
@@ -36,32 +36,32 @@ public class BreathAttack(
             Draw.AnimateFlash(cone, new Glyph('≈', color));
             g.YouObserve(source, $"{source:The} breathes {name}!", $"a blast of {name}");
             foreach (var pos in cone)
-                action(pos, lvl.UnitAt(pos));
-            afterAll?.Invoke(cone);
+            {
+                onTile?.Invoke(pos);
+                var victim = lvl.UnitAt(pos);
+                if (victim != null) onHit(victim);
+            }
         }
         else if (shape == BreathShape.Burst)
         {
-            // No youobserve here, tbh we may want this to be passed in?
             using var area = lvl.CollectCircle(source.Pos, range, andCenter: false);
             Draw.AnimateFlash(area, new Glyph('*', color));
             foreach (var pos in area)
-                action(pos, lvl.UnitAt(pos));
-            afterAll?.Invoke(area);
+            {
+                onTile?.Invoke(pos);
+                var victim = lvl.UnitAt(pos);
+                if (victim != null) onHit(victim);
+            }
         }
         else
         {
-            List<Pos> line = [];
-            foreach (var pos in lvl.CollectLine(source.Pos, dir, range))
-            {
-                if (!lvl[pos].IsPassable) break;
-                line.Add(pos);
-            }
-            if (line.Count > 0)
-                Draw.AnimateBeam(source.Pos, line[^1], new Glyph('*', color));
             g.YouObserve(source, $"{source:The} breathes {name}!", $"a blast of {name}");
-            foreach (var pos in line)
-                action(pos, lvl.UnitAt(pos));
-            afterAll?.Invoke(line);
+            Beam.Cast(source.Pos, dir, "breath", new('*', color), range,
+                BeamFlags.None, victim =>
+                {
+                    onHit(victim);
+                    return BeamHit.Continue;
+                }, onTile: onTile);
         }
     }
 
@@ -72,15 +72,15 @@ public class BreathAttack(
         string name = BreathName(damageType);
         int dc = unit.GetSpellDC();
 
-        CollectBreath(shape, unit, dir, MaxRange, color, name, (pos, victim) =>
+        CollectBreath(shape, unit, dir, MaxRange, color, name, victim =>
         {
-            if (victim == null || victim == unit) return;
+            if (victim == unit) return;
 
             using var ctx = PHContext.Create(unit, Target.From(victim));
             CheckReflex(ctx, dc, damageType.SubCat);
             ctx.Damage.Add(new DamageRoll { Formula = damage, Type = damageType, HalfOnSave = true });
             if (victim.IsPlayer) g.pline($"You are engulfed in {name}!");
             DoDamage(ctx);
-        }, afterAll: tiles => AreaSystem.AffectTiles(lvl, damageType, tiles));
+        }, AreaSystem.OnTile(damageType));
     }
 }

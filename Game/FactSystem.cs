@@ -42,7 +42,7 @@ public interface IEntity
     public void DecrementActiveFact();
     public void ExpireFacts();
     object? Query(string key, string? arg = null, MergeStrategy merge = MergeStrategy.Replace);
-    T Query<T>(string key, string? arg, MergeStrategy merge, T defaultValue);
+    T Query<T>(string key, string? arg = null, MergeStrategy merge = MergeStrategy.Replace, T defaultValue = default!);
     bool Has(string key);
     bool Allows(string key);
     bool HasFact(LogicBrick brick);
@@ -538,7 +538,8 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
         return result;
     }
 
-    public virtual T Query<T>(string key, string? arg, MergeStrategy merge, T defaultValue) =>
+    // defaults must stay in sync with IEntity.Query<T>, otherwise bad news bears
+    public virtual T Query<T>(string key, string? arg = null, MergeStrategy merge = MergeStrategy.Replace, T defaultValue = default!) =>
         Query(key, arg, merge) is T v ? v : defaultValue;
 
     public virtual bool Has(string key) => Query(key, null, MergeStrategy.Or, false);
@@ -982,8 +983,6 @@ public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) :
                 result = Merge(result, LogicBrick.FireOnQuery(fact.Brick, fact, key, arg), merge);
         return result;
     }
-    public override T Query<T>(string key, string? arg, MergeStrategy merge, T defaultValue) =>
-        Query(key, arg, merge) is T v ? v : defaultValue;
     public Modifiers QueryModifiers(string key, string? arg = null)
     {
         var mods = new Modifiers();
