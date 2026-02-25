@@ -261,13 +261,18 @@ public class MeleeDamageRider(string name, DamageType type, Dice dice) : LogicBr
     public static readonly MeleeDamageRider Fire_1d4 = new("fire", DamageTypes.Fire, d(4));
     public static readonly MeleeDamageRider Acid_2d6 = new("acid_2d6", DamageTypes.Acid, d(2, 6));
 
+    public static readonly MeleeDamageRider Random_3d4 = new("random_3d4", default, d(3, 4));
+
+    static readonly DamageType[] RandomElements = [DamageTypes.Fire, DamageTypes.Cold, DamageTypes.Shock, DamageTypes.Acid];
+
     public override string Id => $"melee_rider+{type.SubCat}/{dice.Serialize()}";
     public override string? PokedexDescription => $"{name} ({dice} {type.SubCat} on hit)";
 
     protected override void OnBeforeDamageRoll(Fact fact, PHContext ctx)
     {
         if (ctx.AttackType != AttackType.Melee) return;
-        ctx.Damage.Add(new DamageRoll { Formula = dice, Type = type });
+        var t = type == default ? RandomElements.Pick() : type;
+        ctx.Damage.Add(new DamageRoll { Formula = dice, Type = t });
     }
 }
 

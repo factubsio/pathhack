@@ -385,11 +385,14 @@ public class GameState
             pline($"You hear {sound}.");
     }
 
+    public static bool YouCanObserve(IUnit unit) => YouCanObserve(unit.Pos);
+    public static bool YouCanObserve(Pos pos) => u.CanSee && lvl.IsVisible(pos);
+
     public bool YouObserve(IUnit source, string? ifSee, string? sound = null, int hearRadius = 6)
     {
         if (source.IsDM) return false;
 
-        bool canSee = u.CanSee && lvl.IsVisible(source.Pos);
+        bool canSee = YouCanObserve(source);
         bool canHear = sound != null && upos.ChebyshevDist(source.Pos) <= hearRadius;
 
         if (canSee && ifSee != null)
@@ -402,7 +405,7 @@ public class GameState
 
     public void YouObserve(Pos pos, string? ifSee, string? sound = null, int hearRadius = 6)
     {
-        bool canSee = lvl.IsVisible(pos);
+        bool canSee = YouCanObserve(pos);
         bool canHear = sound != null && upos.ChebyshevDist(pos) <= hearRadius;
 
         if (canSee && ifSee != null)
@@ -691,9 +694,11 @@ public class GameState
 
         int roll = ctx.HealFormula.Roll() + ctx.HealModifiers.Calculate();
         int actual = target.HP.Heal(roll);
-        ctx.HealedAmount = actual;
-
-        LogicBrick.FireOnAfterHealReceived(target, ctx);
+        if (actual > 0)
+        {
+            ctx.HealedAmount = actual;
+            LogicBrick.FireOnAfterHealReceived(target, ctx);
+        }
 
         Log.Structured("heal", $"{source:source}{target:target}{roll:roll}{actual:actual}");
     }
@@ -1432,13 +1437,13 @@ public class GameState
         g.pline($"Your {weapon.Def.Name} is welded to your {HandStr(weapon)}!");
     }
 
-    public bool DoUnequip(IUnit unit, Item item)
+    public bool DoUnequip(IUnit unit, Item item, bool free = false, bool consensual = true)
     {
         var slot = unit.Equipped.First(kv => kv.Value == item).Key;
         var r = unit.Unequip(slot);
         if (r == UnequipResult.Cursed)
         {
-            if (unit.IsPlayer)
+            if (consensual && unit.IsPlayer)
             {
                 item.Knowledge |= ItemKnowledge.BUC;
                 if (item.Def is WeaponDef)
@@ -1448,7 +1453,8 @@ public class GameState
             }
             return false;
         }
-        unit.Energy -= ActionCosts.OneAction.Value;
+        if (!free)
+            unit.Energy -= ActionCosts.OneAction.Value;
         return true;
     }
 

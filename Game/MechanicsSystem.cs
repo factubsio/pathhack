@@ -516,6 +516,9 @@ public static class DamageTypes
     public static readonly DamageType Axiomatic = new("spirit", A_Law);
     public static readonly DamageType Anarchic = new("spirit", A_Chaos);
 
+    public static readonly DamageType Positive = new("spirit", A_Positive);
+    public static readonly DamageType Negative = new("spirit", A_Negative);
+
     public static readonly DamageType Poison = new("poison", "_");
     public static readonly DamageType Bleed = new("bleed", "bleed");
 
@@ -524,6 +527,8 @@ public static class DamageTypes
 
     public const string A_Chaos = "chaos";
     public const string A_Law = "law";
+    public const string A_Positive = "positive";
+    public const string A_Negative = "negative";
 
     public const string P_Slashing = "slashing";
     public const string P_Piercing = "piercing";

@@ -146,19 +146,6 @@ public class FencingBuff : LogicBrick
     }
 }
 
-public class DazeOnHit : LogicBrick
-{
-    public static readonly DazeOnHit Instance = new();
-    public override string Id => "bandit:daze_on_hit";
-
-    protected override void OnAfterAttackRoll(Fact fact, PHContext ctx)
-    {
-        if (!ctx.Check!.Result || !ctx.Melee) return;
-        if (ctx.Target?.Unit is { } target && !target.Has(CommonQueries.DazeImmune))
-            target.AddFact(DazedBuff.Instance, ctx.Source, 1);
-    }
-}
-
 public class BanditHealAlly(Dice heal, int range, string pool, int cd)
     : CooldownAction("Heal Ally", TargetingType.None, _ => cd, tags: AbilityTags.Beneficial)
 {

@@ -33,7 +33,8 @@ public class ItemDef : BaseDef, IFormattable
             {
                 var className = Class switch
                 {
-                    ItemClasses.Potion => "potion",
+                    ItemClasses.Potion when this is PotionDef => "potion",
+                    ItemClasses.Potion when this is BottleDef => "bottle",
                     ItemClasses.Scroll => "scroll",
                     ItemClasses.Ring => "ring",
                     ItemClasses.Amulet => "amulet",

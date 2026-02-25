@@ -117,6 +117,189 @@ public class CarrionAura : LogicBrick
     }
 }
 
+public class GolemHasteBuff : LogicBrick
+{
+    public static readonly GolemHasteBuff Instance = new();
+    public override string Id => "golem:haste";
+    public override bool IsBuff => true;
+    public override bool IsActive => true;
+    public override string? BuffName => "Haste";
+    public override StackMode StackMode => StackMode.Reject;
+
+    protected override void OnRoundStart(Fact fact)
+    {
+        if (fact.Entity is not IUnit unit) return;
+        if (unit.CannotAct) return;
+        unit.Energy += 4;
+    }
+}
+
+public class GolemHaste(int cd)
+    : CooldownAction("Haste", TargetingType.None, _ => cd, tags: AbilityTags.Beneficial)
+{
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target)
+    {
+        var plan = base.CanExecute(unit, data, target);
+        if (!plan) return plan;
+        if (unit.HasFact(GolemHasteBuff.Instance)) return "already hasted";
+        return true;
+    }
+
+    protected override void Execute(IUnit unit, Target target, object? plan = null)
+    {
+        g.YouObserve(unit, $"{unit:The} {VTense(unit, "surge")} with speed!", "a grinding acceleration");
+        unit.AddFact(GolemHasteBuff.Instance, null, 5);
+    }
+
+    public static readonly GolemHaste Instance = new(12);
+}
+
+public class AlchemicalBomb(int range, int cd)
+    : CooldownAction("Alchemical Bomb", TargetingType.Unit, _ => cd, tags: AbilityTags.Harmful, maxRange: range)
+{
+    static readonly BottleDef[] Bombs = [Bottles.AlchemistFireBottle, Bottles.AlchemistAcidBottle, Bottles.AlchemistFrostBottle, Bottles.AlchemistShockBottle];
+
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target)
+    {
+        var plan = base.CanExecute(unit, data, target);
+        if (!plan) return plan;
+        return true;
+    }
+
+    protected override void Execute(IUnit unit, Target target, object? plan = null)
+    {
+        if (target.Unit == null) return;
+        var bottle = Bombs.Pick();
+        var item = Item.Create(bottle);
+
+        if (YouCanObserve(unit)) item.Def.SetKnown();
+        g.YouObserve(unit, $"{unit:The} throws {item:an}!");
+        if (YouCanObserve(target.Unit)) item.Def.SetKnown();
+        ThrowLands(unit, item, target.Unit.Pos, null);
+    }
+
+    public static readonly AlchemicalBomb Instance = new(4, 3);
+}
+
+public class CoralSpike(int range, int cd)
+    : CooldownAction("Coral Spike", TargetingType.None, _ => cd, tags: AbilityTags.Harmful)
+{
+    static readonly WeaponDef SpikeProjectile = new()
+    {
+        id = "coral_spike",
+        Name = "coral spike",
+        BaseDamage = d(8),
+        Style = WeaponStyle.Exotic, Grip = WeaponGrip.Exotic,
+        DamageType = DamageTypes.Piercing,
+        Glyph = new('/', ConsoleColor.DarkCyan),
+        Launcher = "coral",
+        Weight = -1,
+        Price = -1,
+        Components = [BleedOnHit.S1],
+    };
+
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target)
+    {
+        var basePlan = base.CanExecute(unit, data, target);
+        if (!basePlan) return basePlan;
+        if (target.Unit == null) return "no target";
+        if (!unit.Pos.IsCompassFrom(target.Unit.Pos)) return "not compass";
+        if (unit.Pos.ChebyshevDist(target.Unit.Pos) > range) return "too far";
+        return true;
+    }
+
+    protected override void Execute(IUnit unit, Target target, object? plan = null)
+    {
+        if (target.Unit == null) return;
+        var dir = (target.Unit.Pos - unit.Pos).Signed;
+        var item = Item.Create(SpikeProjectile);
+        g.YouObserve(unit, $"{unit:The} hurls a coral spike!", "a sharp whistle");
+        DoThrow(unit, item, dir, AttackType.Thrown);
+    }
+
+    public static readonly CoralSpike Instance = new(5, 8);
+}
+
+public class SandBlast(int range, int cd)
+    : CooldownAction("Sand Blast", TargetingType.Direction, _ => cd, maxRange: range, tags: AbilityTags.Harmful)
+{
+    protected override void Execute(IUnit unit, Target target, object? plan = null)
+    {
+        Pos dir = target.Pos!.Value;
+        int dc = unit.GetSpellDC();
+
+        BreathAttack.CollectBreath(BreathShape.Cone, unit, dir, MaxRange, ConsoleColor.Yellow, "sand", victim =>
+        {
+            if (victim == unit) return;
+            using var ctx = PHContext.Create(unit, Target.From(victim));
+            CheckReflex(ctx, dc, "sand blast");
+            ctx.Damage.Add(new DamageRoll { Formula = d(3, 6), Type = DamageTypes.Blunt, HalfOnSave = true });
+            DoDamage(ctx);
+            if (!ctx.Check!.Result)
+                victim.AddFact(BlindBuff.Instance.Timed(), unit, (d(4) + 2).Roll());
+        });
+    }
+
+    public static readonly SandBlast Instance = new(3, 8);
+}
+
+public class NecroticAura(Dice damage) : LogicBrick
+{
+    public override string Id => "golem:necrotic_aura";
+    public override bool IsActive => true;
+    public override string? PokedexDescription => $"Necrotic aura: {damage} negative energy to adjacent";
+
+    protected override void OnRoundStart(Fact fact)
+    {
+        if (fact.Entity is not IUnit unit) return;
+        if (unit.CannotAct) return;
+        int dc = unit.GetSpellDC();
+
+        foreach (var pos in unit.Pos.Neighbours())
+        {
+            if (lvl.UnitAt(pos) is not { } victim) continue;
+            using var ctx = PHContext.Create(unit, Target.From(victim));
+            CheckWill(ctx, dc, "negative energy");
+            ctx.Damage.Add(new DamageRoll { Formula = damage, Type = DamageTypes.Negative, HalfOnSave = true });
+            DoDamage(ctx);
+        }
+    }
+
+    public static readonly NecroticAura Instance = new(d(8));
+}
+
+public class NecroticBurst(Dice damage, int radius, int cd)
+    : CooldownAction("Necrotic Burst", TargetingType.None, _ => cd, tags: AbilityTags.Harmful)
+{
+    public override string? PokedexDescription => $"Burst of negative energy: {damage}, radius {radius}";
+
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target)
+    {
+        var plan = base.CanExecute(unit, data, target);
+        if (!plan) return plan;
+        if (target.Unit == null) return "no target";
+        if (unit.Pos.ChebyshevDist(target.Unit.Pos) > radius) return "too far";
+        return true;
+    }
+
+    protected override void Execute(IUnit unit, Target target, object? plan = null)
+    {
+        g.YouObserve(unit, $"{unit:The} {VTense(unit, "unleash")} a wave of necrotic energy!", "a pulse of dread");
+        int dc = unit.GetSpellDC();
+
+        BreathAttack.CollectBreath(BreathShape.Burst, unit, Pos.Zero, radius, ConsoleColor.DarkMagenta, "necrotic energy", victim =>
+        {
+            if (victim == unit) return;
+            using var ctx = PHContext.Create(unit, Target.From(victim));
+            CheckWill(ctx, dc, "negative energy");
+            ctx.Damage.Add(new DamageRoll { Formula = damage, Type = DamageTypes.Negative, HalfOnSave = true });
+            DoDamage(ctx);
+        }, AreaSystem.OnTile(DamageTypes.Negative));
+    }
+
+    public static readonly NecroticBurst Instance = new(d(2, 8), 2, 10);
+}
+
 public class DeathExplosion(DamageType type, Dice damage, int radius, ConsoleColor color) : LogicBrick
 {
     public override string Id => $"golem:death_explosion+{type.SubCat}";
@@ -427,12 +610,13 @@ public static class Golems
             SlowedByElement.Cold,
             HealsFromElement.Fire,
             new QueryBrick("reflection", (IUnit unit) => $"bounces off {unit:possessive} polished surface"),
-            // bleed on hit
+            BleedOnHit.S2,
         ], unarmed: NaturalWeapons.Slam_1d6);
 
     public static readonly MonsterDef Marrowstone = G("marrowstone", "marrowstone golem", 8, ConsoleColor.DarkGray,
         [
-            // TODO: necrotic aura (buffs undead), negative energy slam, kills create ghouls
+            NecroticAura.Instance,
+            new GrantAction(NecroticBurst.Instance),
         ], unarmed: NaturalWeapons.Slam_1d6);
 
     // --- CR 9: mid ---
@@ -441,18 +625,22 @@ public static class Golems
         [
             GrabOnHit.Instance,
             Constrict.Medium,
-            // TODO: disarm on hit, sand blast cone (fire+blunt+blind)
+            DisarmOnHit.Instance,
+            new GrantAction(SandBlast.Instance),
             VulnerableToElement.Shock,
         ], unarmed: NaturalWeapons.Slam_2d6);
 
     public static readonly MonsterDef Coral = G("coral", "coral golem", 9, ConsoleColor.DarkCyan,
         [
-            // TODO: bleed, fast healing in water, water spells heal
-        ], unarmed: NaturalWeapons.Slam_1d6);
+            BleedOnHit.S3,
+            RegenBrick.Fire,
+            new GrantAction(CoralSpike.Instance),
+        ], unarmed: NaturalWeapons.Slam_1d6, ac: -1, hp: 6); //coral has quite good offsense and regen so nerf raw stats a little
 
     public static readonly MonsterDef Alchemical = G("alchemical", "alchemical golem", 9, ConsoleColor.Green,
         [
-            // TODO: random element on hit, ranged bombs, splash damage when meleed
+            MeleeDamageRider.Random_3d4,
+            new GrantAction(AlchemicalBomb.Instance),
             VulnerableToElement.Sonic,
         ], unarmed: NaturalWeapons.Slam_2d6);
 
@@ -461,7 +649,8 @@ public static class Golems
     public static readonly MonsterDef Clay = G("clay", "clay golem", 10, ConsoleColor.DarkYellow,
         [
             HealsFromElement.Acid,
-            // TODO: cursed wounds (healing blocked), haste self, berserk
+            CursedWoundsOnHit.Instance,
+            new GrantAction(GolemHaste.Instance),
         ], unarmed: NaturalWeapons.Slam_2d6, size: UnitSize.Large);
 
     public static readonly MonsterDef Lead = G("lead", "lead golem", 10, ConsoleColor.DarkGray,

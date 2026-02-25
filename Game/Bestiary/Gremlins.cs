@@ -19,7 +19,7 @@ public class CurseWeaponInRange(int range) : ActionBrick("Curse Weapon")
 
         var weapon = u.GetWieldedItem();
         if (weapon == null) return new(false, "no weapon");
-        if (weapon.Def is WeaponDef w && w.Category == WeaponCategory.Unarmed) return new(false, "unarmed");
+        if (weapon.Def is WeaponDef w && w.Category != WeaponCategory.Item) return new(false, "unarmed");
 
         return true;
     }

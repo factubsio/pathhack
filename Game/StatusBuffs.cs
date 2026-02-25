@@ -353,3 +353,124 @@ public class DazedBuff : LogicBrick
             g.Defer(() => unit.AddFact(DazeImmunity.Instance, null, 4));
     }
 }
+
+public class DazeOnHit : LogicBrick
+{
+    public static readonly DazeOnHit Instance = new();
+    public override string Id => "daze_on_hit";
+
+    protected override void OnAfterAttackRoll(Fact fact, PHContext ctx)
+    {
+        if (!ctx.Check!.Result || !ctx.Melee) return;
+        if (ctx.Target?.Unit is { } target && !target.Has(CommonQueries.DazeImmune))
+            target.AddFact(DazedBuff.Instance, ctx.Source, 1);
+    }
+}
+
+public class BleedOnHit(int stacks) : LogicBrick
+{
+    public override string Id => $"bleed_on_hit+{stacks}";
+    public override string? PokedexDescription => $"Inflicts {stacks} bleed on hit";
+
+    protected override void OnAfterAttackRoll(Fact fact, PHContext ctx)
+    {
+        if (!ctx.Check!.Result || !ctx.Melee) return;
+        if (ctx.Target?.Unit is not { } target || target.Has(CommonQueries.BleedImmune)) return;
+
+        int dc = ((IUnit)fact.Entity).GetSpellDC();
+        using var fctx = PHContext.Create((IUnit)fact.Entity, Target.From(target));
+        if (!CheckFort(fctx, dc, "bleed")) return;
+
+        target.AddFact(BleedBuff.Instance, ctx.Source, count: stacks);
+    }
+
+    public static readonly BleedOnHit S1 = new(1);
+    public static readonly BleedOnHit S2 = new(2);
+    public static readonly BleedOnHit S3 = new(3);
+    public static readonly BleedOnHit S4 = new(4);
+    public static readonly BleedOnHit S5 = new(5);
+    public static readonly BleedOnHit S6 = new(6);
+    public static readonly BleedOnHit S7 = new(7);
+    public static readonly BleedOnHit S8 = new(8);
+    public static readonly BleedOnHit S9 = new(9);
+}
+
+public class DisarmOnHit : LogicBrick
+{
+    public static readonly DisarmOnHit Instance = new();
+    public override string Id => "disarm_on_hit";
+    public override string? PokedexDescription => "Disarms on hit";
+
+    protected override void OnAfterAttackRoll(Fact fact, PHContext ctx)
+    {
+        if (!ctx.Check!.Result || !ctx.Melee) return;
+        if (ctx.Target?.Unit is not { } target) return;
+        var weapon = target.GetWieldedItem();
+        if (weapon.Def is not WeaponDef { Category: WeaponCategory.Item }) return;
+
+        int dc = ((IUnit)fact.Entity).GetSpellDC();
+        using var fctx = PHContext.Create((IUnit)fact.Entity, Target.From(target));
+        if (!CheckFort(fctx, dc, "disarm"))
+        {
+            g.YouObserve(target, $"{fact.Entity:The} tries to disarm {target:the} but can't get a grip!");
+            return;
+        }
+
+        weapon.Knowledge |= ItemKnowledge.BUC;
+        if (!g.DoUnequip(target, weapon, free: true, consensual: false))
+        {
+            g.YouObserve(target, $"{fact.Entity:The} wrenches at {target:own} {weapon} but it's stuck!");
+            return;
+        }
+
+        g.YouObserve(target, $"{fact.Entity:The} knocks {target:own} {weapon} free!");
+    }
+}
+
+public class CursedWoundsBuff : LogicBrick
+{
+    public static readonly CursedWoundsBuff Instance = new();
+    public override string Id => "cursed_wounds";
+    public override bool IsBuff => true;
+    public override string? BuffName => "Cursed Wounds";
+    public override StackMode StackMode => StackMode.ExtendDuration;
+    public override StatusDisplay StatusDisplayPriority => StatusDisplay.Severe;
+
+    protected override object? OnQuery(Fact fact, string key, string? arg) => key.NumWhen("natural_regen_mult", 0.0);
+
+    protected override void OnBeforeHealReceived(Fact fact, PHContext ctx)
+    {
+        ctx.HealModifiers.Mod(ModifierCategory.Override, -9999, "cursed wounds");
+    }
+
+    protected override void OnFactAdded(Fact fact)
+    {
+        if (fact.Entity is IUnit unit)
+            g.YouObserveSelf(unit, "Your feel extremely itchy.", $"{unit:The} wounds don't seem to close!");
+    }
+
+    protected override void OnFactRemoved(Fact fact)
+    {
+        if (fact.Entity is IUnit unit)
+            g.YouObserveSelf(unit, "You feel extremely relieved.", $"{unit:own} wounds look more normal.");
+    }
+}
+
+public class CursedWoundsOnHit : LogicBrick
+{
+    public static readonly CursedWoundsOnHit Instance = new();
+    public override string Id => "cursed_wounds_on_hit";
+    public override string? PokedexDescription => "Inflicts cursed wounds on hit (12 rounds)";
+
+    protected override void OnAfterAttackRoll(Fact fact, PHContext ctx)
+    {
+        if (!ctx.Check!.Result || !ctx.Melee) return;
+        if (ctx.Target?.Unit is not { } target) return;
+
+        int dc = ((IUnit)fact.Entity).GetSpellDC();
+        using var fctx = PHContext.Create((IUnit)fact.Entity, Target.From(target));
+        if (!CheckFort(fctx, dc, "cursed wounds")) return;
+
+        target.AddFact(CursedWoundsBuff.Instance, ctx.Source, 12);
+    }
+}

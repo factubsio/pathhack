@@ -98,7 +98,7 @@ public static class FovCalculator
         Perf.Start();
         const int maxRange = 66;
 
-        int losRange = u.CanSee ? maxRange : 0;
+        int losRange = maxRange;
 
         bool losDirty =
                 lastLosPov != origin
@@ -129,16 +129,19 @@ public static class FovCalculator
         // they are on?)
         level.ClearVisible();
         int visCount = 0;
-        for (int y = 0; y < level.Height; y++)
+        if (u.CanSee)
         {
-            for (int x = 0; x < level.Width; x++)
+            for (int y = 0; y < level.Height; y++)
             {
-                Pos p = new(x, y);
-                if (level.HasLOS(p) && level.IsLit(p))
+                for (int x = 0; x < level.Width; x++)
                 {
-                    level.SetVisible(p);
-                    level.UpdateMemory(p);
-                    visCount++;
+                    Pos p = new(x, y);
+                    if (level.HasLOS(p) && level.IsLit(p))
+                    {
+                        level.SetVisible(p);
+                        level.UpdateMemory(p);
+                        visCount++;
+                    }
                 }
             }
         }
