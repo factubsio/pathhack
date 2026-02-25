@@ -27,6 +27,7 @@ public static class BasicLevel3Spells
           ctx.Damage.Add(new() { Formula = d(6, 6), Type = DamageTypes.Fire, HalfOnSave = true });
           DoDamage(ctx);
         }
+        AreaSystem.AffectTiles(lvl, DamageTypes.Fire, area);
       }, TargetingType.Pos, maxRange: 8);
 
   public static readonly SpellBrick VampiricTouch = new("Vampiric touch", 3,

@@ -1,22 +1,35 @@
 namespace Pathhack.Game.Bestiary;
 
-public class ConstructTraits : LogicBrick
+public class ConstructTraits(string id, HashSet<string> immunities) : LogicBrick
 {
-    public static readonly ConstructTraits Instance = new();
-    public override string Id => "construct_traits";
-    public override string? PokedexDescription => "Immune to bleed, poison, sleep, paralysis, mind-affecting";
+    // A bit clunky but iiwii
+    static readonly HashSet<string> AlwaysImmune =
+    [
+        CommonQueries.PoisonImmune,
+        CommonQueries.SleepImmune,
+        CommonQueries.ParalysisImmune,
+        CommonQueries.ConfusionImmune,
+        CommonQueries.StunImmune,
+        CommonQueries.DazeImmune,
+    ];
+    static readonly HashSet<string> WithoutBleedImmunity =
+    [
+        ..AlwaysImmune
+    ];
+    static readonly HashSet<string> AllImmunities =
+    [
+        ..AlwaysImmune,
+        CommonQueries.BleedImmune,
+    ];
 
-    protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
-    {
-        CommonQueries.PoisonImmune => true,
-        CommonQueries.BleedImmune => true,
-        CommonQueries.SleepImmune => true,
-        CommonQueries.ParalysisImmune => true,
-        CommonQueries.ConfusionImmune => true,
-        CommonQueries.StunImmune => true,
-        CommonQueries.DazeImmune => true,
-        _ => null
-    };
+    public static readonly ConstructTraits Instance = new("construct:traits", AllImmunities);
+    public static readonly ConstructTraits WithoutBleed = new("construct:traits_without_bleed_immune", WithoutBleedImmunity);
+
+    public override string Id => id;
+    public override string? PokedexDescription => $"Immune to {string.Join(", ", immunities)}";
+
+    protected override object? OnQuery(Fact fact, string key, string? arg) =>
+        immunities.Contains(key) ? true : null;
 }
 
 public class HealsFromElement(DamageType type) : LogicBrick
@@ -104,6 +117,40 @@ public class CarrionAura : LogicBrick
     }
 }
 
+public class DeathExplosion(DamageType type, Dice damage, int radius, ConsoleColor color) : LogicBrick
+{
+    public override string Id => $"golem:death_explosion+{type.SubCat}";
+    public override string? PokedexDescription => $"Explodes on death ({type.SubCat})";
+
+    static string ExplosionName(DamageType dt) => dt.SubCat switch
+    {
+        "cold" => "frost",
+        "fire" => "flames",
+        "shock" => "lightning",
+        "acid" => "acid",
+        _ => dt.SubCat,
+    };
+
+    protected override void OnDeath(Fact fact, PHContext context)
+    {
+        if (fact.Entity is not IUnit unit) return;
+        string name = ExplosionName(type);
+        g.YouObserve(unit, $"{unit:The} explodes in a burst of {name}!", $"an explosion of {name}");
+        int dc = unit.GetSpellDC();
+
+        BreathAttack.CollectBreath(BreathShape.Burst, unit, Pos.Zero, radius, color, name, (pos, victim) =>
+        {
+            if (victim == null || victim == unit) return;
+            using var ctx = PHContext.Create(unit, Target.From(victim));
+            CheckReflex(ctx, dc, type.SubCat);
+            ctx.Damage.Add(new DamageRoll { Formula = damage, Type = type, HalfOnSave = true });
+            DoDamage(ctx);
+        }, afterAll: tiles => AreaSystem.AffectTiles(lvl, type, tiles));
+    }
+
+    public static readonly DeathExplosion Cold_3d6_R1 = new(DamageTypes.Cold, d(3, 6), 1, ConsoleColor.Cyan);
+}
+
 public class JunkSwarm(Pos where) : Swarm("Junk Swarm", new('µ', ConsoleColor.DarkYellow), 1, where)
 {
     public class JunkSwarmOnDeath : LogicBrick
@@ -133,19 +180,147 @@ public class JunkSwarm(Pos where) : Swarm("Junk Swarm", new('µ', ConsoleColor.D
     }
 }
 
+public class BloodConstrict(Dice damage) : LogicBrick
+{
+    public override string Id => "golem:blood_constrict";
+    public override bool IsActive => true;
+    public override string? PokedexDescription => $"Constrict {damage}, heals from constrict damage";
+
+    protected override void OnRoundStart(Fact fact)
+    {
+        var unit = fact.Entity as IUnit;
+        if (unit?.Grabbing is not { } victim) return;
+
+        using var ctx = PHContext.Create(unit, Target.From(victim));
+        ctx.Damage.Add(new DamageRoll { Formula = damage, Type = DamageTypes.Blunt });
+        g.YouObserve(unit, $"{unit:The} {VTense(unit, "crush")} {victim:the}!");
+        DoDamage(ctx);
+
+        if (ctx.TotalDamageDealt > 0)
+            g.DoHeal(unit, unit, ctx.TotalDamageDealt, magical: false);
+    }
+
+    public static readonly BloodConstrict Instance = new(d(2, 8));
+}
+
+public class BerserkAttack(int retargetPct) : ActionBrick("berserk_attack")
+{
+    public override string? PokedexDescription => $"{retargetPct}% chance to attack random adjacent";
+
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target) => unit.IsAdjacent(target);
+
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
+    {
+        IUnit victim = target.Unit!;
+        if (g.Rn2(100) < retargetPct)
+        {
+            List<IUnit> adjacent = [];
+            foreach (var pos in unit.Pos.Neighbours())
+            {
+                if (lvl.UnitAt(pos) is { } u && u != unit)
+                    adjacent.Add(u);
+            }
+            if (adjacent.Count > 0)
+            {
+                victim = adjacent.Pick();
+                g.YouObserve(unit, $"{unit:The} {VTense(unit, "lash")} out wildly!");
+            }
+        }
+        DoWeaponAttack(unit, victim, unit.GetWieldedItem(), attackBonus: 2);
+    }
+
+    public static readonly BerserkAttack Chance30 = new(30);
+}
+
+public class SplinterBurst(Dice damage, int radius) : LogicBrick
+{
+    public override string Id => "golem:splinter_burst";
+    public override string? PokedexDescription => $"50% chance on taking damage: {damage} slashing burst (radius {radius})";
+
+    protected override void OnDamageTaken(Fact fact, PHContext ctx)
+    {
+        if (fact.Entity is not IUnit unit) return;
+        if (g.Rn2(2) != 0) return;
+
+        g.YouObserve(unit, $"{unit:The} {VTense(unit, "splinter")} violently!", "a crack of splintering wood");
+        int dc = unit.GetSpellDC();
+
+        BreathAttack.CollectBreath(BreathShape.Burst, unit, Pos.Zero, radius, ConsoleColor.DarkYellow, "splinters", (pos, victim) =>
+        {
+            if (victim == null || victim == unit) return;
+            using var dmgCtx = PHContext.Create(unit, Target.From(victim));
+            CheckReflex(dmgCtx, dc, "slashing");
+            dmgCtx.Damage.Add(new DamageRoll { Formula = damage, Type = DamageTypes.Slashing, HalfOnSave = true });
+            DoDamage(dmgCtx);
+        }, afterAll: tiles => AreaSystem.AffectTiles(lvl, DamageTypes.Slashing, tiles));
+    }
+
+    public static readonly SplinterBurst Instance = new(d(2, 6), 1);
+}
+
+public class BonePrison(int cd, int range)
+    : CooldownAction("Bone Prison", TargetingType.None, _ => cd, tags: AbilityTags.Harmful)
+{
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target)
+    {
+        var plan = base.CanExecute(unit, data, target);
+        if (!plan) return plan;
+        if (target.Unit == null) return "no target";
+        if (unit.Pos.ChebyshevDist(target.Unit.Pos) > range) return "too far";
+        if (lvl.Traps.ContainsKey(target.Unit.Pos)) return "already trapped";
+        return true;
+    }
+
+    protected override void Execute(IUnit unit, Target target, object? plan = null)
+    {
+        if (target.Unit == null) return;
+        g.YouObserve(unit, $"{unit:The} {VTense(unit, "hurl")} a cage of bones at {target.Unit:the}!", "rattling bones");
+        var trap = new WebTrap(lvl.Depth) { PlayerSeen = true };
+        lvl.Traps[target.Unit.Pos] = trap;
+        trap.Trigger(target.Unit, null);
+    }
+
+    public static readonly BonePrison Instance = new(8, 4);
+}
+
+public class SpawnOnDeath(string id, string ifSee, string? ifHear, Func<MonsterDef> what) : LogicBrick
+{
+    public override string Id => $"spawn_on_death+{id}";
+    public override string? PokedexDescription => "Spawns a lesser form on death";
+
+    protected override void OnDeath(Fact fact, PHContext context)
+    {
+        if (fact.Entity is not IUnit unit) return;
+        Pos deathPos = unit.Pos;
+        MonsterDef def = what();
+        g.Defer(() =>
+        {
+            Pos pos = deathPos; 
+            if (!lvl[deathPos].IsPassable || !lvl.NoUnit(deathPos))
+                pos = deathPos + Pos.AllDirs.Pick();
+
+            if (!lvl[pos].IsPassable || !lvl.NoUnit(pos)) return;
+            g.YouObserve(pos, ifSee, ifHear);
+            var mon = Monster.Spawn(def, "spawn_on_death");
+            lvl.PlaceUnit(mon, pos);
+        });
+    }
+}
+
 public static class Golems
 {
     public static readonly MonsterFamily Family = new("golem");
 
-    // TODO: DeathExplosion brick
     // TODO: SR system
     static readonly LogicBrick[] CommonBricks = [ConstructTraits.Instance];
+    static readonly ConstructTraits ConstructTraitsBleedable = ConstructTraits.WithoutBleed;
 
     static MonsterDef G(string id, string name, int level, ConsoleColor color,
         LogicBrick[] components, int hp = 8, int ac = 0, int ab = 0, int dmg = 0,
         int spawnWeight = 10, UnitSize size = UnitSize.Large,
         ActionCost? speed = null, WeaponDef? unarmed = null,
-        int maxDepth = 99, GroupSize group = GroupSize.None) => new()
+        int maxDepth = 99, GroupSize group = GroupSize.None,
+        LogicBrick[]? common = null) => new()
     {
         id = $"golem_{id}",
         Name = name,
@@ -165,7 +340,7 @@ public static class Golems
         BrainFlags = MonFlags.NoCorpse,
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Neutral,
-        Components = [..CommonBricks, ..components,
+        Components = [..common ?? CommonBricks, ..components,
             new GrantAction(new NaturalAttack(unarmed ?? NaturalWeapons.Slam_1d6))],
     };
 
@@ -191,7 +366,6 @@ public static class Golems
     public static readonly MonsterDef Junk = G("junk", "junk golem", 4, ConsoleColor.Gray,
         [
             JunkSwarm.JunkSwarmOnDeath.Instance,
-            // TODO: discorporate into swarm, disease (tetanus), fast healing near debris
         ], size: UnitSize.Medium, unarmed: NaturalWeapons.Slam_1d4);
 
 
@@ -201,14 +375,16 @@ public static class Golems
     //         // TODO: ranged mind control, swarm form, sees invisible
     //     ], size: UnitSize.Medium, unarmed: NaturalWeapons.Slam_1d4);
 
+    static readonly BreathAttack IceBreath = new(BreathShape.Line, DamageTypes.Cold, ConsoleColor.Cyan, _ => 10, lvl => d(Math.Max(1, lvl / 2), 6), 6);
+
     public static readonly MonsterDef Ice = G("ice", "ice golem", 5, ConsoleColor.Cyan,
         [
             Thorns.Cold_1d4,
             SlowedByElement.Shock,
             HealsFromElement.Cold,
-            // TODO: cold breath cone
-            // TODO: death explosion (cold)
+            DeathExplosion.Cold_3d6_R1,
             VulnerableToElement.Fire,
+            new GrantAction(IceBreath),
         ], unarmed: NaturalWeapons.Slam_1d6);
 
     // --- CR 6-7: mid-early ---
@@ -216,14 +392,14 @@ public static class Golems
     public static readonly MonsterDef Blood = G("blood", "blood golem", 6, ConsoleColor.DarkRed,
         [
             GrabOnHit.Instance,
-            Constrict.Small,
-            // TODO: blood drain (heal on constrict damage), vulnerable to bleed (override construct immunity)
-        ], unarmed: NaturalWeapons.Slam_1d6);
+            BloodConstrict.Instance,
+        ], unarmed: NaturalWeapons.Slam_1d6,
+        common: [ConstructTraitsBleedable]);
 
     public static readonly MonsterDef Wood = G("wood", "wood golem", 6, ConsoleColor.DarkYellow,
         [
             HealsFromElement.Cold,
-            // TODO: splinter burst AoE
+            SplinterBurst.Instance,
             VulnerableToElement.Fire,
         ], unarmed: NaturalWeapons.Slam_1d6);
 
@@ -232,14 +408,18 @@ public static class Golems
             SlowedByElement.Cold,
             SlowedByElement.Fire,
             HealsFromElement.Shock,
-            // TODO: berserk (cumulative 1%/round)
+            new GrantAction(BerserkAttack.Chance30),
         ], unarmed: NaturalWeapons.Slam_2d6);
 
     // --- CR 8: mid ---
 
+    public static readonly MonsterDef BoneShard = G("bone_shard", "bone shard golem", 8, ConsoleColor.White,
+        [], hp: 4, ac: -2, unarmed: NaturalWeapons.Slam_1d6);
+
     public static readonly MonsterDef Bone = G("bone", "bone golem", 8, ConsoleColor.White,
         [
-            // TODO: bone prison (ranged immobilize), healing magic slows, negative energy heals
+            new GrantAction(BonePrison.Instance),
+            new SpawnOnDeath("bone_golem", "bones rise, and reassemble!", "bones rattling together", () => BoneShard),
         ], unarmed: NaturalWeapons.Slam_1d6);
 
     public static readonly MonsterDef Glass = G("glass", "glass golem", 8, ConsoleColor.Blue,

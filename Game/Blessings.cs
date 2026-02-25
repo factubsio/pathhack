@@ -273,6 +273,7 @@ public class SunBlessingMinor() : BlessingAction("Sun Blessing")
             ctx.Damage = [new() { Formula = formula, Type = DamageTypes.Fire }];
             DoDamage(ctx);
         }
+        AreaSystem.AffectTiles(lvl, DamageTypes.Fire, result);
     }
 }
 

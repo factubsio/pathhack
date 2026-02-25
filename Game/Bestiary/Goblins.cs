@@ -32,6 +32,7 @@ public class FireBreath(int radius, Dice damage, int dc, string pool = "fire_bre
             ctx.Damage = [dmg];
             DoDamage(ctx);
         }
+        AreaSystem.AffectTiles(lvl, DamageTypes.Fire, cone);
     }
 }
 

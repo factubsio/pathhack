@@ -60,6 +60,7 @@ public class MephitBreath(BreathShape shape, DamageType damageType, ConsoleColor
             ctx.Damage.Add(new DamageRoll { Formula = d(4), Type = damageType, HalfOnSave = true });
             DoDamage(ctx);
         }
+        AreaSystem.AffectTiles(lvl, damageType, area);
     }
 }
 

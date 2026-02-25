@@ -710,7 +710,11 @@ public class Level(LevelId id, int width, int height)
         }
     }
 
-    internal void CleanupAreas() => Areas.RemoveAll(x => g.CurrentRound >= x.ExpiresAt);
+    internal void CleanupAreasAndSwarms()
+    {
+        Areas.RemoveAll(x => g.CurrentRound >= x.ExpiresAt);
+        Swarms.RemoveAll(s => s.IsDead);
+    } 
 
     internal bool HasHole(Pos pos) => Traps.TryGetValue(pos, out var trap) && trap.Type is TrapType.Hole or TrapType.Trapdoor;
 

@@ -180,6 +180,7 @@ public class Whirlwind(int range) : LogicBrick
             g.YouObserve(victim, $"{victim:The} {VTense(victim, "get")} battered by the whirlwind!");
             DoDamage(ctx);
         }
+        AreaSystem.AffectTiles(lvl, DamageTypes.Blunt, area);
     }
 }
 
@@ -249,6 +250,7 @@ public class WaterCone() : CooldownAction("water blast", TargetingType.Direction
             ctx.Damage.Add(new DamageRoll { Formula = d(6), Type = DamageTypes.Cold, HalfOnSave = true });
             DoDamage(ctx);
         }
+        AreaSystem.AffectTiles(lvl, DamageTypes.Cold, cone);
     }
 }
 
@@ -306,6 +308,7 @@ public class SparkZap() : CooldownAction("spark zap", TargetingType.Direction, _
             ctx.Damage.Add(new DamageRoll { Formula = d(2, 6), Type = DamageTypes.Shock, HalfOnSave = true });
             DoDamage(ctx);
         }
+        AreaSystem.AffectTiles(lvl, DamageTypes.Shock, line);
     }
 }
 

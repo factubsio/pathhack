@@ -1,0 +1,154 @@
+Beam API Refactor
+=================
+
+Problem
+-------
+Every beam consumer (MagicMissile, ScorchingRay, AcidArrow, Dawnflower, SparkZap)
+manually iterates Beam.Fire() steps, checks UnitAt, handles segment animation,
+and breaks on hit. ~20 lines of boilerplate per consumer. Adding reflection
+(glass golem, future shield of reflection) means touching every consumer.
+
+SparkZap doesn't even use Beam — it uses CollectLine + manual iteration.
+
+Current consumer patterns
+-------------------------
+Pattern A: "stop on first hit" (ScorchingRay, Dawnflower, MagicMissile)
+  - iterate steps
+  - check UnitAt per step
+  - on hit: animate segment, do damage, break/return
+  - on bounce/last: animate segment
+  - single target
+
+Pattern B: "attack roll on hit" (ScorchingRay, AcidArrow)
+  - same as A but DoAttackRoll before damage
+  - miss = no damage but still stops
+
+Pattern C: "pierce all" (SparkZap, BreathAttack line shape)
+  - collect all tiles in line
+  - animate whole line
+  - damage every unit in path
+  - calls AffectTiles
+
+Pattern D: "bounce and keep going" (MagicMissile)
+  - canBounce: true
+  - still stops on first unit hit
+
+Proposal
+--------
+Add Beam.Cast() — handles traversal, animation, hit detection, reflection.
+
+  public record BeamOpts
+  {
+      public Glyph Glyph;
+      public int Range = 8;
+      public BounceMode Bounce = BounceMode.None;  // None, Walls, ReflectOnly
+      public bool Pierce = false;       // if true, hits all units in path (pattern C)
+      public bool Pulse = false;        // animation style
+      public DamageType? AffectType;    // if set, calls AffectTiles on beam path
+  }
+
+  // BounceMode.None      — stops at walls, stops at units
+  // BounceMode.Walls     — bounces off walls (MagicMissile), stops at units
+  // BounceMode.ReflectOnly — stops at walls, but bounces off "reflects" units
+  // Walls + ReflectOnly could be combined as flags if needed later
+
+  // Returns: final pos (where beam ended), or null if cancelled/fizzled
+  public static Pos? Beam.Cast(
+      Pos origin,
+      Pos dir,
+      BeamOpts opts,
+      Action<IUnit> onHit
+  )
+
+Internals:
+  - Walks steps via existing iterator
+  - Animates segments (handles bounce segment breaks)
+  - Per step: checks UnitAt
+    - if unit.Has("reflects"): reverse dir, animate bounce, continue
+    - if Pierce: call onHit, continue walking
+    - else: call onHit, stop
+  - After walk: if AffectType set, collect all visited tiles, call AffectTiles
+  - Returns final Pos
+
+Reflection:
+  - New query: "reflects" (bool, MergeStrategy.Or)
+  - Glass golem gets it. Future: shield of reflection, amulet of reflection.
+  - On reflect: beam reverses direction from that tile (same as wall bounce)
+  - Reflected beam can hit the caster. That's intended (NH behavior).
+  - Pierce beams don't reflect (breath weapons / SparkZap go through everything)
+  - BounceMode controls what triggers bounces:
+    - Walls: walls only (current MagicMissile behavior)
+    - ReflectOnly: reflecting units only (most attack beams)
+    - Could combine as flags later if something needs both
+
+Consumer rewrites
+-----------------
+
+ScorchingRay (pattern B — attack roll):
+  Can't use simple onHit because it needs DoAttackRoll and different messages
+  for hit/miss. Options:
+    a) onHit returns bool (did it stick) — awkward
+    b) Beam.Cast takes Action<IUnit, BeamHitContext> where context has .Stop()
+    c) Keep pattern B manual for attack-roll beams
+  Recommendation: (c) for now. Attack-roll beams are rare (ScorchingRay, AcidArrow).
+  They still benefit from reflection if we add a Beam.CastRaw() that yields
+  steps but handles reflection internally.
+
+MagicMissile:
+  Beam.Cast(c.Pos, dir, new() { Glyph = new('*', Magenta), Bounce = BounceMode.Walls }, victim =>
+  {
+      g.YouObserve(victim, $"The magic missile hits {victim:the}.");
+      using var ctx = PHContext.Create(c, Target.From(victim));
+      for (int i = 0; i < missiles; i++)
+          ctx.Damage.Add(new() { Formula = d(6) + 2 + ..., Type = DamageTypes.Magic });
+      DoDamage(ctx);
+  });
+
+Dawnflower:
+  Beam.Cast(wielder.Pos, dir, new() { Glyph = new('*', Yellow), Pulse = true }, target =>
+  {
+      using var ctx = PHContext.Create(wielder, Target.From(target));
+      ctx.Damage.Add(new() { Formula = d(2, 6), Type = DamageTypes.Fire });
+      if (target.IsCreature(CreatureTypes.Undead))
+          ctx.Damage.Add(new() { Formula = d(2, 6), Type = DamageTypes.Holy });
+      DoDamage(ctx);
+  });
+
+SparkZap (pattern C — pierce):
+  Beam.Cast(unit.Pos, dir, new()
+  {
+      Glyph = new('*', Yellow), Pulse = true, Pierce = true,
+      Range = 6, AffectType = DamageTypes.Shock,
+  }, victim =>
+  {
+      if (victim == unit) return;
+      using var ctx = PHContext.Create(unit, Target.From(victim));
+      CheckReflex(ctx, dc, "shock");
+      ctx.Damage.Add(new() { Formula = d(2, 6), Type = DamageTypes.Shock, HalfOnSave = true });
+      DoDamage(ctx);
+  });
+
+Attack-roll beams (ScorchingRay, AcidArrow):
+  Keep using Beam iterator directly for now. Could later add:
+    Beam.CastRaw(origin, dir, opts) -> IEnumerable<BeamStep>
+  which is the current iterator but with reflection logic baked in.
+  Consumers still iterate manually but don't need to handle reflection.
+
+BreathAttack line shape:
+  Already uses CollectBreath helper, not Beam. Leave as-is.
+  Could migrate to Pierce beam later but no urgency.
+
+Migration order
+---------------
+1. Add BeamOpts, Beam.Cast() with reflection support
+2. Migrate MagicMissile, Dawnflower (simplest — no attack roll)
+3. Migrate SparkZap (pierce mode)
+4. Add "reflects" query to glass golem
+5. Later: Beam.CastRaw for attack-roll beams
+6. Later: migrate BreathAttack lines if desired
+
+Open questions
+--------------
+- Should Pierce beams also stop on reflection? (probably not — they go through)
+- Should reflected beams get a different animation color? (nice touch, not required)
+- Max reflection count? (NH caps at 1 reflect per beam. Probably same.)

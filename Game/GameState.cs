@@ -488,12 +488,14 @@ public class GameState
         Draw.DrawCurrent();
         Perf.Stop("Draw");
 
+        // swarms first then areas
         foreach (var swarm in lvl.AllSwarms)
             swarm.Tick();
 
         foreach (var area in lvl.AllAreas)
             area.Tick();
-        lvl.CleanupAreas();
+
+        lvl.CleanupAreasAndSwarms();
 
         Perf.Start();
         Draw.DrawCurrent();
@@ -938,7 +940,9 @@ public class GameState
             if (dmg.DoubleOnFail && ctx.Check?.Result == false) dmg.Double();
 
             int rolled = dmg.Formula.WithExtra(dmg.ExtraDice).Roll();
-            damage += dmg.Resolve(rolled);
+            var value = dmg.Resolve(rolled);
+            if (dmg.IsAttuned) value = -value;
+            damage += value;
         }
         
         // this can happen if all damage instances were negated
@@ -950,6 +954,19 @@ public class GameState
                 ctx.HpBefore = target.HP.Current;
                 ctx.HpAfter = target.HP.Current;
                 Log.Structured("damage", $"{source:source}{target:target}{damage:total}{ctx.Damage:rolls}{ctx.HpBefore:hp_before}{ctx.HpAfter:hp_after}{saved:saved}{0:temp_hp_absorbed}");
+            }
+            return;
+        }
+
+        // Attuned healing
+        if (damage < 0)
+        {
+            ctx.HpBefore = target.HP.Current;
+            g.DoHeal(ctx.Source ?? DungeonMaster.Mook, target, -damage, true);
+            ctx.HpAfter = target.HP.Current;
+            if (!ctx.SilentDamage)
+            {
+                Log.Structured("damage", $"{source:source}{target:target}{damage:total}{ctx.Damage:rolls}{ctx.HpBefore:hp_before}{ctx.HpAfter:hp_after}{0:temp_hp_absorbed}");
             }
             return;
         }
@@ -1160,14 +1177,21 @@ public class GameState
             Log.Structured("use", $"{"throw":action}{item.Def.Name:item}{throwType:type}");
         }
 
+        ThrowLands(thrower, item, last, hit, type);
+
+        return last;
+    }
+
+    public static void ThrowLands(IUnit thrower, Item item, Pos pos, IUnit? hit, AttackType type = AttackType.Thrown)
+    {
         if (item.Def is BottleDef bottle)
         {
-            g.YouObserve(last, $"{item:The} shatters!", "glass breaking");
-            Bottles.DoEffect(bottle, thrower, last);
+            g.YouObserve(pos, $"{item:The} shatters!", "glass breaking");
+            Bottles.DoEffect(bottle, thrower, pos);
         }
         else if (item.Def is PotionDef potion)
         {
-            g.YouObserve(last, hit != null
+            g.YouObserve(pos, hit != null
                 ? $"{item:The} shatters on {hit:the}!"
                 : $"{item:The} shatters!", "glass breaking");
             if (hit != null)
@@ -1177,12 +1201,10 @@ public class GameState
         {
             if (hit != null)
                 DoWeaponAttack(thrower, hit, item, type);
-            
-            if (!item.Def.IsEphemeral)
-                lvl.PlaceItem(item, last);
-        }
 
-        return last;
+            if (!item.Def.IsEphemeral)
+                lvl.PlaceItem(item, pos);
+        }
     }
 
     public int DoPickup(IUnit unit, Item item)

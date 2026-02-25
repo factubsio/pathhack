@@ -112,6 +112,7 @@ public static class BasicLevel1Spells
           ctx.Damage = [dmg];
           DoDamage(ctx);
         }
+        AreaSystem.AffectTiles(lvl, DamageTypes.Fire, cone);
       }, TargetingType.Direction, maxRange: BurningHandsRad - 1);
 
   public static readonly SpellBrickBase Light = new ActivateMaintainedSpell("Light", 1,

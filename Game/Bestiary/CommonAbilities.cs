@@ -1,6 +1,6 @@
 namespace Pathhack.Game.Bestiary;
 
-public enum BreathShape { Cone, Line }
+public enum BreathShape { Cone, Line, Burst }
 
 public class BreathAttack(
     BreathShape shape,
@@ -39,6 +39,15 @@ public class BreathAttack(
                 action(pos, lvl.UnitAt(pos));
             afterAll?.Invoke(cone);
         }
+        else if (shape == BreathShape.Burst)
+        {
+            // No youobserve here, tbh we may want this to be passed in?
+            using var area = lvl.CollectCircle(source.Pos, range, andCenter: false);
+            Draw.AnimateFlash(area, new Glyph('*', color));
+            foreach (var pos in area)
+                action(pos, lvl.UnitAt(pos));
+            afterAll?.Invoke(area);
+        }
         else
         {
             List<Pos> line = [];
@@ -72,6 +81,6 @@ public class BreathAttack(
             ctx.Damage.Add(new DamageRoll { Formula = damage, Type = damageType, HalfOnSave = true });
             if (victim.IsPlayer) g.pline($"You are engulfed in {name}!");
             DoDamage(ctx);
-        });
+        }, afterAll: tiles => AreaSystem.AffectTiles(lvl, damageType, tiles));
     }
 }

@@ -426,17 +426,46 @@ public static partial class Input
         // TODO: throw things that aren't potions!!!
         if (!PickItem("throw", IsQuaffable, out var item)) return;
 
-        if (!PromptDirection(out var dir)) return;
+        bool targeted = u.Has("throw_at_pos");
 
-        Item toThrow;
-        if (item.Count > 1)
-            toThrow = item.Split(1);
+        if (targeted)
+        {
+            int range = Math.Max(1, 4 + u.StrMod - item.EffectiveWeight / 40);
+            g.pline($"Throw where? (range {range})");
+            var pos = PickPosition();
+            if (pos == null) return;
+            if (upos.ChebyshevDist(pos.Value) > range)
+            {
+                g.pline("Too far!");
+                return;
+            }
+
+            Item toThrow;
+            if (item.Count > 1)
+                toThrow = item.Split(1);
+            else
+            {
+                toThrow = item;
+                u.Inventory.Remove(toThrow);
+            }
+            // FIXME: Animate projectile over a bresenham
+            // Draw.AnimateProjectile(upos, pos.Value, toThrow.Glyph);
+            ThrowLands(u, toThrow, pos.Value, lvl.UnitAt(pos.Value));
+        }
         else
         {
-            toThrow = item;
-            u.Inventory.Remove(toThrow);
+            if (!PromptDirection(out var dir)) return;
+
+            Item toThrow;
+            if (item.Count > 1)
+                toThrow = item.Split(1);
+            else
+            {
+                toThrow = item;
+                u.Inventory.Remove(toThrow);
+            }
+            DoThrow(u, toThrow, dir, AttackType.Thrown);
         }
-        DoThrow(u, toThrow, dir, AttackType.Thrown);
         u.Energy -= ActionCosts.OneAction.Value;
     }
 

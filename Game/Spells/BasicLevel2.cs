@@ -63,6 +63,7 @@ public static class BasicLevel2Spells
                 if (!saved && !victim.IsDead)
                     victim.AddFact(StunnedBuff.Instance.Timed(), c, 1);
             }
+            AreaSystem.AffectTiles(lvl, DamageTypes.Force, area);
         }, TargetingType.Pos, maxRange: 6);
 
     public static readonly SpellBrickBase ResistFire = ResistEnergyBuff.MakeSpell("Resist fire", DamageTypes.Fire);

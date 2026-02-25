@@ -227,5 +227,15 @@ public static class GeneralFeats
         Components = [new GrantAction(new RecklessAttackToggle())],
     };
 
-    public static readonly FeatDef[] All = [Fleet, Toughness, BlindFight, FeatherStep, TrapSense, Evasion, DebilitatingStrikes, PowerAttack, RecklessAttack];
+    public static readonly FeatDef ThrowAnything = new()
+    {
+        id = "throw_anything",
+        Name = "Throw Anything",
+        Description = "You can throw potions and bottles at a specific tile rather than in a direction.",
+        Type = FeatType.General,
+        Level = 1,
+        Components = [new QueryBrick("throw_at_pos", true)],
+    };
+
+    public static readonly FeatDef[] All = [Fleet, Toughness, BlindFight, FeatherStep, TrapSense, Evasion, DebilitatingStrikes, PowerAttack, RecklessAttack, ThrowAnything];
 }
