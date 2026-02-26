@@ -128,7 +128,7 @@ public class AntEgg : LogicBrick<ScalarData<int>>
         int val = X(fact).Value++;
         var at = unit.Pos;
 
-        if (val > 3 && g.Rn2(2) == 0)
+        if (val > 5 && g.Rn2(3) == 0)
         {
             DoRemoveFromPlay(unit);
 
@@ -158,9 +158,11 @@ public class AntSpawner : LogicBrick<ScalarData<int>>
         if (fact.Entity is not Monster unit) return;
         if (unit.CannotAct) return;
 
+        if (!lvl.HasLOS(unit.Pos) || unit.Pos.ChebyshevDist(upos) > 10) return;
+
         var dat = X(fact);
         dat.Value++;
-        if (g.Rn2(dat) < 5) return;
+        if (g.Rn2(dat) < 9) return;
         X(fact).Value = 0;
 
         g.Defer(() =>

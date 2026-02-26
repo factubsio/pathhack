@@ -108,7 +108,7 @@ public static class MonsterSpawner
         }
     }
 
-    public static bool SpawnAndPlace(Level level, string reason, MonsterDef? def, bool allowTemplate, Pos? pos = null, bool asleep = false, Func<MonsterDef, bool>? filter = null, bool noGroup = false)
+    public static bool SpawnAndPlace(Level level, string reason, MonsterDef? def, bool allowTemplate, Pos? pos = null, bool asleep = false, Func<MonsterDef, bool>? filter = null, bool noGroup = false, Action<Monster>? andThen = null)
     {
         int depth = level.EffectiveDepth;
         int playerLevel = u?.CharacterLevel ?? 1;
@@ -148,6 +148,8 @@ public static class MonsterSpawner
 
         if (!noGroup)
             TrySpawnGroup(level, mon, template, pos.Value, asleep);
+
+        andThen?.Invoke(mon);
         return true;
     }
 

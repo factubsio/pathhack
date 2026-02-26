@@ -178,6 +178,8 @@ public class Monster : Unit<MonsterDef>, IFormattable
     public PlayerPerception Perception;
     public Pronoun Self;
 
+    public double ExpMultiplier = 1;
+
     public static bool Hates(Monster a, Monster b)
     {
         if (a == b) return false;

@@ -796,7 +796,7 @@ public static partial class LevelGen
             if (ctx.level.UnitAt(p) != null) continue;
 
             var def = pool.Pick();
-            MonsterSpawner.SpawnAndPlace(ctx.level, "goblin nest", def, false, p, true);
+            MonsterSpawner.SpawnAndPlace(ctx.level, "goblin nest", def, false, p, asleep: true, noGroup: true, andThen: m => m.ExpMultiplier = 0.66);
         }
     }
 
@@ -805,7 +805,7 @@ public static partial class LevelGen
         void Place(MonsterDef def)
         {
             if (ctx.level.FindLocationInRoom(room, ctx.level.NoUnit) is { } pos)
-                MonsterSpawner.SpawnAndPlace(ctx.level, "gremlin party", def, false, pos, true);
+                MonsterSpawner.SpawnAndPlace(ctx.level, "gremlin party", def, false, pos, true, noGroup: true, andThen: m => m.ExpMultiplier = 0.66);
         }
 
         int total = small ? RnRange(2, 5) : RnRange(5, 12);

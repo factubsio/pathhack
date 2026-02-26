@@ -1051,7 +1051,7 @@ public class GameState
                     g.YouObserve(target, $"You kill {target:the}!", DeathSounds.Pick());
                     if (target is Monster m)
                     {
-                        g.GainExp(20 * Math.Max(1, m.EffectiveLevel), m.Def.Name);
+                        g.GainExp(20 * Math.Max(1, m.EffectiveLevel), m.ExpMultiplier, m.Def.Name);
                         g.Vanquished[m.Def.Name] = g.Vanquished.GetValueOrDefault(m.Def.Name) + 1;
                     }
                 }
@@ -1282,7 +1282,7 @@ public class GameState
             item.Knowledge |= ItemKnowledge.PropQuality;
     }
 
-    const double ExpMultiplier = 2.0;
+    const double GlobalExpMultiplier = 2.0;
 
     static readonly string[] LevelUpNags = [
         "9 out of 10 dentists recommend levelling up. (#levelup)",
@@ -1295,10 +1295,10 @@ public class GameState
         "You trip over your unspent experience. (#levelup)",
     ];
 
-    public void GainExp(int amount, string? source = null)
+    public void GainExp(int amount, double mul = 1, string? source = null)
     {
         bool wasPending = Progression.HasPendingLevelUp(u);
-        amount = (int)(amount * ExpMultiplier);
+        amount = (int)(amount * GlobalExpMultiplier * mul);
         u.XP += amount;
         Log.Structured("exp", $"{amount:amount}{u.XP:total}{u.CharacterLevel:xl}{lvl.EffectiveDepth:dl}{source ?? "?":src}"); if (!wasPending && Progression.HasPendingLevelUp(u))
             pline(LevelUpNags.Pick());
