@@ -146,7 +146,7 @@ public static class MonsterSpawner
             mon.Gold += (1 + (g.Rn2(depth + 2) + 1) * (g.Rn2(30) + 1)) / 4;
         level.PlaceUnit(mon, pos.Value);
 
-        if (!noGroup)
+        if (!noGroup && depth >= 2)
             TrySpawnGroup(level, mon, template, pos.Value, asleep);
 
         andThen?.Invoke(mon);

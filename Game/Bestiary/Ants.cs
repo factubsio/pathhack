@@ -45,15 +45,15 @@ public static class Ants
 
     public static readonly MonsterDef GiantAnt = A("giant_ant", "giant ant", 2, ConsoleColor.DarkYellow,
         [
-            new GrantAction(new FullAttack("ant", NaturalWeapons.Bite_1d4, NaturalWeapons.Sting_1d4.WithRider(MeleeDamageRider.Acid_1d4))),
+            new GrantAction(new FullAttack("ant", NaturalWeapons.Bite_1d3, NaturalWeapons.Sting_1d4.WithRider(MeleeDamageRider.Acid_1d4))),
             EnergyResist.Acid.DR5,
-        ], speed: ActionCosts.LandMove25);
+        ], speed: ActionCosts.LandMove25, hp: 6, ac: -1);
 
     public static readonly MonsterDef FireAnt = A("fire_ant", "fire ant", 3, ConsoleColor.Red,
         [
             new GrantAction(new FullAttack("fire_ant", NaturalWeapons.Bite_1d4, NaturalWeapons.Sting_1d4.WithRider(MeleeDamageRider.Fire_1d4))),
             EnergyResist.Fire.DR5
-         ]);
+         ], hp: 6);
 
     public static readonly MonsterDef KnightAnt = A("knight_ant", "knight ant", 4, ConsoleColor.Blue,
         [

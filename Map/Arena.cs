@@ -28,6 +28,7 @@ public static class Arena
         foreach (var p in interior) level.GetOrCreateState(p).Room = room;
 
         level.StairsUp = new(ox + size / 2, oy + size / 2);
+        level.PlaceFeature(new(ox + size - 2, oy + 1), new TileFeature("rune_forge", new('∆', ConsoleColor.Red), "a rune forge"));
         level.SpawnFlags = SpawnFlags.None;
     }
 }

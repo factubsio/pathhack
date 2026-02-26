@@ -142,7 +142,10 @@ public static class ListPicker
             ConsoleColor fg = ConsoleColor.White;
             if (items[i].WhyNot != null)
                 fg = ConsoleColor.DarkYellow;
-            win.At(2, 3 + i - scroll).Write(prefix + items[i].Name, fg, ConsoleColor.Black, style);
+            string label = prefix + items[i].Name;
+            if (label.Length > ListWidth - 2)
+                label = label[..(ListWidth - 3)] + "…";
+            win.At(2, 3 + i - scroll).Write(label, fg, ConsoleColor.Black, style);
         }
 
         if (items.Count > maxVisible)

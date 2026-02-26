@@ -34,12 +34,12 @@ public static class RuneForge
                         return false;
                     case ConsoleKey.L:
                     case ConsoleKey.RightArrow:
-                        index = Math.Clamp(index + 1, 0, 3);
+                        index = Math.Clamp(index + 1, 0, item.PropertySlots);
                         RefreshRunes(index);
                         break;
                     case ConsoleKey.H:
                     case ConsoleKey.LeftArrow:
-                        index = Math.Clamp(index - 1, 0, 3);
+                        index = Math.Clamp(index - 1, 0, item.PropertySlots);
                         RefreshRunes(index);
                         break;
                     case ConsoleKey.J:
@@ -59,6 +59,7 @@ public static class RuneForge
                             var rd = (RuneItemDef)runeItem.Def;
                             if (ItemGen.ApplyRune(item, rd.Rune, fundamental: index == 0))
                             {
+                                rd.SetKnown();
                                 inv.Remove(runeItem);
                                 RefreshRunes(index);
                             }
@@ -75,8 +76,13 @@ public static class RuneForge
 
     static void Render(ref WindowWriter w, Item item, int selected, List<Item> availableRunes, int runeScroll)
     {
+        const int carouselX = 20, carouselY = 14, carouselW = 30;
+
         w.SetCursor(0, 0);
-        w.Write(item.DisplayName, ConsoleColor.Yellow);
+        string wname = item.DisplayName;
+        if (wname.Length > carouselX + carouselW)
+            wname = wname[..(carouselX + carouselW - 1)] + "…";
+        w.Write(wname, ConsoleColor.Yellow);
         w.NewLine();
         w.NewLine();
 
@@ -139,16 +145,16 @@ public static class RuneForge
         }
 
         // carousel
-        const int carouselX = 20, carouselY = 14, carouselW = 30;
         for (int row = 0; row < 5; row++)
         {
             w.SetCursor(carouselX, carouselY + row);
             w.Write(new string(' ', carouselW));
         }
 
+        bool slotAvailable = selected >= 0 && (selected == 0 || selected - 1 < item.PropertySlots);
         bool slotEmpty = selected == 0
             ? item.Fundamental == null
-            : selected - 1 >= item.PropertyRunes.Count && selected - 1 < item.PropertySlots;
+            : selected - 1 >= item.PropertyRunes.Count && slotAvailable;
 
         if (slotEmpty && availableRunes.Count > 0)
         {
@@ -160,15 +166,34 @@ public static class RuneForge
             {
                 int ri = top + j;
                 if (ri < 0 || ri >= availableRunes.Count) continue;
-                var rd = (RuneItemDef)availableRunes[ri].Def;
                 w.SetCursor(carouselX, carouselY + 1 + j);
                 bool isMid = ri == center;
                 if (isMid)
-                    w.Write(rd.Rune.QualifiedName, ConsoleColor.Black, ConsoleColor.White);
+                    w.Write(availableRunes[ri].DisplayName, ConsoleColor.Black, ConsoleColor.White);
                 else
-                    w.Write(rd.Rune.QualifiedName, ConsoleColor.White);
+                    w.Write(availableRunes[ri].DisplayName, ConsoleColor.White);
             }
             if (top + 3 < availableRunes.Count) { w.SetCursor(carouselX + carouselW / 2, carouselY + 4); w.Write("▼", ConsoleColor.DarkGray); }
+        }
+        else if (slotAvailable)
+        {
+            w.SetCursor(carouselX, carouselY + 1);
+            if (!slotEmpty)
+            {
+                if (selected == 0 && item.Fundamental!.Brick is NullFundamental)
+                    w.Write("Blocked.", ConsoleColor.DarkGray);
+                else
+                {
+                    string name = selected == 0
+                        ? ((RuneBrick)item.Fundamental!.Brick).QualifiedName
+                        : ((RuneBrick)item.PropertyRunes[selected - 1].Brick).QualifiedName;
+                    w.Write($"{name} is slotted.", ConsoleColor.DarkGray);
+                }
+            }
+            else if (selected == 0)
+                w.Write("You have no fundamental runes.", ConsoleColor.DarkGray);
+            else
+                w.Write("You have no property runes.", ConsoleColor.DarkGray);
         }
 
         w.NewLine();

@@ -327,7 +327,7 @@ public static partial class ClassDefs
             var weaponDef = GetWeaponForType(p.Deity!.FavoredWeapon);
             if (weaponDef != null)
             {
-                var weapon = ItemGen.GenerateItem(weaponDef, depth: 1, maxPotency: 1, propertyRunes: false);
+                var weapon = ItemGen.GenerateItem(weaponDef, depth: 1, maxPotency: -1, propertyRunes: false, fundamental: false);
                 p.Inventory.Add(weapon).Identify();
                 p.Equip(weapon);
                 p.AddFact(new GrantProficiency(p.Deity.FavoredWeapon, ProficiencyLevel.Trained), null);
@@ -338,6 +338,9 @@ public static partial class ClassDefs
 
             // Starting potions
             p.Inventory.Add(Item.Create(Potions.Healing, g.RnRange(2, 3))).Identify();
+
+            p.Inventory.Add(Item.Create(Bottles.AlchemistFireBottle, g.RnRange(2, 3))).Identify();
+            p.Inventory.Add(Item.Create(Bottles.AlchemistAcidBottle, g.RnRange(2, 3))).Identify();
 
             if (ItemGen.TryGenerateWand(1, out var wand))
                 p.Inventory.Add(wand).Identify();
