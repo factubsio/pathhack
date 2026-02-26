@@ -314,7 +314,7 @@ public static partial class LevelGen
     static void MakeRiver(LevelGenContext ctx)
     {
         var level = ctx.level;
-        bool horizontal = Rn2(4) == 0;
+        bool horizontal = Rn2(4) != 0;
         
         if (horizontal)
         {
