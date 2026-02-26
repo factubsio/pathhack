@@ -189,6 +189,10 @@ public class Player(PlayerDef def) : Unit<PlayerDef>(def, def.Components), IForm
                     RoomType.GoblinNest => "You find a goblin prayer circle.",
                     RoomType.GremlinParty => "You stumble across the aftermath of a gremlin party.",
                     RoomType.GremlinPartyBig => "You enter the chaos of a gremlin bender.",
+                    RoomType.SpiderNest => "You walk into a web-choked nest.",
+                    RoomType.BoggardSwamp => "You find a flooded chamber.",
+                    RoomType.AntNest => "You stumble into an ant colony.",
+                    RoomType.RatNest => "You disturb a rat nest.",
                     _ => null
                 };
             }

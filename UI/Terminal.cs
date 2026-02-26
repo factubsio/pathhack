@@ -85,6 +85,7 @@ public class CellEncoder
     bool _inDec;
     bool _inBold;
     bool _inReverse;
+    bool _inUnderline;
 
     public int Length => _buf.Length;
     public int CellCount { get; private set; }
@@ -104,6 +105,7 @@ public class CellEncoder
         _inDec = false;
         _inBold = false;
         _inReverse = false;
+        _inUnderline = false;
     }
 
     public void Emit(int x, int y, Cell cell)
@@ -132,6 +134,11 @@ public class CellEncoder
         bool wantReverse = cell.Style.HasFlag(CellStyle.Reverse);
         if (wantReverse && !_inReverse) { _buf.Append("\x1b[7m"); _inReverse = true; }
         else if (!wantReverse && _inReverse) { _buf.Append("\x1b[27m"); _inReverse = false; }
+
+        // Underline
+        bool wantUnderline = cell.Style.HasFlag(CellStyle.Underline);
+        if (wantUnderline && !_inUnderline) { _buf.Append("\x1b[4m"); _inUnderline = true; }
+        else if (!wantUnderline && _inUnderline) { _buf.Append("\x1b[24m"); _inUnderline = false; }
 
         // DEC line drawing mode
         if (cell.Dec && !_inDec) { _buf.Append("\x1b(0"); _inDec = true; }

@@ -124,6 +124,10 @@ public enum RoomType : byte
     GoblinNest,
     GremlinParty,
     GremlinPartyBig,
+    SpiderNest,
+    BoggardSwamp,
+    AntNest,
+    RatNest,
     Shop,
 }
 

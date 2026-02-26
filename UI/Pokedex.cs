@@ -89,9 +89,14 @@ public static class Pokedex
         "unknown creature causing you dread",
     ];
 
+    static string? SwarmAt(Pos p) => lvl.IsVisible(p) ? lvl.AllSwarms.FirstOrDefault(s => s.Where == p)?.Name : null;
+
     static string DescribeAt(Pos p)
     {
         var unit = lvl.UnitAt(p);
+        var swarmName = SwarmAt(p);
+        string swarmSuffix = swarmName != null ? $" + {swarmName}" : "";
+
         if (unit is Monster m && !m.IsPlayer)
         {
             switch (m.Perception)
@@ -99,7 +104,7 @@ public static class Pokedex
                 case PlayerPerception.Visible:
                 case PlayerPerception.Detected:
                 case PlayerPerception.Warned:
-                    return $"{m.Glyph.Value}  {m}";
+                    return $"{m.Glyph.Value}  {m}{swarmSuffix}";
                 case PlayerPerception.Unease:
                     int warnLevel = Math.Clamp(m.EffectiveLevel / 4, 0, 5);
                     return $"{warnLevel}  {WarningDescs[warnLevel]}";
@@ -108,9 +113,12 @@ public static class Pokedex
             }
         }
 
-        if (unit != null && unit.IsPlayer) return "yourself";
+        if (unit != null && unit.IsPlayer) return $"yourself{swarmSuffix}";
 
         if (!lvl.IsVisible(p) && !lvl.WasSeen(p)) return "unexplored";
+
+        if (swarmName != null)
+            return $"µ  {swarmName}";
 
         var items = lvl.ItemsAt(p);
         if (items.Count > 0)

@@ -573,6 +573,10 @@ public class GameState
                 RoomType.GoblinNest => "You hear chanting.",
                 RoomType.GremlinParty => "You hear snoring.",
                 RoomType.GremlinPartyBig => "You hear a lot of snoring.",
+                RoomType.SpiderNest => "You hear skittering.",
+                RoomType.BoggardSwamp => "You hear croaking.",
+                RoomType.AntNest => "You hear clicking mandibles.",
+                RoomType.RatNest => "You hear squeaking.",
                 _ => null
             };
             if (msg != null) pline(msg);

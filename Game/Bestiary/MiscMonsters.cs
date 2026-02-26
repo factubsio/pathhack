@@ -32,6 +32,20 @@ public class Thorns(Dice damage, DamageType type) : LogicBrick
 public static class MiscMonsters
 {
     public static readonly MonsterFamily RatFamily = new("rat");
+
+    public class RatSwarm(Pos where) : Swarm("Rat Swarm", new('µ', ConsoleColor.DarkYellow), 1, where)
+    {
+        protected override bool ShouldMove => g.Rn2(3) != 0;
+        protected override void SwarmUnit(IUnit unit)
+        {
+            if (unit is Monster m && m.Def.Family == RatFamily) return;
+            using var ctx = PHContext.Create(DungeonMaster.Mook, Target.From(unit));
+            CheckReflex(ctx, 11, "rat swarm");
+            g.YouObserveSelf(unit, "Rats swarm over you, biting!", $"rats swarm over {unit:the}!", "frantic squeaking");
+            ctx.Damage.Add(new() { Formula = d(3), Type = DamageTypes.Piercing, HalfOnSave = true });
+            DoDamage(ctx);
+        }
+    }
     public static readonly MonsterFamily PlantFamily = new("plant");
 
     public static readonly MonsterDef Rat = new()

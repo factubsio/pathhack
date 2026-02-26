@@ -803,6 +803,7 @@ public static partial class Input
                 else
                     g.pline("You try to hack at the swarm, but there are too many!");
 
+                u.Energy -= ActionCosts.OneAction.Value / 2;
                 return;
             }
 

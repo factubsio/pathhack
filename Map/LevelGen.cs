@@ -245,6 +245,10 @@ public static partial class LevelGen
                 RoomType.GoblinNest => 'G',
                 RoomType.GremlinParty => 'g',
                 RoomType.GremlinPartyBig => 'P',
+                RoomType.SpiderNest => 'S',
+                RoomType.BoggardSwamp => 'B',
+                RoomType.AntNest => 'A',
+                RoomType.RatNest => 'R',
                 _ => '?'
             };
             roomLabels[room.Interior[0]] = label;
@@ -523,6 +527,7 @@ public static partial class LevelGen
 
     static int RequireDepth(Level l, int min, int max = 99) => l.Depth >= min && l.Depth <= max ? 1 : 0;
     static int RequireSize(Room r, int min) => r.Interior.Count >= min ? 1 : 0;
+    static int RequireSquare(Room r, int minInterior) => r.Bounds is { } b && b.W - 2 >= minInterior && b.H - 2 >= minInterior ? 1 : 0;
     static int RequireNoUpStairs(Level l, Room r) => r.Interior.Any(p =>
         l[p].Type is TileType.StairsUp or TileType.BranchUp) ? 0 : 1;
 
@@ -541,6 +546,10 @@ public static partial class LevelGen
         new(RoomType.GoblinNest, (l, r) => RequireNoUpStairs(l, r) * RequireSize(r, 9) * RequireDepth(l, 3) * MapRange(l.Depth, 3..6, 12..0)),
         new(RoomType.GremlinParty, (l, r) => RequireNoUpStairs(l, r) * RequireDepth(l, 2) * 10),
         new(RoomType.GremlinPartyBig, (l, r) => RequireNoUpStairs(l, r) * RequireSize(r, 16) * RequireDepth(l, 4) * 5),
+        new(RoomType.SpiderNest, (l, r) => RequireNoUpStairs(l, r) * RequireSize(r, 9) * RequireDepth(l, 3) * 10),
+        new(RoomType.BoggardSwamp, (l, r) => RequireNoUpStairs(l, r) * RequireSquare(r, 5) * RequireDepth(l, 4) * 8),
+        new(RoomType.AntNest, (l, r) => RequireNoUpStairs(l, r) * RequireSize(r, 16) * RequireDepth(l, 3) * 8),
+        new(RoomType.RatNest, (l, r) => RequireNoUpStairs(l, r) * RequireSize(r, 9) * RequireDepth(l, 1) * 12),
     ];
 
     static void AssignRoomTypes(LevelGenContext ctx)
@@ -609,6 +618,18 @@ public static partial class LevelGen
                     break;
                 case RoomType.GremlinPartyBig:
                     FillGremlinParty(ctx, room, small: false);
+                    break;
+                case RoomType.SpiderNest:
+                    FillSpiderNest(ctx, room);
+                    break;
+                case RoomType.BoggardSwamp:
+                    FillBoggardSwamp(ctx, room);
+                    break;
+                case RoomType.AntNest:
+                    FillAntNest(ctx, room);
+                    break;
+                case RoomType.RatNest:
+                    FillRatNest(ctx, room);
                     break;
                 case RoomType.Shop:
                     FillShop(ctx, room);
@@ -817,6 +838,128 @@ public static partial class LevelGen
         MonsterDef[] others = [Gremlins.Mitflit, Gremlins.Pugwampi, Gremlins.Jinkin];
         for (int i = drunk; i < total; i++)
             Place(others.Pick());
+    }
+
+    static void FillSpiderNest(LevelGenContext ctx, Room room)
+    {
+        var level = ctx.level;
+        int depth = level.EffectiveDepth;
+
+        // Big spider in center, scaled by depth
+        MonsterDef boss = depth switch
+        {
+            <= 4 => Spiders.GiantSpider,
+            <= 6 => Spiders.GiantBlackWidow,
+            <= 8 => Spiders.PhaseSpider,
+            <= 10 => Spiders.OgreSpider,
+            _ => Spiders.GiantTarantula,
+        };
+
+        int cx = (int)room.Interior.Average(p => p.X);
+        int cy = (int)room.Interior.Average(p => p.Y);
+        Pos center = new(cx, cy);
+
+        MonsterSpawner.SpawnAndPlace(level, "spider nest", boss, false, center, asleep: true, noGroup: true, andThen: m => m.ExpMultiplier = 0.66);
+
+        // Scatter small spiders
+        MonsterDef[] small = [Spiders.OrbWeaver, Spiders.ScarletSpider, Spiders.GiantCrabSpider];
+        int count = RnRange(2, 5);
+        for (int i = 0; i < count; i++)
+        {
+            var pos = ctx.FindLocationInRoom(room, p => level.NoUnit(p) && !level[p].IsStairs);
+            if (pos == null) break;
+            MonsterSpawner.SpawnAndPlace(level, "spider nest", small.Pick(), false, pos, asleep: true, noGroup: true, andThen: m => m.ExpMultiplier = 0.66);
+        }
+
+        // 50% chance of web per interior tile
+        foreach (var p in room.Interior)
+        {
+            if (level.Traps.ContainsKey(p) || level.UnitAt(p) != null) continue;
+            if (Rn2(2) == 0)
+                level.Traps[p] = new WebTrap(depth) { PlayerSeen = Rn2(2) == 0 };
+        }
+    }
+
+    static void FillBoggardSwamp(LevelGenContext ctx, Room room)
+    {
+        var level = ctx.level;
+        var bounds = room.Bounds!.Value;
+
+        // Interior edge ring becomes water
+        HashSet<Pos> island = [];
+        Rect inner = new(bounds.X + 2, bounds.Y + 2, bounds.W - 4, bounds.H - 4);
+        foreach (var p in room.Interior)
+        {
+            if (inner.Contains(p))
+                island.Add(p);
+            else
+                level.Set(p, TileType.Water);
+        }
+
+        // Guaranteed trapdoor on the island
+        {
+            var pos = island.Where(p => !level[p].IsStairs && !level.Traps.ContainsKey(p)).ToList();
+            if (pos.Count > 0)
+            {
+                var pick = Pick(pos);
+                level.Traps[pick] = new HoleTrap(TrapType.Trapdoor, level.EffectiveDepth);
+            }
+        }
+
+        // 2-3 trees on the island
+        int trees = RnRange(2, 3);
+        for (int i = 0; i < trees; i++)
+        {
+            var pos = island.Where(p => level.NoUnit(p) && !level[p].IsStairs && level[p].Type != TileType.Tree).ToList();
+            if (pos.Count == 0) break;
+            var pick = Pick(pos);
+            level.Set(pick, TileType.Tree);
+            island.Remove(pick);
+        }
+
+        // 2-3 boggards on the island
+        MonsterDef[] pool = [Boggards.Boggard, Boggards.Boggard, Boggards.Hunter, Boggards.Warrior];
+        int count = RnRange(2, 3);
+        for (int i = 0; i < count; i++)
+        {
+            var pos = island.Where(p => level.NoUnit(p) && !level[p].IsStairs && level[p].IsPassable).ToList();
+            if (pos.Count == 0) break;
+            var pick = Pick(pos);
+            MonsterSpawner.SpawnAndPlace(level, "boggard swamp", pool.Pick(), false, pick, asleep: true, noGroup: true, andThen: m => m.ExpMultiplier = 0.66);
+        }
+    }
+
+    static void FillAntNest(LevelGenContext ctx, Room room)
+    {
+        var level = ctx.level;
+        MonsterDef[] pool = [Ants.Worker, Ants.Worker, Ants.Worker, Ants.GiantAnt, Ants.GiantAnt, Ants.FireAnt, Ants.KnightAnt];
+
+        var spots = room.Interior.Where(p => level.NoUnit(p) && !level[p].IsStairs).ToArray().Shuffled();
+        int count = Math.Min(12, spots.Length);
+        for (int i = 0; i < count; i++)
+            MonsterSpawner.SpawnAndPlace(level, "ant nest", pool.Pick(), false, spots[i], asleep: true, noGroup: true, andThen: m => m.ExpMultiplier = 0.25);
+
+        // 10% chance of food ration per tile
+        foreach (var p in room.Interior)
+        {
+            if (Rn2(10) != 0) continue;
+            level.PlaceItem(Item.Create(Foods.Ration), p);
+        }
+    }
+
+    static void FillRatNest(LevelGenContext ctx, Room room)
+    {
+        var level = ctx.level;
+        var spots = room.Interior.Where(p => level.NoUnit(p) && !level[p].IsStairs).ToArray().Shuffled();
+        int idx = 0;
+
+        // 2 rat swarms
+        for (int i = 0; i < 2 && idx < spots.Length; i++)
+            level.CreateSwarm(new MiscMonsters.RatSwarm(spots[idx++]));
+
+        // 2 rats
+        for (int i = 0; i < 2 && idx < spots.Length; i++)
+            MonsterSpawner.SpawnAndPlace(level, "rat nest", MiscMonsters.Rat, false, spots[idx++], asleep: true, noGroup: true, andThen: m => m.ExpMultiplier = 0.66);
     }
 
     static bool CanPlace(uint[] occupied, Rect r)

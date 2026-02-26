@@ -261,7 +261,9 @@ public static class Draw
                     switch (m.Perception)
                     {
                         case PlayerPerception.Visible:
-                            MapWin[x, y] = Cell.From(m.Glyph);
+                            var mc = Cell.From(m.Glyph);
+                            if (areaMap[x, y] is Swarm) mc.Style |= CellStyle.Underline;
+                            MapWin[x, y] = mc;
                             continue;
                         case PlayerPerception.Detected:
                         case PlayerPerception.Warned:
@@ -290,7 +292,10 @@ public static class Draw
                     IUnit? unit = level.UnitAt(p);
                     if (unit != null && unit.IsPlayer)
                     {
-                        MapWin[x, y] = Cell.From(unit.Glyph);
+                        var pc = Cell.From(unit.Glyph);
+                        pc.Bg = ConsoleColor.DarkGray;
+                        if (areaMap[x, y] is Swarm) pc.Style |= CellStyle.Underline;
+                        MapWin[x, y] = pc;
                     }
                     else
                     {

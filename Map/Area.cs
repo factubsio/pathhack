@@ -75,6 +75,8 @@ public abstract class Swarm(string name, Glyph glyph, int wounds, Pos where) : I
         }
     }
 
+    protected virtual bool ShouldMove => true;
+
     public void Tick()
     {
         Pos? next = null;
@@ -82,6 +84,10 @@ public abstract class Swarm(string name, Glyph glyph, int wounds, Pos where) : I
         if (toU == 0)
         {
             // don't move
+        }
+        else if (!ShouldMove)
+        {
+            // skip movement this tick
         }
         else if (toU < 8 && g.Rn2(3) > 0)
         {
@@ -151,6 +157,11 @@ public static class AreaSystem
             if (swarm.Where != pos) continue;
             if (swarm.Damage(2))
                 g.YouObserve(pos, $"The {swarm.Name} scatters into nothing!", "frantic skittering, then silence");
+        }
+
+        if (lvl.Traps.TryGetValue(pos, out var trap) && trap.Type == TrapType.Web)
+        {
+            lvl.Traps.Remove(pos);
         }
     }
 
