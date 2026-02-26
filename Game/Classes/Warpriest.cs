@@ -73,11 +73,11 @@ public class WeaponsOfFaithBrick : LogicBrick
     public static readonly WeaponsOfFaithBrick Instance = new();
     public override string Id => "cls_wp:weapons_of_faith";
 
-  protected override void OnBeforeDamageRoll(Fact fact, PHContext context)
-  {
-    // TODO
-    // Mark DR bypass on context.Damage
-  }
+    protected override void OnBeforeDamageRoll(Fact fact, PHContext context)
+    {
+        // TODO
+        // Mark DR bypass on context.Damage
+    }
 }
 
 public class SacredArmorBrick : LogicBrick
@@ -291,7 +291,7 @@ public static partial class ClassDefs
             new()// 3
             {
                 Selections = SpellSelection,
-            }, 
+            },
             null, // 4
             new() // 5
             {

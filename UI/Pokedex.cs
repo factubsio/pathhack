@@ -19,10 +19,10 @@ public static class Pokedex
             ov.Clear();
             msgOv.Clear();
             ov[cursor.X, cursor.Y] = new Cell('X', ConsoleColor.Yellow, ConsoleColor.Black, CellStyle.Bold);
-            
+
             string desc = DescribeAt(cursor);
             msgOv.At(0, 0).Write(desc.PadRight(Draw.ScreenWidth));
-            
+
             Draw.Blit();
             var key = Input.NextKey();
 
@@ -82,7 +82,7 @@ public static class Pokedex
 
     static readonly string[] WarningDescs = [
         "unknown creature causing you worry",
-        "unknown creature causing you concern", 
+        "unknown creature causing you concern",
         "unknown creature causing you anxiety",
         "unknown creature causing you disquiet",
         "unknown creature causing you alarm",
@@ -107,7 +107,7 @@ public static class Pokedex
                     return "?  something was here";
             }
         }
-        
+
         if (unit != null && unit.IsPlayer) return "yourself";
 
         if (!lvl.IsVisible(p) && !lvl.WasSeen(p)) return "unexplored";
@@ -144,7 +144,7 @@ public static class Pokedex
     static void ShowMonsterEntry(Monster m)
     {
         var menu = new TextMenu();
-        
+
         menu.Add();
         menu.AddHeading($"{m.RealName,-24} Creature CR {m.Def.BaseLevel} {m.CreatureTypeRendered}");
         menu.Add($"{m.Def.Size}");
@@ -154,12 +154,12 @@ public static class Pokedex
         Log.Write($"speed: {speed}");
         menu.Add($"Movement: {SpeedDesc(m.LandMove)}");
         menu.Add();
-        
+
         var grantedActions = m.LiveFacts
             .Where(f => f.Brick is GrantAction)
             .Select(f => ((GrantAction)f.Brick).Action)
             .ToList();
-        
+
         bool hasWeaponOrNatural = grantedActions.Any(a => a is AttackWithWeapon || (a is NaturalAttack n && n.Weapon != m.Def.Unarmed));
 
         foreach (var fact in m.LiveFacts.Where(f => f.Brick is GrantAction))
@@ -204,7 +204,7 @@ public static class Pokedex
             if (firstBuff) { menu.Add(); menu.Add("Active effects:"); firstBuff = false; }
             menu.Add($"  {buff.DisplayName}");
         }
-        
+
         menu.Display();
     }
 

@@ -315,7 +315,7 @@ public static class Draw
                                 var top = items[^1];
                                 MapWin[x, y] = Cell.From(top.Glyph);
                             }
-                            else if (level.GetState(p)?.Feature is {} feature && !feature.Hidden)
+                            else if (level.GetState(p)?.Feature is { } feature && !feature.Hidden)
                             {
                                 MapWin[x, y] = feature.Glyph is { } g ? Cell.From(g) : new('_', ConsoleColor.DarkGreen);
                             }

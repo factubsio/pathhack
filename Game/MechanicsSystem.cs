@@ -95,9 +95,16 @@ public static class WeaponStyle
 
     public static string Pretty(string s) => s switch
     {
-        Simple => "Simple", Impact => "Impact", Carve => "Carve", Skewer => "Skewer",
-        Staff => "Staff", Flail => "Flail", Thrown => "Thrown", Firearm => "Firearm",
-        Exotic => "Exotic", _ => s
+        Simple => "Simple",
+        Impact => "Impact",
+        Carve => "Carve",
+        Skewer => "Skewer",
+        Staff => "Staff",
+        Flail => "Flail",
+        Thrown => "Thrown",
+        Firearm => "Firearm",
+        Exotic => "Exotic",
+        _ => s
     };
 }
 
@@ -111,8 +118,12 @@ public static class WeaponGrip
 
     public static string Pretty(string s) => s switch
     {
-        Light => "Light", Heavy => "Heavy", Great => "Great",
-        Polearm => "Polearm", Exotic => "Exotic", _ => s
+        Light => "Light",
+        Heavy => "Heavy",
+        Great => "Great",
+        Polearm => "Polearm",
+        Exotic => "Exotic",
+        _ => s
     };
 }
 
@@ -314,7 +325,7 @@ public class Check
 
     public bool IsSave => Key == Fort || Key == Reflex || Key == Will;
 
-    public string RollStr => Roll2 == null ? $"{Roll1}" : $"[{Roll1},{Roll2},{(Advantage > Disadvantage ? "hi": "lo")}]";
+    public string RollStr => Roll2 == null ? $"{Roll1}" : $"[{Roll1},{Roll2},{(Advantage > Disadvantage ? "hi" : "lo")}]";
 
     public const string Fort = "fortitude_save";
     public const string Reflex = "reflex_save";
@@ -471,13 +482,13 @@ public class StatBlock<T>(Func<T> creat)
 
     public T this[AbilityStat stat] => stat switch
     {
-      AbilityStat.Str => Str,
-      AbilityStat.Dex => Dex,
-      AbilityStat.Con => Con,
-      AbilityStat.Int => Int,
-      AbilityStat.Wis => Wis,
-      AbilityStat.Cha => Cha,
-      _ => throw new NotImplementedException(),
+        AbilityStat.Str => Str,
+        AbilityStat.Dex => Dex,
+        AbilityStat.Con => Con,
+        AbilityStat.Int => Int,
+        AbilityStat.Wis => Wis,
+        AbilityStat.Cha => Cha,
+        _ => throw new NotImplementedException(),
     };
 }
 

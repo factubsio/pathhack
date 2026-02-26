@@ -122,7 +122,7 @@ public static class DungeonResolver
         }
 
         // Resolve leaf-first
-        List<BranchTemplate> remaining = [..templates];
+        List<BranchTemplate> remaining = [.. templates];
         Dictionary<string, Branch> branches = [];
 
         while (remaining.Count > 0)

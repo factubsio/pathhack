@@ -132,29 +132,29 @@ public static class FovCalculator
         {
             // Pass 1: non-opaque tiles
             for (int y = 0; y < level.Height; y++)
-            for (int x = 0; x < level.Width; x++)
-            {
-                Pos p = new(x, y);
-                if (!level.IsOpaque(p) && level.HasLOS(p) && level.IsLit(p))
+                for (int x = 0; x < level.Width; x++)
                 {
-                    level.SetVisible(p);
-                    level.UpdateMemory(p);
-                    visCount++;
+                    Pos p = new(x, y);
+                    if (!level.IsOpaque(p) && level.HasLOS(p) && level.IsLit(p))
+                    {
+                        level.SetVisible(p);
+                        level.UpdateMemory(p);
+                        visCount++;
+                    }
                 }
-            }
 
             // Pass 2: opaque tiles visible if adjacent non-opaque tile is visible
             for (int y = 0; y < level.Height; y++)
-            for (int x = 0; x < level.Width; x++)
-            {
-                Pos p = new(x, y);
-                if (level.IsOpaque(p) && level.HasLOS(p) && HasVisibleNeighbour(level, p))
+                for (int x = 0; x < level.Width; x++)
                 {
-                    level.SetVisible(p);
-                    level.UpdateMemory(p);
-                    visCount++;
+                    Pos p = new(x, y);
+                    if (level.IsOpaque(p) && level.HasLOS(p) && HasVisibleNeighbour(level, p))
+                    {
+                        level.SetVisible(p);
+                        level.UpdateMemory(p);
+                        visCount++;
+                    }
                 }
-            }
         }
 
         // Compute monster perception

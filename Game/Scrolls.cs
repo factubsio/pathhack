@@ -54,7 +54,7 @@ public static partial class Scrolls
                     g.pline($"{toId.InvLet} - {toId.DisplayNameWeighted}.");
                 }
                 break;
-                
+
             case var _ when def == Teleportation:
                 var dest = lvl.FindLocation(p => lvl[p].IsPassable && lvl.NoUnit(p));
                 if (dest == null)

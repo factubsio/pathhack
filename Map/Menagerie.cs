@@ -49,12 +49,12 @@ public static class Menagerie
 
         // fill with floor and light everything
         for (int y = 0; y < level.Height; y++)
-        for (int x = 0; x < level.Width; x++)
-        {
-            Pos p = new(x, y);
-            level.Set(p, TileType.Floor);
-            level.SetLit(p);
-        }
+            for (int x = 0; x < level.Width; x++)
+            {
+                Pos p = new(x, y);
+                level.Set(p, TileType.Floor);
+                level.SetLit(p);
+            }
 
         // draw horizontal walls
         for (int row = 0; row <= rows; row++)
@@ -78,12 +78,12 @@ public static class Menagerie
         List<Pos> border = [];
         List<Pos> interior = [];
         for (int y = 0; y < level.Height; y++)
-        for (int x = 0; x < level.Width; x++)
-        {
-            Pos p = new(x, y);
-            if (level[p].Type == TileType.Wall) border.Add(p);
-            else interior.Add(p);
-        }
+            for (int x = 0; x < level.Width; x++)
+            {
+                Pos p = new(x, y);
+                if (level[p].Type == TileType.Wall) border.Add(p);
+                else interior.Add(p);
+            }
         Room room = new(border, interior) { Flags = RoomFlags.Lit };
         level.Rooms.Add(room);
         foreach (var p in border) level.GetOrCreateState(p).Room = room;
@@ -96,22 +96,22 @@ public static class Menagerie
         // place monsters, one per cage, with stasis + release trap
         int idx = 0;
         for (int row = 0; row < rows && idx < monsters.Length; row++)
-        for (int col = 0; col < cols && idx < monsters.Length; col++)
-        {
-            if (row == 0 && col == 0) continue;
-            Pos center = new(col * cellW + cellW / 2, row * cellH + cellH / 2);
-            var mon = Monster.Spawn(monsters[idx], "menagerie");
-            mon.IsAsleep = true;
-            mon.AddFact(StasisBuff.Instance, null);
-            level.PlaceUnit(mon, center);
+            for (int col = 0; col < cols && idx < monsters.Length; col++)
+            {
+                if (row == 0 && col == 0) continue;
+                Pos center = new(col * cellW + cellW / 2, row * cellH + cellH / 2);
+                var mon = Monster.Spawn(monsters[idx], "menagerie");
+                mon.IsAsleep = true;
+                mon.AddFact(StasisBuff.Instance, null);
+                level.PlaceUnit(mon, center);
 
-            // place release trap one tile south of center (or north if no room)
-            Pos trapPos = center + new Pos(0, 3);
-            if (level[trapPos].IsPassable && level.NoUnit(trapPos))
-                level.Traps[trapPos] = new ReleaseTrap { PlayerSeen = true };
+                // place release trap one tile south of center (or north if no room)
+                Pos trapPos = center + new Pos(0, 3);
+                if (level[trapPos].IsPassable && level.NoUnit(trapPos))
+                    level.Traps[trapPos] = new ReleaseTrap { PlayerSeen = true };
 
-            idx++;
-        }
+                idx++;
+            }
 
         level.BaseLit.Reset(true);
     }

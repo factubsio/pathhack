@@ -42,13 +42,13 @@ public readonly record struct Pos(int X, int Y) : IFormattable
     // For each direction, the 5 "forward" neighbors to check when running (excludes behind + behind-diagonals)
     public static readonly Dictionary<Pos, Pos[]> ForwardNeighbours = new()
     {
-        [N]  = [NW, N, NE, W, E],
+        [N] = [NW, N, NE, W, E],
         [NE] = [N, NE, E, NW, SE],
-        [E]  = [NE, E, SE, N, S],
+        [E] = [NE, E, SE, N, S],
         [SE] = [E, SE, S, NE, SW],
-        [S]  = [SE, S, SW, E, W],
+        [S] = [SE, S, SW, E, W],
         [SW] = [S, SW, W, SE, NW],
-        [W]  = [SW, W, NW, S, N],
+        [W] = [SW, W, NW, S, N],
         [NW] = [W, NW, N, SW, NE],
     };
 

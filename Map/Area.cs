@@ -117,7 +117,7 @@ public abstract class Swarm(string name, Glyph glyph, int wounds, Pos where) : I
         }
 
         // TODO: some swarms are airborn/sea-boarn, probably want a mask?
-        if (lvl.UnitAt(Where) is {} tgt && !tgt.Has(CreatureTags.Flying))
+        if (lvl.UnitAt(Where) is { } tgt && !tgt.Has(CreatureTags.Flying))
         {
             SwarmUnit(tgt);
         }

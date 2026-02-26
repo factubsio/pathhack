@@ -50,16 +50,29 @@ public static class Dump
                 messages = snap.Messages,
                 player = new
                 {
-                    hp = snap.Hp, maxHp = snap.MaxHp, tempHp = snap.TempHp,
-                    ac = snap.AC, cl = snap.CL, xp = snap.XP, gold = snap.Gold,
-                    str = snap.Str, dex = snap.Dex, con = snap.Con,
-                    @int = snap.Int, wis = snap.Wis, cha = snap.Cha,
+                    hp = snap.Hp,
+                    maxHp = snap.MaxHp,
+                    tempHp = snap.TempHp,
+                    ac = snap.AC,
+                    cl = snap.CL,
+                    xp = snap.XP,
+                    gold = snap.Gold,
+                    str = snap.Str,
+                    dex = snap.Dex,
+                    con = snap.Con,
+                    @int = snap.Int,
+                    wis = snap.Wis,
+                    cha = snap.Cha,
                     hunger = snap.Hunger,
                     buffs = snap.Buffs,
                     spellSlots = snap.SpellSlots.Select(s => new
                     {
-                        level = s.Level, current = s.Current, max = s.Max,
-                        effectiveMax = s.EffectiveMax, ticks = s.Ticks, regenRate = s.RegenRate,
+                        level = s.Level,
+                        current = s.Current,
+                        max = s.Max,
+                        effectiveMax = s.EffectiveMax,
+                        ticks = s.Ticks,
+                        regenRate = s.RegenRate,
                     }).ToArray(),
                 },
             };
@@ -73,7 +86,7 @@ public static class Dump
                 name += " " + Input.EquipDescription(item, slot);
             if (item == u.Quiver)
                 name += " (quivered)";
-            
+
             return name;
         }
 
@@ -316,9 +329,9 @@ public static class Dump
         Dictionary<string, object> dex = [];
         // Floor items
         for (int y = 0; y < level.Height; y++)
-        for (int x = 0; x < level.Width; x++)
-            foreach (var item in level.ItemsAt(new(x, y)))
-                AddItemDex(dex, item);
+            for (int x = 0; x < level.Width; x++)
+                foreach (var item in level.ItemsAt(new(x, y)))
+                    AddItemDex(dex, item);
         // Monster inventories
         foreach (var unit in level.LiveUnits)
             if (unit is Monster m)

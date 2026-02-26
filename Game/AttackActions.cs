@@ -52,7 +52,7 @@ public class AttackWithWeapon() : ActionBrick("attack_with_weapon")
                     if (wep.Launcher != null || wep.id == throwableId)
                     {
                         if (bestThrow == null || throwIsWielded)
-                            { bestThrow = item; throwIsWielded = item == wielded; }
+                        { bestThrow = item; throwIsWielded = item == wielded; }
                     }
                 }
             }
@@ -112,20 +112,20 @@ public class AttackWithWeapon() : ActionBrick("attack_with_weapon")
                 break;
 
             case Act.Throw:
-            {
-                var item = d.Weapon!;
-                Pos dir = (target.Unit!.Pos - unit.Pos).Signed;
-                Item toThrow;
-                if (item.Count > 1)
-                    toThrow = item.Split(1);
-                else
                 {
-                    toThrow = item;
-                    unit.Inventory.Remove(item);
+                    var item = d.Weapon!;
+                    Pos dir = (target.Unit!.Pos - unit.Pos).Signed;
+                    Item toThrow;
+                    if (item.Count > 1)
+                        toThrow = item.Split(1);
+                    else
+                    {
+                        toThrow = item;
+                        unit.Inventory.Remove(item);
+                    }
+                    DoThrow(unit, toThrow, dir, AttackType.Thrown);
+                    break;
                 }
-                DoThrow(unit, toThrow, dir, AttackType.Thrown);
-                break;
-            }
 
             case Act.Equip:
                 unit.Unequip(ItemSlots.MainHandSlot);
@@ -135,11 +135,11 @@ public class AttackWithWeapon() : ActionBrick("attack_with_weapon")
                 break;
 
             case Act.Shoot:
-            {
-                Pos dir = (target.Unit!.Pos - unit.Pos).Signed;
-                ArcherySystem.ShootFrom(unit, d.Ammo!, dir);
-                break;
-            }
+                {
+                    Pos dir = (target.Unit!.Pos - unit.Pos).Signed;
+                    ArcherySystem.ShootFrom(unit, d.Ammo!, dir);
+                    break;
+                }
         }
     }
 }

@@ -47,5 +47,6 @@ public static class BigRoomLevels
                 1111111111........................1111111111                
                          11111111111111111111111111      
 """,
-    PostRender: SpawnMonsters) { IrregularRooms = [1], Name = "Big Room" };
+    PostRender: SpawnMonsters)
+    { IrregularRooms = [1], Name = "Big Room" };
 }

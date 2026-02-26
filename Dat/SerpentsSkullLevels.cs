@@ -44,8 +44,8 @@ public static class SerpentsSkullLevels
                 // oh no, apeman got there first
                 if (g.Rn2(3) == 0)
                 {
-                    if (room.Resident is {} shk)
-                       DoDie(shk, b.Level);
+                    if (room.Resident is { } shk)
+                        DoDie(shk, b.Level);
 
                     for (int i = 0; i < g.RnRange(1, 3); i++)
                     {
@@ -106,7 +106,7 @@ public static class SerpentsSkullLevels
                 {
                     var pos = b.Level.FindLocationInRoom(room, b.Level.NoUnit);
                     if (pos == null) continue;
-                    MonsterSpawner.SpawnAndPlace(b.Level,reason, null, true, pos: pos);
+                    MonsterSpawner.SpawnAndPlace(b.Level, reason, null, true, pos: pos);
                 }
 
                 var chestPos = b.Level.FindLocationInRoom(room, _ => true);
@@ -201,7 +201,7 @@ public static class SerpentsSkullLevels
                     pilesX.Add(x - 1);
                     pilesX.Add(x);
                     pilesX.Add(x + 1);
-                    Pos[] n = [..lootPos.Neighbours()];
+                    Pos[] n = [.. lootPos.Neighbours()];
                     foreach (var p in n.Shuffled().Take(LevelGen.RnRange(2, 4)))
                     {
                         b.Level.PlaceFeature(p, new("wreckage", wreckage, flotsam.Pick()));

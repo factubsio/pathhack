@@ -13,14 +13,14 @@ public static class Arena
         List<Pos> interior = [];
 
         for (int dy = 0; dy < size; dy++)
-        for (int dx = 0; dx < size; dx++)
-        {
-            Pos p = new(ox + dx, oy + dy);
-            bool edge = dx == 0 || dy == 0 || dx == size - 1 || dy == size - 1;
-            level.Set(p, edge ? TileType.Wall : TileType.Floor);
-            level.SetLit(p);
-            (edge ? border : interior).Add(p);
-        }
+            for (int dx = 0; dx < size; dx++)
+            {
+                Pos p = new(ox + dx, oy + dy);
+                bool edge = dx == 0 || dy == 0 || dx == size - 1 || dy == size - 1;
+                level.Set(p, edge ? TileType.Wall : TileType.Floor);
+                level.SetLit(p);
+                (edge ? border : interior).Add(p);
+            }
 
         Room room = new(border, interior) { Flags = RoomFlags.Lit };
         level.Rooms.Add(room);

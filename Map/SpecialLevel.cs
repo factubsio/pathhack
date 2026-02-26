@@ -18,16 +18,16 @@ public class LevelBuilder(Dictionary<char, List<Pos>> marks, LevelGenContext ctx
 {
     public Level Level => ctx.level;
     public LevelGenContext Context => ctx;
-    
+
     public Pos this[char c] => marks.TryGetValue(c, out var list) ? list[0] : throw new($"No mark '{c}'");
     public List<Pos> Marks(char c) => marks.GetValueOrDefault(c, []);
     public Pos RnMark(char c) => LevelGen.Pick(Marks(c));
     public Room Room(int n) => Level.Rooms[n];
-    
+
     public void Stair(Pos p, TileType type) => Level.Set(p, type);
-    
+
     public void Door(Pos p, DoorState state) => Level.PlaceDoor(p, state);
-    
+
     public void Monster(MonsterDef def, Pos p) =>
         Level.PlaceUnit(Game.Monster.Spawn(def, $"special level: {Level.Id.Branch}/{Level.Id.Depth}"), p);
 
@@ -36,7 +36,7 @@ public class LevelBuilder(Dictionary<char, List<Pos>> marks, LevelGenContext ctx
 
     public void Trap(Trap trap, Pos p) =>
         Level.Traps[p] = trap;
-    
+
     public Pos? FindLocation(Func<Pos, bool> predicate, int maxAttempts = 100)
     {
         for (int i = 0; i < maxAttempts; i++)
@@ -47,7 +47,7 @@ public class LevelBuilder(Dictionary<char, List<Pos>> marks, LevelGenContext ctx
         }
         return null;
     }
-    
+
     public Pos? FindLocationInRoom(Room room, Func<Pos, bool> predicate, int maxAttempts = 100)
     {
         for (int i = 0; i < maxAttempts; i++)
@@ -57,7 +57,7 @@ public class LevelBuilder(Dictionary<char, List<Pos>> marks, LevelGenContext ctx
         }
         return null;
     }
-    
+
     // public void NonDiggable(Rect r)
     // {
     //     for (int y = r.Y; y < r.Y + r.H; y++)
@@ -68,7 +68,7 @@ public class LevelBuilder(Dictionary<char, List<Pos>> marks, LevelGenContext ctx
     //         Level[p] = tile with { Flags = tile.Flags & ~TileFlags.Diggable };
     //     }
     // }
-    
+
     // public void NonPasswall(Rect r)
     // {
     //     for (int y = r.Y; y < r.Y + r.H; y++)
@@ -95,22 +95,22 @@ public static class SpecialLevelParser
         ['~'] = TileType.Water,
         ['+'] = TileType.Door,
     };
-    
+
     static readonly HashSet<char> MarkerChars = ['<', '>', 'S', '^', '_'];
-    
+
     public static Dictionary<char, List<Pos>> Parse(SpecialLevel spec, LevelGenContext ctx)
     {
         Dictionary<char, List<Pos>> marks = [];
         SortedDictionary<int, List<Pos>> roomTiles = [];
-        
+
         var lines = spec.Map.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         int mapH = lines.Length;
         int mapW = lines.Max(l => l.Length);
-        
+
         // Center the map
         int offX = (ctx.level.Width - mapW) / 2;
         int offY = (ctx.level.Height - mapH) / 2;
-        
+
         for (int y = 0; y < mapH; y++)
         {
             var line = lines[y];
@@ -118,7 +118,7 @@ public static class SpecialLevelParser
             {
                 char c = line[x];
                 Pos p = new(offX + x, offY + y);
-                
+
                 if (TileMap.TryGetValue(c, out var type))
                 {
                     if (type == TileType.Door)
@@ -159,7 +159,7 @@ public static class SpecialLevelParser
                 }
             }
         }
-        
+
         // Build rooms from digit tiles
         foreach (var (n, tiles) in roomTiles)
         {
@@ -248,10 +248,10 @@ public static class SpecialLevelParser
                 LevelGen.PlaceRoom(ctx, bounds);
             }
         }
-        
+
         return marks;
     }
-    
+
     static void AddMark(Dictionary<char, List<Pos>> marks, char c, Pos p)
     {
         if (!marks.TryGetValue(c, out var list))

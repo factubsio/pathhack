@@ -16,7 +16,7 @@ public class DeityDef : ISelectable
 
     public string? WhyNot => null;
 
-    private string AlignmentToColor => 
+    private string AlignmentToColor =>
         Alignment[1] switch
         {
             'G' => "green",

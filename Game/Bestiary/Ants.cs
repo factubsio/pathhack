@@ -56,7 +56,7 @@ public static class Ants
          ]);
 
     public static readonly MonsterDef KnightAnt = A("knight_ant", "knight ant", 4, ConsoleColor.Blue,
-        [ 
+        [
             new GrantAction(new FullAttack("knight_ant", NaturalWeapons.Bite_1d6, NaturalWeapons.Sting_1d6)),
             new QueryBrick("tremorsense", 4),
             KnightAntFormation.Instance,
@@ -95,7 +95,7 @@ public static class Ants
         ],
         hp: 8, size: UnitSize.Large, group: GroupSize.None,
         speed: ActionCosts.LandMove10, ac: 2);
-    
+
     public static readonly MonsterDef Egg = A("ant_egg", "ant egg", 2, ConsoleColor.Green, [
         AntEgg.Instance,
     ], hp: 2, speed: 0, group: GroupSize.None);
@@ -183,7 +183,7 @@ public class AntSpawner : LogicBrick<ScalarData<int>>
                 1 => "lays an egg",
                 _ => $"lays {count} eggs",
             };
-            
+
             g.YouObserve(unit, $"{unit:The} {msg}", "a slopping sound");
         });
     }

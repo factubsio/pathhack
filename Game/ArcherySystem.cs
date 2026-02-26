@@ -54,9 +54,10 @@ public static partial class MundaneQuivers
             Price = 0,
             Weight = -1,
             BaseDamage = dmg,
-            Style = WeaponStyle.Exotic, Grip = WeaponGrip.Exotic,
+            Style = WeaponStyle.Exotic,
+            Grip = WeaponGrip.Exotic,
             Glyph = new(')'),
-            DamageType =  DamageTypes.Piercing,
+            DamageType = DamageTypes.Piercing,
             Name = name,
         }
     };
@@ -85,7 +86,8 @@ public static partial class MundaneQuivers
             Price = 0,
             Weight = -1,
             BaseDamage = d(3),
-            Style = WeaponStyle.Exotic, Grip = WeaponGrip.Exotic,
+            Style = WeaponStyle.Exotic,
+            Grip = WeaponGrip.Exotic,
             Glyph = new(')'),
             DamageType = DamageTypes.Piercing,
             Name = "blowgun dart",

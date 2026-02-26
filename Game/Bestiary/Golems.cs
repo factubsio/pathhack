@@ -183,7 +183,8 @@ public class CoralSpike(int range, int cd)
         id = "coral_spike",
         Name = "coral spike",
         BaseDamage = d(8),
-        Style = WeaponStyle.Exotic, Grip = WeaponGrip.Exotic,
+        Style = WeaponStyle.Exotic,
+        Grip = WeaponGrip.Exotic,
         DamageType = DamageTypes.Piercing,
         Glyph = new('/', ConsoleColor.DarkCyan),
         Launcher = "coral",
@@ -865,7 +866,7 @@ public class JunkSwarm(Pos where) : Swarm("Junk Swarm", new('µ', ConsoleColor.D
             lvl.CreateSwarm(new JunkSwarm(unit.Pos));
         }
     }
-    
+
     protected override void SwarmUnit(IUnit unit)
     {
         using var ctx = PHContext.Create(DungeonMaster.Mook, Target.From(unit));
@@ -1331,7 +1332,8 @@ public class MithralReachAttack()
         id = "mithral_blade",
         Name = "mithral blade",
         BaseDamage = d(2, 8),
-        Style = WeaponStyle.Exotic, Grip = WeaponGrip.Exotic,
+        Style = WeaponStyle.Exotic,
+        Grip = WeaponGrip.Exotic,
         DamageType = DamageTypes.Slashing,
         Glyph = new('/', ConsoleColor.White),
         Weight = -1,
@@ -1415,7 +1417,8 @@ public class CannonShot(int range, int cd)
         id = "cannonball",
         Name = "cannonball",
         BaseDamage = d(6, 6),
-        Style = WeaponStyle.Exotic, Grip = WeaponGrip.Exotic,
+        Style = WeaponStyle.Exotic,
+        Grip = WeaponGrip.Exotic,
         DamageType = DamageTypes.Blunt,
         Glyph = new('●', ConsoleColor.Gray),
         Launcher = "cannon",
@@ -1649,7 +1652,7 @@ public class SpawnOnDeath(string id, string ifSee, string? ifHear, Func<MonsterD
         MonsterDef def = what();
         g.Defer(() =>
         {
-            Pos pos = deathPos; 
+            Pos pos = deathPos;
             if (!lvl[deathPos].IsPassable || !lvl.NoUnit(deathPos))
                 pos = deathPos + Pos.AllDirs.Pick();
 
@@ -1924,28 +1927,28 @@ public static class Golems
         int maxDepth = 99, GroupSize group = GroupSize.None,
         MonFlags extraFlags = MonFlags.None,
         LogicBrick[]? common = null) => new()
-    {
-        id = $"golem_{id}",
-        Name = name,
-        Family = Family,
-        CreatureType = CreatureTypes.Construct,
-        Glyph = new('\'', color),
-        HpPerLevel = hp,
-        AC = ac,
-        AttackBonus = ab,
-        Unarmed = unarmed ?? NaturalWeapons.Slam_1d6,
-        LandMove = speed ?? ActionCosts.LandMove20,
-        Size = size,
-        BaseLevel = level,
-        SpawnWeight = spawnWeight,
-        MaxDepth = maxDepth,
-        GroupSize = group,
-        BrainFlags = MonFlags.NoCorpse | extraFlags,
-        MoralAxis = MoralAxis.Neutral,
-        EthicalAxis = EthicalAxis.Neutral,
-        Components = [..common ?? CommonBricks, ..components,
+        {
+            id = $"golem_{id}",
+            Name = name,
+            Family = Family,
+            CreatureType = CreatureTypes.Construct,
+            Glyph = new('\'', color),
+            HpPerLevel = hp,
+            AC = ac,
+            AttackBonus = ab,
+            Unarmed = unarmed ?? NaturalWeapons.Slam_1d6,
+            LandMove = speed ?? ActionCosts.LandMove20,
+            Size = size,
+            BaseLevel = level,
+            SpawnWeight = spawnWeight,
+            MaxDepth = maxDepth,
+            GroupSize = group,
+            BrainFlags = MonFlags.NoCorpse | extraFlags,
+            MoralAxis = MoralAxis.Neutral,
+            EthicalAxis = EthicalAxis.Neutral,
+            Components = [..common ?? CommonBricks, ..components,
             new GrantAction(new NaturalAttack(unarmed ?? NaturalWeapons.Slam_1d6))],
-    };
+        };
 
     // --- CR 3-5: early golems ---
 

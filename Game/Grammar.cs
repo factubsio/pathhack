@@ -21,17 +21,17 @@ public static class Grammar
 
     public static string Possessive(this string s) => s.EndsWith('s') ? $"{s}'" : $"{s}'s";
 
-    public static string Capitalize(this string s) => 
+    public static string Capitalize(this string s) =>
         string.IsNullOrEmpty(s) ? s : char.ToUpper(s[0]) + s[1..];
 
     public static string Plural(this string s)
     {
         if (string.IsNullOrEmpty(s)) return s;
-        
+
         // Handle "bottled X" -> "bottles of X"
         if (s.StartsWith("bottled "))
             return "bottles of " + s[8..];
-        
+
         // Handle "X of Y" patterns - pluralize first word
         int ofIdx = s.IndexOf(" of ");
         if (ofIdx < 0)
@@ -40,7 +40,7 @@ public static class Grammar
             ofIdx = s.IndexOf(" scribed ");
         if (ofIdx > 0)
             return PluralWord(s[..ofIdx]) + s[ofIdx..];
-        
+
         return PluralWord(s);
     }
 

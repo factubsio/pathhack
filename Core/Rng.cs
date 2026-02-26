@@ -41,18 +41,18 @@ public static class RngExtensions
 
     public static T[] Shuffled<T>(this T[] array)
     {
-        T[] copy = [..array];
+        T[] copy = [.. array];
         g.Shuffle(copy.AsSpan());
         return copy;
     }
 
     public static List<T> Shuffled<T>(this List<T> list)
     {
-        List<T> copy = [..list];
+        List<T> copy = [.. list];
         g.Shuffle(CollectionsMarshal.AsSpan(copy));
         return copy;
     }
-    
+
     public static T PickWeighted<T>(this IEnumerable<T> items, Func<T, int> weight)
     {
         var list = items.ToList();
@@ -81,7 +81,7 @@ public record struct Dice(int D, int F, int Flat = 0)
         return sum;
     }
 
-    public static Dice operator+(Dice d, int bonus) => new(d.D, d.F, d.Flat + bonus);
+    public static Dice operator +(Dice d, int bonus) => new(d.D, d.F, d.Flat + bonus);
 
     internal readonly Dice WithExtra(int extraDice) => new(D * (1 + extraDice), F, Flat);
 
@@ -149,8 +149,8 @@ public record struct DiceFormula(Dice[] Dice) : IEnumerable<Dice>
         if (Dice.Length == 1)
             return Dice[0].WithExtra(extraDice);
         else
-            return new([Dice[0].WithExtra(extraDice), ..Dice[1..]]);
-        
+            return new([Dice[0].WithExtra(extraDice), .. Dice[1..]]);
+
     }
 
 }

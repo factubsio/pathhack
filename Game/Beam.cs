@@ -5,9 +5,9 @@ public enum BeamHit { Stop, Continue }
 [Flags]
 public enum BeamFlags
 {
-    None        = 0,
+    None = 0,
     BounceOnWall = 1,
-    Reflectable  = 2,
+    Reflectable = 2,
 }
 
 public static class Beam
@@ -17,21 +17,21 @@ public static class Beam
         // Cardinal directions just reverse
         if (dir.X == 0 || dir.Y == 0)
             return new(-dir.X, -dir.Y);
-        
+
         // Diagonal: check which directions are clear
         Pos flipX = new(-dir.X, dir.Y);  // flip X, keep Y
         Pos flipY = new(dir.X, -dir.Y);  // keep X, flip Y
-        
+
         Pos hCheck = lastPos + new Pos(dir.X, 0);
         Pos vCheck = lastPos + new Pos(0, dir.Y);
-        
+
         bool hClear = lvl.InBounds(hCheck) && lvl[hCheck].IsPassable;
         bool vClear = lvl.InBounds(vCheck) && lvl[vCheck].IsPassable;
-        
+
         if (hClear && !vClear) return flipY;
         if (vClear && !hClear) return flipX;
         if (hClear && vClear) return g.Rn2(2) == 0 ? flipX : flipY;
-        
+
         return new(-dir.X, -dir.Y);
     }
 

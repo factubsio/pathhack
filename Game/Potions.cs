@@ -20,7 +20,7 @@ public static partial class Potions
     public static readonly PotionDef Paralysis = new() { Name = "potion of paralysis", Price = 120 };
     public static readonly PotionDef Antivenom = new() { Name = "potion of antivenom", Price = 40 };
     public static readonly PotionDef Omen = new() { Name = "bottled omen", Price = 120 };
-    public static readonly PotionDef Panacea = new() { Name = "panacea", Price = 500};
+    public static readonly PotionDef Panacea = new() { Name = "panacea", Price = 500 };
     public static readonly PotionDef LesserInvisibility = new() { Name = "potion of lesser invisibility", Price = 120 };
 
     public static void DoEffect(PotionDef def, IUnit user)
@@ -129,7 +129,7 @@ public class LesserInvisibilityBuff : LogicBrick
     {
         if (ctx.Source != fact.Entity) return;
         fact.Entity.RemoveStack(this.Timed());
-        if (fact.Entity is IUnit {} unit)
+        if (fact.Entity is IUnit { } unit)
             g.YouObserve(unit, $"{unit:The} {VTense(unit, "become")} visible!");
     }
 }

@@ -32,7 +32,7 @@ public static class RichText
 
             bool isSpace = token.Text.Length > 0 && char.IsWhiteSpace(token.Text[0]);
             bool isWord = !isSpace;
-            
+
             if (isWord && cx > x && cx + token.Text.Length > lineEnd)
             {
                 cx = x;

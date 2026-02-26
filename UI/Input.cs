@@ -230,7 +230,7 @@ public static partial class Input
     static void ResolveTargetAndExecute(ActionBrick ability)
     {
         var data = u.ActionData.GetValueOrDefault(ability);
-        
+
         var plan = ability.CanExecute(u, data, Target.None);
         if (!plan)
         {
@@ -273,7 +273,7 @@ public static partial class Input
             }
             target = new Target(null, pos.Value);
         }
-        
+
         ability.Execute(u, data, target, plan.Plan);
         u.Energy -= ability.GetCost(u, data, target).Value;
     }
@@ -309,7 +309,7 @@ public static partial class Input
         menu.Add('a', "Show current effects.", "effects");
         if (Progression.HasPendingLevelUp(u))
             menu.Add('l', "Level up!", "levelup");
-        
+
         var picked = menu.Display(MenuMode.PickOne);
         if (picked.Count == 0) return;
         if (picked[0] == "effects")
@@ -324,7 +324,7 @@ public static partial class Input
         // Also check inventory items for buffs
         foreach (var item in u.Inventory)
             buffs.AddRange(item.ActiveBuffNames);
-        
+
         var menu = new TextMenu();
         menu.AddHeading("Current Effects");
         menu.Add();
@@ -374,9 +374,9 @@ public static partial class Input
     {
         var history = g.MessageHistory;
         if (history.Count == 0) return;
-        
+
         _msgHistoryIdx++;
-        
+
         if (_msgHistoryIdx < 2 && _msgHistoryIdx < history.Count)
         {
             Draw.RenderTopLine(history[history.Count - 1 - _msgHistoryIdx].Text);
@@ -398,7 +398,7 @@ public static partial class Input
         var start = _lastTravelTarget is { } lt && lvl.InBounds(lt) ? lt : (Pos?)null;
         var cursor = PickPosition(start);
         if (cursor == null || cursor == upos) return;
-        
+
         var path = Pathfinding.FindPath(lvl, upos, cursor.Value);
         if (path == null || path.Count == 0)
         {
@@ -457,18 +457,18 @@ public static partial class Input
         Pos cursor = start ?? upos;
         char lastGlyph = '\0';
         int glyphIndex = 0;
-        
+
         while (true)
         {
             onMove?.Invoke(cursor);
             Draw.DrawCurrent(cursor);
             var key = NextKey();
-            
+
             if (key.Key == ConsoleKey.Escape) return null;
-            
+
             if (key.Key == ConsoleKey.Enter || key.KeyChar == '.' || key.KeyChar == ',')
                 return cursor;
-            
+
             if (GetDirection(key.Key) is { } dir)
             {
                 int dist = key.Modifiers.HasFlag(ConsoleModifiers.Shift) ? 5 : 1;
@@ -494,13 +494,13 @@ public static partial class Input
     {
         List<Pos> result = [];
         for (int y = 0; y < lvl.Height; y++)
-        for (int x = 0; x < lvl.Width; x++)
-        {
-            Pos p = new(x, y);
-            if (!lvl.WasSeen(p)) continue;
-            char ch = GetTileGlyph(p);
-            if (ch == glyph) result.Add(p);
-        }
+            for (int x = 0; x < lvl.Width; x++)
+            {
+                Pos p = new(x, y);
+                if (!lvl.WasSeen(p)) continue;
+                char ch = GetTileGlyph(p);
+                if (ch == glyph) result.Add(p);
+            }
         return result;
     }
 
@@ -592,7 +592,7 @@ public static partial class Input
     {
         g.pline("In what direction? ");
 
-        if (GetDirection(NextKey().Key) is {} d)
+        if (GetDirection(NextKey().Key) is { } d)
         {
             dir = d;
             return true;
@@ -738,23 +738,23 @@ public static partial class Input
     public static void HandleKey(ConsoleKeyInfo key)
     {
         Log.Verbose("movement", $"HandleKey: Key={key.Key} Char={(int)key.KeyChar} Mods={key.Modifiers}");
-        
+
         // Ctrl+P is special - doesn't reset message history
         if (key.Key == ConsoleKey.P && key.Modifiers.HasFlag(ConsoleModifiers.Control))
         {
             ShowMessageHistory();
             return;
         }
-        
+
         ResetMessageHistory();
         Movement.Stop(); // any manual input stops running
-        
+
         // Check special commands (ctrl+key)
         foreach (var special in _specialCommands)
         {
             if (special.Matches(key)) { special.Action(); return; }
         }
-        
+
         if (key.KeyChar == '#')
         {
             HandleExtended();
@@ -787,7 +787,7 @@ public static partial class Input
         }
         else if (key.KeyChar == '>')
         {
-            if (lvl.AllSwarms.FirstOrDefault(s => s.Where == upos) is {} swarm)
+            if (lvl.AllSwarms.FirstOrDefault(s => s.Where == upos) is { } swarm)
             {
                 if (g.Rn2(3) == 0)
                 {
@@ -832,7 +832,7 @@ public static partial class Input
             u.Energy -= ActionCosts.OneAction.Value;
             return;
         }
-        
+
         // Continue running if in run mode
         if (Movement.TryContinueRun())
         {

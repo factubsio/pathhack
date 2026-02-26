@@ -139,7 +139,7 @@ if (args.Length > 0 && args[0] == "--test-dungeon")
 {
     int startSeed = 0;
     if (args.Length > 1 && int.TryParse(args[1], out var s)) startSeed = s;
-    
+
     LevelGen.TestMode = true;
     LevelGen.QuietLog = true;
     Console.WriteLine($"Testing dungeon generation from seed {startSeed}...");

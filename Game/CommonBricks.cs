@@ -3,203 +3,203 @@ namespace Pathhack.Game;
 // Add damage to attacks with weapons
 public class WeaponDamageRider(string name, DamageType type, Dice dice) : LogicBrick
 {
-  public override string Id => $"rider+{type.SubCat}/{dice.Serialize()}";
-  public override StackMode StackMode => StackMode.ExtendDuration;
+    public override string Id => $"rider+{type.SubCat}/{dice.Serialize()}";
+    public override StackMode StackMode => StackMode.ExtendDuration;
 
-  public static readonly WeaponDamageRider UnholyD4 = new("Unholy Weapon", DamageTypes.Unholy, d(4));
-  public static readonly WeaponDamageRider UnholyD8 = new("Unholy Weapon", DamageTypes.Unholy, d(8));
-  public static readonly WeaponDamageRider HolyD4 = new("Holy Weapon", DamageTypes.Holy,       d(4));
-  public static readonly WeaponDamageRider HolyD8 = new("Holy Weapon", DamageTypes.Holy,       d(8));
-  public static readonly WeaponDamageRider FreezeD4 = new("Freezing Weapon", DamageTypes.Cold, d(4));
-  public static readonly WeaponDamageRider FreezeD8 = new("Freezing Weapon", DamageTypes.Cold, d(8));
-  public static readonly WeaponDamageRider ShockD4 = new("Shocking Weapon", DamageTypes.Shock, d(4));
-  public static readonly WeaponDamageRider ShockD8 = new("Shocking Weapon", DamageTypes.Shock, d(8));
-  public static readonly WeaponDamageRider FlamingD4 = new("Flaming Weapon", DamageTypes.Fire, d(4));
-  public static readonly WeaponDamageRider FlamingD8 = new("Flaming Weapon", DamageTypes.Fire, d(8));
+    public static readonly WeaponDamageRider UnholyD4 = new("Unholy Weapon", DamageTypes.Unholy, d(4));
+    public static readonly WeaponDamageRider UnholyD8 = new("Unholy Weapon", DamageTypes.Unholy, d(8));
+    public static readonly WeaponDamageRider HolyD4 = new("Holy Weapon", DamageTypes.Holy, d(4));
+    public static readonly WeaponDamageRider HolyD8 = new("Holy Weapon", DamageTypes.Holy, d(8));
+    public static readonly WeaponDamageRider FreezeD4 = new("Freezing Weapon", DamageTypes.Cold, d(4));
+    public static readonly WeaponDamageRider FreezeD8 = new("Freezing Weapon", DamageTypes.Cold, d(8));
+    public static readonly WeaponDamageRider ShockD4 = new("Shocking Weapon", DamageTypes.Shock, d(4));
+    public static readonly WeaponDamageRider ShockD8 = new("Shocking Weapon", DamageTypes.Shock, d(8));
+    public static readonly WeaponDamageRider FlamingD4 = new("Flaming Weapon", DamageTypes.Fire, d(4));
+    public static readonly WeaponDamageRider FlamingD8 = new("Flaming Weapon", DamageTypes.Fire, d(8));
 
-  private string OnStr(IUnit unit, string weapon) => type.SubCat switch
-  {
-    "fire" => $"Flames surround {unit:own} {weapon}.",
-    "cold" => $"Icicles swirl round {unit:own} {weapon}.",
-    "shock" => $"{unit:Own} {weapon} start to crackle.",
-    "holy" => $"{unit:Own} {weapon} glow gold.",
-    "unholy" => $"{unit:Own} {weapon} glow black.",
-    _ => "??",
-  };
-
-  private string OffStr(IUnit unit, string weapon) => type.SubCat switch
-  {
-    "fire" => $"The flames surrounding {unit:own} {weapon} die out.",
-    "cold" => $"Icicles around {unit:own} {weapon} start melting.",
-    "shock" => $"{unit:Own} {weapon} stops crackling.",
-    "holy" => $"{unit:Own} {weapon} stops glowing gold.",
-    "unholy" => $"{unit:Own} {weapon} stops glowing black.",
-    _ => "??",
-  };
-
-  private string Key => type.SubCat switch
-  {
-    "fire" => "flaming",
-    "cold" => "freeze",
-    "shock" => "shock",
-    "holy" => "holy",
-    "unholy" => "unholy",
-    _ => "___",
-  };
-
-  public override bool IsBuff => true;
-  public override string? BuffName => name;
-  public override bool IsActive => true;
-
-  protected override object? OnQuery(Fact fact, string key, string? arg) => key.TrueWhen(Key);
-
-  protected override void OnFactAdded(Fact fact)
-  {
-    if (fact.Entity is Item item && item.Holder?.IsPlayer == true)
+    private string OnStr(IUnit unit, string weapon) => type.SubCat switch
     {
-      bool isUnarmed = item.Def is WeaponDef w && w.Category == WeaponCategory.Unarmed;
-      string weaponName = isUnarmed ? "fists" : item.Def.Name;
-      if (item.Has(Key))
-        g.pline($"{item.Holder:Own} {weaponName} seems more energised.");
-      else
-        g.pline(OnStr(u, weaponName));
+        "fire" => $"Flames surround {unit:own} {weapon}.",
+        "cold" => $"Icicles swirl round {unit:own} {weapon}.",
+        "shock" => $"{unit:Own} {weapon} start to crackle.",
+        "holy" => $"{unit:Own} {weapon} glow gold.",
+        "unholy" => $"{unit:Own} {weapon} glow black.",
+        _ => "??",
+    };
+
+    private string OffStr(IUnit unit, string weapon) => type.SubCat switch
+    {
+        "fire" => $"The flames surrounding {unit:own} {weapon} die out.",
+        "cold" => $"Icicles around {unit:own} {weapon} start melting.",
+        "shock" => $"{unit:Own} {weapon} stops crackling.",
+        "holy" => $"{unit:Own} {weapon} stops glowing gold.",
+        "unholy" => $"{unit:Own} {weapon} stops glowing black.",
+        _ => "??",
+    };
+
+    private string Key => type.SubCat switch
+    {
+        "fire" => "flaming",
+        "cold" => "freeze",
+        "shock" => "shock",
+        "holy" => "holy",
+        "unholy" => "unholy",
+        _ => "___",
+    };
+
+    public override bool IsBuff => true;
+    public override string? BuffName => name;
+    public override bool IsActive => true;
+
+    protected override object? OnQuery(Fact fact, string key, string? arg) => key.TrueWhen(Key);
+
+    protected override void OnFactAdded(Fact fact)
+    {
+        if (fact.Entity is Item item && item.Holder?.IsPlayer == true)
+        {
+            bool isUnarmed = item.Def is WeaponDef w && w.Category == WeaponCategory.Unarmed;
+            string weaponName = isUnarmed ? "fists" : item.Def.Name;
+            if (item.Has(Key))
+                g.pline($"{item.Holder:Own} {weaponName} seems more energised.");
+            else
+                g.pline(OnStr(u, weaponName));
+        }
     }
-  }
 
-  protected override void OnFactRemoved(Fact fact)
-  {
-    if (fact.Entity is Item item && item.Holder is { IsPlayer: true })
+    protected override void OnFactRemoved(Fact fact)
     {
-      bool isUnarmed = item.Def is WeaponDef w && w.Category == WeaponCategory.Unarmed;
-      string weaponName = isUnarmed ? "fists" : item.Def.Name;
-      if (item.Has(Key))
-        g.pline($"{item.Holder:Own} {weaponName} seems slightly less energised.");
-      else
-        g.pline(OffStr(u, weaponName));
+        if (fact.Entity is Item item && item.Holder is { IsPlayer: true })
+        {
+            bool isUnarmed = item.Def is WeaponDef w && w.Category == WeaponCategory.Unarmed;
+            string weaponName = isUnarmed ? "fists" : item.Def.Name;
+            if (item.Has(Key))
+                g.pline($"{item.Holder:Own} {weaponName} seems slightly less energised.");
+            else
+                g.pline(OffStr(u, weaponName));
+        }
     }
-  }
 
-  protected override void OnBeforeDamageRoll(Fact fact, PHContext context)
-  {
-    if (context.Weapon != fact.Entity) return;
-
-    context.Damage.Add(new DamageRoll
+    protected override void OnBeforeDamageRoll(Fact fact, PHContext context)
     {
-      Formula = dice,
-      Type = type,
-    });
-  }
+        if (context.Weapon != fact.Entity) return;
+
+        context.Damage.Add(new DamageRoll
+        {
+            Formula = dice,
+            Type = type,
+        });
+    }
 }
 
 public static class RampHelper
 {
-  public static T Ramp<T>(this int level, T[] values) => level switch
-  {
-      _ when level <= 5 => values[0],
-      _ when level <= 10 => values[1],
-      _ when level <= 15 => values[2],
-      _ => values[3],
+    public static T Ramp<T>(this int level, T[] values) => level switch
+    {
+        _ when level <= 5 => values[0],
+        _ when level <= 10 => values[1],
+        _ when level <= 15 => values[2],
+        _ => values[3],
 
-  };
+    };
 }
 
 public class EnergyResist(DamageType type, int amount) : LogicBrick
 {
-  static readonly int[] RampValues = [5, 10, 15, 20];
+    static readonly int[] RampValues = [5, 10, 15, 20];
 
-  public override string Id => amount == 0 ? $"energy_res+{type.SubCat}" : $"energy_res+{type.SubCat}/{amount}";
-  public override string? PokedexDescription => amount == 0 ? $"Resist {type.SubCat} (scaling)" : $"Resist {type.SubCat} {amount}";
+    public override string Id => amount == 0 ? $"energy_res+{type.SubCat}" : $"energy_res+{type.SubCat}/{amount}";
+    public override string? PokedexDescription => amount == 0 ? $"Resist {type.SubCat} (scaling)" : $"Resist {type.SubCat} {amount}";
 
-  int Resolve(Fact fact) => amount > 0 ? amount : (fact.Entity as IUnit)?.EffectiveLevel.Ramp(RampValues) ?? 5;
+    int Resolve(Fact fact) => amount > 0 ? amount : (fact.Entity as IUnit)?.EffectiveLevel.Ramp(RampValues) ?? 5;
 
-  [BrickInstances]
-  public class Ramp(DamageType type)
-  {
-    public readonly EnergyResist Dynamic = new(type, 0);
-    public readonly EnergyResist DR5 =  new(type, 5);
-    public readonly EnergyResist DR10 = new(type, 10);
-    public readonly EnergyResist DR15 = new(type, 15);
-    public readonly EnergyResist DR20 = new(type, 20);
-    public readonly EnergyResist Immune = new(type, 999);
+    [BrickInstances]
+    public class Ramp(DamageType type)
+    {
+        public readonly EnergyResist Dynamic = new(type, 0);
+        public readonly EnergyResist DR5 = new(type, 5);
+        public readonly EnergyResist DR10 = new(type, 10);
+        public readonly EnergyResist DR15 = new(type, 15);
+        public readonly EnergyResist DR20 = new(type, 20);
+        public readonly EnergyResist Immune = new(type, 999);
 
-    public EnergyResist Lookup(int level) => level.Ramp([DR5, DR10, DR15, DR20]);
-  }
+        public EnergyResist Lookup(int level) => level.Ramp([DR5, DR10, DR15, DR20]);
+    }
 
-  public static readonly Ramp Fire = new(DamageTypes.Fire);
-  public static readonly Ramp Shock = new(DamageTypes.Shock);
-  public static readonly Ramp Cold = new(DamageTypes.Cold);
-  public static readonly Ramp Acid = new(DamageTypes.Acid);
-  public static readonly Ramp Sonic = new(DamageTypes.Sonic);
+    public static readonly Ramp Fire = new(DamageTypes.Fire);
+    public static readonly Ramp Shock = new(DamageTypes.Shock);
+    public static readonly Ramp Cold = new(DamageTypes.Cold);
+    public static readonly Ramp Acid = new(DamageTypes.Acid);
+    public static readonly Ramp Sonic = new(DamageTypes.Sonic);
 
-  protected override void OnBeforeDamageIncomingRoll(Fact fact, PHContext ctx)
-  {
-    int dr = Resolve(fact);
-    foreach (var roll in ctx.Damage)
-      if (roll.Type == type) roll.ApplyDR(dr);
-  }
+    protected override void OnBeforeDamageIncomingRoll(Fact fact, PHContext ctx)
+    {
+        int dr = Resolve(fact);
+        foreach (var roll in ctx.Damage)
+            if (roll.Type == type) roll.ApplyDR(dr);
+    }
 
-  public static EnergyResist For(DamageType type, int level) => 
-      RampFor(type).Lookup(level);
+    public static EnergyResist For(DamageType type, int level) =>
+        RampFor(type).Lookup(level);
 
-  public static EnergyResist Dynamic(DamageType type) =>
-      RampFor(type).Dynamic;
+    public static EnergyResist Dynamic(DamageType type) =>
+        RampFor(type).Dynamic;
 
-  public static Ramp RampFor(DamageType type) => type.SubCat switch
-  {
-    DamageTypes.E_Fire => Fire,
-    DamageTypes.E_Cold => Cold,
-    DamageTypes.E_Shock => Shock,
-    DamageTypes.E_Acid => Acid,
-    DamageTypes.E_Sonic => Sonic,
-    _ => throw new NotSupportedException(),
-  };
+    public static Ramp RampFor(DamageType type) => type.SubCat switch
+    {
+        DamageTypes.E_Fire => Fire,
+        DamageTypes.E_Cold => Cold,
+        DamageTypes.E_Shock => Shock,
+        DamageTypes.E_Acid => Acid,
+        DamageTypes.E_Sonic => Sonic,
+        _ => throw new NotSupportedException(),
+    };
 }
 
 
 public class SimpleDR(int amount, string bypass) : LogicBrick
 {
-  public override string Id => $"dr+{bypass}/{amount}";
-  [BrickInstances]
-  public class SimpleDRRamp(string bypass)
-  {
-    public readonly SimpleDR DR5 = new(5, bypass);
-    public readonly SimpleDR DR10 = new(10, bypass);
-    public readonly SimpleDR DR15 = new(15, bypass);
-    public readonly SimpleDR DR20 = new(20, bypass);
+    public override string Id => $"dr+{bypass}/{amount}";
+    [BrickInstances]
+    public class SimpleDRRamp(string bypass)
+    {
+        public readonly SimpleDR DR5 = new(5, bypass);
+        public readonly SimpleDR DR10 = new(10, bypass);
+        public readonly SimpleDR DR15 = new(15, bypass);
+        public readonly SimpleDR DR20 = new(20, bypass);
 
-    public SimpleDR Lookup(int level) => level.Ramp([DR5, DR10, DR15, DR20]);
-  }
+        public SimpleDR Lookup(int level) => level.Ramp([DR5, DR10, DR15, DR20]);
+    }
 
-  protected override void OnBeforeDamageIncomingRoll(Fact fact, PHContext ctx)
-  {
-    ctx.Damage.ApplyDRUnless(amount, bypass, true);
-  }
+    protected override void OnBeforeDamageIncomingRoll(Fact fact, PHContext ctx)
+    {
+        ctx.Damage.ApplyDRUnless(amount, bypass, true);
+    }
 
-  public override string? PokedexDescription => $"DR {amount}/{bypass}";
+    public override string? PokedexDescription => $"DR {amount}/{bypass}";
 
-  public static readonly SimpleDRRamp Slashing = new(DamageTypes.P_Slashing);
-  public static readonly SimpleDRRamp Blunt = new(DamageTypes.P_Blunt);
-  public static readonly SimpleDRRamp Piercing = new(DamageTypes.P_Piercing);
+    public static readonly SimpleDRRamp Slashing = new(DamageTypes.P_Slashing);
+    public static readonly SimpleDRRamp Blunt = new(DamageTypes.P_Blunt);
+    public static readonly SimpleDRRamp Piercing = new(DamageTypes.P_Piercing);
 
-  public static readonly SimpleDRRamp Silver = new(Materials.Silver);
-  public static readonly SimpleDRRamp Adamantine = new(Materials.Adamantine);
-  public static readonly SimpleDRRamp ColdIron = new(Materials.ColdIron);
+    public static readonly SimpleDRRamp Silver = new(Materials.Silver);
+    public static readonly SimpleDRRamp Adamantine = new(Materials.Adamantine);
+    public static readonly SimpleDRRamp ColdIron = new(Materials.ColdIron);
 
-  public static readonly SimpleDRRamp Good = new(DamageTypes.A_Good);
-  public static readonly SimpleDRRamp Evil = new(DamageTypes.A_Evil);
-  public static readonly SimpleDRRamp Chaotic = new(DamageTypes.A_Chaos);
-  public static readonly SimpleDRRamp Lawful = new(DamageTypes.A_Law);
+    public static readonly SimpleDRRamp Good = new(DamageTypes.A_Good);
+    public static readonly SimpleDRRamp Evil = new(DamageTypes.A_Evil);
+    public static readonly SimpleDRRamp Chaotic = new(DamageTypes.A_Chaos);
+    public static readonly SimpleDRRamp Lawful = new(DamageTypes.A_Law);
 
-  public static readonly SimpleDRRamp Universal = new("-");
+    public static readonly SimpleDRRamp Universal = new("-");
 }
 
 public static class DRHelper
 {
-  public static void ApplyDRUnless(this List<DamageRoll> rolls, int amount, string bypass, bool physicalOnly)
-  {
-    foreach (var roll in rolls)
-      if ((!physicalOnly || roll.Type.Category == "phys") && !roll.Has(bypass)) roll.ApplyDR(amount);
-  }
+    public static void ApplyDRUnless(this List<DamageRoll> rolls, int amount, string bypass, bool physicalOnly)
+    {
+        foreach (var roll in rolls)
+            if ((!physicalOnly || roll.Type.Category == "phys") && !roll.Has(bypass)) roll.ApplyDR(amount);
+    }
 }
 
 public class ProtectionBrick(DamageType type) : LogicBrick
@@ -211,8 +211,8 @@ public class ProtectionBrick(DamageType type) : LogicBrick
     public static readonly ProtectionBrick Acid = new(DamageTypes.Acid);
     public static readonly ProtectionBrick Phys = new(new DamageType("phys", "_"));
 
-    bool Matches(DamageRoll roll) => type.SubCat == "_" 
-        ? roll.Type.Category == type.Category 
+    bool Matches(DamageRoll roll) => type.SubCat == "_"
+        ? roll.Type.Category == type.Category
         : roll.Type == type;
 
     string Label => type.SubCat == "_" ? type.Category : type.SubCat;

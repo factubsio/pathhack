@@ -25,7 +25,7 @@ public class WebSpit(int cooldown = 120) : CooldownAction("spit web", TargetingT
     {
         var basePlan = base.CanExecute(unit, data, target);
         if (!basePlan) return basePlan;
-        
+
         if (unit is Monster m && !m.CanSeeYou) return new(false, "can't see target");
 
         if (target.Pos is not { } tgtPos) return new(false, "no target");
@@ -59,14 +59,14 @@ public class WebSpit(int cooldown = 120) : CooldownAction("spit web", TargetingT
             pos += dir;
             if (!lvl.InBounds(pos) || !lvl.CanMoveTo(last, pos, null)) break;
             last = pos;
-            
+
             var hit = lvl.UnitAt(pos);
             if (hit == null) continue;
-            
+
             Animate();
-            
+
             if (hit.Has("web_immunity")) continue;
-            
+
             int dc = unit.GetSpellDC() - 2;
             using var ctx = PHContext.Create(unit, Target.From(hit));
             if (CheckReflex(ctx, dc, "web"))
@@ -74,7 +74,7 @@ public class WebSpit(int cooldown = 120) : CooldownAction("spit web", TargetingT
                 g.YouObserve(hit, $"{hit:The} {VTense(hit, "dodge")} the web!");
                 continue;
             }
-            
+
             g.YouObserve(hit, $"{hit:The} {VTense(hit, "get")} caught in a web!");
             var trap = new WebTrap(lvl.Depth) { PlayerSeen = true };
             hit.TrappedIn = trap;
@@ -123,7 +123,7 @@ public class SpiderVenom(int dc) : AfflictionBrick(dc, "poison")
     {
         if (stage == 1 && unit.IsPlayer) //FIXME YouObserveSelf?
             g.pline($"{unit:The} {VTense(unit, "feel")} woozy from spider venom!");
-        
+
         if (stage >= 5)
         {
             int duration = (stage - 3) / 2;
@@ -188,7 +188,7 @@ public static class Spiders
             StartingRot = Foods.RotSpoiled,
             MoralAxis = MoralAxis.Neutral,
             EthicalAxis = EthicalAxis.Neutral,
-            Components = [WebImmunity.Instance, ..components],
+            Components = [WebImmunity.Instance, .. components],
         };
     }
 

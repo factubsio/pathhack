@@ -4,58 +4,58 @@ namespace Pathhack.Game;
 
 public class BlindBuff : LogicBrick
 {
-  public static readonly BlindBuff Instance = new();
-  public override string Id => "blind";
+    public static readonly BlindBuff Instance = new();
+    public override string Id => "blind";
 
-  public override bool IsBuff => true;
-  public override string? BuffName => "Blind";
-  public override StatusDisplay StatusDisplayPriority => StatusDisplay.Severe;
-  public override StackMode StackMode => StackMode.Stack;
+    public override bool IsBuff => true;
+    public override string? BuffName => "Blind";
+    public override StatusDisplay StatusDisplayPriority => StatusDisplay.Severe;
+    public override StackMode StackMode => StackMode.Stack;
 
-  protected override object? OnQuery(Fact fact, string key, string? arg) => key.FalseWhen(CommonQueries.See);
+    protected override object? OnQuery(Fact fact, string key, string? arg) => key.FalseWhen(CommonQueries.See);
 
-  protected override void OnStackRemoved(Fact fact)
-  {
-    if (fact.Entity is not IUnit { IsPlayer: true }) return;
-    if (fact.Stacks == 0)
-      g.pline("You can see again.");
-    else
-      g.pline("Your vision clears slightly.");
-  }
+    protected override void OnStackRemoved(Fact fact)
+    {
+        if (fact.Entity is not IUnit { IsPlayer: true }) return;
+        if (fact.Stacks == 0)
+            g.pline("You can see again.");
+        else
+            g.pline("Your vision clears slightly.");
+    }
 }
 
 // Prone: -2 AC, half speed
 public class ProneBuff : LogicBrick
 {
-  public static readonly ProneBuff Instance = new();
-  public override string Id => "prone";
-  public override bool IsBuff => true;
-  public override string? BuffName => "Hamstrung";
-  public override StatusDisplay StatusDisplayPriority => StatusDisplay.Moderate;
-  public override StackMode StackMode => StackMode.Stack;
+    public static readonly ProneBuff Instance = new();
+    public override string Id => "prone";
+    public override bool IsBuff => true;
+    public override string? BuffName => "Hamstrung";
+    public override StatusDisplay StatusDisplayPriority => StatusDisplay.Moderate;
+    public override StackMode StackMode => StackMode.Stack;
 
-  protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
-  {
-    "ac" => new Modifier(ModifierCategory.UntypedStackable, -2, "prone"),
-    CommonQueries.SpeedPenaltyMul => 0.5,
-    _ => null
-  };
+    protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
+    {
+        "ac" => new Modifier(ModifierCategory.UntypedStackable, -2, "prone"),
+        CommonQueries.SpeedPenaltyMul => 0.5,
+        _ => null
+    };
 }
 
 public class SilencedBuff : LogicBrick
 {
-  public static readonly SilencedBuff Instance = new();
-  public override string Id => "silenced";
-  public override bool IsBuff => true;
-  public override string? BuffName => "Silenced";
-  public override StatusDisplay StatusDisplayPriority => StatusDisplay.Moderate;
-  public override StackMode StackMode => StackMode.Stack;
+    public static readonly SilencedBuff Instance = new();
+    public override string Id => "silenced";
+    public override bool IsBuff => true;
+    public override string? BuffName => "Silenced";
+    public override StatusDisplay StatusDisplayPriority => StatusDisplay.Moderate;
+    public override StackMode StackMode => StackMode.Stack;
 
-  protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
-  {
-    "can_speak" => false,
-    _ => null
-  };
+    protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
+    {
+        "can_speak" => false,
+        _ => null
+    };
 }
 
 public class ParalyzedBuff : LogicBrick
@@ -79,48 +79,48 @@ public class ParalyzedBuff : LogicBrick
 
 public class NauseatedBuff : LogicBrick
 {
-  public static readonly NauseatedBuff Instance = new();
-  public override string Id => "nauseated";
-  public override bool IsBuff => true;
-  public override string? BuffName => "Nauseated";
-  public override StatusDisplay StatusDisplayPriority => StatusDisplay.Severe;
-  public override StackMode StackMode => StackMode.Stack;
+    public static readonly NauseatedBuff Instance = new();
+    public override string Id => "nauseated";
+    public override bool IsBuff => true;
+    public override string? BuffName => "Nauseated";
+    public override StatusDisplay StatusDisplayPriority => StatusDisplay.Severe;
+    public override StackMode StackMode => StackMode.Stack;
 
-  protected override void OnBeforeCheck(Fact fact, PHContext context)
-  {
-    if (context.IsCheckingOwnerOf(fact))
+    protected override void OnBeforeCheck(Fact fact, PHContext context)
     {
-      context.Check!.Disadvantage++;
-      fact.Entity.RemoveStack(Instance);
+        if (context.IsCheckingOwnerOf(fact))
+        {
+            context.Check!.Disadvantage++;
+            fact.Entity.RemoveStack(Instance);
+        }
     }
-  }
 }
 
 public class FleeingBuff : LogicBrick
 {
-  public static readonly FleeingBuff Instance = new();
-  public override string Id => "fleeing";
-  public override bool IsBuff => true;
-  public override string? BuffName => "Fleeing";
-  public override StatusDisplay StatusDisplayPriority => StatusDisplay.Severe;
+    public static readonly FleeingBuff Instance = new();
+    public override string Id => "fleeing";
+    public override bool IsBuff => true;
+    public override string? BuffName => "Fleeing";
+    public override StatusDisplay StatusDisplayPriority => StatusDisplay.Severe;
 
-  protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
-  {
-    "fleeing" => true,
-    _ => null
-  };
+    protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
+    {
+        "fleeing" => true,
+        _ => null
+    };
 }
 
 public class StunnedBuff : LogicBrick
 {
-  public static readonly StunnedBuff Instance = new();
-  public override string Id => "stunned";
-  public override bool IsBuff => true;
-  public override bool IsActive => true;
-  public override string? BuffName => "Stunned";
-  public override StatusDisplay StatusDisplayPriority => StatusDisplay.Critical;
+    public static readonly StunnedBuff Instance = new();
+    public override string Id => "stunned";
+    public override bool IsBuff => true;
+    public override bool IsActive => true;
+    public override string? BuffName => "Stunned";
+    public override StatusDisplay StatusDisplayPriority => StatusDisplay.Critical;
 
-  protected override object? OnQuery(Fact fact, string key, string? arg) => key == "can_act" && !fact.Entity.Has(CommonQueries.StunImmune) ? false : null;
+    protected override object? OnQuery(Fact fact, string key, string? arg) => key == "can_act" && !fact.Entity.Has(CommonQueries.StunImmune) ? false : null;
 }
 
 public class BleedBuff : LogicBrick
@@ -189,135 +189,135 @@ public static class CommonQueries
 
 public class AfflictionData
 {
-  public int NextTick;
-  public int AppliedAt;
+    public int NextTick;
+    public int AppliedAt;
 }
 
 public abstract class AfflictionBrick(int dc, string? tag = null) : LogicBrick<AfflictionData>
 {
-  public int DC => dc;
-  public string? Tag => tag;
+    public int DC => dc;
+    public string? Tag => tag;
 
-  public override bool IsBuff => true;
-  public override bool IsActive => true;
-  public override StatusDisplay StatusDisplayPriority => StatusDisplay.Affliction;
-  public override StackMode StackMode => StackMode.Stack;
-  public override FactDisplayMode DisplayMode => FactDisplayMode.Name | FactDisplayMode.Stacks;
+    public override bool IsBuff => true;
+    public override bool IsActive => true;
+    public override StatusDisplay StatusDisplayPriority => StatusDisplay.Affliction;
+    public override StackMode StackMode => StackMode.Stack;
+    public override FactDisplayMode DisplayMode => FactDisplayMode.Name | FactDisplayMode.Stacks;
 
-  public abstract string AfflictionName { get; }
-  public abstract int MaxStage { get; }
-  public abstract DiceFormula TickInterval { get; }
-  public virtual int? AutoCureMax => null;
-  public virtual string SaveKey => "fortitude_save";
-  public virtual string? ImmunityKey => null;
+    public abstract string AfflictionName { get; }
+    public abstract int MaxStage { get; }
+    public abstract DiceFormula TickInterval { get; }
+    public virtual int? AutoCureMax => null;
+    public virtual string SaveKey => "fortitude_save";
+    public virtual string? ImmunityKey => null;
 
-  public override string? BuffName => AfflictionName;
-  public override int MaxStacks => MaxStage + 1;
+    public override string? BuffName => AfflictionName;
+    public override int MaxStacks => MaxStage + 1;
 
-  public override LogicBrick? MergeWith(LogicBrick other) =>
-      other is AfflictionBrick a && a.GetType() == GetType()
-          ? (a.DC > DC ? a : this)
-          : null;
+    public override LogicBrick? MergeWith(LogicBrick other) =>
+        other is AfflictionBrick a && a.GetType() == GetType()
+            ? (a.DC > DC ? a : this)
+            : null;
 
-  protected abstract void DoPeriodicEffect(Fact fact, IUnit unit, int stage);
-  protected abstract object? DoQuery(int stage, string key, string? arg);
+    protected abstract void DoPeriodicEffect(Fact fact, IUnit unit, int stage);
+    protected abstract object? DoQuery(int stage, string key, string? arg);
 
-  protected static int Stage(Fact fact) => fact.Stacks - 1;
+    protected static int Stage(Fact fact) => fact.Stacks - 1;
 
-  protected override void OnFactAdded(Fact fact)
-  {
-    var data = X(fact);
-    data.AppliedAt = g.CurrentRound;
-    data.NextTick = g.CurrentRound + TickInterval.Roll();
-  }
-
-  protected override void OnFactRemoved(Fact fact) => OnCured((IUnit)fact.Entity);
-
-  protected override void OnStackAdded(Fact fact)
-  {
-    int stage = Stage(fact);
-    if (stage > 0)
-      DoPeriodicEffect(fact, (IUnit)fact.Entity, stage);
-  }
-
-  protected override void OnRoundStart(Fact fact)
-  {
-    var data = X(fact);
-    if (g.CurrentRound < data.NextTick) return;
-
-    var unit = (IUnit)fact.Entity;
-
-    if (tag != null && unit.Query<bool>("suppress_affliction", tag, MergeStrategy.Or, false)) return;
-
-    data.NextTick = g.CurrentRound + TickInterval.Roll();
-
-    // auto-cure
-    int roundsAfflicted = g.CurrentRound - data.AppliedAt;
-    if (AutoCureMax is int max && g.Rn2(max) < roundsAfflicted)
+    protected override void OnFactAdded(Fact fact)
     {
-      fact.Remove();
-      return;
+        var data = X(fact);
+        data.AppliedAt = g.CurrentRound;
+        data.NextTick = g.CurrentRound + TickInterval.Roll();
     }
 
-    // save
-    using var saveCtx = PHContext.Create(DungeonMaster.WithDC(DC), Target.From(unit));
-    bool saved = CreateAndDoCheck(saveCtx, SaveKey, DC, AfflictionName);
-    if (saved)
-      unit.RemoveStack(this);
-    else
-      unit.AddFact(this, fact.Source);
-  }
+    protected override void OnFactRemoved(Fact fact) => OnCured((IUnit)fact.Entity);
 
-  protected virtual void OnCured(IUnit unit) => g.pline($"{unit:The} {VTense(unit, "feel")} better.");
+    protected override void OnStackAdded(Fact fact)
+    {
+        int stage = Stage(fact);
+        if (stage > 0)
+            DoPeriodicEffect(fact, (IUnit)fact.Entity, stage);
+    }
 
-  protected override object? OnQuery(Fact fact, string key, string? arg) =>
-      key == Tag ? fact : DoQuery(Stage(fact), key, arg);
+    protected override void OnRoundStart(Fact fact)
+    {
+        var data = X(fact);
+        if (g.CurrentRound < data.NextTick) return;
+
+        var unit = (IUnit)fact.Entity;
+
+        if (tag != null && unit.Query<bool>("suppress_affliction", tag, MergeStrategy.Or, false)) return;
+
+        data.NextTick = g.CurrentRound + TickInterval.Roll();
+
+        // auto-cure
+        int roundsAfflicted = g.CurrentRound - data.AppliedAt;
+        if (AutoCureMax is int max && g.Rn2(max) < roundsAfflicted)
+        {
+            fact.Remove();
+            return;
+        }
+
+        // save
+        using var saveCtx = PHContext.Create(DungeonMaster.WithDC(DC), Target.From(unit));
+        bool saved = CreateAndDoCheck(saveCtx, SaveKey, DC, AfflictionName);
+        if (saved)
+            unit.RemoveStack(this);
+        else
+            unit.AddFact(this, fact.Source);
+    }
+
+    protected virtual void OnCured(IUnit unit) => g.pline($"{unit:The} {VTense(unit, "feel")} better.");
+
+    protected override object? OnQuery(Fact fact, string key, string? arg) =>
+        key == Tag ? fact : DoQuery(Stage(fact), key, arg);
 }
 
 public class RegenBrick(params DamageType[] suppressedBy) : LogicBrick<RegenBrick.State>
 {
-  public override string Id => suppressedBy.Length == 0 ? "regen" : $"regen+{string.Join("/", suppressedBy.Select(t => t.SubCat))}";
-  public class State
-  {
-    public int SuppressedUntil;
-    public void Suppress() => SuppressedUntil = Math.Max(SuppressedUntil, g.CurrentRound + d(3).Roll());
-    public bool IsSuppressed => g.CurrentRound < SuppressedUntil;
-  }
+    public override string Id => suppressedBy.Length == 0 ? "regen" : $"regen+{string.Join("/", suppressedBy.Select(t => t.SubCat))}";
+    public class State
+    {
+        public int SuppressedUntil;
+        public void Suppress() => SuppressedUntil = Math.Max(SuppressedUntil, g.CurrentRound + d(3).Roll());
+        public bool IsSuppressed => g.CurrentRound < SuppressedUntil;
+    }
 
-  public override AbilityTags Tags => AbilityTags.Biological;
-  public override bool IsActive => true;
+    public override AbilityTags Tags => AbilityTags.Biological;
+    public override bool IsActive => true;
 
-  public static readonly RegenBrick Always = new();
-  public static readonly RegenBrick FireOrAcid = new(DamageTypes.Fire, DamageTypes.Acid);
-  public static readonly RegenBrick Fire = new(DamageTypes.Fire);
-  public static readonly RegenBrick Acid = new(DamageTypes.Acid);
+    public static readonly RegenBrick Always = new();
+    public static readonly RegenBrick FireOrAcid = new(DamageTypes.Fire, DamageTypes.Acid);
+    public static readonly RegenBrick Fire = new(DamageTypes.Fire);
+    public static readonly RegenBrick Acid = new(DamageTypes.Acid);
 
-  public override string? PokedexDescription => $"Regen{SuppressingString}";
-  private string SuppressingString => suppressedBy.Length switch
-  {
-    0 => "",
-    _ => $"/{string.Join(",", suppressedBy.Select(x => x.SubCat.Capitalize()))}",
-  };
+    public override string? PokedexDescription => $"Regen{SuppressingString}";
+    private string SuppressingString => suppressedBy.Length switch
+    {
+        0 => "",
+        _ => $"/{string.Join(",", suppressedBy.Select(x => x.SubCat.Capitalize()))}",
+    };
 
     protected override void OnRoundEnd(Fact fact)
     {
-        if (fact.Entity is not IUnit {} unit) return;
+        if (fact.Entity is not IUnit { } unit) return;
         if (X(fact).IsSuppressed) return;
         unit.HP += 1;
     }
 
-  protected override void OnDamageTaken(Fact fact, PHContext ctx)
-  {
-    foreach (var roll in ctx.Damage)
-      if (suppressedBy.Contains(roll.Type))
-      {
-        X(fact).Suppress();
-        return;
-      }
-  }
+    protected override void OnDamageTaken(Fact fact, PHContext ctx)
+    {
+        foreach (var roll in ctx.Damage)
+            if (suppressedBy.Contains(roll.Type))
+            {
+                X(fact).Suppress();
+                return;
+            }
+    }
 
-  protected override object? OnQuery(Fact fact, string key, string? arg) =>
-      key == "respawn_from_corpse" && !X(fact).IsSuppressed ? true : null;
+    protected override object? OnQuery(Fact fact, string key, string? arg) =>
+        key == "respawn_from_corpse" && !X(fact).IsSuppressed ? true : null;
 }
 
 public class ConfusedBuff : LogicBrick

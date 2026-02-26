@@ -184,7 +184,7 @@ static class DungeonOverview
             rows.Add(new(label, !visited, isHere,
                 isEntry && parentName != null ? $"{parentName} ←" : null,
                 visited ? rightAnnot : null,
-                resolved.SeenAnnotations.Count > 0 ? [..resolved.SeenAnnotations] : null));
+                resolved.SeenAnnotations.Count > 0 ? [.. resolved.SeenAnnotations] : null));
         }
 
         if (lastVisited < branch.MaxDepth)

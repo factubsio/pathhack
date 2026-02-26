@@ -282,7 +282,7 @@ public class VeryDrunkJinkinBrain : MonsterBrain
             if (upos.ChebyshevDist(m.Pos) == 1 && g.Rn2(3) == 0)
                 to = upos;
 
-            if (lvl.UnitAt(m.Pos + dir) is {} tgt)
+            if (lvl.UnitAt(m.Pos + dir) is { } tgt)
             {
                 using var ctx = PHContext.Create(m, Target.From(tgt));
 
@@ -314,7 +314,7 @@ public class VeryDrunkJinkinBrain : MonsterBrain
         {
             Pos dir = Pos.AllDirs.Pick();
             Pos to = m.Pos + dir;
-            if (lvl.UnitAt(to) is {} tgt)
+            if (lvl.UnitAt(to) is { } tgt)
             {
                 // GET OUT OF MY WAY
                 if (g.Rn2(2) == 0)

@@ -99,8 +99,12 @@ public static class BlackBox
             CL = u.CharacterLevel,
             XP = u.XP,
             Gold = u.Gold,
-            Str = u.Str, Dex = u.Dex, Con = u.Con,
-            Int = u.Int, Wis = u.Wis, Cha = u.Cha,
+            Str = u.Str,
+            Dex = u.Dex,
+            Con = u.Con,
+            Int = u.Int,
+            Wis = u.Wis,
+            Cha = u.Cha,
             Hunger = Hunger.GetLabel(hunger),
             Buffs = [.. u.LiveFacts
                 .Where(f => f.Brick.BuffName != null)

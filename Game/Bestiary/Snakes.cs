@@ -18,7 +18,7 @@ public class SnakeVenomLesser(int dc) : AfflictionBrick(dc, "poison")
         using var ctx = PHContext.Create(unit, Target.From(unit));
         ctx.Damage.Add(new DamageRoll { Formula = d(4), Type = DamageTypes.Poison });
         DoDamage(ctx);
-        
+
         if (stage == 1 && unit.IsPlayer) //FIXME YouObserveSelf?
             g.pline($"{unit:The} {VTense(unit, "feel")} poisoned!");
     }
@@ -47,7 +47,7 @@ public class SnakeVenomGreater(int dc) : AfflictionBrick(dc, "poison")
         DiceFormula formula = stage >= 5 ? d(2, 6) : stage >= 3 ? d(8) : d(6);
         ctx.Damage.Add(new DamageRoll { Formula = formula, Type = DamageTypes.Poison });
         DoDamage(ctx);
-        
+
         if (stage == 1 && unit.IsPlayer) //FIXME YouObserveSelf?
             g.pline($"{unit:The} {VTense(unit, "feel")} badly poisoned!");
     }
@@ -66,7 +66,7 @@ public class GrabOnHit : LogicBrick
     public static readonly GrabOnHit Instance = new();
     public override string Id => "snake:grab";
     public override string? PokedexDescription => "Grabs on hit";
-    
+
     protected override void OnAfterAttackRoll(Fact fact, PHContext ctx)
     {
         if (!ctx.Melee || !ctx.Check!.Result) return;
@@ -74,7 +74,7 @@ public class GrabOnHit : LogicBrick
         var target = ctx.Target.Unit;
         if (target == null) return;
         if (attacker.Grabbing != null || target.GrabbedBy != null) return;
-        
+
         attacker.Grabbing = target;
         target.GrabbedBy = attacker;
         g.YouObserve(attacker, $"{attacker:The} {VTense(attacker, "grab")} {target:the}!");
@@ -89,10 +89,10 @@ public class Constrict(Dice damage) : LogicBrick
     public static readonly Constrict Large = new(d(10) + 7);
     public static readonly Constrict Heavy = new(d(2, 8));
     public static readonly Constrict Crushing = new(d(4, 8));
-    
+
     public override string? PokedexDescription => $"Constrict {damage}";
     public override bool IsActive => true;
-    
+
     protected override void OnRoundStart(Fact fact)
     {
         var unit = fact.Entity as IUnit;

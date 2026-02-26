@@ -34,7 +34,7 @@ public static class Pathfinding
                 if (!level.InBounds(next)) continue;
                 if (!level.WasSeen(next)) continue;
                 if (!level.CanMoveTo(current, next, u)) continue;
-                
+
                 int moveCost = (next.X != current.X && next.Y != current.Y) ? 14 : 10;
                 int newCost = cost[current] + moveCost;
                 if (!cost.TryGetValue(next, out int oldCost) || newCost < oldCost)

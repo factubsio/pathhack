@@ -68,7 +68,7 @@ public static partial class LevelGen
                 if (!room.Interior.Contains(p + d) && !room.Border.Contains(p + d))
                     wallNeighbors++;
             if (wallNeighbors >= 2) continue;
-            
+
             foreach (var dir in Pos.CardinalDirs)
             {
                 var neighbor = p + dir;
@@ -189,17 +189,17 @@ public static partial class LevelGen
     static bool TryDigCorridor(LevelGenContext ctx, Room roomA, Room roomB, bool nxcor = false)
     {
         var level = ctx.level;
-        
+
         var pair = PickDoorPair(level, roomA, roomB);
         if (pair == null)
         {
             LogVerbose($"  No door candidates found");
             return false;
         }
-        
+
         var (doorA, doorB, outDir) = pair.Value;
         int dx = outDir.X, dy = outDir.Y;
-        
+
         if (dx == 0 && dy == 0)
         {
             dx = Math.Sign(doorB.X - doorA.X);
@@ -211,7 +211,7 @@ public static partial class LevelGen
 
         Pos org = new(doorA.X + dx, doorA.Y + dy);
         Pos dest = new(doorB.X - dx, doorB.Y - dy);
-        
+
         if (level[dest].Type is not TileType.Rock && level[dest].Type != TileType.Corridor)
             dest = doorB;
 
@@ -233,7 +233,7 @@ public static partial class LevelGen
             {
                 level.Set(new(x, y), TileType.Corridor);
                 dug.Add(new(x, y));
-                
+
                 if (!placedDoorA)
                 {
                     if (level[doorA].Type != TileType.Door && CanPlaceDoor(level, doorA))
@@ -333,7 +333,7 @@ public static partial class LevelGen
                 level.Set(dug[i], TileType.Rock);
             return;
         }
-        
+
         foreach (Pos p in dug)
             level.Set(p, TileType.Rock);
         if (placedDoorA && level[doorA].Type == TileType.Door)

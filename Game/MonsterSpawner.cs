@@ -77,7 +77,7 @@ public static class MonsterSpawner
         if (!level.SpawnFlags.HasFlag(SpawnFlags.Runtime)) return;
 
         if (g.Rn2(RuntimeSpawnFrequency) != 0) return;
-        
+
         const int minDist = 10;
         bool far(Pos p) => p.ChebyshevDist(upos) >= minDist;
         bool basic(Pos p) => level.NoUnit(p) && !level[p].IsStairs;
@@ -88,9 +88,9 @@ public static class MonsterSpawner
                ?? level.FindLocation(p => basic(p) && far(p))
                ?? level.FindLocation(p => basic(p) && !level.HasLOS(p))
                ?? level.FindLocation(p => basic(p));
-        
+
         if (pos == null) return;
-        
+
         SpawnAndPlace(level, $"runtime DL={level.Id}", null, true, pos);
     }
 
@@ -112,7 +112,7 @@ public static class MonsterSpawner
     {
         int depth = level.EffectiveDepth;
         int playerLevel = u?.CharacterLevel ?? 1;
-        
+
         var resolved = level.Id.Branch.ResolvedLevels[level.Id.Depth - 1];
         var pick = resolved.Behaviour?.PickMonster(level, depth, reason);
         def ??= pick?.Def ?? PickMonster(depth, playerLevel, filter);

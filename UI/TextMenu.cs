@@ -71,7 +71,7 @@ public class TextMenu
         while (true)
         {
             win.Clear(Cell.Empty);
-            var content = win.At(1,0);
+            var content = win.At(1, 0);
             int start = pageStarts[page];
             int end = page + 1 < pageStarts.Count ? pageStarts[page + 1] : _lines.Count;
             int y = 0;

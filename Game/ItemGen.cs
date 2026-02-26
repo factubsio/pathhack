@@ -23,10 +23,10 @@ public static class ItemGen
         (4, GenerateGloves),
         (3, GenerateRune),
     ];
-    
+
     static int TotalWeight => ClassWeights.Sum(x => x.weight);
 
-    static readonly ItemDef[] ArmorShopPool = [..MundaneArmory.RandomAllArmors, ..MagicBoots.RandomAll, ..MagicGloves.RandomAll];
+    static readonly ItemDef[] ArmorShopPool = [.. MundaneArmory.RandomAllArmors, .. MagicBoots.RandomAll, .. MagicGloves.RandomAll];
 
     public static Item? GenerateForShop(ShopType type, int depth) => type switch
     {
@@ -148,7 +148,7 @@ public static class ItemGen
         Item item = Item.Create(def);
         item.BUC = RollBUC(bucChance, def.BUCBias);
         List<string> genLog = [];
-        
+
         if (def is WeaponDef)
         {
             int potency = RollPotency(depth, genLog, maxPotency);
@@ -194,7 +194,7 @@ public static class ItemGen
     {
         if (force.HasValue && force.Value < 0) return -force.Value;
         if (force.HasValue) return g.Rn2(force.Value + 1);
-        
+
         int d = Math.Clamp(depth, 0, ItemGenTables.Potency.Length - 1);
         int roll = g.Rn2(100);
         int result = ItemGenTables.Potency[d][roll];
@@ -207,14 +207,14 @@ public static class ItemGen
         int d = Math.Clamp(depth, 0, ItemGenTables.Fundamental.Length - 1);
         int roll = g.Rn2(100);
         int quality = ItemGenTables.Fundamental[d][roll];
-        
+
         // Don't block unique items
         if (quality == 0 && !item.Def.IsUnique)
         {
             ApplyRune(item, NullFundamental.Instance, fundamental: true);
             return;
         }
-        
+
         genLog.Add($"striking r{roll}={quality}");
         ApplyRune(item, StrikingRune.Of(quality), fundamental: true);
     }
@@ -230,28 +230,28 @@ public static class ItemGen
             if (fact.Brick is ElementalRune er)
                 usedCategories.Add(er.Category);
         }
-        
+
         for (int slot = startSlot; slot < item.Potency; slot++)
         {
             int fillRoll = g.Rn2(100);
             if (ItemGenTables.Fill[d][fillRoll] == 0) continue;
-            
+
             int category = g.Rn2(3); // fire, frost, shock for now
             if (!usedCategories.Add(category)) continue;
-            
+
             int qualRoll = g.Rn2(100);
             int quality = ItemGenTables.Quality[d][qualRoll];
-            
+
             string[] names = ["flaming", "frost", "shock"];
             genLog?.Add($"{names[category]} f{fillRoll} q{qualRoll}={quality}");
-            
+
             RuneBrick rune = category switch
             {
                 0 => ElementalRune.Flaming(quality),
                 1 => ElementalRune.Frost(quality),
                 _ => ElementalRune.Shock(quality),
             };
-            
+
             ApplyRune(item, rune, fundamental: false);
         }
     }

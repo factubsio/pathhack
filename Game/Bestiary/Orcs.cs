@@ -35,7 +35,7 @@ public static class Orcs
             BaseLevel = level,
             MoralAxis = MoralAxis.Evil,
             EthicalAxis = EthicalAxis.Chaotic,
-            Components = [..Common, ..extra],
+            Components = [.. Common, .. extra],
         };
     }
 

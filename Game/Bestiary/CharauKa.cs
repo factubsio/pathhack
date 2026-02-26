@@ -16,7 +16,7 @@ public class AerialCharge() : CooldownAction("charau_ka:aerial_charge", Targetin
         var plan = base.CanExecute(unit, data, target);
         if (!plan) return plan;
 
-        if (target.Unit is not {} tgt) return "no unit";
+        if (target.Unit is not { } tgt) return "no unit";
         if (!tgt.Pos.IsCompassFrom(unit.Pos)) return "not in line";
 
         var dist = tgt.Pos.ChebyshevDist(unit.Pos);
@@ -30,7 +30,7 @@ public class AerialCharge() : CooldownAction("charau_ka:aerial_charge", Targetin
 
     protected override void Execute(IUnit unit, Target target, object? plan = null)
     {
-        if (plan is not Pos {} landingSpot) return;
+        if (plan is not Pos { } landingSpot) return;
         lvl.MoveUnit(unit, landingSpot, true);
 
         g.YouObserve(unit, $"{unit:The} charges {target.Unit!:the} through the air!", "a whoosh, a stomping crash");
@@ -52,7 +52,7 @@ public class ShriekingFrenzyBuff : LogicBrick
 
     protected override void OnRoundStart(Fact fact)
     {
-        if (fact.Entity is not IUnit {} unit) return;
+        if (fact.Entity is not IUnit { } unit) return;
         if (unit.CannotAct) return;
         unit.Energy += 3;
     }

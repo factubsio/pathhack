@@ -96,7 +96,8 @@ public static class Goblins
         BaseDamage = d(6),
         DamageType = DamageTypes.Slashing,
         WeaponType = WeaponTypes.Shortbow,
-        Style = WeaponStyle.Carve, Grip = WeaponGrip.Light,
+        Style = WeaponStyle.Carve,
+        Grip = WeaponGrip.Light,
         MeleeVerb = "swing",
         Price = -1,
     };

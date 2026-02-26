@@ -126,7 +126,7 @@ public class EatActivity(Item food, bool canChoke) : Activity("eat", food)
                 g.Done("choked on food");
                 return false;
             }
-        else
+            else
             {
                 u.Nutrition = Math.Max(0, u.Nutrition - 1000);
                 CookingUtil.DoVomit(u, "You stuff yourself and then vomit voluminously.",
@@ -164,7 +164,7 @@ public class CookQuickActivity(Item corpse) : Activity("cook_quick")
         if (Done)
         {
             g.pline("You finish cooking.");
-            if (corpse.CorpseOf?.OnCookQuick is {} msg) g.pline(msg);
+            if (corpse.CorpseOf?.OnCookQuick is { } msg) g.pline(msg);
             u.Nutrition = Math.Min(Hunger.Max, u.Nutrition + _nutrition);
             return false;
         }
@@ -217,7 +217,7 @@ public class CookCarefulActivity : Activity
         if (Done)
         {
             g.pline($"You finish cooking {DoNameOne(_corpse)}.");
-            if (_corpse.CorpseOf?.OnCookSlow is {} msg) g.pline(msg);
+            if (_corpse.CorpseOf?.OnCookSlow is { } msg) g.pline(msg);
 
             if (Foods.IsTainted(_corpse))
             {
@@ -456,10 +456,10 @@ public static class Foods
     public static bool TickCorpse(Item corpseItem, IUnit? holder, Pos? floorPos)
     {
         if (corpseItem.CorpseOf == null) return false;
-        
+
         // Don't rot while being cooked
         if (u.CurrentActivity?.TargetItem == corpseItem) return false;
-        
+
         corpseItem.RotTimer++;
         corpseItem.RespawnTimer++;
 

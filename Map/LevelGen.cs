@@ -7,7 +7,7 @@ public static partial class LevelGen
 {
     static Random _rng = new();
     static StreamWriter? _log;
-    
+
     public static bool QuietLog = false; // only log major stages, not every corridor step
     public static bool TestMode = false; // skip population, return after structure gen
     public static StreamWriter? SharedLog; // for --gen-dungeons, receives final renders
@@ -64,7 +64,7 @@ public static partial class LevelGen
             {
                 level = new(id, Draw.MapWidth, Draw.MapHeight),
             };
-            
+
             var resolved = id.Branch.ResolvedLevels[id.Depth - 1];
             ctx.level.FloorColor = resolved.FloorColor;
             ctx.level.WallColor = resolved.WallColor;
@@ -90,7 +90,7 @@ public static partial class LevelGen
                 (_, _, { } template) => template,
                 _ => null
             };
-            
+
             if (special != null)
             {
                 Log($"GenSpecial: {special.Id}");
@@ -177,7 +177,7 @@ public static partial class LevelGen
                 Log($"PopulateCave (roomless={ctx.level.Rooms.Count == 0}, anywhere={anywhere})...");
                 PopulateCave(ctx, anywhere ? ctx.level.Rooms.Count : 0);
             }
-            
+
             LogLevel(ctx.level);
             BakeBaseLit(ctx.level);
             ctx.level.UnderConstruction = false;
@@ -200,11 +200,11 @@ public static partial class LevelGen
 
         if (level.Outdoors)
             for (int y = 0; y < level.Height; y++)
-            for (int x = 0; x < level.Width; x++)
-            {
-                Pos p = new(x, y);
-                if (level[p].Type != TileType.Rock) level.BaseLit[p] = true;
-            }
+                for (int x = 0; x < level.Width; x++)
+                {
+                    Pos p = new(x, y);
+                    if (level[p].Type != TileType.Rock) level.BaseLit[p] = true;
+                }
     }
 
     static void LogLevelVerbose(Level level) { if (!QuietLog) LogLevel(level); }
@@ -217,13 +217,13 @@ public static partial class LevelGen
     static void LogLevel(Level level, bool toShared = false)
     {
         const string xChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        
+
         void Out(string s)
         {
             _log?.WriteLine(s);
             if (toShared) SharedLog?.WriteLine(s);
         }
-        
+
         Out("");
         // X axis header
         char[] xAxis = new char[level.Width + 2];
@@ -303,7 +303,7 @@ public static partial class LevelGen
         RenderRooms(ctx);
 
         // Note: room merging now happens during PlaceRoom
-        
+
         // Re-place doors (RenderRooms may have overwritten them)
         foreach (var p in marks.GetValueOrDefault('+', []))
             ctx.level.PlaceDoor(p, DoorState.Closed);
@@ -315,7 +315,7 @@ public static partial class LevelGen
     {
         var level = ctx.level;
         bool horizontal = Rn2(4) != 0;
-        
+
         if (horizontal)
         {
             int center = RnRange(6, level.Height - 6);
@@ -351,7 +351,7 @@ public static partial class LevelGen
             }
         }
     }
-    
+
     static void RemoveOrphanWalls(Level level)
     {
         for (int y = 1; y < level.Height - 1; y++)
@@ -363,18 +363,18 @@ public static partial class LevelGen
                     level.Set(p, TileType.Water);
             }
     }
-    
+
     static void Liquify(Level level, int x, int y, bool edge)
     {
         if (x <= 0 || x >= level.Width - 1 || y <= 0 || y >= level.Height - 1) return;
-        
+
         var pos = new Pos(x, y);
         var tile = level[pos];
-        
+
         // Don't liquify shop tiles
         var room = level.RoomAt(pos);
         if (room?.Type == RoomType.Shop) return;
-        
+
         // Rock or non-edge wall -> Water
         if (tile.Type == TileType.Rock || (tile.Type == TileType.Wall && !edge && Rn2(3) != 0))
         {
@@ -394,31 +394,31 @@ public static partial class LevelGen
         {
             int x = Rn2(level.Width - 6) + 1;
             int y = Rn2(level.Height - 6) + 1;
-            
+
             bool ok = true;
             for (int i = 0; i < 6 && ok; i++)
                 for (int j = 0; j < 6 && ok; j++)
                     if (level[new Pos(x + i, y + j)].Type != TileType.Rock)
                         ok = false;
-            
+
             if (!ok) continue;
-            
+
             // Outer ring = water
             for (int i = 0; i < 6; i++)
                 for (int j = 0; j < 6; j++)
                     level.Set(new Pos(x + i, y + j), TileType.Water);
-            
+
             // Inner 2x2 = floor with walls
             for (int i = 1; i < 5; i++)
                 for (int j = 1; j < 5; j++)
                     level.Set(new Pos(x + i, y + j), TileType.Wall);
-            
+
             for (int i = 2; i < 4; i++)
                 for (int j = 2; j < 4; j++)
                     level.Set(new Pos(x + i, y + j), TileType.Floor);
-            
+
             Log($"MiniVault placed at {x},{y}");
-            
+
             // TODO: chests, guard monster
             return;
         }
@@ -428,32 +428,32 @@ public static partial class LevelGen
     public static bool PlaceRoom(LevelGenContext ctx, Rect bounds)
     {
         Log($"PlaceRoom trying {RectStr(bounds)}");
-        
+
         // Find all touching stamps
         List<int> touching = [];
-        HashSet<Pos> newBorder = [..bounds.Border()];
-        
+        HashSet<Pos> newBorder = [.. bounds.Border()];
+
         for (int i = 0; i < ctx.Stamps.Count; i++)
         {
             var stamp = ctx.Stamps[i];
             IEnumerable<Pos> existingBorder = stamp.Bounds?.Border() ?? stamp.Tiles ?? [];
-            
-            bool touches = existingBorder.Any(p => 
+
+            bool touches = existingBorder.Any(p =>
                 Pos.CardinalDirs.Any(dir => newBorder.Contains(p + dir)));
-            
+
             if (touches)
             {
                 Log($"  touches stamp {i}");
                 touching.Add(i);
             }
         }
-        
+
         if (touching.Count > 1)
         {
             Log($"  Rejected - touches {touching.Count} stamps");
             return false;
         }
-        
+
         if (touching.Count == 1)
         {
             int i = touching[0];
@@ -468,19 +468,19 @@ public static partial class LevelGen
             Log($"  Rejected - touches stamp {i} but can't merge");
             return false;
         }
-        
+
         ctx.Stamps.Add(new(bounds));
         ctx.MarkOccupied(bounds);
         Log($"  Placed as room {ctx.Stamps.Count - 1}");
         return true;
     }
-    
+
     static bool TryMergeStamps(LevelGenContext ctx, int existingIdx, Rect newBounds, out HashSet<Pos> merged)
     {
         merged = [];
         var existing = ctx.Stamps[existingIdx];
-        HashSet<Pos> existingTiles = existing.Tiles ?? [..existing.Bounds!.Value.All()];
-        HashSet<Pos> newBorder = [..newBounds.Border()];
+        HashSet<Pos> existingTiles = existing.Tiles ?? [.. existing.Bounds!.Value.All()];
+        HashSet<Pos> newBorder = [.. newBounds.Border()];
 
         int touching = 0;
         foreach (var p in newBorder)
@@ -523,7 +523,7 @@ public static partial class LevelGen
 
     static int RequireDepth(Level l, int min, int max = 99) => l.Depth >= min && l.Depth <= max ? 1 : 0;
     static int RequireSize(Room r, int min) => r.Interior.Count >= min ? 1 : 0;
-    static int RequireNoUpStairs(Level l, Room r) => r.Interior.Any(p => 
+    static int RequireNoUpStairs(Level l, Room r) => r.Interior.Any(p =>
         l[p].Type is TileType.StairsUp or TileType.BranchUp) ? 0 : 1;
 
     static int MapRange(int value, Range input, Range output)
@@ -546,7 +546,7 @@ public static partial class LevelGen
     static void AssignRoomTypes(LevelGenContext ctx)
     {
         var level = ctx.level;
-        
+
         List<int> eligible = [];
         for (int i = 0; i < level.Rooms.Count; i++)
             if ((level.Rooms[i].Flags & RoomFlags.Merged) == 0)
@@ -579,7 +579,7 @@ public static partial class LevelGen
         if (depth > 1 && Rn2(depth) < 4)
         {
             var ordinary = level.Rooms.Where(r =>
-                r.Type == RoomType.Ordinary && 
+                r.Type == RoomType.Ordinary &&
                 !r.HasStairs &&
                 r.Interior.Count < 64 &&
                 r.Border.Count(p => level[p].Type == TileType.Door) == 1
@@ -661,14 +661,14 @@ public static partial class LevelGen
                 }
             }
         }
-        
+
         // Traps: x = 12 - depth/6, while rn2(x)==0 place trap
         int trapChance = Math.Max(2, 12 - level.EffectiveDepth / 6);
         while (Rn2(trapChance) == 0)
         {
             var pos = ctx.FindLocationInRoom(room, p => level[p].IsPassable && !level[p].IsStairs && !level.Traps.ContainsKey(p));
             if (pos == null) break;
-            
+
             Trap trap = Rn2(5) switch
             {
                 0 => new WebTrap(level.EffectiveDepth),
@@ -679,7 +679,7 @@ public static partial class LevelGen
             level.Traps[pos.Value] = trap;
             Log($"trapgen: placed {trap.Type} at {pos.Value}");
         }
-        
+
         // Gold: 1/3 chance
         if (Rn2(3) == 0)
         {
@@ -690,7 +690,7 @@ public static partial class LevelGen
                 level.PlaceItem(Item.Create(MiscItems.SilverCrest, amount), pos.Value);
             }
         }
-        
+
         // Items: 1/3 chance for first, then 1/5 for each additional
         if (Rn2(3) == 0)
         {
@@ -699,11 +699,11 @@ public static partial class LevelGen
                 PlaceRoomItem(ctx, room);
         }
     }
-    
+
     public static void FillShop(LevelGenContext ctx, Room room)
     {
         var level = ctx.level;
-        
+
         HashSet<Pos> shopTiles = [.. room.Interior];
 
         var doorPos = room.Border.FirstOrDefault(p => level[p].Type == TileType.Door);
@@ -762,15 +762,15 @@ public static partial class LevelGen
                 level.GetOrCreateState(p).Undiggable = true;
         }
     }
-    
+
     static void PlaceRoomItem(LevelGenContext ctx, Room room)
     {
         var pos = ctx.FindLocationInRoom(room, p => ctx.level[p].IsPassable && !ctx.level.HasFeature(p));
         if (pos == null) return;
-        
+
         var item = ItemGen.GenerateRandomItem(ctx.level.EffectiveDepth);
         if (item == null) return;
-        
+
         ctx.level.PlaceItem(item, pos.Value);
         Log($"objgen: placed {item.DisplayName} at {pos.Value}");
     }
@@ -781,20 +781,20 @@ public static partial class LevelGen
         int cx = (int)room.Interior.Average(p => p.X);
         int cy = (int)room.Interior.Average(p => p.Y);
         Pos center = new(cx, cy);
-        
+
         // Scale goblin count by depth: 3 at D1, up to 8 at D6+
         int count = Math.Min(3 + ctx.level.EffectiveDepth, 8);
-        
+
         MonsterDef[] pool = [Goblins.Warrior, Goblins.Warrior, Goblins.Warrior, Goblins.Warrior,
                              Goblins.Chef, Goblins.WarChanter, Goblins.Pyro, Goblins.Warrior];
-        
+
         foreach (var dir in Pos.AllDirs)
         {
             if (count-- <= 0) break;
             Pos p = center + dir;
             if (!room.Interior.Contains(p)) continue;
             if (ctx.level.UnitAt(p) != null) continue;
-            
+
             var def = pool.Pick();
             MonsterSpawner.SpawnAndPlace(ctx.level, "goblin nest", def, false, p, true);
         }

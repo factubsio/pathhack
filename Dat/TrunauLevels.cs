@@ -96,7 +96,8 @@ public static class TrunauLevels
         Stationary = true,
         MoralAxis = MoralAxis.Good,
         EthicalAxis = EthicalAxis.Lawful,
-        OnChat = _ => {
+        OnChat = _ =>
+        {
             LoreDump("""
 [fg=yellow]Chief Defender Halgra[/fg] looks up from her maps.
 
@@ -152,10 +153,10 @@ She taps a worn parchment. "There's an ancient tomb beneath Trunau. Most folk ha
                 room.Flags |= RoomFlags.Lit;
             b.Stair(b['<'], TileType.BranchUp);
             b.Stair(b['>'], TileType.StairsDown);
-            
+
             foreach (var p in b.Marks('P'))
                 b.Level.PlaceUnit(Monster.Spawn(Villager, "quest/villager"), p);
-            
+
             b.Monster(QuestGiver, b['Q']);
             _exitPath = b.Marks('_');
         })
@@ -191,7 +192,7 @@ She taps a worn parchment. "There's an ancient tomb beneath Trunau. Most folk ha
         {
             b.Level.SpawnFlags = SpawnFlags.None;
             b.Stair(b['<'], TileType.StairsUp);
-            
+
             // spawn orcs to the right of the wall
             var spawnBounds = b.Marks('A');
             MonsterDef[] siegeOrcs = [Orcs.OrcScrapper, Orcs.OrcVeteran, Orcs.OrcCommander];
@@ -212,7 +213,7 @@ She taps a worn parchment. "There's an ancient tomb beneath Trunau. Most folk ha
             var stairs = b.Marks('>');
             for (int i = 0; i < stairs.Count; i++)
                 b.Level.Set(stairs[i], TileType.Rock);
-            
+
             var tracker = new SiegeEngineTracker(stairs);
             var spawner = new SpawnOnDamage(siegeOrcs, 45);
             MonsterDef catapult = new()

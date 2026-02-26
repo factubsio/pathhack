@@ -13,7 +13,7 @@ public class FlamingWeapon : LogicBrick
     {
         if (!fact.IsEquipped()) return;
         if (context.Weapon != fact.Entity) return;
-        
+
         context.Damage.Add(new DamageRoll
         {
             Formula = d(6),

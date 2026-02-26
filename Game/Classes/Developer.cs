@@ -3,7 +3,7 @@ namespace Pathhack.Game.Classes;
 public class DebugMap() : ActionBrick("Magic Mapping")
 {
     public override ActionPlan CanExecute(IUnit unit, object? data, Target target) => true;
-    
+
     public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
     {
         g.DoMapLevel();
@@ -38,7 +38,7 @@ public class ToggleGlobalHatred() : ActionBrick("Global Hatred")
 public class BlindSelf() : ActionBrick("Blind Self")
 {
     public override ActionPlan CanExecute(IUnit unit, object? data, Target target) => true;
-    
+
     public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
     {
         unit.AddFact(BlindBuff.Instance.Timed(), null, duration: 5);
@@ -52,7 +52,7 @@ public class GreaseAround() : ActionBrick("grease test")
 
     public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
     {
-        var area = new GreaseArea("Grease", unit, 14, 6) { TileSet = [..unit.Pos.Neighbours().Where(p => !lvl[p].IsStructural)] };
+        var area = new GreaseArea("Grease", unit, 14, 6) { TileSet = [.. unit.Pos.Neighbours().Where(p => !lvl[p].IsStructural)] };
         lvl.CreateArea(area);
     }
 }
@@ -377,13 +377,13 @@ public static partial class ClassDefs
             p.AddSpell(BasicLevel3Spells.ProtectShock);
             p.AddSpell(BasicLevel3Spells.ProtectCold);
             p.AddSpell(BasicLevel3Spells.ProtectFire);
-            
+
             // Test striking rune
             var strikingSword = Item.Create(MundaneArmory.Longsword);
             strikingSword.Potency = 1;
             ItemGen.ApplyRune(strikingSword, StrikingRune.Q1, fundamental: true);
             p.Inventory.Add(strikingSword);
-            
+
             // Test bonus rune
             var bonusSword = Item.Create(MundaneArmory.Longsword);
             bonusSword.Potency = 1;
@@ -391,7 +391,7 @@ public static partial class ClassDefs
             p.Inventory.Add(bonusSword);
 
             p.Gold = 2000;
-            
+
             p.Inventory.Add(Item.Create(MundaneArmory.Longsword));
             p.Inventory.Add(Item.Create(MundaneArmory.LeatherArmor));
             p.Inventory.Add(Item.Create(MagicRings.RingOfTheRam)).Identify();
@@ -401,7 +401,7 @@ public static partial class ClassDefs
             Scrolls.Identify.SetKnown();
             foreach (var def in DummyThings.All)
                 p.Inventory.Add(Item.Create(def));
-            
+
             p.AddAction(new DebugMap());
             p.AddAction(new ToggleOmniscience());
             p.AddAction(new ToggleGlobalHatred());

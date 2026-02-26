@@ -247,8 +247,8 @@ public class ScalarData<T>() where T : struct
 
 public abstract class LogicBrick<T> : LogicBrick where T : class, new()
 {
-  public sealed override object? CreateData() => new T();
-  protected static T X(Fact fact) => (T)fact.Data!;
+    public sealed override object? CreateData() => new T();
+    protected static T X(Fact fact) => (T)fact.Data!;
 }
 
 public enum MergeStrategy { Replace, Max, Min, Sum, Or, And }
@@ -258,17 +258,17 @@ public enum TargetingType { None, Direction, Unit, Pos }
 [Flags]
 public enum AbilityTags
 {
-    None       = 0,
-    Harmful    = 1 << 0,
+    None = 0,
+    Harmful = 1 << 0,
     Beneficial = 1 << 1,
-    Heal       = 1 << 2,  // only self-cast when below 50% HP
-    Mental     = 1 << 3,  // blocked by mindless
-    Verbal     = 1 << 4,  // blocked by silence
-    AoE        = 1 << 5,  // AI avoids if allies in blast
-    Evil       = 1 << 6,
-    Holy       = 1 << 7,
+    Heal = 1 << 2,  // only self-cast when below 50% HP
+    Mental = 1 << 3,  // blocked by mindless
+    Verbal = 1 << 4,  // blocked by silence
+    AoE = 1 << 5,  // AI avoids if allies in blast
+    Evil = 1 << 6,
+    Holy = 1 << 7,
     Biological = 1 << 8,  // stripped by undead templates
-    FirstSpawnOnly  = 1 << 9,  // skipped on respawn
+    FirstSpawnOnly = 1 << 9,  // skipped on respawn
 }
 
 public enum ToggleState { NotAToggle, Off, On }
@@ -394,7 +394,7 @@ public class Entity<DefT> : IEntity where DefT : BaseDef
     public uint Id => _id;
     public readonly DefT Def;
     public int ActiveFactCount;
-    
+
     protected Entity(DefT def, IEnumerable<LogicBrick> components)
     {
         Def = def;
@@ -640,11 +640,11 @@ public class Inventory(IUnit owner) : IEnumerable<Item>
         Items.RemoveAt(i);
         int idx = LetterToIndex(item.InvLet);
         if (idx >= 0) inUse &= ~(1UL << idx);
-        
+
         // auto-unequip if equipped
         foreach (var slot in owner.Equipped.Where(kv => kv.Value == item).Select(kv => kv.Key).ToList())
             owner.Unequip(slot, force: true);
-        
+
         item.Holder = null;
     }
 
@@ -1131,7 +1131,7 @@ public class GrantPool(string name, int max, DiceFormula regenRate) : LogicBrick
 {
     public override string Id => $"grant_pool+{name}";
 
-    internal static IEnumerable<GrantPool> Spells(params (int Count, int Cooldown)[] levels) => levels.Select((x, lvl) => new GrantPool($"spell_l{lvl+1}", x.Count, x.Cooldown));
+    internal static IEnumerable<GrantPool> Spells(params (int Count, int Cooldown)[] levels) => levels.Select((x, lvl) => new GrantPool($"spell_l{lvl + 1}", x.Count, x.Cooldown));
 
     internal static IEnumerable<GrantPool> StandardLevel1Caster => Spells((2, 20));
     internal static IEnumerable<GrantPool> StandardLevel2Caster => Spells((2, 15), (1, 25));
@@ -1140,5 +1140,5 @@ public class GrantPool(string name, int max, DiceFormula regenRate) : LogicBrick
     {
         Log.Write($"on fact added pool {name} to {fact.Entity}");
         (fact.Entity as IUnit)?.AddPool(name, max, regenRate);
-    } 
+    }
 }

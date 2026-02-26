@@ -46,7 +46,7 @@ public static partial class Input
                 FeatType.Ancestry => ("Choose an ancestry feat", u.Ancestry?.Feats ?? []),
                 _ => (null, null)
             };
-            
+
             if (pool != null && label != null)
             {
                 foreach (var f in pool)

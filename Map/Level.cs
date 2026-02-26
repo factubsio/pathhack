@@ -141,7 +141,7 @@ public record struct RoomStamp
 {
     public Rect? Bounds { get; init; }
     public HashSet<Pos>? Tiles { get; init; }
-    
+
     public RoomStamp(Rect bounds) { Bounds = bounds; }
     public RoomStamp(HashSet<Pos> tiles) { Tiles = tiles; }
 }
@@ -157,7 +157,7 @@ public record class Room(List<Pos> Border, List<Pos> Interior)
     public Monster? Resident;
 
     public Pos RandomInterior() => Interior.Pick();
-    
+
     public static Room FromStamp(RoomStamp stamp, RoomType type = RoomType.Ordinary)
     {
         if (stamp.Tiles != null)
@@ -174,21 +174,21 @@ public record class Room(List<Pos> Border, List<Pos> Interior)
             }
             return new(border, interior) { Type = type };
         }
-        return new([..stamp.Bounds!.Value.Border()], [..stamp.Bounds!.Value.Interior()]) { Type = type, Bounds = stamp.Bounds };
+        return new([.. stamp.Bounds!.Value.Border()], [.. stamp.Bounds!.Value.Interior()]) { Type = type, Bounds = stamp.Bounds };
     }
 }
 
 [Flags]
 public enum SpawnFlags
 {
-    None     = 0,
-    Initial  = 1 << 0,
-    Runtime  = 1 << 1,
-    Catchup  = 1 << 2,
-    More     = 1 << 3,
-    Less     = 1 << 4,
+    None = 0,
+    Initial = 1 << 0,
+    Runtime = 1 << 1,
+    Catchup = 1 << 2,
+    More = 1 << 3,
+    Less = 1 << 4,
     Anywhere = 1 << 5,
-    Default  = Initial | Runtime | Catchup,
+    Default = Initial | Runtime | Catchup,
 }
 
 public class Level(LevelId id, int width, int height)
@@ -222,7 +222,7 @@ public class Level(LevelId id, int width, int height)
     public Pos? BranchDown { get; set; }
     public LevelId? BranchUpTarget { get; set; }
     public LevelId? BranchDownTarget { get; set; }
-    
+
     public long LastExitTurn { get; set; }
     public IReadOnlyList<Area> AllAreas => Areas;
     public IEnumerable<Swarm> AllSwarms => Swarms.Where(s => !s.IsDead);
@@ -355,7 +355,7 @@ public class Level(LevelId id, int width, int height)
 
     public void MoveUnit(IUnit unit, Pos to, bool free = false)
     {
-        if (unit.TrappedIn is {} trappedIn)
+        if (unit.TrappedIn is { } trappedIn)
         {
             if (trappedIn.TryEscape(unit))
                 unit.TrappedIn = null;
@@ -420,7 +420,7 @@ public class Level(LevelId id, int width, int height)
                 }
             }
         }
-        
+
         if (unit.IsPlayer)
         {
             if (from.ChebyshevDist(to) <= 1)
@@ -461,12 +461,12 @@ public class Level(LevelId id, int width, int height)
             items = lvl.ItemsAt(upos); // refresh after pickup
         }
 
-        if (lvl.GetState(upos)?.Feature is {} f && !f.Hidden)
+        if (lvl.GetState(upos)?.Feature is { } f && !f.Hidden)
         {
             g.pline($"You see {f.Desc ?? "something"} here.");
         }
 
-        if (items.Count == 0) {}
+        if (items.Count == 0) { }
         else if (items.Count == 1)
             g.pline($"You see here {items[0]:an}.");
         else if (items.Count >= 5)
@@ -634,7 +634,7 @@ public class Level(LevelId id, int width, int height)
     {
         var state = GetOrCreateState(p);
         state.Items ??= [];
-        
+
         foreach (var existing in state.Items)
         {
             if (existing.CanMerge(item))
@@ -644,7 +644,7 @@ public class Level(LevelId id, int width, int height)
             }
         }
         state.Items.Add(item);
-        
+
         if (item.CorpseOf != null)
             Corpses.Add((item, p));
     }
@@ -661,7 +661,7 @@ public class Level(LevelId id, int width, int height)
         if (items?.Remove(item) != true) return false;
 
         CleanUp(item);
-        
+
         return true;
     }
 
@@ -693,7 +693,7 @@ public class Level(LevelId id, int width, int height)
         for (int i = 1; i <= range; i++)
         {
             src += dir;
-            if (InBounds(src) && func(src) is {} val) yield return val;
+            if (InBounds(src) && func(src) is { } val) yield return val;
         }
     }
     internal TileBitset CollectCircle(Pos src, int range, bool includeWalls = false, bool andCenter = false)
@@ -718,7 +718,7 @@ public class Level(LevelId id, int width, int height)
     internal IEnumerable<T> CollectCone<T>(Pos origin, Pos dir, int radius, Func<Pos, T?> func)
     {
         foreach (var pos in CollectCone(origin, dir, radius))
-            if (func(pos) is {} val) yield return val;
+            if (func(pos) is { } val) yield return val;
     }
 
     static int[] OctantsForDirection(Pos dir) => dir switch
@@ -766,7 +766,7 @@ public class Level(LevelId id, int width, int height)
     {
         Areas.RemoveAll(x => g.CurrentRound >= x.ExpiresAt);
         Swarms.RemoveAll(s => s.IsDead);
-    } 
+    }
 
     internal bool HasHole(Pos pos) => Traps.TryGetValue(pos, out var trap) && trap.Type is TrapType.Hole or TrapType.Trapdoor;
 
@@ -775,12 +775,12 @@ public class Level(LevelId id, int width, int height)
     public void BakeWallChars()
     {
         for (int y = 0; y < Height; y++)
-        for (int x = 0; x < Width; x++)
-        {
-            Pos p = new(x, y);
-            if (this[p].Type != TileType.Wall) continue;
-            this[p] = this[p] with { WallCh = ComputeWallChar(p) };
-        }
+            for (int x = 0; x < Width; x++)
+            {
+                Pos p = new(x, y);
+                if (this[p].Type != TileType.Wall) continue;
+                this[p] = this[p] with { WallCh = ComputeWallChar(p) };
+            }
     }
 
     char ComputeWallChar(Pos p)
@@ -793,21 +793,21 @@ public class Level(LevelId id, int width, int height)
         return (n, s, e, w) switch
         {
             (false, false, false, false) => '0',
-            (true,  true,  false, false) => 'x',
-            (false, false, true,  true)  => 'q',
-            (false, true,  true,  false) => 'l',
-            (false, true,  false, true)  => 'k',
-            (true,  false, true,  false) => 'm',
-            (true,  false, false, true)  => 'j',
-            (true,  true,  true,  false) => 't',
-            (true,  true,  false, true)  => 'u',
-            (false, true,  true,  true)  => 'w',
-            (true,  false, true,  true)  => 'v',
-            (true,  true,  true,  true)  => 'n',
-            (true,  false, false, false) => 'x',
-            (false, true,  false, false) => 'x',
-            (false, false, true,  false) => 'q',
-            (false, false, false, true)  => 'q',
+            (true, true, false, false) => 'x',
+            (false, false, true, true) => 'q',
+            (false, true, true, false) => 'l',
+            (false, true, false, true) => 'k',
+            (true, false, true, false) => 'm',
+            (true, false, false, true) => 'j',
+            (true, true, true, false) => 't',
+            (true, true, false, true) => 'u',
+            (false, true, true, true) => 'w',
+            (true, false, true, true) => 'v',
+            (true, true, true, true) => 'n',
+            (true, false, false, false) => 'x',
+            (false, true, false, false) => 'x',
+            (false, false, true, false) => 'q',
+            (false, false, false, true) => 'q',
         };
     }
 }

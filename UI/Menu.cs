@@ -8,7 +8,7 @@ public class Menu<T>
     readonly List<(char? Letter, char? AltKey, string Text, T? Value, LineStyle Style, char? Category, ConsoleColor? Color)> _items = [];
     readonly Dictionary<char, T?> _hidden = [];
     public int InitialPage { get; set; }
-    
+
     public void Add(string line, LineStyle style = LineStyle.Text, ConsoleColor? color = null) => _items.Add((null, null, line, default, style, null, color));
     public void Add(char letter, string text, T value, char? category = null) => _items.Add((letter, null, text, value, LineStyle.Item, category, null));
     public void Add(char letter, char altKey, string text, T value, char? category = null) => _items.Add((letter, altKey, text, value, LineStyle.Item, category, null));
@@ -16,7 +16,7 @@ public class Menu<T>
 
     public List<T> Display(MenuMode mode = MenuMode.None)
     {
-        int contentWidth = _items.Max(x => x.Style == LineStyle.Item && x.Letter.HasValue 
+        int contentWidth = _items.Max(x => x.Style == LineStyle.Item && x.Letter.HasValue
             ? x.Text.Length + 5
             : x.Text.Length);
         contentWidth = Math.Max(contentWidth, 30);
@@ -57,7 +57,7 @@ public class Menu<T>
             int take = page == 0 ? firstPageSize : maxLines;
             var pageItems = _items.Skip(skip).Take(take).ToList();
             int pageOffset = skip;
-            
+
             var lines = new List<(string Text, LineStyle Style, ConsoleColor? Color)>();
             for (int i = 0; i < pageItems.Count; i++)
             {
@@ -72,7 +72,7 @@ public class Menu<T>
                     lines.Add((text, style, color));
                 }
             }
-            
+
             string prompt = mode switch
             {
                 MenuMode.PickAny => pages > 1 ? $"({page + 1}/{pages}) < > page, letter toggle, enter confirm" : "letter toggle, enter confirm",
@@ -95,7 +95,7 @@ public class Menu<T>
 
             Draw.Blit();
             var key = Input.NextKey();
-            
+
             if (key.Key == ConsoleKey.RightArrow || key.KeyChar == '>')
             {
                 if (pages > 1) page = (page + 1) % pages;
@@ -113,7 +113,7 @@ public class Menu<T>
                 if (pages > 1) page = (page - 1 + pages) % pages;
                 continue;
             }
-            
+
             if (mode == MenuMode.PickAny && (key.KeyChar == '.' || key.KeyChar == ','))
             {
                 var selectable = _items.Select((item, i) => (item, i)).Where(x => x.item.Value != null).ToList();
@@ -129,19 +129,19 @@ public class Menu<T>
             {
                 return [];
             }
-            
+
             if (mode == MenuMode.PickAny && (key.Key == ConsoleKey.Enter || key.KeyChar == '\n'))
             {
                 return selected.Select(i => _items[i].Value!).ToList();
             }
-            
+
             char ch = key.KeyChar;
-            
+
             if (_hidden.TryGetValue(ch, out var hiddenValue))
             {
                 return [hiddenValue!];
             }
-            
+
             int idx = _items.FindIndex(x => x.Letter == ch || x.AltKey == ch);
             if (idx >= 0 && _items[idx].Value != null)
             {
@@ -155,7 +155,7 @@ public class Menu<T>
                     continue;
                 }
             }
-            
+
             if (mode == MenuMode.PickAny)
             {
                 var catItems = _items.Select((item, i) => (item, i))
@@ -172,7 +172,7 @@ public class Menu<T>
                     continue;
                 }
             }
-            
+
             if (mode != MenuMode.PickAny) break;
         }
         return [];

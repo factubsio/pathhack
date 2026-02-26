@@ -23,7 +23,7 @@ public class CharCreation
         while (step < 3)
         {
             DrawProgress(progressWin);
-            
+
             bool? result = step switch
             {
                 0 => PickClass(),
@@ -50,7 +50,7 @@ public class CharCreation
     {
         win.Clear();
         int x = 2;
-        
+
         if (Class != null)
         {
             win.At(x, 0).Write(Class.Name, ConsoleColor.Yellow);

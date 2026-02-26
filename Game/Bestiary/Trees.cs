@@ -8,7 +8,8 @@ public class ThrowBranch(int cd, int range)
         id = "thrown_branch",
         Name = "branch",
         BaseDamage = d(6),
-        Style = WeaponStyle.Exotic, Grip = WeaponGrip.Exotic,
+        Style = WeaponStyle.Exotic,
+        Grip = WeaponGrip.Exotic,
         DamageType = DamageTypes.Blunt,
         Glyph = new('/', ConsoleColor.DarkYellow),
         Launcher = "tree",
@@ -220,7 +221,7 @@ public class PlaceVineSnare(int cd, int range)
     }
 }
 
-public class SpawnFirePatches(int cd, int range) 
+public class SpawnFirePatches(int cd, int range)
     : CooldownAction("Fire Patch", TargetingType.None, _ => cd, tags: AbilityTags.Harmful)
 {
     public override ActionPlan CanExecute(IUnit unit, object? data, Target target)

@@ -108,17 +108,17 @@ public static partial class Input
             menu.Display();
             return;
         }
-        
+
         int weight = u.CarriedWeight;
         int maxWeight = u.CarryCapacity;
         int slots = u.Inventory.Count();
         int maxSlots = 52;
         menu.Add($"Inventory: {weight}/{maxWeight} weight ({slots}/{maxSlots} slots)", LineStyle.Heading);
         BuildItemList(menu, u.Inventory, u);
-        
+
         var picked = menu.Display(MenuMode.PickOne);
         if (picked.Count == 0) return;
-        
+
         // TODO: add menu here later (option based?)
         Pokedex.ShowItemEntry(picked[0]);
     }
@@ -223,7 +223,7 @@ public static partial class Input
         var sorted = items
             .OrderBy(i => ItemClasses.Order.IndexOf(i.Def.Class))
             .ThenBy(i => i.InvLet);
-        
+
 
         char? lastClass = null;
         char autoLet = 'a';
@@ -498,7 +498,7 @@ public static partial class Input
                     {
                         g.pline($"But a few {q.Ammo.Name.Plural()} slip out!");
                     }
-                    else if(lost == 2)
+                    else if (lost == 2)
                     {
                         g.pline($"But a couple of {q.Ammo.Name.Plural()} slip out!");
                     }
@@ -517,7 +517,7 @@ public static partial class Input
         }
         else
             g.pline("You empty your quiver.");
-        
+
     }
 
     static void WieldWeapon()
@@ -738,9 +738,9 @@ public static partial class Input
             g.pline("You're already busy.");
             return;
         }
-        
+
         var corpses = lvl.ItemsAt(upos).Where(i => i.CorpseOf != null).ToList();
-        
+
         // If corpses on ground, offer cooking
         if (corpses.Count > 0)
         {
@@ -757,14 +757,14 @@ public static partial class Input
                 if (cpicked.Count == 0) return;
                 corpse = cpicked[0];
             }
-            
+
             var cookMenu = new Menu<char>();
             cookMenu.Add("How to cook?", LineStyle.Heading);
             cookMenu.Add('a', "cook quickly (4 turns, 10% nutrition)", 'a');
             cookMenu.Add('b', "cook carefully (20 turns, 25% nutrition)", 'b');
             var choice = cookMenu.Display(MenuMode.PickOne);
             if (choice.Count == 0) return;
-            
+
             if (choice[0] == 'a')
             {
                 g.pline($"You start cooking {DoNameOne(corpse)}.");
@@ -788,9 +788,9 @@ public static partial class Input
             u.Energy -= ActionCosts.OneAction.Value;
             return;
         }
-        
+
         if (!PickItem("eat", IsEdible, out var food)) return;
-        
+
         // Split off one if it's a stack (unless already partially eaten)
         if (food.Count > 1 && food.Eaten == 0)
         {
@@ -798,13 +798,13 @@ public static partial class Input
             food.Eaten = -1; // prevent merge back
             u.Inventory.Add(food);
         }
-        
+
         bool canchoke = Hunger.GetState(u.Nutrition) == HungerState.Satiated;
         bool resuming = food.Eaten > 0;
-        
+
         if (resuming)
             g.pline($"You continue eating {DoNameOne(food)}.");
-        
+
         u.CurrentActivity = new EatActivity(food, canchoke);
         u.Energy -= ActionCosts.OneAction.Value;
     }
@@ -919,7 +919,7 @@ public static partial class Input
         var nameable = u.Inventory
             .Where(i => i.Def.AppearanceCategory != null && !ItemDb.Instance.IsIdentified(i.Def))
             .ToList();
-        
+
         if (nameable.Count == 0)
         {
             g.pline("You have nothing to name.");
@@ -934,9 +934,9 @@ public static partial class Input
 
         var item = picked[0];
         var name = PromptLine($"Call {item:an}");
-        
+
         ItemDb.Instance.SetCalledName(item.Def, name);
-        
+
         if (string.IsNullOrWhiteSpace(name))
             g.pline("Name removed.");
         else
@@ -1004,10 +1004,10 @@ public static partial class Input
             var toggle = action.IsToggleOn(data);
             string status = toggle switch
             {
-              ToggleState.NotAToggle => "",
-              ToggleState.Off => " [off]",
-              ToggleState.On => " [on]",
-              _ => "???",
+                ToggleState.NotAToggle => "",
+                ToggleState.Off => " [off]",
+                ToggleState.On => " [on]",
+                _ => "???",
             };
             status += ready ? "" : $" ({whyNot})";
             menu.Add(let++, action.Name + status, action);

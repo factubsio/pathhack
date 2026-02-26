@@ -11,8 +11,8 @@ public class ShopkeeperBrain : MonsterBrain
 
         if (fact?.Data is not ShopState shop) return false;
 
-        Pos goal = shop.Bill > 0 && upos.ChebyshevDist(shop.Door) <= 2 
-            ? shop.Block 
+        Pos goal = shop.Bill > 0 && upos.ChebyshevDist(shop.Door) <= 2
+            ? shop.Block
             : shop.Home;
 
         if (m.Pos == goal)
@@ -303,7 +303,7 @@ public class ShopState
         return toPay;
     }
 
-    public List<Item> UnpaidItems() => 
+    public List<Item> UnpaidItems() =>
         Stock.Where(kv => kv.Value.Unpaid).Select(kv => kv.Key).ToList();
 
     private void DoPrice(Item item, ShopItem state)

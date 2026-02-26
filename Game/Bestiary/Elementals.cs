@@ -378,18 +378,18 @@ public static class Elementals
 
     static WeaponDef Slam(UnitSize size) => size switch
     {
-        UnitSize.Small  => NaturalWeapons.Slam_1d4,
+        UnitSize.Small => NaturalWeapons.Slam_1d4,
         UnitSize.Medium => NaturalWeapons.Slam_1d6,
-        _               => NaturalWeapons.Slam_2d6,
+        _ => NaturalWeapons.Slam_2d6,
     };
 
     static ActionCost SpeedFor(string element) => element switch
     {
         "air" or "lightning" => 9,
-        "fire"               => 9,
-        "ice"                => ActionCosts.LandMove25,
-        "water"              => ActionCosts.StandardLandMove,
-        _                    => ActionCosts.LandMove20, // earth, magma, mud
+        "fire" => 9,
+        "ice" => ActionCosts.LandMove25,
+        "water" => ActionCosts.StandardLandMove,
+        _ => ActionCosts.LandMove20, // earth, magma, mud
     };
 
     static LogicBrick[] Components(ElementType elem, ElementalTier tier)
@@ -416,18 +416,18 @@ public static class Elementals
             case "air":
                 c.Add(tier.Size switch
                 {
-                    UnitSize.Small  => Whirlwind.Range1,
+                    UnitSize.Small => Whirlwind.Range1,
                     UnitSize.Medium => Whirlwind.Range2,
-                    _               => Whirlwind.Range3,
+                    _ => Whirlwind.Range3,
                 });
                 break;
 
             case "earth":
                 c.Add(tier.Size switch
                 {
-                    UnitSize.Small  => FlatDR.DR2,
+                    UnitSize.Small => FlatDR.DR2,
                     UnitSize.Medium => FlatDR.DR5,
-                    _               => FlatDR.DR10,
+                    _ => FlatDR.DR10,
                 });
                 if (tier.Size >= UnitSize.Medium)
                     c.Add(new GrantAction(tier.Size >= UnitSize.Large ? BullRush.Push2 : BullRush.Push1));

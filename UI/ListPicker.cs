@@ -5,7 +5,7 @@ public interface ISelectable
     string Name { get; }
     string? Subtitle => null;
     string Description { get; }
-    IEnumerable<string> Details  => [];
+    IEnumerable<string> Details => [];
     public string? WhyNot { get; }
     string[] Tags => [];
 }
@@ -25,10 +25,10 @@ public static class ListPicker
     public static T? Pick<T>(IReadOnlyList<T> items, string prompt, int defaultIndex = 0, ListPickerDrawCallback<T>? custom = null) where T : class, ISelectable
     {
         if (items.Count == 0) return null;
-        
+
         using var handle = WM.CreateTransient(Draw.ScreenWidth, Draw.ScreenHeight, z: 5, opaque: true);
         var win = handle.Window;
-        
+
         int index = Math.Clamp(defaultIndex, 0, items.Count - 1);
         string? filter = null;
         bool typing = false;
@@ -93,7 +93,7 @@ public static class ListPicker
     {
         using var handle = WM.CreateTransient(Draw.ScreenWidth, Draw.ScreenHeight, z: 5, opaque: true);
         var win = handle.Window;
-        
+
         int index = 0;
         HashSet<int> selected = [];
         while (true)

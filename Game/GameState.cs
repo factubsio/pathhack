@@ -161,7 +161,7 @@ public class GameState
         bool hasLOS = viewer.IsPlayer ? lvl.HasLOS(target.Pos) : lvl.HasLOS(viewer.Pos);
 
         bool visual = !hiding && !blind && !targetInvis && !targetInDark && hasLOS;
-        
+
         // Determine perception level: visual > tremor > specific warning > generic warning
         PlayerPerception perception;
         if (visual)
@@ -178,7 +178,7 @@ public class GameState
                 if (detectRange > 0 && viewer.Pos.ChebyshevDist(target.Pos) <= detectRange)
                     perception = PlayerPerception.Warned;
             }
-            
+
             if (perception == PlayerPerception.None)
             {
                 int warningRange = viewer.Query<int>("warning", null, MergeStrategy.Max, 0);
@@ -403,7 +403,7 @@ public class GameState
             pline(ifSee);
         else if (canHear)
             pline($"You hear {sound}.");
-        
+
         return canSee;
     }
 
@@ -548,7 +548,7 @@ public class GameState
                 lvl.RemoveItem(corpse, pos);
             }
         }
-        
+
         // tick corpses in inventories
         foreach (var unit in lvl.LiveUnits)
         {
@@ -559,7 +559,7 @@ public class GameState
                     unit.Inventory.RemoveAt(i);
             }
         }
-        
+
         CleanupFacts();
         Perf.Stop("OnRoundEnd");
 
@@ -723,8 +723,8 @@ public class GameState
     public void DoMapLevel()
     {
         for (int y = 0; y < lvl.Height; y++)
-        for (int x = 0; x < lvl.Width; x++)
-            lvl.UpdateMemory(new(x, y), includeItems: false);
+            for (int x = 0; x < lvl.Width; x++)
+                lvl.UpdateMemory(new(x, y), includeItems: false);
 
         if (lvl.BranchDown is { } bd && lvl.BranchDownTarget is { } bdt)
             bdt.Branch.Discovered = true;
@@ -758,7 +758,7 @@ public class GameState
         {
             check.Modifiers.Untyped(attacker.GetSpellAttackBonus(ctx.Spell), "atk");
         }
-        
+
         if (attacker.IsPlayer)
         {
             int penalty = u.Encumbrance switch
@@ -891,10 +891,10 @@ public class GameState
         else
         {
             defender.MissesTaken++;
-            
+
             // Combined miss log
             Log.Structured("attack", $"{attacker:attacker}{defender:defender}{with:weapon}{check.Roll:roll}{check.BaseRoll:base_roll}{check.DC:ac}{check.Modifiers:check_mods}{check.Advantage:advantage}{check.Disadvantage:disadvantage}{false:hit}");
-            
+
             if (isProjectile)
             {
                 if (defender.IsPlayer)
@@ -966,7 +966,7 @@ public class GameState
             if (dmg.IsAttuned) value = -value;
             damage += value;
         }
-        
+
         // this can happen if all damage instances were negated
         if (damage == 0)
         {
@@ -997,7 +997,7 @@ public class GameState
         target.LastDamagedOnTurn = g.CurrentRound;
         target.HitsTaken++;
         target.DamageTaken += damage;
-        
+
         damage = target.AbsorbTempHp(damage, out int absorbed);
         if (damage == 0)
         {
@@ -1008,7 +1008,7 @@ public class GameState
             }
             return;
         }
-        
+
         target.HP -= damage;
         ctx.TotalDamageDealt = damage;
         ctx.HpAfter = target.HP.Current;
@@ -1238,14 +1238,14 @@ public class GameState
         var maybeRoom = lvl.RoomAt(unit.Pos);
         Log.Write($"picking up: {unit.IsPlayer}, room:{maybeRoom != null}, shop:{maybeRoom?.Type == RoomType.Shop}");
         int price = 0;
-        if (unit.IsPlayer && maybeRoom is {} room && room.Type == RoomType.Shop)
+        if (unit.IsPlayer && maybeRoom is { } room && room.Type == RoomType.Shop)
         {
             price = room.Resident?.FindFact(ShopkeeperBrick.Instance)?.As<ShopState>()?.Take(item) ?? 0;
         }
 
         if (item.Def == MiscItems.SilverCrest && unit is Player p)
         {
-            if (price == 0 && unit.IsPlayer && maybeRoom is {} goldRoom && goldRoom.Type == RoomType.Shop)
+            if (price == 0 && unit.IsPlayer && maybeRoom is { } goldRoom && goldRoom.Type == RoomType.Shop)
             {
                 var shop = goldRoom.Resident?.FindFact(ShopkeeperBrick.Instance)?.As<ShopState>();
                 if (shop != null)
@@ -1300,7 +1300,7 @@ public class GameState
         bool wasPending = Progression.HasPendingLevelUp(u);
         amount = (int)(amount * ExpMultiplier);
         u.XP += amount;
-        Log.Structured("exp", $"{amount:amount}{u.XP:total}{u.CharacterLevel:xl}{lvl.EffectiveDepth:dl}{source ?? "?":src}");        if (!wasPending && Progression.HasPendingLevelUp(u))
+        Log.Structured("exp", $"{amount:amount}{u.XP:total}{u.CharacterLevel:xl}{lvl.EffectiveDepth:dl}{source ?? "?":src}"); if (!wasPending && Progression.HasPendingLevelUp(u))
             pline(LevelUpNags.Pick());
     }
 
@@ -1326,7 +1326,7 @@ public class GameState
     {
         var grabber = unit.GrabbedBy!;
         using var ctx = PHContext.Create(grabber, Target.From(unit));
-        
+
         if (CreateAndDoCheck(ctx, "athletics", dc, "escape grab"))
         {
             pline($"{unit:The} {VTense(unit, "break")} free from {grabber:the}!");
@@ -1334,7 +1334,7 @@ public class GameState
             grabber.Grabbing = null;
             return StruggleResult.Escaped;
         }
-        
+
         pline($"{unit:The} {VTense(unit, "struggle")} against {grabber:the}!");
         DoWeaponAttack(unit, grabber, unit is Player p ? p.GetWieldedItem() : ((Monster)unit).GetWieldedItem());
         return StruggleResult.Failed;

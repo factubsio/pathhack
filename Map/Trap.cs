@@ -19,12 +19,12 @@ public enum TrapType
 [Flags]
 public enum MoveMode
 {
-    Walk    = 1 << 0,
-    Fly     = 1 << 1,
-    Swim    = 1 << 2,
-    Phase   = 1 << 3,
-    Burrow  = 1 << 4,
-    Climb   = 1 << 5,
+    Walk = 1 << 0,
+    Fly = 1 << 1,
+    Swim = 1 << 2,
+    Phase = 1 << 3,
+    Burrow = 1 << 4,
+    Climb = 1 << 5,
 }
 
 public abstract class Trap(TrapType type, int depth, int detectDelta, int escapeDelta, int escapeBonus)

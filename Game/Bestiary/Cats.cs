@@ -79,7 +79,7 @@ public class QuickBite() : ActionBrick("quick_bite")
     public override void Execute(IUnit unit, object? data, Target target, object? plan = null) => DoWeaponAttack(unit, target.Unit!, Weapon);
 }
 
-public class Pounce() : ActionBrick("pounce", TargetingType.Unit) 
+public class Pounce() : ActionBrick("pounce", TargetingType.Unit)
 {
     public static readonly Pounce Instance = new();
     const int Range = 2;

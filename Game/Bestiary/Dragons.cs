@@ -58,7 +58,7 @@ public class AlignmentPeaceful(EthicalAxis ethical, MoralAxis moral) : LogicBric
     public static readonly AlignmentPeaceful NG = new(EthicalAxis.Neutral, MoralAxis.Good);
     public static readonly AlignmentPeaceful NE = new(EthicalAxis.Neutral, MoralAxis.Evil);
 
-    internal static AlignmentPeaceful For(EthicalAxis ethical, MoralAxis moral) =>  (ethical, moral) switch
+    internal static AlignmentPeaceful For(EthicalAxis ethical, MoralAxis moral) => (ethical, moral) switch
     {
         (EthicalAxis.Lawful, MoralAxis.Good) => LG,
         (EthicalAxis.Lawful, MoralAxis.Neutral) => LN,
@@ -97,8 +97,16 @@ public static class Dragons
     // Base levels per color (compressed from 1e CR to our 1-20 range)
     static readonly Dictionary<string, int> BaseLevels = new()
     {
-        ["white"] = 2, ["black"] = 3, ["brass"] = 3, ["green"] = 4, ["copper"] = 4,
-        ["blue"] = 5, ["bronze"] = 5, ["red"] = 6, ["silver"] = 6, ["gold"] = 7,
+        ["white"] = 2,
+        ["black"] = 3,
+        ["brass"] = 3,
+        ["green"] = 4,
+        ["copper"] = 4,
+        ["blue"] = 5,
+        ["bronze"] = 5,
+        ["red"] = 6,
+        ["silver"] = 6,
+        ["gold"] = 7,
     };
 
     static readonly DragonAge[] Ages =
