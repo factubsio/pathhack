@@ -28,7 +28,7 @@ public static partial class Potions
         switch (def)
         {
             case var _ when def == Healing:
-                g.DoHeal(user, user, d(8) + 4);
+                g.DoHeal(user, user, [d(1 + user.CasterLevel / 2, 8), d(4), 4]);
                 if (g.YouObserve(user, $"{user:The} {VTense(user, "feel")} better.")) def.SetKnown();
                 break;
             case var _ when def == Speed:

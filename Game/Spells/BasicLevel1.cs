@@ -216,12 +216,12 @@ public class GreaseArea(string name, IUnit? source, int dc, int duration) : Area
     var slips = VTense(unit, "slip");
     if (!CheckReflex(ctx, dc, "difficult_terrain"))
     {
-      g.pline($"{unit:The} {slips} on some {name} and {VTense(unit, "fall")}!");
+      g.YouObserve(unit, $"{unit:The} {slips} on some {name} and {VTense(unit, "fall")}!");
       unit.AddFact(ProneBuff.Instance.Timed(), null, 1);
     }
     else
     {
-      g.pline($"{unit:The} {slips} on some {name} but {VTense(unit, "keep")} {unit:own} balance.");
+      g.YouObserve(unit, $"{unit:The} {slips} on some {name} but {VTense(unit, "keep")} {unit:own} balance.");
     }
   }
 

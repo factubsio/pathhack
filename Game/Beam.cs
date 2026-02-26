@@ -62,7 +62,7 @@ public static class Beam
 
             if (!lvl.InBounds(next)) break;
 
-            if (!lvl[next].IsPassable)
+            if (lvl.IsOpaque(next))
             {
                 if (!bounce) break;
 

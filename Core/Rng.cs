@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Pathhack.Core;
@@ -83,14 +85,22 @@ public record struct Dice(int D, int F, int Flat = 0)
 
     internal readonly Dice WithExtra(int extraDice) => new(D * (1 + extraDice), F, Flat);
 
+    public static implicit operator Dice(int flat) => new(0, 0, flat);
+
     internal readonly string Serialize() => $"{D},{F},{Flat}";
     public override readonly string ToString() => $"{(D == 1 ? "" : D)}d{F}{Flat:+#;-#;}";
 }
 
-public record struct DiceFormula(Dice[] Dice)
+[CollectionBuilder(typeof(DiceFormula), nameof(Create))]
+public record struct DiceFormula(Dice[] Dice) : IEnumerable<Dice>
 {
-    public static implicit operator DiceFormula(Dice d) => new([d]);
-    public static implicit operator DiceFormula(int flat) => new([new(0, 0, flat)]);
+    public readonly IEnumerator<Dice> GetEnumerator() => ((IEnumerable<Dice>)Dice).GetEnumerator();
+    readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    public static implicit operator DiceFormula(Dice d) => [d];
+    public static implicit operator DiceFormula(int flat) => [new(0, 0, flat)];
+
+    public static DiceFormula Create(ReadOnlySpan<Dice> items) => new(items.ToArray());
 
     public readonly int Roll(int extraDice = 0)
     {
