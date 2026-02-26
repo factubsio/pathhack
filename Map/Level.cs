@@ -377,9 +377,13 @@ public class Level(LevelId id, int width, int height)
 
         foreach (var area in Areas)
         {
-            if (area.IsDifficultTerrain && unit.Has(CommonQueries.DifficultTerrainImmune)) continue;
             bool wasIn = area.Contains(from);
             bool nowIn = area.Contains(to);
+
+            // Don't just ignore here, cos putting flying boots on means you should exit the area (above it)
+            if (area.IsDifficultTerrain && (unit.Has(CommonQueries.DifficultTerrainImmune) || unit.Has(CreatureTags.Flying)))
+                nowIn = false;
+
             if (nowIn) area.HandleMove(unit);
             else if (wasIn) area.HandleExit(unit);
         }
