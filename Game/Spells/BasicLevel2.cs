@@ -3,7 +3,7 @@ namespace Pathhack.Game.Spells;
 public static class BasicLevel2Spells
 {
     public static readonly SpellBrick ScorchingRay = new("Scorching ray", 2,
-        """A blazing beam of fire. Make a spell attack roll for 4d6 fire damage.""",
+        """Make a spell attack roll, on hit deal 4d6+Caster Level fire damage.""",
         (c, t) =>
         {
             if (t.Pos == null) return;
@@ -16,7 +16,7 @@ public static class BasicLevel2Spells
                 {
                     using var ctx = PHContext.Create(c, Target.From(unit));
                     ctx.Spell = ScorchingRay;
-                    ctx.Damage.Add(new() { Formula = d(4, 6), Type = DamageTypes.Fire });
+                    ctx.Damage.Add(new() { Formula = d(4, 6) + c.CasterLevel, Type = DamageTypes.Fire });
                     if (DoAttackRoll(ctx, 0))
                     {
                         g.YouObserve(unit, $"The ray hits {unit:the}!", "something sizzles!");
@@ -29,7 +29,7 @@ public static class BasicLevel2Spells
         }, TargetingType.Direction);
 
     public static readonly SpellBrick SoundBurst = new("Sound burst", 2,
-        """A burst of sonic energy. 2d8 sonic damage, fort save or stunned for 1 round.""",
+        """2d8 sonic damage in a burst, fort save or stunned for 1 round.""",
         (c, t) =>
         {
             if (t.Pos == null) return;
@@ -62,7 +62,7 @@ public static class BasicLevel2Spells
     public static readonly SpellBrickBase ResistAcid = ResistEnergyBuff.MakeSpell("Resist acid", DamageTypes.Acid);
 
     public static readonly SpellBrickBase DelayPoison = new ActivateMaintainedSpell("Delay poison", 2,
-        """You suppress the effects of poison. While maintained, poison afflictions do not tick.""",
+        """You suppress the effects of poison, poison afflictions do not tick.""",
         c =>
         {
             g.YouObserveSelf(c, "You feel the poison slow in your veins.", $"{c:The} looks steadier.", "a calming hum");
@@ -131,7 +131,7 @@ public static class BasicLevel2Spells
         }, TargetingType.Pos, maxRange: 4);
 
     public static readonly SpellBrick AcidArrow = new("Acid Arrow", 2,
-        """You conjure an arrow of acid that continues corroding the target after it hits. Make a spell attack against the target. On a hit, you deal 3d8 acid damage plus 1d6 persistent acid damage.""",
+        """Make a spell attack against the target. On a hit, you deal 3d8 acid damage. Fort save against 1d6 persistent acid damage.""",
         (c, t) =>
         {
             if (t.Pos == null) return;

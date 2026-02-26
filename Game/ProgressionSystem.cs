@@ -9,6 +9,13 @@ public class FeatDef : BaseDef, ISelectable
     public FeatType Type;
     public int Level = 1;
     public Func<string?>? CheckWhyNot;
+    public IEnumerable<string> Details => DetailArray;
+    public string[] Tags => TagArray;
+    public string? Subtitle => SubtitleText;
+
+    public string[] DetailArray { get; set; } = [];
+    public string[] TagArray = [];
+    public string? SubtitleText = null;
 
     public string? WhyNot => CheckWhyNot?.Invoke();
 }

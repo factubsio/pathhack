@@ -5,7 +5,7 @@ public interface ISelectable
     string Name { get; }
     string? Subtitle => null;
     string Description { get; }
-    IEnumerable<string> Details => [];
+    IEnumerable<string> Details  => [];
     public string? WhyNot { get; }
     string[] Tags => [];
 }

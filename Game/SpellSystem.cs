@@ -2,26 +2,33 @@ namespace Pathhack.Game;
 
 public abstract class SpellBrickBase(string name, int level, string description, TargetingType targeting, bool maintained = false, int maxRange = -1, AbilityTags tags = AbilityTags.None) : ActionBrick(name, targeting, maxRange, tags)
 {
-  public string Description => description;
+    public string Description => description;
 
-  public int Level => level;
+    public int Level => level;
 
-  public bool Maintained => maintained;
+    public bool Maintained => maintained;
 
-  public readonly string Pool = $"spell_l{level}";
+    public readonly string Pool = $"spell_l{level}";
 
-  public override ActionPlan CanExecute(IUnit unit, object? data, Target target) =>
-    unit.HasCharge(Pool, out var whyNot) ? true : new ActionPlan(false, whyNot);
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target) =>
+      unit.HasCharge(Pool, out var whyNot) ? true : new ActionPlan(false, whyNot);
 
-  public FeatDef ToFeat() => new()
-  {
-    id = $"spell_{Name}",
-    Name = $"{Name}",
-    Description = Description,
-    Type = FeatType.Class,
-    Components = [new GrantSpell(this)],
-    CheckWhyNot = () => !u.HasPool($"spell_l{level}") ? $"Must be able to cast level {level} spells" : null,
-  };
+    private static string TargetString(TargetingType t) => t switch
+    {
+        TargetingType.None => "Self",
+        _ => t.ToString(),
+    };
+
+    public FeatDef ToFeat() => new()
+    {
+        id = $"spell_{Name}",
+        Name = $"{Name}",
+        Description = Description,
+        Type = FeatType.Class,
+        Components = [new GrantSpell(this)],
+        CheckWhyNot = () => !u.HasPool($"spell_l{level}") ? $"Must be able to cast level {level} spells" : null,
+        TagArray   = [$"target: {TargetString(Targeting)}"],
+    };
 }
 
 public class SpellBrick(string name, int level, string description, Action<IUnit, Target> act, TargetingType targeting = TargetingType.None, bool maintained = false, int maxRange = -1, AbilityTags tags = AbilityTags.None) : SpellBrickBase(name, level, description, targeting, maintained, maxRange, tags)

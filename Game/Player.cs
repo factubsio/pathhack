@@ -1,5 +1,3 @@
-using System.Security.Principal;
-
 namespace Pathhack.Game;
 
 public enum Encumbrance { Unencumbered, Burdened, Stressed, Strained, Overtaxed, Overloaded }

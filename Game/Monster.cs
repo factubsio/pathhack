@@ -306,6 +306,9 @@ public class Monster : Unit<MonsterDef>, IFormattable
   // see tools/dc.md, this gives us what seems to be a reasonable curve
   private const int ATTACK_PENALTY_FUDGE = 5;
 
+  // Who even knows how this is balanced...
+  private const int DamageFudge = 1;
+
   public override ActionCost LandMove
   {
       get
@@ -317,7 +320,6 @@ public class Monster : Unit<MonsterDef>, IFormattable
   }
   public override int GetAttackBonus(WeaponDef weapon) => LevelDC - ATTACK_PENALTY_FUDGE + Def.AttackBonus;
   public override int GetSpellAttackBonus(SpellBrickBase brick) => LevelDC - ATTACK_PENALTY_FUDGE + Def.AttackBonus;
-  const int DamageFudge = 2;
   public override int GetStrDamageBonus() => Def.DamageBonus + TemplateBonusLevels + DamageFudge;
   public override int GetSpellDC() => LevelDC;
   protected override WeaponDef GetUnarmedDef() => Def.Unarmed;
