@@ -134,7 +134,8 @@ public static class Goblins
         hp: 5, dmg: -1, maxDepth: 3, growsInto: () => Basic!);
 
     public static readonly MonsterDef Chef = G("goblin_chef", "goblin chef", 1, ConsoleColor.Yellow,
-        [new GrantAction(AttackWithWeapon.Instance)]);
+        [new GrantAction(AttackWithWeapon.Instance)]
+    ).WithOnEat("You sense a spirit nod approvingly.", "You sense a spirit shake its head.");
 
     public static readonly MonsterDef Pyro = G("goblin_pyro", "goblin pyro", 1, ConsoleColor.Red,
         [new GrantPool("fire_breath", 2, 50), new GrantAction(new FireBreath(2, d(6), 12)), new GrantAction(AttackWithWeapon.Instance)]);

@@ -491,6 +491,8 @@ public static class ActionCosts
     public static readonly ActionCost Free = 0;
     public static readonly ActionCost OneAction = 12;
     // 30ft speed equivalent, let's say?
+    public static readonly ActionCost ardLandMove60 = 6;
+    public static readonly ActionCost ardLandMove45 = 9;
     public static readonly ActionCost StandardLandMove = 12;
     public static readonly ActionCost LandMove25 = 15;
     internal static readonly ActionCost LandMove20 = 18;

@@ -278,7 +278,7 @@ public static class Draw
                             MapWin[x, y] = new((char)('0' + warnLevel), warnColor);
                             continue;
                         case PlayerPerception.Guess:
-                            MapWin[x, y] = new('?', ConsoleColor.DarkMagenta);
+                            MapWin[x, y] = new('I', ConsoleColor.DarkMagenta);
                             continue;
                     }
                 }
@@ -288,7 +288,7 @@ public static class Draw
                 if (visible || p == upos)
                 {
                     IUnit? unit = level.UnitAt(p);
-                    if (unit != null)
+                    if (unit != null && unit.IsPlayer)
                     {
                         MapWin[x, y] = Cell.From(unit.Glyph);
                     }

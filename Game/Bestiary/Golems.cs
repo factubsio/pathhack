@@ -2153,7 +2153,7 @@ public static class Golems
         [
             SlowedByElement.Shock,
             HealsFromElement.Fire,
-            SimpleDR.None.DR10,
+            SimpleDR.Universal.DR10,
             new GrantAction(PoisonBreath.Instance),
         ], unarmed: NaturalWeapons.Slam_4d8, size: UnitSize.Large, speed: ActionCosts.LandMove15, common: CommonBricksPetriImmune);
 

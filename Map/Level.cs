@@ -365,6 +365,23 @@ public class Level(LevelId id, int width, int height)
             return;
         }
 
+        // Hidden monster reveal: player steps onto a hider's tile
+        if (UnitAt(to) is Monster { Hiding: true } hider)
+        {
+            unit.Energy = Math.Min(0, unit.Energy - unit.LandMove.Value);
+            if (unit.IsPlayer)
+            {
+                hider.Hiding = false;
+                hider.Perception = PlayerPerception.Detected;
+                int oldInit = hider.Initiative;
+                hider.Initiative = 999;
+                g.Defer(() => hider.Initiative = oldInit);
+                if (hider.Def.RevealMessage is { } msg)
+                    g.YouObserve(hider, $"{hider:An} {msg}", hider.Def.RevealSound);
+            }
+            return;
+        }
+
         var from = unit.Pos;
         if (UnitAt(from) == unit)
             GetOrCreateState(from).Unit = null;

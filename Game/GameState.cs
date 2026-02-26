@@ -149,17 +149,18 @@ public class GameState
             return new(mVisual, false, mVisual ? PlayerPerception.Visible : PlayerPerception.None);
         }
 
-        int tremor = viewer.Query<int>("tremorsense", null, MergeStrategy.Max, 0);
+        int tremor = viewer.Query("tremorsense", null, MergeStrategy.Max, 0);
         bool hasTremor = tremor > 0 && viewer.Pos.ChebyshevDist(target.Pos) <= tremor;
 
         bool blind = !viewer.CanSee;
         bool targetInvis = target.Has("invisible") && !viewer.Has("see_invisible");
         bool targetInDark = !lvl.IsLit(target.Pos) && !viewer.Has("darkvision");
+        bool hiding = target is Monster { Hiding: true };
 
         // LOS check for visual detection (player-centric)
         bool hasLOS = viewer.IsPlayer ? lvl.HasLOS(target.Pos) : lvl.HasLOS(viewer.Pos);
 
-        bool visual = !blind && !targetInvis && !targetInDark && hasLOS;
+        bool visual = !hiding && !blind && !targetInvis && !targetInDark && hasLOS;
         
         // Determine perception level: visual > tremor > specific warning > generic warning
         PlayerPerception perception;
@@ -192,6 +193,9 @@ public class GameState
         // blind_fight removes disadvantage but not visual
         if (disadvantage && blind && viewer.Has("blind_fight"))
             disadvantage = false;
+
+        if (hiding && perception >= PlayerPerception.Detected)
+            ((Monster)target).Hiding = false;
 
         return new(canTarget, disadvantage, perception);
     }
@@ -468,11 +472,22 @@ public class GameState
             if (unit.IsPlayer) continue;
             unit.Energy += 12;
             LogicBrick.FireOnRoundStart(unit);
+
+            // Adjacent hiders have a chance to self-reveal
+            if (unit is Monster { Hiding: true } hider && hider.Pos.ChebyshevDist(upos) <= 1 && Rn2(10) < 3)
+            {
+                hider.Hiding = false;
+                if (hider.Def.RevealMessage is { } msg)
+                    g.YouObserve(hider, $"{hider:An} {msg}", hider.Def.RevealSound);
+            }
         }
+
+        Draw.DrawCurrent();
 
         foreach (var unit in lvl.LiveUnits)
         {
             if (unit.IsPlayer) continue;
+            if (unit is Monster { Hiding: true }) { unit.Energy = 0; continue; }
             PHContext.Initiator = unit;
             while (unit.Energy > 1 && !unit.IsDead)
             {
@@ -481,6 +496,7 @@ public class GameState
                 Perf.Start();
                 MonsterTurn(unit);
                 Perf.Stop("MonsterTurn");
+                Draw.DrawCurrent();
             }
         }
         PHContext.Initiator = null;
@@ -1371,6 +1387,7 @@ public class GameState
             }
 
             var tgt = lvl.UnitAt(next);
+            if (tgt is Monster { Hiding: true }) tgt = null;
             if (tgt != null && (tgt is not Monster m || !m.Peaceful))
             {
                 DoWeaponAttack(u, tgt, u.GetWieldedItem());

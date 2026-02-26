@@ -164,6 +164,7 @@ public class CookQuickActivity(Item corpse) : Activity("cook_quick")
         if (Done)
         {
             g.pline("You finish cooking.");
+            if (corpse.CorpseOf?.OnCookQuick is {} msg) g.pline(msg);
             u.Nutrition = Math.Min(Hunger.Max, u.Nutrition + _nutrition);
             return false;
         }
@@ -215,7 +216,8 @@ public class CookCarefulActivity : Activity
 
         if (Done)
         {
-            g.pline($"You finish cooking {Grammar.DoNameOne(_corpse)}.");
+            g.pline($"You finish cooking {DoNameOne(_corpse)}.");
+            if (_corpse.CorpseOf?.OnCookSlow is {} msg) g.pline(msg);
 
             if (Foods.IsTainted(_corpse))
             {

@@ -194,7 +194,7 @@ public static partial class Input
     static void DoSpawn(CommandArg arg)
     {
         if (arg is not StringArg s || string.IsNullOrWhiteSpace(s.Value)) return;
-        var def = Pathhack.Wish.WishParser.ParseMonster(s.Value);
+        var def = Wish.WishParser.ParseMonster(s.Value);
         if (def == null) { g.pline("No such monster."); return; }
         g.pline("Spawn where?");
         var pos = PickPosition();

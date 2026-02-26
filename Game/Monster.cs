@@ -111,6 +111,11 @@ public class MonsterDef : BaseDef
   public bool IsUnique = false;
   public bool Peaceful = false;
   public bool Stationary = false;
+  public bool IsHider = false;
+  public string? RevealMessage;
+  public string? RevealSound;
+  public string? OnCookSlow;
+  public string? OnCookQuick;
   public int MaxDepth = 99;
   public required MonsterFamily Family;
   public Action<Monster>? OnChat;
@@ -125,7 +130,14 @@ public class MonsterDef : BaseDef
 
   public MonsterDef WithBrain(MonsterBrain brain) { Brain = brain; return this; }
 
-  string? _creatureTypeKey;
+    internal MonsterDef WithOnEat(string slow, string quick)
+    {
+        OnCookSlow = slow;
+        OnCookQuick = quick;
+        return this;
+    }
+
+    string? _creatureTypeKey;
   public string CreatureTypeKey => _creatureTypeKey ??= Subtypes.Count == 0
       ? CreatureType
       : $"{CreatureType}/{string.Join('.', Subtypes)}";
@@ -192,6 +204,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
   public EthicalAxis? OwnEthicalAxis;
   public Glyph? OwnGlyph;
   public bool HiddenFromRender;
+  public bool Hiding;
   public MonFlags? OwnBrainFlags;
   public long Gold;
 
@@ -361,6 +374,7 @@ public class Monster : Unit<MonsterDef>, IFormattable
     Monster m = new(def, components);
     m.Self = (Pronoun)g.Rn2(3);
     m.Peaceful = def.Peaceful;
+    m.Hiding = def.IsHider;
     m.TemplateBonusLevels = (template?.LevelBonus(def, m.EffectiveLevel) ?? 0) + depthBonus;
     m.HP.Reset((int)(Math.Max(1, def.HpPerLevel * m.EffectiveLevel - 1) * HpMultiplier));
     template?.ModifySpawn(m);

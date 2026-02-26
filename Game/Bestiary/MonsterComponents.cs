@@ -386,6 +386,46 @@ public static class NaturalWeapons
         MeleeVerb = "lash",
         Price = -1,
     };
+
+    public static readonly WeaponDef Sting_1d4 = new()
+    {
+        id = "sting_1d4",
+        Name = "sting",
+        BaseDamage = d(4),
+        DamageType = DamageTypes.Piercing,
+        Style = WeaponStyle.Exotic, Grip = WeaponGrip.Exotic,
+        Category = WeaponCategory.Natural,
+        MeleeVerb = "sting",
+        Price = -1,
+    };
+
+    public static readonly WeaponDef Sting_1d6 = new()
+    {
+        id = "sting_1d6",
+        Name = "sting",
+        BaseDamage = d(6),
+        DamageType = DamageTypes.Piercing,
+        Style = WeaponStyle.Exotic, Grip = WeaponGrip.Exotic,
+        Category = WeaponCategory.Natural,
+        MeleeVerb = "sting",
+        Price = -1,
+    };
+}
+
+public static class NaturalWeaponExts
+{
+    public static WeaponDef WithRider(this WeaponDef w, MeleeDamageRider rider) => new()
+    {
+        id = w.id + "_" + rider.Id,
+        Name = $"{w.Name} with {rider.PokedexDescription}",
+        BaseDamage = w.BaseDamage,
+        DamageType = w.DamageType,
+        Style = w.Style, Grip = w.Grip,
+        Category = w.Category,
+        MeleeVerb = w.MeleeVerb,
+        Price = -1,
+        Components = [rider],
+    };
 }
 
 public class SayOnDeath(string message) : LogicBrick

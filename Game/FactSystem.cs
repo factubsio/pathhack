@@ -238,9 +238,9 @@ public class DataFlag
     public static implicit operator bool(DataFlag flag) => flag.On;
 }
 
-public class ScalarData<T>(T val) where T : struct
+public class ScalarData<T>() where T : struct
 {
-    public T Value = val;
+    public T Value = default;
 
     public static implicit operator T(ScalarData<T> val) => val.Value;
 }
