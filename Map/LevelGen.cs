@@ -809,6 +809,7 @@ public static partial class LevelGen
         MonsterDef[] pool = [Goblins.Warrior, Goblins.Warrior, Goblins.Warrior, Goblins.Warrior,
                              Goblins.Chef, Goblins.WarChanter, Goblins.Pyro, Goblins.Warrior];
 
+        Monster? strongest = null;
         foreach (var dir in Pos.AllDirs)
         {
             if (count-- <= 0) break;
@@ -817,8 +818,14 @@ public static partial class LevelGen
             if (ctx.level.UnitAt(p) != null) continue;
 
             var def = pool.Pick();
-            MonsterSpawner.SpawnAndPlace(ctx.level, "goblin nest", def, false, p, asleep: true, noGroup: true, andThen: m => m.ExpMultiplier = 0.66);
+            MonsterSpawner.SpawnAndPlace(ctx.level, "goblin nest", def, false, p, asleep: true, noGroup: true, andThen: m =>
+            {
+                m.ExpMultiplier = 0.66;
+                if (strongest == null || m.Def.BaseLevel > strongest.Def.BaseLevel)
+                    strongest = m;
+            });
         }
+        room.Resident = strongest;
     }
 
     static void FillGremlinParty(LevelGenContext ctx, Room room, bool small)
@@ -859,7 +866,11 @@ public static partial class LevelGen
         int cy = (int)room.Interior.Average(p => p.Y);
         Pos center = new(cx, cy);
 
-        MonsterSpawner.SpawnAndPlace(level, "spider nest", boss, false, center, asleep: true, noGroup: true, andThen: m => m.ExpMultiplier = 0.66);
+        MonsterSpawner.SpawnAndPlace(level, "spider nest", boss, false, center, asleep: true, noGroup: true, andThen: m =>
+        {
+            m.ExpMultiplier = 0.66;
+            room.Resident = m;
+        });
 
         // Scatter small spiders
         MonsterDef[] small = [Spiders.OrbWeaver, Spiders.ScarletSpider, Spiders.GiantCrabSpider];

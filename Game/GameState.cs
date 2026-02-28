@@ -564,22 +564,35 @@ public class GameState
         Perf.Stop("OnRoundEnd");
 
         // Ambient room sounds
+        string[] shopSounds = ["someone cursing shoplifters.", "the chime of a cash register.", "Neiman and Marcus arguing!"];
+        string[] goblinSounds = ["chanting.", "murmured prayers.", "a guttural hymn."];
+        string[] gremlinSounds = ["snoring.", "giggling.", "something breaking."];
+        string[] gremlinBigSounds = ["a lot of snoring.", "a raucous party.", "glass shattering."];
+        string[] spiderSounds = ["skittering.", "far too many legs.", "clicking fangs."];
+        string[] boggardSounds = ["croaking.", "splashing.", "bubbling mud."];
+        string[] antSounds = ["clicking mandibles.", "industrious scuttling.", "chittering."];
+        string[] ratSounds = ["squeaking.", "gnawing.", "tiny claws scraping."];
         var specialRooms = lvl.Rooms.Where(r => r.Type != RoomType.Ordinary).ToList();
         if (specialRooms.Count > 0 && Rn2(200) == 0)
         {
             var room = specialRooms.Pick();
+            bool has(MonsterFamily f) => lvl.LiveUnits.OfType<Monster>()
+                .Any(m => m.Def.Family == f && room.Interior.Contains(m.Pos));
+
             var msg = room.Type switch
             {
-                RoomType.GoblinNest => "You hear chanting.",
-                RoomType.GremlinParty => "You hear snoring.",
-                RoomType.GremlinPartyBig => "You hear a lot of snoring.",
-                RoomType.SpiderNest => "You hear skittering.",
-                RoomType.BoggardSwamp => "You hear croaking.",
-                RoomType.AntNest => "You hear clicking mandibles.",
-                RoomType.RatNest => "You hear squeaking.",
-                _ => null
+                RoomType.GoblinNest when room.Resident is { IsDead: false } => goblinSounds.Pick(),
+                RoomType.GremlinParty when has(Gremlins.Family) => gremlinSounds.Pick(),
+                RoomType.GremlinPartyBig when has(Gremlins.Family) => gremlinBigSounds.Pick(),
+                RoomType.SpiderNest when room.Resident is { IsDead: false } => spiderSounds.Pick(),
+                RoomType.BoggardSwamp when has(Boggards.Family) => boggardSounds.Pick(),
+                RoomType.AntNest when has(Ants.Family) => antSounds.Pick(),
+                RoomType.RatNest when has(MiscMonsters.RatFamily) => ratSounds.Pick(),
+                RoomType.Shop when room.Resident is { IsDead: false } && lvl.RoomAt(upos) != room
+                    => shopSounds.Pick(),
+                _ => (string?)null
             };
-            if (msg != null) pline(msg);
+            if (msg != null) pline($"You hear {msg}");
         }
 
         lvl.ReapDead();
