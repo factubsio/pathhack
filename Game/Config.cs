@@ -187,6 +187,11 @@ public static partial class Config
         foreach (var raw in File.ReadLines(path))
         {
             var line = raw.Trim();
+            // allow #PH_ to be parsed so we can dump junk in a shared dnh/pathhack rc
+            if (line.StartsWith("#PH_"))
+                line = line[4..].Trim();
+
+            // Skip empty or comment lines (after the special #PH_ stripping)
             if (line.Length == 0 || line[0] == '#') continue;
 
             if (line.StartsWith("AUTOPICKUP_EXCEPTION=", StringComparison.OrdinalIgnoreCase))
