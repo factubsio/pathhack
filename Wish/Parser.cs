@@ -68,80 +68,70 @@ public static partial class WishParser
         return item;
     }
 
+    static List<string> Tokenize(string input)
+    {
+        List<string> tokens = [];
+        int i = 0;
+        while (i < input.Length)
+        {
+            if (input[i] == ' ') { i++; continue; }
+            if (input[i] == '\'')
+            {
+                int end = input.IndexOf('\'', i + 1);
+                if (end < 0) end = input.Length;
+                tokens.Add(input[(i + 1)..end]);
+                i = end + 1;
+            }
+            else
+            {
+                int end = input.IndexOf(' ', i);
+                if (end < 0) end = input.Length;
+                tokens.Add(input[i..end]);
+                i = end;
+            }
+        }
+        return tokens;
+    }
+
     static WishMods StripMods(ref string input)
     {
         WishMods mods = new();
+        var tokens = Tokenize(input);
+        List<string> remaining = [];
 
-        // Trailing charges: "c6", "c12" — strip first so it doesn't interfere
-        var chargeMatch = TrailingCharges().Match(input);
-        if (chargeMatch.Success)
+        foreach (var tok in tokens)
         {
-            mods.Charges = int.Parse(chargeMatch.Groups[1].Value);
-            input = input[..chargeMatch.Index].TrimEnd();
-        }
+            if (mods.Count == null && TokenCount().IsMatch(tok))
+            { mods.Count = int.Parse(tok); continue; }
 
-        // Trailing runes: "striking/3 flaming/2" or bare "striking flaming"
-        while (true)
-        {
-            var runeMatch = TrailingRune().Match(input);
-            if (!runeMatch.Success) break;
-            mods.Runes ??= [];
-            int? q = runeMatch.Groups[2].Success ? int.Parse(runeMatch.Groups[2].Value) : null;
-            mods.Runes.Add((runeMatch.Groups[1].Value, q));
-            input = input[..runeMatch.Index].TrimEnd();
-        }
+            if (mods.Potency == null && TokenPotency().IsMatch(tok))
+            { mods.Potency = int.Parse(tok); continue; }
 
-        // Loop: strip leading modifiers in any order
-        bool found = true;
-        while (found)
-        {
-            found = false;
-            input = input.TrimStart();
-
-            if (mods.Count == null)
-            {
-                var m = LeadingCount().Match(input);
-                if (m.Success) { mods.Count = int.Parse(m.Groups[1].Value); input = input[m.Length..]; found = true; continue; }
-            }
+            if (mods.Charges == null && TokenCharges().IsMatch(tok))
+            { mods.Charges = int.Parse(tok[1..]); continue; }
 
             if (mods.Buc == null)
             {
-                if (input.StartsWith("blessed ")) { mods.Buc = BUC.Blessed; input = input[8..]; found = true; continue; }
-                if (input.StartsWith("uncursed ")) { mods.Buc = BUC.Uncursed; input = input[9..]; found = true; continue; }
-                if (input.StartsWith("cursed ")) { mods.Buc = BUC.Cursed; input = input[7..]; found = true; continue; }
+                if (tok == "blessed") { mods.Buc = BUC.Blessed; continue; }
+                if (tok == "uncursed") { mods.Buc = BUC.Uncursed; continue; }
+                if (tok == "cursed") { mods.Buc = BUC.Cursed; continue; }
             }
 
-            if (mods.Potency == null)
-            {
-                var m = LeadingPotency().Match(input);
-                if (m.Success) { mods.Potency = int.Parse(m.Groups[1].Value); input = input[m.Length..]; found = true; continue; }
-            }
+            if (_ignoredWords.Contains(tok)) continue;
 
-            // Recognized but ignored (for now): erodeproof synonyms
-            foreach (var word in _ignoredPrefixes)
-            {
-                if (input.StartsWith(word))
-                {
-                    input = input[word.Length..];
-                    found = true;
-                    break;
-                }
-            }
-            if (found) continue;
-
-            // Leading runes: "flaming/2 longsword" or "striking longsword"
-            var lrm = LeadingRune().Match(input);
-            if (lrm.Success)
+            var rm = TokenRune().Match(tok);
+            if (rm.Success)
             {
                 mods.Runes ??= [];
-                int? q = lrm.Groups[2].Success ? int.Parse(lrm.Groups[2].Value) : null;
-                mods.Runes.Add((lrm.Groups[1].Value, q));
-                input = input[lrm.Length..].TrimStart();
-                found = true;
+                int? q = rm.Groups[2].Success ? int.Parse(rm.Groups[2].Value) : null;
+                mods.Runes.Add((rm.Groups[1].Value, q));
+                continue;
             }
+
+            remaining.Add(tok);
         }
 
-        input = input.Trim();
+        input = string.Join(" ", remaining);
         return mods;
     }
 
@@ -227,24 +217,19 @@ public static partial class WishParser
         return null;
     }
 
-    [GeneratedRegex(@"^(\d+)\s")]
-    private static partial Regex LeadingCount();
+    [GeneratedRegex(@"^\d+$")]
+    private static partial Regex TokenCount();
 
-    [GeneratedRegex(@"^([+-]\d+)\s")]
-    private static partial Regex LeadingPotency();
+    [GeneratedRegex(@"^[+-]\d+$")]
+    private static partial Regex TokenPotency();
 
-    [GeneratedRegex(@"\bc(\d+)$")]
-    private static partial Regex TrailingCharges();
+    [GeneratedRegex(@"^c(\d+)$")]
+    private static partial Regex TokenCharges();
 
     // Rune names are duplicated here and in ApplyMods — keep in sync manually.
-    // Bad news bears: rune names are hardcoded in these regexes. We can't source-gen from
-    // rune defs because chained source generators aren't a thing. May move to table lookup later.
-    [GeneratedRegex(@"^(striking|bonus|accurate|flaming|fire|frost|freezing|cold|shock|shocking|electric)(?:/(\d+))?\s")]
-    private static partial Regex LeadingRune();
+    [GeneratedRegex(@"^(striking|bonus|accurate|flaming|fire|frost|freezing|cold|shock|shocking|electric)(?:/(\d+))?$")]
+    private static partial Regex TokenRune();
 
-    [GeneratedRegex(@"\b(striking|bonus|accurate|flaming|fire|frost|freezing|cold|shock|shocking|electric)(?:/(\d+))?$")]
-    private static partial Regex TrailingRune();
-
-    static readonly string[] _ignoredPrefixes =
-        ["fixed ", "rustproof ", "fireproof ", "corrodeproof ", "erodeproof ", "greased "];
+    static readonly HashSet<string> _ignoredWords =
+        ["fixed", "rustproof", "fireproof", "corrodeproof", "erodeproof", "greased"];
 }
