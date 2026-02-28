@@ -1023,13 +1023,15 @@ public static partial class Input
         }
         foreach (var item in toPickup)
         {
-            int price = g.DoPickup(u, item);
+            int price = g.DoPickup(u, item, out var actual);
             if (price > 0)
             {
                 g.pline($"The list price of {item:the,noprice} is {price.Crests()}.");
                 item.UnitPrice = price;
             }
-            g.pline($"{(item.Def.Class == '$' ? '$' : item.InvLet)} - {item.DisplayNameWeighted}.");
+            string name = item.DisplayNameWeighted;
+            if (actual == u.Quiver) name += " (quivered)";
+            g.pline($"{(item.Def.Class == '$' ? '$' : actual.InvLet)} - {name}.");
         }
 
         u.Energy -= ActionCosts.OneAction.Value;

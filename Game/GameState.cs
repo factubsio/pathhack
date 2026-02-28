@@ -1249,7 +1249,7 @@ public class GameState
         }
     }
 
-    public int DoPickup(IUnit unit, Item item)
+    public int DoPickup(IUnit unit, Item item, out Item actual)
     {
         lvl.RemoveItem(item, unit.Pos);
 
@@ -1273,10 +1273,11 @@ public class GameState
                 }
             }
             p.Gold += item.Count;
+            actual = item;
         }
         else
         {
-            unit.Inventory.Add(item);
+            actual = unit.Inventory.Add(item);
             item.ThrownByPlayer = false;
             Log.Structured("pickup", $"{item.Def.Name:item}");
         }

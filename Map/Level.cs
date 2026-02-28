@@ -471,8 +471,10 @@ public class Level(LevelId id, int width, int height)
 
                 if (want)
                 {
-                    g.DoPickup(u, item);
-                    g.pline($"{(item.Def.Class == '$' ? '$' : item.InvLet)} - {item.DisplayNameWeighted}.");
+                    g.DoPickup(u, item, out var actual);
+                    string name = item.DisplayNameWeighted;
+                    if (actual == u.Quiver) name += " (quivered)";
+                    g.pline($"{(item.Def.Class == '$' ? '$' : actual.InvLet)} - {name}.");
                     Movement.DidAutoPickup = true;
                 }
             }

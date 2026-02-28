@@ -14,6 +14,9 @@ public static partial class MundaneArmory
         WeaponType = WeaponTypes.Dagger,
         DamageType = DamageTypes.Piercing,
         Glyph = new(ItemClasses.Weapon, ConsoleColor.White),
+        Stackable = true,
+        Launcher = "hand",
+        MeleeVerb = "stab",
         Weight = 10,
         Price = 2,
     };
