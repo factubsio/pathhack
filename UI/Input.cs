@@ -535,16 +535,8 @@ public static partial class Input
 
     static string? PromptLine(string? prompt)
     {
-        Console.SetCursorPosition(0, 0);
-        Console.Write(new string(' ', Console.WindowWidth));
-        Console.SetCursorPosition(0, 0);
-        Console.CursorVisible = true;
-        if (prompt != null) Console.Write(prompt + ": ");
-        string? s = ReadLine();
-        Console.CursorVisible = false;
-        Console.SetCursorPosition(0, 0);
-        Console.Write(new string(' ', Console.WindowWidth));
-        return s;
+        string prefix = prompt != null ? prompt + ": " : "";
+        return ReadLine(prefix);
     }
 
     public static bool YesNo(string prompt)
@@ -607,15 +599,7 @@ public static partial class Input
 
     static void HandleExtended()
     {
-        Console.SetCursorPosition(0, 0);
-        Console.Write(new string(' ', Console.WindowWidth));
-        Console.SetCursorPosition(0, 0);
-        Console.CursorVisible = true;
-        Console.Write("#");
-        string? name = ReadLine(_extCommands.Keys);
-        Console.CursorVisible = false;
-        Console.SetCursorPosition(0, 0);
-        Console.Write(new string(' ', Console.WindowWidth));
+        string? name = ReadLine("#", _extCommands.Keys);
         if (name == null) return;
         if (_extCommands.TryGetValue(name, out Command? cmd))
         {
@@ -624,113 +608,115 @@ public static partial class Input
         }
     }
 
-    static string? ReadLine(IEnumerable<string>? completions = null)
+    static string? ReadLine(string prefix, IEnumerable<string>? completions = null)
     {
         List<char> chars = [];
-        int autoCompleteLen = 0; // how many chars were auto-filled
+        int autoCompleteLen = 0;
         bool suppressAutoComplete = false;
+
+        void Redraw()
+        {
+            string text = (prefix + new string([.. chars])).PadRight(Draw.ScreenWidth);
+            Draw.MessageWin.Clear();
+            Draw.MessageWin.At(0, 0).Write(text);
+            Draw.Blit();
+            int cursorCol = prefix.Length + chars.Count - autoCompleteLen;
+            Console.SetCursorPosition(cursorCol, 0);
+        }
+
+        Console.CursorVisible = true;
+        Redraw();
+
         while (true)
         {
-            // auto-complete if unambiguous
             if (completions != null && chars.Count > 0 && autoCompleteLen == 0 && !suppressAutoComplete)
             {
-                string prefix = new([.. chars]);
-                var matches = completions.Where(c => c.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)).ToList();
+                string pfx = new([.. chars]);
+                var matches = completions.Where(c => c.StartsWith(pfx, StringComparison.OrdinalIgnoreCase)).ToList();
                 if (matches.Count == 1 && matches[0].Length > chars.Count)
                 {
                     string suffix = matches[0][chars.Count..];
-                    Console.Write(suffix);
                     chars.AddRange(suffix);
                     autoCompleteLen = suffix.Length;
+                    Redraw();
                 }
             }
             suppressAutoComplete = false;
 
             ConsoleKeyInfo k = NextKey();
-            if (k.Key == ConsoleKey.Enter) return new string([.. chars]);
-            if (k.Key == ConsoleKey.Escape) return null;
+            if (k.Key == ConsoleKey.Enter)
+            {
+                Console.CursorVisible = false;
+                Draw.RenderTopLine();
+                return new string([.. chars]);
+            }
+            if (k.Key == ConsoleKey.Escape)
+            {
+                Console.CursorVisible = false;
+                Draw.RenderTopLine();
+                return null;
+            }
             if (k.Key == ConsoleKey.Backspace && chars.Count > 0)
             {
                 if (autoCompleteLen > 0)
                 {
-                    // clear entire autocomplete suffix
-                    for (int i = 0; i < autoCompleteLen; i++)
-                    {
-                        chars.RemoveAt(chars.Count - 1);
-                        Console.Write("\b \b");
-                    }
+                    chars.RemoveRange(chars.Count - autoCompleteLen, autoCompleteLen);
                     autoCompleteLen = 0;
                 }
                 else
                 {
                     chars.RemoveAt(chars.Count - 1);
-                    Console.Write("\b \b");
                 }
                 suppressAutoComplete = true;
+                Redraw();
             }
             else if (k.Key == ConsoleKey.U && k.Modifiers.HasFlag(ConsoleModifiers.Control))
             {
-                for (int i = chars.Count - 1; i >= 0; i--)
-                    Console.Write("\b \b");
                 chars.Clear();
                 autoCompleteLen = 0;
+                Redraw();
             }
             else if (k.Key == ConsoleKey.W && k.Modifiers.HasFlag(ConsoleModifiers.Control))
             {
                 if (autoCompleteLen > 0)
                 {
-                    for (int i = 0; i < autoCompleteLen; i++)
-                    {
-                        chars.RemoveAt(chars.Count - 1);
-                        Console.Write("\b \b");
-                    }
+                    chars.RemoveRange(chars.Count - autoCompleteLen, autoCompleteLen);
                     autoCompleteLen = 0;
                 }
-                // delete back to previous space
                 while (chars.Count > 0 && chars[^1] == ' ')
-                {
                     chars.RemoveAt(chars.Count - 1);
-                    Console.Write("\b \b");
-                }
                 while (chars.Count > 0 && chars[^1] != ' ')
-                {
                     chars.RemoveAt(chars.Count - 1);
-                    Console.Write("\b \b");
-                }
+                Redraw();
             }
             else if (k.Key == ConsoleKey.Tab && completions != null)
             {
-                string prefix = new([.. chars]);
-                string? match = completions.FirstOrDefault(c => c.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+                string pfx = new([.. chars]);
+                string? match = completions.FirstOrDefault(c => c.StartsWith(pfx, StringComparison.OrdinalIgnoreCase));
                 if (match != null)
                 {
-                    Console.Write(match[chars.Count..]);
-                    chars.AddRange(match[chars.Count..]);
+                    chars.Clear();
+                    chars.AddRange(match);
                 }
                 autoCompleteLen = 0;
+                Redraw();
             }
             else if (!char.IsControl(k.KeyChar))
             {
-                // if typing matches autocompleted char, just consume it
                 if (autoCompleteLen > 0 && char.ToLowerInvariant(k.KeyChar) == char.ToLowerInvariant(chars[chars.Count - autoCompleteLen]))
                 {
                     autoCompleteLen--;
                 }
                 else
                 {
-                    // clear autocomplete suffix if typing something different
                     if (autoCompleteLen > 0)
                     {
-                        for (int i = 0; i < autoCompleteLen; i++)
-                        {
-                            chars.RemoveAt(chars.Count - 1);
-                            Console.Write("\b \b");
-                        }
+                        chars.RemoveRange(chars.Count - autoCompleteLen, autoCompleteLen);
                         autoCompleteLen = 0;
                     }
                     chars.Add(k.KeyChar);
-                    Console.Write(k.KeyChar);
                 }
+                Redraw();
             }
         }
     }
