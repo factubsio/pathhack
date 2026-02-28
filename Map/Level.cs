@@ -458,7 +458,7 @@ public class Level(LevelId id, int width, int height)
             foreach (var item in items.ToList())
             {
                 bool wantClass = Config.Data.PickupAll || Config.Data.PickupTypes.Contains(item.Def.Class);
-                bool wantThrown = Config.Data.PickupThrown; //TODO: && item.ThrownByPlayer;
+                bool wantThrown = Config.Data.PickupThrown && item.ThrownByPlayer;
                 if (wantClass || wantThrown)
                 {
                     g.DoPickup(u, item);

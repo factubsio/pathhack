@@ -146,6 +146,8 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
     public bool IsCursed => BUC == BUC.Cursed;
     public bool IsBlessed => BUC == BUC.Blessed;
 
+    public bool ThrownByPlayer;
+
     public bool IsUnique => IsNamedUnique || Def.IsUnique;
 
     public int EffectiveWeight => CorpseOf is { } c
@@ -245,7 +247,7 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
             parts.Add($"{count}");
 
         var bucKnown = Knowledge.HasFlag(ItemKnowledge.BUC);
-        if (bucKnown)
+        if (bucKnown && !(Config.Data.ImplicitUncursed && BUC == BUC.Uncursed))
             parts.Add(BUC switch { BUC.Blessed => "blessed", BUC.Cursed => "cursed", _ => "uncursed" });
 
         if (potencyKnown)

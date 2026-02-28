@@ -117,6 +117,7 @@ public record class ConfigData
     public bool EightBitTty { get; set; } = false;
     public bool HilitePet { get; set; } = false;
     public bool HilitePile { get; set; } = false;
+    public bool HiliteHiddenStairs { get; set; } = true;
     public bool LitCorridor { get; set; } = false;
     public bool MentionWalls { get; set; } = false;
     public bool Sparkle { get; set; } = true;

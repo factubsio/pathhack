@@ -308,8 +308,8 @@ public static class Draw
                         {
                             var items = level.ItemsAt(p);
                             var cell = TileCell(level, p);
-                            if (items.Count > 0)
-                                cell = cell with { Style = CellStyle.Reverse };
+                            if (items.Count > 0 && Config.Data.HiliteHiddenStairs)
+                                cell = cell with { Bg = ConsoleColor.DarkRed };
                             MapWin[x, y] = cell;
                         }
                         else
@@ -318,7 +318,10 @@ public static class Draw
                             if (items.Count > 0 && level[p].Type != TileType.Water)
                             {
                                 var top = items[^1];
-                                MapWin[x, y] = Cell.From(top.Glyph);
+                                var cell = Cell.From(top.Glyph);
+                                if (items.Count > 1 && Config.Data.HilitePile)
+                                    cell = cell with { Bg = ConsoleColor.DarkBlue };
+                                MapWin[x, y] = cell;
                             }
                             else if (level.GetState(p)?.Feature is { } feature && !feature.Hidden)
                             {
@@ -337,7 +340,7 @@ public static class Draw
                 }
                 else if (level.WasSeen(p) && level.GetMemory(p) is { } mem)
                 {
-                    ConsoleColor col = ConsoleColor.DarkBlue;
+                    ConsoleColor col = Config.Data.UseDarkGray ? ConsoleColor.DarkGray : ConsoleColor.DarkBlue;
                     if (mem.Tile.Type == TileType.Wall) col = level.WallColor ?? ConsoleColor.Gray;
                     else if (mem.Tile.Type == TileType.Tree) col = ConsoleColor.DarkGreen;
                     else if (mem.Tile.Type == TileType.Grass) col = ConsoleColor.DarkGreen;
@@ -351,8 +354,8 @@ public static class Draw
                     else
                     {
                         cell = MemoryTileCell(level, p, mem, col);
-                        if (mem.Tile.IsStairs && mem.TopItem != null)
-                            cell = cell with { Style = CellStyle.Reverse };
+                        if (mem.Tile.IsStairs && mem.TopItem != null && Config.Data.HiliteHiddenStairs)
+                            cell = cell with { Bg = ConsoleColor.DarkRed };
                     }
                     MapWin[x, y] = cell;
                 }
@@ -453,7 +456,8 @@ public static class Draw
         if (save) SaveTopLine();
         if (!PHMonitor.Active)
         {
-            MessageWin.At(col, row).Write("--more--");
+            MessageWin.At(col, row).Write("--more--",
+                style: Config.Data.Standout ? CellStyle.Reverse : CellStyle.None);
             Blit();
             while (Input.NextKey().Key != ConsoleKey.Spacebar)
                 ;
