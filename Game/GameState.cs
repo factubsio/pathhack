@@ -1225,6 +1225,7 @@ public class GameState
 
     public static void ThrowLands(IUnit thrower, Item item, Pos pos, IUnit? hit, AttackType type = AttackType.Thrown)
     {
+        item.ThrownByPlayer = thrower.IsPlayer;
         if (item.Def is BottleDef bottle)
         {
             g.YouObserve(pos, $"{item:The} shatters!", "glass breaking");
@@ -1276,6 +1277,7 @@ public class GameState
         else
         {
             unit.Inventory.Add(item);
+            item.ThrownByPlayer = false;
             Log.Structured("pickup", $"{item.Def.Name:item}");
         }
 
@@ -1463,6 +1465,8 @@ public class GameState
                 if (!free) unit.Energy -= ActionCosts.OneAction.Value;
                 return EquipResult.NoSlot;
             }
+            if (unit is Player pl && pl.Quiver == item)
+                pl.Quiver = null;
             if (item.IsCursed)
             {
                 item.Knowledge |= ItemKnowledge.BUC;

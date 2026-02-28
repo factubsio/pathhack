@@ -106,6 +106,7 @@ public record class ConfigData
     public bool AutoDig { get; set; } = false;
     public bool AutoOpen { get; set; } = true;
     public bool AutoQuiver { get; set; } = false;
+    public bool ZapQuivered { get; set; } = false;
     public bool Confirm { get; set; } = true;
     public bool SafePet { get; set; } = true;
     public bool PushWeapon { get; set; } = false;

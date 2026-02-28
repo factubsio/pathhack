@@ -153,7 +153,7 @@ public static class Draw
         Blit();
     }
 
-    public static void AnimateProjectile(Pos from, Pos to, Glyph glyph, int delayMs = -1, int total = 150)
+    public static void AnimateProjectile(Pos from, Pos to, Glyph glyph, int delayMs = -1, int total = 150, bool includeTo = true)
     {
         if (from.X < 0 || to.X < 0) return;
 
@@ -181,6 +181,13 @@ public static class Draw
                 ov[p.X, p.Y] = null;
             }
             p += new Pos(dx, dy);
+        }
+        if (includeTo && lvl.IsVisible(to))
+        {
+            ov[to.X, to.Y] = new Cell(glyph.Value, glyph.Color);
+            Blit();
+            Thread.Sleep(delayMs);
+            ov[to.X, to.Y] = null;
         }
         Blit();
     }

@@ -371,62 +371,58 @@ public static partial class Input
     {
         if (u.Quiver == null)
         {
-            g.pline("You have nothing readied.");
+            if (!PickItem("ready", _ => true, out var ready)) return;
+            if (IsWorn(ready)) { g.pline("You cannot ready that!"); return; }
+            if (DoReady(ready)) return;
+        }
+
+        Item quivered = u.Quiver!;
+
+        if (Config.Data.ZapQuivered && quivered.Def is WandDef)
+        {
+            DoZap(quivered);
             return;
         }
-        Item toThrow;
-        int? range = null;
-
-        AttackType type = AttackType.Thrown;
 
         var weapon = u.GetWieldedItem();
-        var quiver = u.Quiver.Def as QuiverDef;
+        var quiver = quivered.Def as QuiverDef;
         if (quiver != null && quiver.WeaponType != (weapon.Def as WeaponDef)?.WeaponType)
         {
-            g.pline($"That is a silly way to fire {u.Quiver:an}.");
+            g.pline($"That is a silly way to fire {quivered:an}.");
             return;
         }
-        if (!PromptDirection(out var dir)) return;
 
         if (quiver != null)
         {
-            if (u.Quiver.Charges == 0)
+            if (quivered.Charges == 0)
             {
-                g.pline($"Your {u.Quiver:bare} is empty!");
+                g.pline($"Your {quivered:bare} is empty!");
                 return;
             }
-            ArcherySystem.ShootFrom(u, u.Quiver, dir);
+            if (!PromptDirection(out var dir)) return;
+            ArcherySystem.ShootFrom(u, quivered, dir);
             u.Energy -= ActionCosts.OneAction.Value;
             return;
         }
-        else
-        {
-            if (u.Quiver.Count > 1)
-                toThrow = u.Quiver.Split(1);
-            else
-            {
-                toThrow = u.Quiver;
-                u.Inventory.Remove(toThrow);
-                u.Quiver = null;
-            }
-        }
 
-        DoThrow(u, toThrow, dir, type, range: range);
-        u.Energy -= ActionCosts.OneAction.Value;
+        ThrowFromInventory(quivered, fromQuiver: true);
     }
 
     static void ZapWand()
     {
         if (!PickItem("zap", IsZappable, out var wand)) return;
+        DoZap(wand);
+    }
 
+    static void DoZap(Item wand)
+    {
+        var def = (WandDef)wand.Def;
         if (wand.Charges <= 0)
         {
             g.pline("Nothing happens.");
             u.Energy -= ActionCosts.OneAction.Value;
             return;
         }
-
-        var def = (WandDef)wand.Def;
         if (def.Spell.Targeting == TargetingType.None)
         {
             wand.Charges--;
@@ -435,7 +431,6 @@ public static partial class Input
         else
         {
             if (!PromptDirection(out var dir)) return;
-
             wand.Charges--;
             Wands.DoEffect(def, u, dir);
         }
@@ -444,8 +439,27 @@ public static partial class Input
 
     static void Throw()
     {
-        // TODO: throw things that aren't potions!!!
-        if (!PickItem("throw", IsQuaffable, out var item)) return;
+        if (!PickItem("throw", _ => true, out var item)) return;
+        ThrowFromInventory(item);
+    }
+
+    static void ThrowFromInventory(Item item, bool fromQuiver = false)
+    {
+        var slot = u.Equipped.FirstOrDefault(kv => kv.Value == item).Key;
+        if (slot != default)
+        {
+            if (IsWorn(item))
+            {
+                g.pline("You cannot throw something you are wearing.");
+                return;
+            }
+            if (slot.Type == ItemSlots.Hand && !u.CanLetGoOf(item))
+            {
+                item.Knowledge |= ItemKnowledge.BUC;
+                g.pline($"Your {item.Def.Name} is welded to your {HandStr(item)}!");
+                return;
+            }
+        }
 
         bool targeted = u.Has("throw_at_pos");
 
@@ -461,38 +475,55 @@ public static partial class Input
                 return;
             }
 
-            Item toThrow;
-            if (item.Count > 1)
-                toThrow = item.Split(1);
-            else
-            {
-                toThrow = item;
-                u.Inventory.Remove(toThrow);
-            }
-            // FIXME: Animate projectile over a bresenham
-            // Draw.AnimateProjectile(upos, pos.Value, toThrow.Glyph);
+            Item toThrow = SplitOne(item, fromQuiver);
             ThrowLands(u, toThrow, pos.Value, lvl.UnitAt(pos.Value));
         }
         else
         {
             if (!PromptDirection(out var dir)) return;
-
-            Item toThrow;
-            if (item.Count > 1)
-                toThrow = item.Split(1);
-            else
-            {
-                toThrow = item;
-                u.Inventory.Remove(toThrow);
-            }
+            Item toThrow = SplitOne(item, fromQuiver);
             DoThrow(u, toThrow, dir, AttackType.Thrown);
         }
         u.Energy -= ActionCosts.OneAction.Value;
     }
 
+    /// <summary>Returns true if readying consumed the action (QuiverDef ammo-loss).</summary>
+    static bool DoReady(Item item)
+    {
+        u.Quiver = item;
+        g.pline($"You ready {item:the}.");
+        if (item.Def is not QuiverDef q) return false;
+
+        int lost = g.Rn2(g.Rn2(item.Charges));
+        if (lost > 0)
+        {
+            item.Charges -= lost;
+            if (lost > 2) g.pline($"But a few {q.Ammo.Name.Plural()} slip out!");
+            else if (lost == 2) g.pline($"But a couple of {q.Ammo.Name.Plural()} slip out!");
+            else g.pline($"But {q.Ammo:an} slips out!");
+        }
+        u.Energy -= ActionCosts.OneAction.Value;
+        return true;
+    }
+
+    static bool IsWorn(Item item)
+    {
+        var slot = u.Equipped.FirstOrDefault(kv => kv.Value == item).Key;
+        return slot != default && slot.Type is not (ItemSlots.Hand or ItemSlots.Alt or ItemSlots.Quiver);
+    }
+
+    static Item SplitOne(Item item, bool fromQuiver)
+    {
+        if (item.Count > 1) return item.Split(1);
+        u.Inventory.Remove(item);
+        if (fromQuiver) u.Quiver = null;
+        return item;
+    }
+
     static void SetQuiver()
     {
-        if (!PickItem("ready", i => i.Def is QuiverDef || i.Def is WeaponDef { Launcher: not null }, out var item)) return;
+        if (!PickItem("ready", _ => true, out var item)) return;
+        if (IsWorn(item)) { g.pline("You cannot ready that!"); return; }
 
         if (u.Quiver == item)
         {
@@ -500,45 +531,7 @@ public static partial class Input
             return;
         }
 
-        u.Quiver = item;
-        if (u.Quiver != null)
-        {
-
-            if (u.Quiver.Def is QuiverDef q)
-            {
-                // Punish scumming quiver swaps.
-
-                g.pline($"You ready {u.Quiver:the}.");
-                // Note: it's a bid odd cos you "ready (5), but some splip out",
-                // which means you actually have (3), I am not sure which order is better
-                int lost = g.Rn2(g.Rn2(u.Quiver.Charges));
-                if (lost > 0)
-                {
-                    u.Quiver.Charges -= lost;
-                    if (lost > 2)
-                    {
-                        g.pline($"But a few {q.Ammo.Name.Plural()} slip out!");
-                    }
-                    else if (lost == 2)
-                    {
-                        g.pline($"But a couple of {q.Ammo.Name.Plural()} slip out!");
-                    }
-                    else
-                    {
-                        g.pline($"But {q.Ammo:an} slips out!");
-                    }
-                }
-
-                u.Energy -= ActionCosts.OneAction.Value;
-            }
-            else
-            {
-                g.pline($"You ready {u.Quiver:the}.");
-            }
-        }
-        else
-            g.pline("You empty your quiver.");
-
+        DoReady(item);
     }
 
     static void WieldWeapon()

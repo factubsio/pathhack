@@ -394,9 +394,14 @@ public static partial class ClassDefs
 
             p.Inventory.Add(Item.Create(MundaneArmory.Longsword));
             p.Inventory.Add(Item.Create(MundaneArmory.LeatherArmor));
+
+            p.Inventory.Add(ItemGen.GenerateItem(Wands.AcidArrow)).Identify();
+
             p.Inventory.Add(Item.Create(MagicRings.RingOfTheRam)).Identify();
             p.Inventory.Add(Item.Create(Potions.LesserInvisibility, 4)).Identify();
             p.Inventory.Add(Item.Create(Scrolls.Identify, 10)).Identify();
+
+
             p.Inventory.Add(Item.Create(Scrolls.Teleportation, 4)).Identify();
             Scrolls.Identify.SetKnown();
             foreach (var def in DummyThings.All)
