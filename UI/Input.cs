@@ -48,6 +48,7 @@ public static partial class Input
         ["forge"] = new("forge", "Open rune forge", ArgType.None, _ => DoForge()),
         ["dip"] = new("dip", "Open rune forge", ArgType.None, _ => DoForge()),
         ["adjust"] = new("adjust", "Adjust inventory letters", ArgType.None, _ => DoAdjust()),
+        ["redraw"] = new("redraw", "Redraw screen", ArgType.None, _ => Draw.Invalidate(true)),
     };
 
     static readonly Dictionary<char, Command> _commands = new()

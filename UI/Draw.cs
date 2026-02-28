@@ -157,21 +157,18 @@ public static class Draw
     {
         if (from.X < 0 || to.X < 0) return;
 
+        var tiles = Pos.LineBetween(from, to, includeTo);
+        if (tiles.Count == 0) return;
+
         if (delayMs < 0)
         {
-            int frames = to.ChebyshevDist(from);
-            if (frames <= 0) return;
-            delayMs = total / frames;
+            delayMs = total / tiles.Count;
         }
-
-        int dx = Math.Sign(to.X - from.X);
-        int dy = Math.Sign(to.Y - from.Y);
-        Pos p = from + new Pos(dx, dy);
 
         using var handle = WM.CreateTransient(MapWidth, MapHeight, x: 0, y: 1, z: 10);
         var ov = handle.Window;
 
-        while (p != to)
+        foreach (var p in tiles)
         {
             if (lvl.IsVisible(p))
             {
@@ -180,14 +177,6 @@ public static class Draw
                 Thread.Sleep(delayMs);
                 ov[p.X, p.Y] = null;
             }
-            p += new Pos(dx, dy);
-        }
-        if (includeTo && lvl.IsVisible(to))
-        {
-            ov[to.X, to.Y] = new Cell(glyph.Value, glyph.Color);
-            Blit();
-            Thread.Sleep(delayMs);
-            ov[to.X, to.Y] = null;
         }
         Blit();
     }
@@ -246,7 +235,12 @@ public static class Draw
 
     public static void ResetRoundStats() => TerminalBackend.ResetStats();
 
-    public static void Invalidate() => Compositor.Invalidate();
+    public static void Invalidate(bool now = false) 
+    {
+        Compositor.Invalidate();
+        if (now)
+            Blit();
+    }
 
     public static void DrawLevel(Level level)
     {

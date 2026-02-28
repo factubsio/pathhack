@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Pathhack.Dat;
 using Pathhack.Game.Classes;
 
@@ -261,6 +262,10 @@ else
 }
 
 Draw.Init();
+if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+{
+    PosixSignalRegistration.Create(PosixSignal.SIGCONT, _ => Draw.Invalidate(true));
+}
 using var _rec = TtyRec.Start("game.rec");
 using var _plog = new StreamWriter("pline.log") { AutoFlush = true };
 
