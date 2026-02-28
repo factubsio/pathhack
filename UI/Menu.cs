@@ -115,7 +115,9 @@ public class Menu<T>
             if (key.Key == ConsoleKey.Spacebar)
             {
                 if (page < pages - 1) { page++; continue; }
-                else break;
+                if (mode == MenuMode.PickAny)
+                    return selected.Select(i => _items[i].Value!).ToList();
+                break;
             }
             if (key.Key == ConsoleKey.LeftArrow || key.KeyChar == '<' || key.KeyChar == '^'
                 || (key.Key == ConsoleKey.P && key.Modifiers == ConsoleModifiers.Control))
@@ -183,7 +185,7 @@ public class Menu<T>
                 }
             }
 
-            if (mode != MenuMode.PickAny) break;
+            if (mode == MenuMode.None) break;
         }
         return [];
     }

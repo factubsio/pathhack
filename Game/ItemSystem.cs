@@ -141,6 +141,8 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
     public ItemKnowledge Knowledge;
     public BUC BUC;
 
+    public static readonly Item None = new(new() { Price = -1, Weight = -1 });
+
     public bool IsNamedUnique = false;
 
     public bool IsCursed => BUC == BUC.Cursed;

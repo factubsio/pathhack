@@ -150,21 +150,22 @@ public static partial class Input
     }
 
 
-    static bool PickItem(string verb, Func<Item, bool> filter, [NotNullWhen(true)] out Item? item)
+    static bool PickItem(string verb, Func<Item, bool> filter, [NotNullWhen(true)] out Item? item, bool allowNone = false, string? ifNone = null)
     {
         string prompt = $"What do you want to {verb}?";
-        string ifNone = $"You don't have anything to {verb}.";
+        ifNone ??= $"You don't have anything to {verb}.";
         string ifWrong = $"That's a silly thing to {verb}";
         var valid = u.Inventory.Where(filter).ToList();
         item = null;
-        if (valid.Count == 0)
+        if (valid.Count == 0 && !allowNone)
         {
             g.pline(ifNone);
             return false;
         }
 
         var letters = CompressRuns(valid.Select(i => i.InvLet).OrderBy(c => c).ToArray());
-        var fullPrompt = $"{prompt} [{letters} or ?*]";
+        var lettersPart = allowNone ? $"-{letters}" : letters;
+        var fullPrompt = $"{prompt} [{lettersPart} or ?*]";
 
         while (true)
         {
@@ -176,8 +177,26 @@ public static partial class Input
             {
                 return false;
             }
+            if (allowNone && key.KeyChar == '-')
+            {
+                item = Item.None;
+                break;
+            }
             if (key.KeyChar == '?')
             {
+                if (valid.Count == 1)
+                {
+                    var only = valid[0];
+                    string desc = $"{only.InvLet} - {only.DisplayNameWeighted}";
+                    var equippedKv = u.Equipped.FirstOrDefault(kv => kv.Value == only);
+                    if (equippedKv is { Key: var slot } && slot != default)
+                        desc += " " + EquipDescription(only, slot);
+                    g.pline($"{desc}--More--");
+                    var k = NextKey();
+                    Draw.ClearTopLine();
+                    if (k.KeyChar == only.InvLet) { item = only; break; }
+                    continue;
+                }
                 var menu = new Menu<Item>();
                 menu.Add(prompt, LineStyle.Heading);
                 BuildItemList(menu, valid, u);
@@ -208,6 +227,8 @@ public static partial class Input
             }
         }
         Draw.ClearTopLine();
+
+        if (allowNone && item == Item.None) return true;
 
         if (item != null)
         {
@@ -522,25 +543,23 @@ public static partial class Input
 
     static void WieldWeapon()
     {
-        var weapons = u.Inventory.Where(i => i.Def is WeaponDef).ToList();
-        var menu = new Menu<Item?>();
-        menu.Add("Wield what? (- for bare hands)", LineStyle.Heading);
-        menu.AddHidden('-', null);
-        foreach (var item in weapons.OrderBy(i => ItemClasses.Order.IndexOf(i.Def.Class)).ThenBy(i => i.InvLet))
+        if (!PickItem("wield", i => i.Def is WeaponDef, out var item, allowNone: true)) return;
+        if (item != Item.None && u.Equipped.TryGetValue(ItemSlots.MainHandSlot, out var cur) && cur == item)
         {
-            string name = item.DisplayNameWeighted;
-            if (u.Equipped.ContainsValue(item))
-                name += $" (weapon in {HandStr(item)})";
-            menu.Add(item.InvLet, name, item);
+            g.pline("You are already wielding that!");
+            return;
         }
-        var picked = menu.Display(MenuMode.PickOne);
-        if (picked.Count == 0) return;
-        var result = g.DoEquip(u, picked[0]);
+        if (item == Item.None && !u.Equipped.ContainsKey(ItemSlots.MainHandSlot))
+        {
+            g.pline("You are already empty handed.");
+            return;
+        }
+        var result = g.DoEquip(u, item == Item.None ? null : item);
         if (result == EquipResult.Cursed) return;
-        if (picked[0] == null)
+        if (item == Item.None)
             g.pline("You are empty handed.");
         else
-            g.pline($"{picked[0]!.InvLet} - {picked[0]!.Def.Name} (weapon in {HandStr(picked[0]!)}).");
+            g.pline($"{item.InvLet} - {item.Def.Name} (weapon in {HandStr(item)}).");
     }
 
     internal static void DoSwapWeapon()
@@ -598,22 +617,11 @@ public static partial class Input
 
     static void WearArmor()
     {
-        var armors = u.Inventory.Where(i => i.Def is ArmorDef
-            || i.Def.DefaultEquipSlot is ItemSlots.Feet or ItemSlots.Hands).ToList();
-        if (armors.Count == 0)
-        {
-            g.pline("You have nothing to wear.");
-            return;
-        }
-        var menu = new Menu<Item>();
-        menu.Add("Wear what?", LineStyle.Heading);
-        BuildItemList(menu, armors, u);
-        var picked = menu.Display(MenuMode.PickOne);
-        if (picked.Count == 0) return;
-        var armor = picked[0];
+        if (!PickItem("wear", i => (i.Def is ArmorDef || i.Def.DefaultEquipSlot is ItemSlots.Feet or ItemSlots.Hands)
+            && !u.Equipped.ContainsValue(i), out var armor, ifNone: "You don't have anything else to wear.")) return;
         var slot = g.DoEquip(u, armor);
-        if (slot == GameState.EquipResult.Cursed) return;
-        if (slot == GameState.EquipResult.NoSlot)
+        if (slot == EquipResult.Cursed) return;
+        if (slot == EquipResult.NoSlot)
             g.pline("You can't wear that.");
         else
             g.pline($"{armor.InvLet} - {armor.DisplayNameWeighted} (being worn).");
@@ -621,18 +629,8 @@ public static partial class Input
 
     static void PutOnAccessory()
     {
-        var accessories = u.Inventory.Where(i => i.Def.Class is ItemClasses.Ring or ItemClasses.Amulet).ToList();
-        if (accessories.Count == 0)
-        {
-            g.pline("You have no accessories.");
-            return;
-        }
-        var menu = new Menu<Item>();
-        menu.Add("Put on what?", LineStyle.Heading);
-        BuildItemList(menu, accessories, u);
-        var picked = menu.Display(MenuMode.PickOne);
-        if (picked.Count == 0) return;
-        var item = picked[0];
+        if (!PickItem("put on", i => i.Def.Class is ItemClasses.Ring or ItemClasses.Amulet
+            && !u.Equipped.ContainsValue(i), out var item, ifNone: "You don't have anything else to put on.")) return;
         var slot = g.DoEquip(u, item);
         if (slot == EquipResult.Cursed) return;
         if (slot == EquipResult.NoSlot)
@@ -656,37 +654,30 @@ public static partial class Input
 
     static void TakeOff()
     {
-        var equipped = u.Equipped.Values.Where(i => i.Def is ArmorDef
-            || i.Def.DefaultEquipSlot is ItemSlots.Feet or ItemSlots.Hands).ToList();
-        if (equipped.Count == 0)
-        {
-            g.pline("You have nothing to take off.");
-            return;
-        }
-        var menu = new Menu<Item>();
-        menu.Add("Take off what?", LineStyle.Heading);
-        BuildItemList(menu, equipped, u);
-        var picked = menu.Display(MenuMode.PickOne);
-        if (picked.Count == 0) return;
-        if (g.DoUnequip(u, picked[0]))
-            g.pline($"You take off {DoName(picked[0])}.");
+        Func<Item, bool> filter = i => (i.Def is ArmorDef || i.Def.DefaultEquipSlot is ItemSlots.Feet or ItemSlots.Hands)
+            && u.Equipped.ContainsValue(i);
+        var worn = u.Inventory.Where(filter).ToList();
+        Item item;
+        if (worn.Count == 0) { g.pline("You have nothing to take off."); return; }
+        else if (worn.Count == 1) item = worn[0];
+        else if (!PickItem("take off", filter, out var picked)) return;
+        else item = picked;
+        if (g.DoUnequip(u, item))
+            g.pline($"You take off {DoName(item)}.");
     }
 
     static void RemoveAccessory()
     {
-        var equipped = u.Equipped.Values.Where(i => i.Def.Class is ItemClasses.Ring or ItemClasses.Amulet).ToList();
-        if (equipped.Count == 0)
-        {
-            g.pline("You have no accessories equipped.");
-            return;
-        }
-        var menu = new Menu<Item>();
-        menu.Add("Remove what?", LineStyle.Heading);
-        BuildItemList(menu, equipped, u);
-        var picked = menu.Display(MenuMode.PickOne);
-        if (picked.Count == 0) return;
-        if (g.DoUnequip(u, picked[0]))
-            g.pline($"You remove {DoName(picked[0])}.");
+        Func<Item, bool> filter = i => i.Def.Class is ItemClasses.Ring or ItemClasses.Amulet
+            && u.Equipped.ContainsValue(i);
+        var worn = u.Inventory.Where(filter).ToList();
+        Item item;
+        if (worn.Count == 0) { g.pline("You have no accessories equipped."); return; }
+        else if (worn.Count == 1) item = worn[0];
+        else if (!PickItem("remove", filter, out var picked)) return;
+        else item = picked;
+        if (g.DoUnequip(u, item))
+            g.pline($"You remove {DoName(item)}.");
     }
 
     // Like GetDirection but supports </>, slightly odd?
