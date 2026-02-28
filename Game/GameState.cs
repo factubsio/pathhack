@@ -1410,7 +1410,7 @@ public class GameState
             {
                 DoOpenDoor(next);
             }
-            else if (Config.AutoDig && lvl.IsDiggable(next) && u.GetWieldedItem().Has(DiggerIdentity.Q))
+            else if (Config.Data.AutoDig && lvl.IsDiggable(next) && u.GetWieldedItem().Has(DiggerIdentity.Q))
             {
                 DiggingUtil.DoDig(u.GetWieldedItem(), dir);
             }

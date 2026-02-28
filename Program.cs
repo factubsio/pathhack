@@ -264,6 +264,8 @@ Draw.Init();
 using var _rec = TtyRec.Start("game.rec");
 using var _plog = new StreamWriter("pline.log") { AutoFlush = true };
 
+Config.Load();
+
 var creation = new CharCreation();
 if (LevelGen.MonitorAttached)
 {
@@ -290,7 +292,6 @@ while (true)
     }
 
     Log.Write($"Game seed: {g.Seed}");
-    Config.Load();
     ItemDb.Reset(g.Seed);
     g.Branches = DungeonResolver.Resolve(templates, g.Seed);
     var dungeon = g.Branches["dungeon"];

@@ -453,14 +453,18 @@ public class Level(LevelId id, int width, int height)
             }
 
         }
-        if (Config.AutoPickup && room?.Type != RoomType.Shop)
+        if (Config.Data.AutoPickup && room?.Type != RoomType.Shop)
         {
             foreach (var item in items.ToList())
             {
-                if (!Config.AutoPickupClasses.Contains(item.Def.Class)) continue;
-                g.DoPickup(u, item);
-                g.pline($"{(item.Def.Class == '$' ? '$' : item.InvLet)} - {item.DisplayNameWeighted}.");
-                Movement.DidAutoPickup = true;
+                bool wantClass = Config.Data.PickupAll || Config.Data.PickupTypes.Contains(item.Def.Class);
+                bool wantThrown = Config.Data.PickupThrown; //TODO: && item.ThrownByPlayer;
+                if (wantClass || wantThrown)
+                {
+                    g.DoPickup(u, item);
+                    g.pline($"{(item.Def.Class == '$' ? '$' : item.InvLet)} - {item.DisplayNameWeighted}.");
+                    Movement.DidAutoPickup = true;
+                }
             }
             items = lvl.ItemsAt(upos); // refresh after pickup
         }
