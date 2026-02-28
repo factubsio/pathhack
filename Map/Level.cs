@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text.RegularExpressions;
 
 namespace Pathhack.Map;
 
@@ -459,7 +460,16 @@ public class Level(LevelId id, int width, int height)
             {
                 bool wantClass = Config.Data.PickupAll || Config.Data.PickupTypes.Contains(item.Def.Class);
                 bool wantThrown = Config.Data.PickupThrown && item.ThrownByPlayer;
-                if (wantClass || wantThrown)
+                bool want = wantClass || wantThrown;
+
+                // Autopickup exceptions: last match wins
+                foreach (var ex in Config.Data.AutoPickupExceptions)
+                {
+                    if (ex.Regex.IsMatch(item.DisplayName))
+                        want = ex.Include;
+                }
+
+                if (want)
                 {
                     g.DoPickup(u, item);
                     g.pline($"{(item.Def.Class == '$' ? '$' : item.InvLet)} - {item.DisplayNameWeighted}.");

@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace Pathhack.Game;
 
 // --- Attributes ---
@@ -84,9 +86,9 @@ public enum MsgTypeAction { Show, Hide, Stop, NoRep }
 
 // --- Directive entries ---
 
-public record struct AutoPickupException(bool Include, string Pattern);
+public record struct AutoPickupException(bool Include, string Pattern, Regex Regex);
 public record struct MsgTypeRule(MsgTypeAction Action, string Pattern);
-public record struct MenuColorRule(string Pattern, string Color);
+public record struct MenuColorRule(string Pattern, string Color, CellStyle Style, Regex Regex);
 public record struct StatusColorRule(string Field, string Condition, string Color);
 public record struct MonsterColorRule(string Monster, string Color);
 public record struct BindRule(string Key, string Command);
@@ -120,6 +122,7 @@ public record class ConfigData
     public bool HiliteHiddenStairs { get; set; } = true;
     public bool LitCorridor { get; set; } = false;
     public bool MentionWalls { get; set; } = false;
+    public bool MenuColors { get; set; } = false;
     public bool Sparkle { get; set; } = true;
     public bool Standout { get; set; } = false;
     public bool UseDarkGray { get; set; } = false;
@@ -161,7 +164,7 @@ public record class ConfigData
     // Directives
     public List<AutoPickupException> AutoPickupExceptions { get; set; } = [];
     public List<MsgTypeRule> MsgTypes { get; set; } = [];
-    public List<MenuColorRule> MenuColors { get; set; } = [];
+    public List<MenuColorRule> MenuColorRules { get; set; } = [];
     public List<StatusColorRule> StatusColors { get; set; } = [];
     public List<MonsterColorRule> MonsterColors { get; set; } = [];
     public List<BindRule> Binds { get; set; } = [];
@@ -184,6 +187,18 @@ public static partial class Config
         {
             var line = raw.Trim();
             if (line.Length == 0 || line[0] == '#') continue;
+
+            if (line.StartsWith("AUTOPICKUP_EXCEPTION=", StringComparison.OrdinalIgnoreCase))
+            {
+                ParseAutoPickupException(line[21..], warnings);
+                continue;
+            }
+            if (line.StartsWith("MENUCOLOR=", StringComparison.OrdinalIgnoreCase))
+            {
+                ParseMenuColor(line[10..], warnings);
+                continue;
+            }
+
             if (!line.StartsWith("OPTIONS=", StringComparison.OrdinalIgnoreCase)) continue;
             line = line[8..];
 
@@ -263,5 +278,128 @@ public static partial class Config
                 result |= flag;
         }
         return result;
+    }
+
+    // AUTOPICKUP_EXCEPTION="<pattern" or ">pattern"
+    static void ParseAutoPickupException(string val, List<string> warnings)
+    {
+        val = val.Trim('"');
+        if (val.Length < 2 || (val[0] != '<' && val[0] != '>'))
+        {
+            warnings.Add($"bad AUTOPICKUP_EXCEPTION: {val}");
+            return;
+        }
+        bool include = val[0] == '<';
+        string pattern = val[1..];
+        try
+        {
+            Regex rx = new(GlobToRegex(pattern), RegexOptions.IgnoreCase | RegexOptions.Compiled);
+            Data.AutoPickupExceptions.Add(new(include, pattern, rx));
+        }
+        catch (RegexParseException)
+        {
+            warnings.Add($"bad pattern in AUTOPICKUP_EXCEPTION: {pattern}");
+        }
+    }
+
+    // MENUCOLOR="pattern"=color[&style[&style]]
+    static void ParseMenuColor(string val, List<string> warnings)
+    {
+        // Format: "pattern"=color or "pattern"=color&bold&inverse
+        if (val.Length < 4 || val[0] != '"')
+        {
+            warnings.Add($"bad MENUCOLOR: {val}");
+            return;
+        }
+        int closeQuote = val.IndexOf('"', 1);
+        if (closeQuote < 0 || closeQuote + 1 >= val.Length || val[closeQuote + 1] != '=')
+        {
+            warnings.Add($"bad MENUCOLOR: {val}");
+            return;
+        }
+        string pattern = val[1..closeQuote];
+        string colorSpec = val[(closeQuote + 2)..];
+
+        var parts = colorSpec.Split('&');
+        string colorName = parts[0].Trim();
+        CellStyle style = CellStyle.None;
+        for (int i = 1; i < parts.Length; i++)
+        {
+            switch (parts[i].Trim().ToLowerInvariant())
+            {
+                case "bold": style |= CellStyle.Bold; break;
+                case "inverse": style |= CellStyle.Reverse; break;
+                case "underline": style |= CellStyle.Underline; break;
+                case "hilite": style |= CellStyle.Reverse; break;
+                // blink — we don't support it, ignore
+            }
+        }
+
+        try
+        {
+            Regex rx = new(pattern, RegexOptions.IgnoreCase | RegexOptions.Compiled);
+            Data.MenuColorRules.Add(new(pattern, colorName, style, rx));
+        }
+        catch (RegexParseException)
+        {
+            warnings.Add($"bad regex in MENUCOLOR: {pattern}");
+        }
+    }
+
+    /// <summary>Last matching MENUCOLOR rule wins. Returns null if no match or menucolors disabled.</summary>
+    public static (ConsoleColor Color, CellStyle Style)? ResolveMenuColor(string text)
+    {
+        if (!Data.MenuColors || Data.MenuColorRules.Count == 0) return null;
+
+        (ConsoleColor Color, CellStyle Style)? result = null;
+        foreach (var rule in Data.MenuColorRules)
+        {
+            if (rule.Regex.IsMatch(text) && TryParseColor(rule.Color, out var color))
+                result = (color, rule.Style);
+        }
+        return result;
+    }
+
+    static bool TryParseColor(string name, out ConsoleColor color)
+    {
+        var n = name.ToLowerInvariant().Replace(" ", "");
+        (color, bool ok) = n switch
+        {
+            "black" => (ConsoleColor.Black, true),
+            "red" => (ConsoleColor.DarkRed, true),
+            "green" => (ConsoleColor.DarkGreen, true),
+            "brown" or "orange" => (ConsoleColor.DarkYellow, true),
+            "blue" => (ConsoleColor.DarkBlue, true),
+            "magenta" => (ConsoleColor.DarkMagenta, true),
+            "cyan" => (ConsoleColor.DarkCyan, true),
+            "gray" or "grey" => (ConsoleColor.Gray, true),
+            "darkgray" or "darkgrey" => (ConsoleColor.DarkGray, true),
+            "darkgreen" => (ConsoleColor.DarkGreen, true),
+            "lightred" or "brightred" => (ConsoleColor.Red, true),
+            "lightgreen" or "brightgreen" => (ConsoleColor.Green, true),
+            "yellow" => (ConsoleColor.Yellow, true),
+            "lightblue" or "brightblue" => (ConsoleColor.Blue, true),
+            "lightmagenta" or "brightmagenta" => (ConsoleColor.Magenta, true),
+            "lightcyan" or "brightcyan" => (ConsoleColor.Cyan, true),
+            "white" => (ConsoleColor.White, true),
+            _ => (default, false),
+        };
+        return ok;
+    }
+
+    static string GlobToRegex(string glob)
+    {
+        var sb = new System.Text.StringBuilder("^");
+        foreach (char c in glob)
+        {
+            sb.Append(c switch
+            {
+                '*' => ".*",
+                '?' => ".",
+                _ when ".+^${}()|[]\\".Contains(c) => $"\\{c}",
+                _ => c.ToString(),
+            });
+        }
+        return sb.Append('$').ToString();
     }
 }

@@ -58,18 +58,28 @@ public class Menu<T>
             var pageItems = _items.Skip(skip).Take(take).ToList();
             int pageOffset = skip;
 
-            var lines = new List<(string Text, LineStyle Style, ConsoleColor? Color)>();
+            var lines = new List<(string Text, LineStyle Style, ConsoleColor? Color, CellStyle? CStyle)>();
             for (int i = 0; i < pageItems.Count; i++)
             {
                 var (letter, _, text, _, style, _, color) = pageItems[i];
+                CellStyle? menuColorStyle = null;
+                if (style == LineStyle.Item && color == null)
+                {
+                    var mc = Config.ResolveMenuColor(text);
+                    if (mc is var (mcColor, mcStyle))
+                    {
+                        color = mcColor;
+                        menuColorStyle = mcStyle;
+                    }
+                }
                 if (style == LineStyle.Item && letter.HasValue)
                 {
                     char sel = mode == MenuMode.PickAny && selected.Contains(pageOffset + i) ? '+' : '-';
-                    lines.Add(($"{letter} {sel} {text}", style, color));
+                    lines.Add(($"{letter} {sel} {text}", style, color, menuColorStyle));
                 }
                 else
                 {
-                    lines.Add((text, style, color));
+                    lines.Add((text, style, color, menuColorStyle));
                 }
             }
 
@@ -78,7 +88,7 @@ public class Menu<T>
                 MenuMode.PickAny => pages > 1 ? $"({page + 1}/{pages}) < > page, letter toggle, enter confirm" : "letter toggle, enter confirm",
                 _ => pages > 1 ? $"({page + 1}/{pages}) < > page" : "(press any key)"
             };
-            lines.Add((prompt, LineStyle.Text, null));
+            lines.Add((prompt, LineStyle.Text, null, null));
 
             int menuHeight = lines.Count + 1;
             if (InitialPage < 0 && page == 0)
@@ -87,9 +97,9 @@ public class Menu<T>
             win.At(menuX, 0).Fill(menuWidth, menuHeight, Cell.Empty);
 
             int y = 0;
-            foreach (var (text, style, color) in lines)
+            foreach (var (text, style, color, cstyle) in lines)
             {
-                CellStyle cs = style == LineStyle.SubHeading ? CellStyle.Reverse : CellStyle.None;
+                CellStyle cs = style == LineStyle.SubHeading ? CellStyle.Reverse : (cstyle ?? CellStyle.None);
                 win.At(menuX + 1, y++).Write(text, fg: color ?? ConsoleColor.Gray, style: cs);
             }
 
