@@ -60,6 +60,7 @@ public enum CellStyle : byte
     Bold = 1,
     Underline = 2,
     Reverse = 4,
+    Dim = 8,
 }
 
 public record struct Cell(char Ch, ConsoleColor Fg = ConsoleColor.Gray, ConsoleColor Bg = ConsoleColor.Black, CellStyle Style = CellStyle.None, bool Dec = false)
@@ -545,6 +546,30 @@ public static class Draw
         TopLineState = TopLineState.PresentMustShow;
     }
 
+    static int _dimRange = -1;
+    static bool _dimCompass;
+
+    public static RangeIndicatorHandle ShowRangeIndicator(int range, TargetingType type)
+    {
+        var setting = Config.Data.RangeIndicator;
+        if (setting == RangeIndicator.None) return new();
+        if (setting == RangeIndicator.PosOnly && type != TargetingType.Pos) return new();
+        _dimRange = range;
+        _dimCompass = type == TargetingType.Direction;
+        return new();
+    }
+
+    public static void HideRangeIndicator()
+    {
+        _dimRange = -1;
+        _dimCompass = false;
+    }
+
+    public struct RangeIndicatorHandle : IDisposable
+    {
+        public void Dispose() => HideRangeIndicator();
+    }
+
     public static void DrawCurrent(Pos? cursor = null)
     {
         if (g.CurrentLevel is { } level)
@@ -552,6 +577,26 @@ public static class Draw
             Perf.Start();
             DrawLevel(level);
             Perf.Stop("DrawLevel");
+
+            if (_dimRange >= 0)
+            {
+                for (int y = 0; y < level.Height; y++)
+                    for (int x = 0; x < level.Width; x++)
+                    {
+                        if (!MapWin[x, y].HasValue) continue;
+                        int dx = x - upos.X, dy = y - upos.Y;
+                        bool inRange;
+                        if (dx == 0 && dy == 0)
+                            inRange = true;
+                        else if (_dimCompass)
+                            inRange = (dx == 0 || dy == 0 || Math.Abs(dx) == Math.Abs(dy))
+                                   && new Pos(x, y).InRange(upos, _dimRange);
+                        else
+                            inRange = new Pos(x, y).InRange(upos, _dimRange);
+                        if (!inRange)
+                            MapWin[x, y] = MapWin[x, y]!.Value with { Style = MapWin[x, y]!.Value.Style | CellStyle.Dim };
+                    }
+            }
 
             if (cursor is { } c && level.InBounds(c))
             {
@@ -648,6 +693,9 @@ public static class Draw
 
         // Buffs from player and inventory
         foreach (var fact in u.LiveFacts.Where(f => f.Brick.IsBuff && f.Brick.StatusDisplayPriority != StatusDisplay.None))
+            entries.Add(BuffEntry(fact));
+
+        foreach (var fact in u.Equipped.Values.SelectMany(x => x.LiveFacts).Where(f => f.Brick.IsBuff && f.Brick.StatusDisplayPriority != StatusDisplay.None))
             entries.Add(BuffEntry(fact));
 
         // Sort: priority asc, then remaining duration asc (expiring soon first)

@@ -240,6 +240,7 @@ public class Level(LevelId id, int width, int height)
     public string? FirstIntro;
     public string? ReturnIntro;
     public string? Described;
+    public string? Annotation;
     public List<Pos> FeaturePositions = [];
     public int GeometryVersion;
 
@@ -438,7 +439,7 @@ public class Level(LevelId id, int width, int height)
         unit.TryReloadQuiver(false);
     }
 
-    static void LookHere()
+    public static void LookHere()
     {
         var room = lvl.RoomAt(upos);
         u.CurrentRoom = room;

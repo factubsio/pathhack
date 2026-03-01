@@ -302,7 +302,7 @@ while (true)
     var dungeon = g.Branches["dungeon"];
 
     u = Create(creation.Class!, creation.Deity!, creation.Ancestry!);
-    if (u.Class.id == "developer")
+    if (u.Class.id == "developer" || Environment.GetEnvironmentVariable("PH_DBG") == "1")
     {
         g.DebugMode = true;
         Input.InitDebugCommands();

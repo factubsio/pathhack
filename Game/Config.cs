@@ -84,6 +84,8 @@ public enum ParanoidConfirm
 
 public enum MsgTypeAction { Show, Hide, Stop, NoRep }
 
+public enum RangeIndicator { None, PosOnly, All }
+
 // --- Directive entries ---
 
 public record struct AutoPickupException(bool Include, string Pattern, Regex Regex);
@@ -118,6 +120,7 @@ public record class ConfigData
     public bool Color { get; set; } = true;
     public bool DarkRoom { get; set; } = false;
     public bool EightBitTty { get; set; } = false;
+    public RangeIndicator RangeIndicator { get; set; } = RangeIndicator.All;
     public bool HilitePet { get; set; } = false;
     public bool HilitePile { get; set; } = false;
     public bool HiliteHiddenStairs { get; set; } = true;

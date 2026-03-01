@@ -181,6 +181,9 @@ static class DungeonOverview
             else if (resolved.BranchUp is { } upId && g.Branches.TryGetValue(upId, out var up) && up.Discovered && up.Name != parentName)
                 rightAnnot = $"→ {up.Name}";
 
+            if (visited && g.Levels.TryGetValue(lid, out var lvlForAnnot) && lvlForAnnot.Annotation is { } annot)
+                rightAnnot = rightAnnot != null ? $"{rightAnnot}  {annot}" : annot;
+
             rows.Add(new(label, !visited, isHere,
                 isEntry && parentName != null ? $"{parentName} ←" : null,
                 visited ? rightAnnot : null,
@@ -247,7 +250,12 @@ static class DungeonOverview
             if (row.LeftAnnot is { } la)
                 win.At(SliceLeft - la.Length, y).Write(la, ConsoleColor.DarkYellow);
             if (row.RightAnnot is { } ra)
-                win.At(SliceLeft + SliceWidth + 2, y).Write(ra, ConsoleColor.DarkCyan);
+            {
+                int annotX = SliceLeft + SliceWidth + 2;
+                int maxWidth = Draw.ScreenWidth - annotX;
+                if (maxWidth > 0)
+                    win.At(annotX, y).Write(ra.Length > maxWidth ? ra[..maxWidth] : ra, ConsoleColor.DarkCyan);
+            }
             y++;
 
             win.At(SliceLeft, y).Write("╱", fg);

@@ -240,5 +240,38 @@ public static class GeneralMechanics
             """,
     };
 
-    public static readonly MechanicsPage[] All = [TurnOrder, Energy, Checks, ModifierStacking, Damage, Encumbrance, BUC, Awareness, Spells, Consumables, Runes, Progression, FavouredWeapon];
+    public static readonly MechanicsPage Swarms = new()
+    {
+        Name = "Swarms",
+        Description = """
+            Swarms are large groups of very small creatures.
+
+            They can occupy the same tile as a unit, but cannot share the same tile with another swarm.
+
+            A unit with a swarm sharing its tile will be drawn with an underlined glyph.
+
+            Most area spells or abilities will destroy swarms, though higher level swarms may require more than one hit.
+
+            Swarms are "below" the unit, you try to attack them using `>`. This costs 6 energy and does not always succeed.
+
+            Note: swarms block going down stairs!
+            """,
+    };
+
+    public static readonly MechanicsPage[] All = [
+        TurnOrder,
+        Energy,
+        Checks,
+        ModifierStacking,
+        Damage,
+        Encumbrance,
+        BUC,
+        Awareness,
+        Spells,
+        Consumables,
+        Runes,
+        Progression,
+        FavouredWeapon,
+        Swarms,
+    ];
 }

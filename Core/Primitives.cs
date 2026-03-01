@@ -76,6 +76,9 @@ public readonly record struct Pos(int X, int Y) : IFormattable
     public int ManhattanDist(Pos other) => Math.Abs(X - other.X) + Math.Abs(Y - other.Y);
     public int ChebyshevDist(Pos other) => Math.Max(Math.Abs(X - other.X), Math.Abs(Y - other.Y));
     public int EuclideanDistSq(Pos other) => (X - other.X) * (X - other.X) + (Y - other.Y) * (Y - other.Y);
+    public bool InRange(Pos other, int range) => range <= 1
+        ? ChebyshevDist(other) <= range
+        : FovCalculator.InCircle(X - other.X, Y - other.Y, range);
     public Pos Signed => new(Math.Sign(X), Math.Sign(Y));
     public bool IsCompassFrom(Pos other)
     {

@@ -231,7 +231,7 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
     {
         // Corpses use monster name
         if (CorpseOf != null)
-            return $"{CorpseOf.Name} corpse";
+            return Eaten > 0 ? $"partially cooked {CorpseOf.Name} corpse" : $"{CorpseOf.Name} corpse";
 
         var seen = Knowledge.HasFlag(ItemKnowledge.Seen);
         var runesKnown = Knowledge.HasFlag(ItemKnowledge.PropRunes);

@@ -27,6 +27,7 @@ public record SpecialCommand(ConsoleKey Key, ConsoleModifiers Mods, string Desc,
 public static partial class Input
 {
     public static Queue<ConsoleKey>? InjectedKeys;
+    public static bool AbilityCancelled;
 
     public static ConsoleKeyInfo NextKey()
     {
@@ -48,6 +49,7 @@ public static partial class Input
         ["forge"] = new("forge", "Open rune forge", ArgType.None, _ => DoForge()),
         ["dip"] = new("dip", "Open rune forge", ArgType.None, _ => DoForge()),
         ["adjust"] = new("adjust", "Adjust inventory letters", ArgType.None, _ => DoAdjust()),
+        ["annotate"] = new("annotate", "Annotate current level", ArgType.None, _ => DoAnnotate()),
         ["redraw"] = new("redraw", "Redraw screen", ArgType.None, _ => Draw.Invalidate(true)),
     };
 
@@ -78,6 +80,8 @@ public static partial class Input
         ['a'] = new("apply", "Apply item", ArgType.None, _ => Apply()),
         ['x'] = new("swap", "Swap to alternate weapon", ArgType.None, _ => DoSwapWeapon()),
         ['\\'] = new("discoveries", "Show discoveries", ArgType.None, _ => ShowDiscoveries()),
+        ['@'] = new("autopickup", "Toggle autopickup", ArgType.None, _ => ToggleAutopickup()),
+        [':'] = new("look", "Look at current square", ArgType.None, _ => Level.LookHere()),
         ['C'] = new("call", "Name an item type", ArgType.None, _ => CallItem()),
         ['?'] = new("help", "Show help", ArgType.None, _ => ShowHelp()),
         ['p'] = new("pay", "Pay shopkeeper", ArgType.None, _ => PayShopkeeper()),
@@ -88,6 +92,7 @@ public static partial class Input
         new(ConsoleKey.O, ConsoleModifiers.Control, "Branch overview", DungeonOverview.Show),
         new(ConsoleKey.X, ConsoleModifiers.Control, "Character info", ShowCharacterInfo),
         new(ConsoleKey.P, ConsoleModifiers.Control, "Message history", ShowMessageHistory),
+        new(ConsoleKey.L, ConsoleModifiers.Alt, "Loot container", LootContainer),
     ];
 
     static void DebugExp()
@@ -243,12 +248,14 @@ public static partial class Input
         Target target = Target.None;
         if (ability.Targeting == TargetingType.Direction)
         {
+            using var _ = Draw.ShowRangeIndicator(ability.EffectiveMaxRange, TargetingType.Direction);
             Draw.DrawCurrent();
             if (!PromptDirection(out var dir)) return;
             target = new Target(null, dir);
         }
         else if (ability.Targeting == TargetingType.Unit)
         {
+            using var _ = Draw.ShowRangeIndicator(ability.EffectiveMaxRange, TargetingType.Unit);
             var tgt = PickTargetInRange(ability.EffectiveMaxRange, filter: m => m.Perception >= PlayerPerception.Detected);
             if (tgt == null) return;
 
@@ -265,10 +272,11 @@ public static partial class Input
         else if (ability.Targeting == TargetingType.Pos)
         {
             g.pline("Target where?");
+            using var _ = Draw.ShowRangeIndicator(ability.EffectiveMaxRange, TargetingType.Pos);
             Draw.DrawCurrent();
             var pos = PickPosition();
             if (pos == null) return;
-            if (pos.Value.ChebyshevDist(upos) > ability.EffectiveMaxRange)
+            if (!pos.Value.InRange(upos, ability.EffectiveMaxRange))
             {
                 g.pline("Too far.");
                 return;
@@ -276,8 +284,10 @@ public static partial class Input
             target = new Target(null, pos.Value);
         }
 
+        AbilityCancelled = false;
         ability.Execute(u, data, target, plan.Plan);
-        u.Energy -= ability.GetCost(u, data, target).Value;
+        if (!AbilityCancelled)
+            u.Energy -= ability.GetCost(u, data, target).Value;
     }
 
 
@@ -419,7 +429,7 @@ public static partial class Input
         Draw.DrawCurrent();
         List<IUnit> candidates = [..lvl.LiveUnits
             .OfType<Monster>()
-            .Where(m => m.Pos.ChebyshevDist(from) <= range && (filter == null || filter(m)))
+            .Where(m => m.Pos.InRange(from, range) && (filter == null || filter(m)))
             .OrderBy(m => m.Pos.ChebyshevDist(from))
         ];
         Menu<IUnit> menu = new();
@@ -437,7 +447,7 @@ public static partial class Input
             g.pline("Pick a target.");
             var pos = PickPosition();
             if (pos == null) return null;
-            if (pos.Value.ChebyshevDist(from) > range)
+            if (!pos.Value.InRange(from, range))
             {
                 g.pline("Too far.");
                 return null;

@@ -175,9 +175,7 @@ public class ContainerBrick() : VerbResponder(ItemVerb.Apply)
         // Item select
         Menu<Item> itemMenu = new();
         itemMenu.Add("Take out what?", LineStyle.Heading);
-        char let = 'a';
-        foreach (var item in items.OrderBy(i => ItemClasses.Order.IndexOf(i.Def.Class)))
-            itemMenu.Add(let++, item.DisplayNameWeighted, item, item.Def.Class);
+        Input.BuildItemList(itemMenu, items, useInvLet: false);
 
         List<Item> toTake = itemMenu.Display(MenuMode.PickAny);
         if (toTake.Count == 0) return false;
@@ -199,12 +197,7 @@ public class ContainerBrick() : VerbResponder(ItemVerb.Apply)
         // Item select
         Menu<Item> itemMenu = new();
         itemMenu.Add("Put in what?", LineStyle.Heading);
-        foreach (var item in items.OrderBy(i => ItemClasses.Order.IndexOf(i.Def.Class)).ThenBy(i => i.InvLet))
-        {
-            if (item == container)
-                continue;
-            itemMenu.Add(item.InvLet, item.DisplayNameWeighted, item, item.Def.Class);
-        }
+        Input.BuildItemList(itemMenu, items.Where(i => i != container), u);
 
         List<Item> toPut = itemMenu.Display(MenuMode.PickAny);
         if (toPut.Count == 0) return false;

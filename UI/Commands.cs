@@ -239,7 +239,7 @@ public static partial class Input
         return false;
     }
 
-    static void BuildItemList(Menu<Item> menu, IEnumerable<Item> items, IUnit? unit = null, bool useInvLet = true)
+    public static void BuildItemList(Menu<Item> menu, IEnumerable<Item> items, IUnit? unit = null, bool useInvLet = true)
     {
         var sorted = items
             .OrderBy(i => ItemClasses.Order.IndexOf(i.Def.Class))
@@ -367,6 +367,20 @@ public static partial class Input
 
     static void WaitTurn() => u.Energy -= ActionCosts.OneAction.Value;
 
+    static void ToggleAutopickup()
+    {
+        Config.Data.AutoPickup = !Config.Data.AutoPickup;
+        g.pline($"Autopickup {(Config.Data.AutoPickup ? "on" : "off")}.");
+    }
+
+    static void DoAnnotate()
+    {
+        string? text = PromptLine("What do you want to call this dungeon level?");
+        if (text == null) return;
+        lvl.Annotation = string.IsNullOrWhiteSpace(text) ? null : text.Trim();
+        g.pline(lvl.Annotation != null ? "Noted." : "Annotation removed.");
+    }
+
     static void Fire()
     {
         if (u.Quiver == null)
@@ -469,7 +483,7 @@ public static partial class Input
             g.pline($"Throw where? (range {range})");
             var pos = PickPosition();
             if (pos == null) return;
-            if (upos.ChebyshevDist(pos.Value) > range)
+            if (!upos.InRange(pos.Value, range))
             {
                 g.pline("Too far!");
                 return;
@@ -522,7 +536,16 @@ public static partial class Input
 
     static void SetQuiver()
     {
-        if (!PickItem("ready", _ => true, out var item)) return;
+        if (!PickItem("ready", _ => true, out var item, allowNone: true)) return;
+
+        if (item == Item.None)
+        {
+            if (u.Quiver == null) { g.pline("You already have no ammunition readied!"); return; }
+            u.Quiver = null;
+            g.pline("You now have no ammunition readied.");
+            return;
+        }
+
         if (IsWorn(item)) { g.pline("You cannot ready that!"); return; }
 
         if (u.Quiver == item)
@@ -763,8 +786,8 @@ public static partial class Input
                     g.pline($"You continue cooking {DoNameOne(corpse)}.");
                 else
                 {
-                    corpse.Eaten = 1;
                     g.pline($"You start carefully cooking {DoNameOne(corpse)}.");
+                    corpse.Eaten = 1;
                     u.HippoCounter++;
                 }
                 u.CurrentActivity = new CookCarefulActivity(corpse);

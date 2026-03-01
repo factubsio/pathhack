@@ -35,7 +35,7 @@ public class DazeAction(int range, int dc, string pool) : ActionBrick("Daze", ta
         using var ctx = PHContext.Create(unit, Target.From(u));
         if (CheckWill(ctx, dc, "daze"))
         {
-            g.pline($"{msg}, but {tgt:the} resists.");
+            g.pline($"{msg}, but {tgt:the} {VTense(tgt, "resist")}.");
             return;
         }
         else

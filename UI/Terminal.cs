@@ -86,6 +86,7 @@ public class CellEncoder
     bool _inBold;
     bool _inReverse;
     bool _inUnderline;
+    bool _inDim;
 
     public int Length => _buf.Length;
     public int CellCount { get; private set; }
@@ -106,6 +107,7 @@ public class CellEncoder
         _inBold = false;
         _inReverse = false;
         _inUnderline = false;
+        _inDim = false;
     }
 
     public void Emit(int x, int y, Cell cell)
@@ -128,7 +130,12 @@ public class CellEncoder
         // Bold
         bool wantBold = cell.Style.HasFlag(CellStyle.Bold);
         if (wantBold && !_inBold) { _buf.Append("\x1b[1m"); _inBold = true; }
-        else if (!wantBold && _inBold) { _buf.Append("\x1b[22m"); _inBold = false; }
+        else if (!wantBold && _inBold) { _buf.Append("\x1b[22m"); _inBold = false; _inDim = false; }
+
+        // Dim
+        bool wantDim = cell.Style.HasFlag(CellStyle.Dim);
+        if (wantDim && !_inDim) { _buf.Append("\x1b[2m"); _inDim = true; }
+        else if (!wantDim && _inDim) { _buf.Append("\x1b[22m"); _inDim = false; _inBold = false; }
 
         // Reverse
         bool wantReverse = cell.Style.HasFlag(CellStyle.Reverse);
@@ -156,7 +163,7 @@ public class CellEncoder
         _buf.Append("\x1b[0m");
         _lastX = _lastY = -1;
         _lastFg = _lastBg = -1;
-        _inDec = _inBold = _inReverse = false;
+        _inDec = _inBold = _inReverse = _inDim = false;
     }
 
     static int AnsiColor(ConsoleColor c) => c switch

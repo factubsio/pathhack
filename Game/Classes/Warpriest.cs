@@ -13,8 +13,6 @@ public static class Fervor
 
         public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
         {
-            if (!unit.TryUseCharge(Resource)) return;
-
             Menu<string> menu = new();
             menu.Add("Enhance weapon:", LineStyle.Heading);
 
@@ -28,7 +26,9 @@ public static class Fervor
                 menu.Add('d', "Holy", "Holy");
 
             var picks = menu.Display(MenuMode.PickOne);
-            if (picks.Count == 0) return;
+            if (picks.Count == 0) { Input.AbilityCancelled = true; return; }
+
+            if (!unit.TryUseCharge(Resource)) return;
 
             var weapon = unit.GetWieldedItem();
 

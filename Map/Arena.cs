@@ -28,7 +28,16 @@ public static class Arena
         foreach (var p in interior) level.GetOrCreateState(p).Room = room;
 
         level.StairsUp = new(ox + size / 2, oy + size / 2);
+
         level.PlaceFeature(new(ox + size - 2, oy + 1), new TileFeature("rune_forge", new('∆', ConsoleColor.Red), "a rune forge"));
+        var chest = Item.Create(Containers.Chest);
+        level.PlaceItem(chest, new(ox + size - 2, oy + size - 2));
+        var inv = chest.FindFactOfType<ContainerBrick>();
+        ContainerBrick.AddItemTo(inv, ItemGen.GenerateRandomItem(4));
+        ContainerBrick.AddItemTo(inv, ItemGen.GenerateRandomItem(4));
+        ContainerBrick.AddItemTo(inv, ItemGen.GenerateRandomItem(4));
+        ContainerBrick.AddItemTo(inv, ItemGen.GenerateRandomItem(4));
+
         level.SpawnFlags = SpawnFlags.None;
     }
 }

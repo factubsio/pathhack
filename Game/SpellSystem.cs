@@ -27,7 +27,7 @@ public abstract class SpellBrickBase(string name, int level, string description,
         Type = FeatType.Class,
         Components = [new GrantSpell(this)],
         CheckWhyNot = () => !u.HasPool($"spell_l{level}") ? $"Must be able to cast level {level} spells" : null,
-        TagArray = [$"target: {TargetString(Targeting)}"],
+        TagArray = [$"Level {Level}", $"target: {TargetString(Targeting)}"],
     };
 }
 

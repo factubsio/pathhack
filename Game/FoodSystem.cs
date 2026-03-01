@@ -216,7 +216,7 @@ public class CookCarefulActivity : Activity
 
         if (Done)
         {
-            g.pline($"You finish cooking {DoNameOne(_corpse)}.");
+            g.pline($"You finish cooking {_corpse.RealName.The()}.");
             if (_corpse.CorpseOf?.OnCookSlow is { } msg) g.pline(msg);
 
             if (Foods.IsTainted(_corpse))
