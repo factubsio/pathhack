@@ -53,7 +53,7 @@ public static partial class Bottles
             int progression = c.Query<int>("bomb_progression", null, MergeStrategy.Min, 3);
             int dice = Math.Max(1, c.CasterLevel / progression);
             using var area = lvl.CollectCircle(center, 1, andCenter: true);
-            Draw.AnimateFlash(area, new Glyph('*', color));
+            Draw.AnimateFlash(area, new Glyph('φ', color));
             int dc = c.GetSpellDC();
             foreach (var pos in area)
             {

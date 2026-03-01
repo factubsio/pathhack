@@ -5,6 +5,9 @@ public static class RichText
     record struct State(ConsoleColor Fg, ConsoleColor Bg, CellStyle Style);
 
     public static int Write(Window buf, int x, int y, int maxWidth, string text, ConsoleColor defaultFg = ConsoleColor.Gray, ConsoleColor defaultBg = ConsoleColor.Black)
+        => Write(buf, x, y, maxWidth, text, -1, defaultFg, defaultBg);
+
+    public static int Write(Window buf, int x, int y, int maxWidth, string text, int selectedLink, ConsoleColor defaultFg = ConsoleColor.Gray, ConsoleColor defaultBg = ConsoleColor.Black)
     {
         Stack<State> stack = [];
         var fg = defaultFg;
@@ -13,13 +16,35 @@ public static class RichText
         int cx = x;
         int cy = y;
         int lineEnd = x + maxWidth;
+        int linkIdx = -1;
+        int linkStackDepth = -1;
 
         var tokens = Tokenize(text);
         foreach (var token in tokens)
         {
             if (token.IsTag)
             {
-                TryApplyTag(token.Text, stack, ref fg, ref bg, ref style);
+                if (token.Text.StartsWith("link="))
+                {
+                    linkIdx++;
+                    linkStackDepth = stack.Count;
+                    stack.Push(new(fg, bg, style));
+                    fg = ConsoleColor.Cyan;
+                    if (linkIdx == selectedLink)
+                        style |= CellStyle.Reverse;
+                }
+                else if (token.Text.StartsWith('/') && linkStackDepth >= 0 && stack.Count == linkStackDepth + 1)
+                {
+                    linkStackDepth = -1;
+                    var prev = stack.Pop();
+                    fg = prev.Fg;
+                    bg = prev.Bg;
+                    style = prev.Style;
+                }
+                else
+                {
+                    TryApplyTag(token.Text, stack, ref fg, ref bg, ref style);
+                }
                 continue;
             }
 
@@ -56,6 +81,23 @@ public static class RichText
             }
         }
         return cy;
+    }
+
+    public static List<string> ExtractLinks(string text)
+    {
+        List<string> links = [];
+        int i = 0;
+        while (i < text.Length)
+        {
+            int start = text.IndexOf("[link=", i, StringComparison.Ordinal);
+            if (start < 0) break;
+            int valStart = start + 6;
+            int close = text.IndexOf(']', valStart);
+            if (close < 0) break;
+            links.Add(text[valStart..close]);
+            i = close + 1;
+        }
+        return links;
     }
 
     record struct Token(string Text, bool IsTag);

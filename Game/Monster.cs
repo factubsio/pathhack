@@ -116,6 +116,7 @@ public class MonsterDef : BaseDef
     public string? RevealSound;
     public string? OnCookSlow;
     public string? OnCookQuick;
+    public string? PokedexDescription;
     public int MaxDepth = 99;
     public required MonsterFamily Family;
     public Action<Monster>? OnChat;
