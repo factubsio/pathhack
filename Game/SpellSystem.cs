@@ -1,8 +1,10 @@
 namespace Pathhack.Game;
 
-public abstract class SpellBrickBase(string name, int level, string description, TargetingType targeting, bool maintained = false, int maxRange = -1, AbilityTags tags = AbilityTags.None) : ActionBrick(name, targeting, maxRange, tags)
+public abstract class SpellBrickBase(string name, int level, string description, string briefDescription, TargetingType targeting, bool maintained = false, int maxRange = -1, AbilityTags tags = AbilityTags.None) : ActionBrick(name, targeting, maxRange, tags)
 {
     public string Description => description;
+
+    public string BriefDescription => briefDescription;
 
     public int Level => level;
 
@@ -31,7 +33,7 @@ public abstract class SpellBrickBase(string name, int level, string description,
     };
 }
 
-public class SpellBrick(string name, int level, string description, Action<IUnit, Target> act, TargetingType targeting = TargetingType.None, bool maintained = false, int maxRange = -1, AbilityTags tags = AbilityTags.None) : SpellBrickBase(name, level, description, targeting, maintained, maxRange, tags)
+public class SpellBrick(string name, int level, string description, string briefDescription, Action<IUnit, Target> act, TargetingType targeting = TargetingType.None, bool maintained = false, int maxRange = -1, AbilityTags tags = AbilityTags.None) : SpellBrickBase(name, level, description, briefDescription, targeting, maintained, maxRange, tags)
 {
     public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
     {
@@ -39,7 +41,7 @@ public class SpellBrick(string name, int level, string description, Action<IUnit
     }
 }
 
-public class ActivateMaintainedSpell(string name, int level, string description, Action<IUnit> act, MaintainedBuff buff) : SpellBrickBase(name, level, description, TargetingType.None, true, tags: AbilityTags.Beneficial)
+public class ActivateMaintainedSpell(string name, int level, string description, string briefDescription, Action<IUnit> act, MaintainedBuff buff) : SpellBrickBase(name, level, description, briefDescription, TargetingType.None, true, tags: AbilityTags.Beneficial)
 {
     public override ActionPlan CanExecute(IUnit unit, object? data, Target target)
     {
@@ -58,7 +60,7 @@ public class ActivateMaintainedSpell(string name, int level, string description,
     }
 }
 
-public class SpellBrick<T>(string name, int level, string description, Action<IUnit, Target, T> act, TargetingType targeting = TargetingType.None, bool maintained = false) : SpellBrickBase(name, level, description, targeting, maintained) where T : new()
+public class SpellBrick<T>(string name, int level, string description, string briefDescription, Action<IUnit, Target, T> act, TargetingType targeting = TargetingType.None, bool maintained = false) : SpellBrickBase(name, level, description, briefDescription, targeting, maintained) where T : new()
 {
     public override object? CreateData() => new T();
     public override void Execute(IUnit unit, object? data, Target target, object? plan = null)

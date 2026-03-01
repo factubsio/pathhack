@@ -452,17 +452,24 @@ public static class Draw
 
     private static string TopLine = "";
     private static TopLineState TopLineState = TopLineState.Empty;
+    private static bool MoreSuppressed;
+
+    public static void ResetMoreSuppressed() => MoreSuppressed = false;
 
     public static bool More(bool save, int col, int row)
     {
         if (save) SaveTopLine();
-        if (!PHMonitor.Active)
+        if (!PHMonitor.Active && !MoreSuppressed)
         {
             MessageWin.At(col, row).Write("--more--",
                 style: Config.Data.Standout ? CellStyle.Reverse : CellStyle.None);
             Blit();
-            while (Input.NextKey().Key != ConsoleKey.Spacebar)
-                ;
+            while (true)
+            {
+                var key = Input.NextKey();
+                if (key.Key == ConsoleKey.Spacebar) break;
+                if (key.Key == ConsoleKey.Escape) { MoreSuppressed = true; break; }
+            }
         }
         TopLine = "";
         TopLineState = TopLineState.Empty;

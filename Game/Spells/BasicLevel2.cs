@@ -4,6 +4,7 @@ public static class BasicLevel2Spells
 {
     public static readonly SpellBrick ScorchingRay = new("Scorching ray", 2,
         """Make a spell attack roll, on hit deal 4d6+Caster Level fire damage.""",
+        "4d6+CL fire beam, atk roll",
         (c, t) =>
         {
             if (t.Pos == null) return;
@@ -30,6 +31,7 @@ public static class BasicLevel2Spells
 
     public static readonly SpellBrick SoundBurst = new("Sound burst", 2,
         """2d8 sonic damage in a burst, fort save or stunned for 1 round.""",
+        "2d8 sonic burst, stun",
         (c, t) =>
         {
             if (t.Pos == null) return;
@@ -63,6 +65,7 @@ public static class BasicLevel2Spells
 
     public static readonly SpellBrickBase DelayPoison = new ActivateMaintainedSpell("Delay poison", 2,
         """You suppress the effects of poison, poison afflictions do not tick.""",
+        "maintained, suppress poison",
         c =>
         {
             g.YouObserveSelf(c, "You feel the poison slow in your veins.", $"{c:The} looks steadier.", "a calming hum");
@@ -70,6 +73,7 @@ public static class BasicLevel2Spells
 
     public static readonly SpellBrick HoldPerson = new("Hold person", 2,
         """You freeze a humanoid in place. Will save negates.""",
+        "paralyze humanoid, will neg.",
         (c, t) =>
         {
             if (t.Unit is not IUnit target) return;
@@ -94,6 +98,7 @@ public static class BasicLevel2Spells
 
     public static readonly SpellBrick DimensionDoor = new("Dimension door", 2,
         """You teleport to a nearby location. Without teleport control, you land on a random adjacent tile.""",
+        "short teleport",
         (c, t) =>
         {
             if (t.Pos == null) return;
@@ -132,6 +137,7 @@ public static class BasicLevel2Spells
 
     public static readonly SpellBrick AcidArrow = new("Acid Arrow", 2,
         """Make a spell attack against the target. On a hit, you deal 3d8 acid damage. Fort save against 1d6 persistent acid damage.""",
+        "3d8 acid beam, persistent",
         (c, t) =>
         {
             if (t.Pos == null) return;
@@ -201,6 +207,7 @@ public class ResistEnergyBuff(string name, DamageType element) : MaintainedBuff(
         var buff = type == DamageTypes.Fire ? Fire : type == DamageTypes.Cold ? Cold : type == DamageTypes.Shock ? Shock : Acid;
         return new(label, 2,
             $"You gain resistance to {type.SubCat}, reducing incoming damage.",
+            $"maintained {type.SubCat} resist",
             c => g.YouObserveSelf(c, $"You feel resistant to {type.SubCat}.", $"{c:The} shimmers briefly.", "a faint hum"),
             buff);
     }

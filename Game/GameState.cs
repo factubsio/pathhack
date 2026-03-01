@@ -1065,6 +1065,7 @@ public class GameState
         if (target.IsPlayer)
         {
             Movement.Stop();
+            Input.StopMulti();
             if (u.CurrentActivity is { Interruptible: true } act)
             {
                 act.OnInterrupt();

@@ -4,6 +4,7 @@ public static class BasicLevel3Spells
 {
     public static readonly SpellBrick Fireball = new("Fireball", 3,
         """A ball of fire explodes at the target location, dealing 6d6 fire damage in a burst. Reflex save for half.""",
+        "6d6 fire burst",
         (c, t) =>
         {
             if (t.Pos == null) return;
@@ -32,6 +33,7 @@ public static class BasicLevel3Spells
 
     public static readonly SpellBrick VampiricTouch = new("Vampiric touch", 3,
         """Your touch drains life. Make a spell attack for 4d6 necrotic damage and heal for the damage dealt.""",
+        "4d6 drain, heal self",
         (c, t) =>
         {
             if (t.Pos == null) return;
@@ -63,6 +65,7 @@ public static class BasicLevel3Spells
 
     public static readonly SpellBrickBase FlyLesser = new ActivateMaintainedSpell("Fly, lesser", 3,
         """You gain the ability to fly, but your movement is slowed.""",
+        "maintained flight",
         c =>
         {
             g.YouObserveSelf(c, "You rise into the air!", $"{c:The} rises into the air!", "a rush of wind");
@@ -70,6 +73,7 @@ public static class BasicLevel3Spells
 
     public static readonly SpellBrickBase Heroism = new ActivateMaintainedSpell("Heroism", 3,
         """You are filled with heroic resolve, gaining +2 to attacks and saves.""",
+        "maintained +2 atk/saves",
         c =>
         {
             g.YouObserveSelf(c, "You feel heroic!", $"{c:The} looks emboldened!", "a surge of confidence");
@@ -77,6 +81,7 @@ public static class BasicLevel3Spells
 
     public static readonly SpellBrick FalseLife = new("False life", 3,
         """You gain a moderate amount of temporary hit points.""",
+        "2d6+CL temp HP",
         (c, _) =>
         {
             int amount = d(2, 6).Roll() + c.CasterLevel;
@@ -84,13 +89,14 @@ public static class BasicLevel3Spells
             g.YouObserveSelf(c, $"You feel a surge of vitality! (+{amount} temp HP)", $"{c:The} looks more resilient.", "a surge of energy");
         }, tags: AbilityTags.Beneficial);
 
-    public static readonly SpellBrick ProtectFire = MakeProtect("Protection from fire", DamageTypes.Fire, ProtectionBrick.Fire);
-    public static readonly SpellBrick ProtectCold = MakeProtect("Protection from cold", DamageTypes.Cold, ProtectionBrick.Cold);
-    public static readonly SpellBrick ProtectShock = MakeProtect("Protection from shock", DamageTypes.Shock, ProtectionBrick.Shock);
-    public static readonly SpellBrick ProtectAcid = MakeProtect("Protection from acid", DamageTypes.Acid, ProtectionBrick.Acid);
+    public static readonly SpellBrick ProtectFire = MakeProtect("Protection from fire", "absorb 10+5*CL fire", DamageTypes.Fire, ProtectionBrick.Fire);
+    public static readonly SpellBrick ProtectCold = MakeProtect("Protection from cold", "absorb 10+5*CL cold", DamageTypes.Cold, ProtectionBrick.Cold);
+    public static readonly SpellBrick ProtectShock = MakeProtect("Protection from shock", "absorb 10+5*CL shock", DamageTypes.Shock, ProtectionBrick.Shock);
+    public static readonly SpellBrick ProtectAcid = MakeProtect("Protection from acid", "absorb 10+5*CL acid", DamageTypes.Acid, ProtectionBrick.Acid);
 
-    static SpellBrick MakeProtect(string name, DamageType type, ProtectionBrick brick) => new(name, 3,
+    static SpellBrick MakeProtect(string name, string brief, DamageType type, ProtectionBrick brick) => new(name, 3,
         $"You gain a pool of absorption against {type.SubCat}. Absorbs damage until depleted.",
+        brief,
         (c, _) =>
         {
             int pool = 10 + c.CasterLevel * 5;

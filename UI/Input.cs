@@ -28,6 +28,8 @@ public static partial class Input
 {
     public static Queue<ConsoleKey>? InjectedKeys;
     public static bool AbilityCancelled;
+    static int _multiCount;
+    static Action? _multiAction;
 
     public static ConsoleKeyInfo NextKey()
     {
@@ -51,6 +53,11 @@ public static partial class Input
         ["adjust"] = new("adjust", "Adjust inventory letters", ArgType.None, _ => DoAdjust()),
         ["annotate"] = new("annotate", "Annotate current level", ArgType.None, _ => DoAnnotate()),
         ["redraw"] = new("redraw", "Redraw screen", ArgType.None, _ => Draw.Invalidate(true)),
+        ["power"] = new("power", "Use ability", ArgType.None, _ => ShowAbilities()),
+        ["cast"] = new("cast", "Cast spell", ArgType.None, _ => ZapSpell()),
+        ["overview"] = new("overview", "Branch overview", ArgType.None, _ => DungeonOverview.Show()),
+        ["charinfo"] = new("charinfo", "Character info", ArgType.None, _ => ShowCharacterInfo()),
+        ["history"] = new("history", "Message history", ArgType.None, _ => ShowMessageHistory()),
     };
 
     static readonly Dictionary<char, Command> _commands = new()
@@ -735,20 +742,23 @@ public static partial class Input
         }
     }
 
-    public static void HandleKey(ConsoleKeyInfo key)
+    public static void StopMulti()
     {
-        Log.Verbose("movement", $"HandleKey: Key={key.Key} Char={(int)key.KeyChar} Mods={key.Modifiers}");
+        _multiCount = 0;
+        _multiAction = null;
+    }
 
-        // Ctrl+P is special - doesn't reset message history
-        if (key.Key == ConsoleKey.P && key.Modifiers.HasFlag(ConsoleModifiers.Control))
-        {
-            ShowMessageHistory();
-            return;
-        }
+    static Action? ResolveAction(ConsoleKeyInfo key)
+    {
+        if (_commands.TryGetValue(key.KeyChar, out Command? cmd))
+            return () => cmd.Action(GetArg(cmd.Arg));
+        if (GetDirection(key.Key, key.Modifiers.HasFlag(ConsoleModifiers.Control)) is { } dir)
+            return () => DoMoveU(dir);
+        return null;
+    }
 
-        ResetMessageHistory();
-        Movement.Stop(); // any manual input stops running
-
+    static void DispatchKey(ConsoleKeyInfo key)
+    {
         // Check special commands (ctrl+key)
         foreach (var special in _specialCommands)
         {
@@ -818,9 +828,57 @@ public static partial class Input
                 g.Portal(u);
             else if (lvl[upos].IsStairs)
                 g.pline("These stairs don't go up.");
-
-
         }
+    }
+
+    public static void HandleKey(ConsoleKeyInfo key)
+    {
+        Log.Verbose("movement", $"HandleKey: Key={key.Key} Char={(int)key.KeyChar} Mods={key.Modifiers}");
+
+        // Ctrl+P is special - doesn't reset message history
+        if (key.Key == ConsoleKey.P && key.Modifiers.HasFlag(ConsoleModifiers.Control))
+        {
+            ShowMessageHistory();
+            return;
+        }
+
+        ResetMessageHistory();
+        Movement.Stop(); // any manual input stops running
+        StopMulti();
+
+        // Digit prefix for counted commands
+        if (key.KeyChar is >= '0' and <= '9' && key.Modifiers == 0)
+        {
+            int count = key.KeyChar - '0';
+            while (true)
+            {
+                if (count > 9) Draw.RenderTopLine($"Count: {count}");
+                var next = NextKey();
+                if (next.KeyChar is >= '0' and <= '9' && next.Modifiers == 0)
+                {
+                    count = Math.Min(200, count * 10 + (next.KeyChar - '0'));
+                }
+                else if (next.Key == ConsoleKey.Escape)
+                {
+                    Draw.ClearTopLine();
+                    return;
+                }
+                else
+                {
+                    Draw.ClearTopLine();
+                    if (count > 1)
+                    {
+                        _multiCount = count - 1;
+                        _multiAction = ResolveAction(next);
+                    }
+                    if (_multiAction == null) _multiCount = 0;
+                    DispatchKey(next);
+                    return;
+                }
+            }
+        }
+
+        DispatchKey(key);
     }
 
     public static void PlayerTurn()
@@ -841,9 +899,19 @@ public static partial class Input
             return;
         }
 
+        // Continue counted command
+        if (_multiCount > 0 && _multiAction is { } action)
+        {
+            _multiCount--;
+            action();
+            if (_multiCount == 0) _multiAction = null;
+            return;
+        }
+
         Perf.Pause();
         var key = NextKey();
         Perf.Resume();
+        Draw.ResetMoreSuppressed();
         Draw.ClearTopLine();
         HandleKey(key);
     }

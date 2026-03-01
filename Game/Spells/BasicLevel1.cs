@@ -4,6 +4,7 @@ public static class BasicLevel1Spells
 {
     public static readonly SpellBrick CureLightWounds = new("Cure light wounds", 1,
         """Heals a living creature for 1d6 per 2 caster levels, or damages undead.""",
+        "Nd6 heal or Nd8 vs undead",
         (c, t) =>
         {
             if (t.Pos == null) return;
@@ -32,6 +33,7 @@ public static class BasicLevel1Spells
 
     public static readonly SpellBrick MagicMissile = new("Magic missile", 1,
         """Unerring darts of force strike your target. 1d4+1 damage per missile, one missile plus one per 3 caster levels (max 4). Bounces off walls.""",
+        "1-4x d6+2 force beam, bounces",
         (c, t) =>
         {
             if (t.Pos == null) return;
@@ -59,6 +61,7 @@ public static class BasicLevel1Spells
 
     public static readonly SpellBrick Grease = new("Grease", 1,
         """You conjure a patch of grease, it's very slippy.""",
+        "slippery area",
         (c, t) =>
         {
             g.YouObserve(c, "Greasy, yum!", "something squelches");
@@ -72,6 +75,7 @@ public static class BasicLevel1Spells
     const int BurningHandsRad = 3;
     public static readonly SpellBrick BurningHands = new("Burning hands", 1,
         """A cone of flame erupts from the caster's hands, dealing 2d6 fire damage. Reflex save for half.""",
+        "2d6 fire cone (reflex half)",
         (c, t) =>
         {
             if (t.Pos == null) return;
@@ -104,19 +108,23 @@ public static class BasicLevel1Spells
 
     public static readonly SpellBrickBase Light = new ActivateMaintainedSpell("Light", 1,
         """You create an orb of light that circles the edge of your natural light radius, shedding bright light for a further 20-foot distance.""",
+        "maintained light",
         (c) =>
         {
             g.YouObserve(c, $"{c:The} {VTense(c, "create")} a brightly glowing orb.");
         }, CastedLightBuff.Instance);
 
     public static readonly SpellBrickBase Shield = new ActivateMaintainedSpell("Shield", 1,
-        """You raise a magical shield of force, giving you a +1 circumstance bonus to AC per 7 levels, but it doesn't require a hand to use.""", (c) =>
+        """You raise a magical shield of force, giving you a +1 circumstance bonus to AC per 7 levels, but it doesn't require a hand to use.""",
+        "maintained AC bonus, +1 for every 7 CL",
+        (c) =>
         {
             g.YouObserve(c, $"A glimmering shield materialises in front of {c:the}.", "a new hum");
         }, CastedShieldBuff.Instance);
 
     public static readonly SpellBrick Command = new("Command", 1,
         """You shout a command at a creature, forcing it to flee. Will save negates.""",
+        "force flee (will negates)",
         (c, t) =>
         {
             if (t.Unit is not IUnit target) return;
@@ -140,6 +148,7 @@ public static class BasicLevel1Spells
 
     public static readonly SpellBrick FalseLifeLesser = new("False life, lesser", 1,
         """You gain a small amount of temporary hit points.""",
+        "d4+CL temp HP",
         (c, _) =>
         {
             int amount = d(4).Roll() + c.CasterLevel;
@@ -256,13 +265,14 @@ public class ProtectionFromAlignmentBuff(string name, MoralAxis? moral, EthicalA
     public static readonly ProtectionFromAlignmentBuff Law = new("Prot. from Law", null, EthicalAxis.Lawful);
     public static readonly ProtectionFromAlignmentBuff Chaos = new("Prot. from Chaos", null, EthicalAxis.Chaotic);
 
-    static ActivateMaintainedSpell MakeSpell(string label, ProtectionFromAlignmentBuff buff) => new(label, 1,
+    static ActivateMaintainedSpell MakeSpell(string label, string brief, ProtectionFromAlignmentBuff buff) => new(label, 1,
         $"You are protected from {label.Split(' ').Last().ToLower()} creatures, gaining +1 AC against their attacks.",
+        brief,
         c => g.YouObserveSelf(c, $"A ward shimmers around you.", $"A ward shimmers around {c:the}.", "a faint hum"),
         buff);
 
-    public static readonly ActivateMaintainedSpell SpellEvil = MakeSpell("Protection from Evil", Evil);
-    public static readonly ActivateMaintainedSpell SpellGood = MakeSpell("Protection from Good", Good);
-    public static readonly ActivateMaintainedSpell SpellLaw = MakeSpell("Protection from Law", Law);
-    public static readonly ActivateMaintainedSpell SpellChaos = MakeSpell("Protection from Chaos", Chaos);
+    public static readonly ActivateMaintainedSpell SpellEvil = MakeSpell("Protection from Evil", "maintained, +1 AC vs evil", Evil);
+    public static readonly ActivateMaintainedSpell SpellGood = MakeSpell("Protection from Good", "maintained, +1 AC vs good", Good);
+    public static readonly ActivateMaintainedSpell SpellLaw = MakeSpell("Protection from Law", "maintained, +1 AC vs law", Law);
+    public static readonly ActivateMaintainedSpell SpellChaos = MakeSpell("Protection from Chaos", "maintained, +1 AC vs chaos", Chaos);
 }

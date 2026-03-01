@@ -47,6 +47,7 @@ public static partial class Bottles
 
     private static SpellBrick Bomb(string name, DamageType type, ConsoleColor color) => new(name, 1,
         $"(1 + CL/3)d6 burst (3x3) of {type.SubCat}. Reflex save for half.",
+        $"Nd6 {type.SubCat} burst",
         (c, t) =>
         {
             if (t.Pos is not { } center) return;

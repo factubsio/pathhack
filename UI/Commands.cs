@@ -977,7 +977,6 @@ public static partial class Input
         }
         var menu = new Menu<ActionBrick>();
         menu.Add("Choose which spell to cast", LineStyle.Heading);
-        char let = 'a';
         foreach (var level in u.Spells.GroupBy(s => s.Level))
         {
             menu.Add($"Level {level.Key}:", LineStyle.SubHeading);
@@ -986,7 +985,7 @@ public static partial class Input
                 var data = u.ActionData.GetValueOrDefault(spell);
                 var spellPlan = spell.CanExecute(u, data, Target.None);
                 string status = spellPlan ? "" : $" ({spellPlan.WhyNot})";
-                menu.Add(let++, spell.Name + status, spell);
+                menu.Add($"{spell.Name}{status} - {spell.BriefDescription}", spell);
             }
         }
         var picked = menu.Display(MenuMode.PickOne);
@@ -1004,7 +1003,6 @@ public static partial class Input
         }
         var menu = new Menu<ActionBrick>();
         menu.Add("Use which ability?", LineStyle.Heading);
-        char let = 'a';
         foreach (var action in u.Actions.Distinct())
         {
             var data = u.ActionData.GetValueOrDefault(action);
@@ -1020,7 +1018,7 @@ public static partial class Input
                 _ => "???",
             };
             status += ready ? "" : $" ({whyNot})";
-            menu.Add(let++, action.Name + status, action);
+            menu.Add(action.Name + status, action);
         }
         var picked = menu.Display(MenuMode.PickOne);
         if (picked.Count == 0) return;
