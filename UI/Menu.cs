@@ -11,6 +11,7 @@ public class Menu<T>
 
     public void Add(string line, LineStyle style = LineStyle.Text, ConsoleColor? color = null) => _items.Add((null, null, line, default, style, null, color));
     public void Add(char letter, string text, T value, char? category = null) => _items.Add((letter, null, text, value, LineStyle.Item, category, null));
+    public void Add(string text, T value, char? category = null) => _items.Add(('\0', null, text, value, LineStyle.Item, category, null));
     public void Add(char letter, char altKey, string text, T value, char? category = null) => _items.Add((letter, altKey, text, value, LineStyle.Item, category, null));
     public void AddHidden(char letter, T? value) => _hidden[letter] = value;
 
@@ -59,9 +60,14 @@ public class Menu<T>
             int pageOffset = skip;
 
             var lines = new List<(string Text, LineStyle Style, ConsoleColor? Color, CellStyle? CStyle)>();
+            Dictionary<char, int> pageLetterMap = [];
+            char autoLet = 'a';
             for (int i = 0; i < pageItems.Count; i++)
             {
                 var (letter, _, text, _, style, _, color) = pageItems[i];
+                if (style == LineStyle.Item && letter == '\0') letter = autoLet;
+                if (style == LineStyle.Item && letter.HasValue)
+                    autoLet = autoLet == 'z' ? 'A' : (char)(autoLet + 1);
                 CellStyle? menuColorStyle = null;
                 if (style == LineStyle.Item && color == null)
                 {
@@ -74,6 +80,7 @@ public class Menu<T>
                 }
                 if (style == LineStyle.Item && letter.HasValue)
                 {
+                    pageLetterMap[letter.Value] = pageOffset + i;
                     char sel = mode == MenuMode.PickAny && selected.Contains(pageOffset + i) ? '+' : '-';
                     lines.Add(($"{letter} {sel} {text}", style, color, menuColorStyle));
                 }
@@ -154,7 +161,8 @@ public class Menu<T>
                 return [hiddenValue!];
             }
 
-            int idx = _items.FindIndex(x => x.Letter == ch || x.AltKey == ch);
+            int idx = pageLetterMap.TryGetValue(ch, out var mapped) ? mapped
+                : _items.FindIndex(x => x.Letter != '\0' && (x.Letter == ch || x.AltKey == ch));
             if (idx >= 0 && _items[idx].Value != null)
             {
                 if (mode == MenuMode.PickOne)

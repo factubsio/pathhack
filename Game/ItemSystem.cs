@@ -244,14 +244,16 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
 
     public Appearance? Appearance => ItemDb.Instance.GetAppearance(Def);
 
-    public Glyph Glyph => this switch
+    public Glyph Glyph => Hallucination.ScrambleItemGlyph(this switch
     {
         { CorpseOf: { } c } => new(ItemClasses.Food, c.Glyph.Color),
         { Appearance: { } app } => Def.Glyph with { Color = app.Color },
         _ => Def.Glyph
-    };
+    });
 
-    public string DisplayName => CostOf(IsUnique ? GetDisplayName(Count).The() : Count == 1 ? GetDisplayName(Count).An() : GetDisplayName(Count));
+    public string DisplayName => Hallucination.Active
+        ? Hallucination.ScrambleItemName().An()
+        : CostOf(IsUnique ? GetDisplayName(Count).The() : Count == 1 ? GetDisplayName(Count).An() : GetDisplayName(Count));
     public string DisplayNameWeighted => DisplayName + $" {{{EffectiveWeight}}}";
     public string SingleName => CostOf(GetDisplayName(1).An());
     public string RealName => GetRealName(Count);
@@ -520,6 +522,29 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
         }
 
         return DegradeResult.None;
+    }
+
+    internal static void PrintDegrade(IUnit unit, Item item, DegradeResult result)
+    {
+        string name = $"{item:bare}";
+        switch (result)
+        {
+            case DegradeResult.Degraded:
+                g.YouObserveSelf(unit, $"Your {name} looks worse for wear!", $"{unit:possessive} {name} corrodes!");
+                break;
+            case DegradeResult.DegradedFurther:
+                g.YouObserveSelf(unit, $"Your {name} looks even worse for wear!", $"{unit:possessive} {name} corrodes further!");
+                break;
+            case DegradeResult.Tarnished:
+                g.YouObserveSelf(unit, $"The runes on your {name} flicker and fade!", $"The runes on {unit:possessive} {name} flicker and fade!");
+                break;
+            case DegradeResult.TarnishedFurther:
+                g.YouObserveSelf(unit, $"The runes on your {name} fade further!", $"The runes on {unit:possessive} {name} fade further!");
+                break;
+            default:
+                g.YouObserveSelf(unit, $"Your {name} couldn't get any worse.", $"{unit:possessive} {name} couldn't get any worse.");
+                break;
+        }
     }
 }
 

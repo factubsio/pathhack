@@ -101,6 +101,7 @@ public static partial class Input
 
     static void ShowInventory()
     {
+        using var _ = Hallucination.Suppress();
         var menu = new Menu<Item>();
         if (!u.Inventory.Any())
         {
@@ -152,6 +153,7 @@ public static partial class Input
 
     static bool PickItem(string verb, Func<Item, bool> filter, [NotNullWhen(true)] out Item? item, bool allowNone = false, string? ifNone = null)
     {
+        using var _hallu = Hallucination.Suppress();
         string prompt = $"What do you want to {verb}?";
         ifNone ??= $"You don't have anything to {verb}.";
         string ifWrong = $"That's a silly thing to {verb}";
@@ -247,7 +249,6 @@ public static partial class Input
 
 
         char? lastClass = null;
-        char autoLet = 'a';
         var canSee = unit?.IsPlayer == true && unit.CanSee;
         foreach (var item in sorted)
         {
@@ -261,14 +262,16 @@ public static partial class Input
                 lastClass = item.Def.Class;
                 menu.Add(ClassDisplayName(lastClass.Value), LineStyle.SubHeading);
             }
-            char let = useInvLet ? item.InvLet : autoLet++;
             string name = item.DisplayNameWeighted;
             var equippedKv = unit?.Equipped.FirstOrDefault(kv => kv.Value == item);
             if (equippedKv is { Key: var slot } && slot != default)
                 name += " " + EquipDescription(item, slot);
             if (item == u.Quiver)
                 name += " (quivered)";
-            menu.Add(let, name, item, item.Def.Class);
+            if (useInvLet)
+                menu.Add(item.InvLet, name, item, item.Def.Class);
+            else
+                menu.Add(name, item, item.Def.Class);
         }
     }
 

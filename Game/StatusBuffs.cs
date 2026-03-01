@@ -1,5 +1,3 @@
-using System.Security;
-
 namespace Pathhack.Game;
 
 public class BlindBuff : LogicBrick
@@ -181,6 +179,7 @@ public static class CommonQueries
     public const string DifficultTerrainImmune = "difficult_terrain_immunity";
     public const string PetrificationImmune = "petrification_immunity";
     public const string See = "can_see";
+    public const string Hallucinating = "hallucinating";
 
     public const string SpeedPenaltyMul = "speed_pen";
     public const string SpeedBonusMul = "speed_bon";
@@ -491,4 +490,72 @@ public class TrueSeeingBuff : LogicBrick
     public override string Id => "true_seeing";
 
     protected override object? OnQuery(Fact fact, string key, string? arg) => key.TrueWhen("see_invisible");
+}
+
+public class HallucinatingBuff : LogicBrick
+{
+    public static readonly HallucinatingBuff Instance = new();
+    public override string Id => "hallucinating";
+    public override bool IsBuff => true;
+    public override string? BuffName => "Hallucinating";
+    public override StatusDisplay StatusDisplayPriority => StatusDisplay.Severe;
+    public override StackMode StackMode => StackMode.ExtendDuration;
+
+    protected override object? OnQuery(Fact fact, string key, string? arg) => key.TrueWhen(CommonQueries.Hallucinating);
+
+    protected override void OnFactAdded(Fact fact)
+    {
+        g.plineu((IUnit)fact.Entity, "Oh wow! Everything looks so cosmic!");
+    }
+
+    protected override void OnFactRemoved(Fact fact)
+    {
+        g.plineu((IUnit)fact.Entity, "Everything looks SO boring now.");
+    }
+}
+
+public static class Hallucination
+{
+    static int _suppressed;
+
+    public static bool Active => _suppressed == 0 && u?.Has(CommonQueries.Hallucinating) == true;
+
+    public static Suppressor Suppress() => new();
+
+    public readonly struct Suppressor : IDisposable
+    {
+        public Suppressor() => _suppressed++;
+        public void Dispose() => _suppressed--;
+    }
+
+    public static Glyph ScrambleMonsterGlyph(Glyph real)
+    {
+        if (!Active) return real;
+        var defs = AllMonsters.All;
+        var pick = defs[g.Rn2(defs.Length)];
+        return pick.Glyph with { Color = (ConsoleColor)g.Rn2(16) };
+    }
+
+    public static Glyph ScrambleItemGlyph(Glyph real)
+    {
+        if (!Active) return real;
+        char cls = ItemClasses.Order[g.Rn2(ItemClasses.Order.Length)];
+        return new(cls, (ConsoleColor)g.Rn2(16));
+    }
+
+    public static string ScrambleMonsterName()
+    {
+        int pick = g.Rn2(AllMonsters.All.Length + Dat.Hallucinations.BogusMonsters.Length);
+        return pick < AllMonsters.All.Length
+            ? AllMonsters.All[pick].Name
+            : Dat.Hallucinations.BogusMonsters[pick - AllMonsters.All.Length];
+    }
+
+    public static string ScrambleItemName()
+    {
+        var bogus = Dat.Hallucinations.BogusItems;
+        var real = AllItems.All;
+        int pick = g.Rn2(real.Length + bogus.Length);
+        return pick < real.Length ? real[pick].Name : bogus[pick - real.Length];
+    }
 }

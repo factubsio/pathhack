@@ -345,26 +345,32 @@ public class Monster : Unit<MonsterDef>, IFormattable
         {
             var g = OwnGlyph ?? Def.Glyph;
             if (Peaceful) g = g with { Background = ConsoleColor.DarkYellow };
-            return g;
+            return Hallucination.ScrambleMonsterGlyph(g);
         }
     }
 
     public string RealName => ProperName ?? TemplatedName ?? Def.Name;
 
-    public override string ToString() => RealName;
+    public override string ToString() => Hallucination.Active ? Hallucination.ScrambleMonsterName() : RealName;
 
-    public override string ToString(string? format, IFormatProvider? provider) => format switch
+    public override string ToString(string? format, IFormatProvider? provider)
     {
-        "the" => ProperName ?? (Def.IsUnique ? RealName : RealName.The()),
-        "The" => ProperName ?? (Def.IsUnique ? RealName : RealName.The().Capitalize()),
-        "an" => ProperName ?? (Def.IsUnique ? RealName : RealName.An()),
-        "An" => ProperName ?? (Def.IsUnique ? RealName : RealName.An().Capitalize()),
-        "own" => Self switch { Game.Pronoun.Male => "his", Game.Pronoun.Female => "her", _ => "their" },
-        "Own" => Self switch { Game.Pronoun.Male => "His", Game.Pronoun.Female => "Her", _ => "Their" },
-        "possessive" => ToString("the", null).Possessive(),
-        "Possessive" => ToString("The", null).Possessive(),
-        _ => RealName,
-    };
+        string name = Hallucination.Active ? Hallucination.ScrambleMonsterName() : RealName;
+        bool isProper = ProperName != null && !Hallucination.Active;
+        bool isUnique = Def.IsUnique && !Hallucination.Active;
+        return format switch
+        {
+            "the" => isProper ? name : (isUnique ? name : name.The()),
+            "The" => isProper ? name : (isUnique ? name : name.The().Capitalize()),
+            "an" => isProper ? name : (isUnique ? name : name.An()),
+            "An" => isProper ? name : (isUnique ? name : name.An().Capitalize()),
+            "own" => Self switch { Game.Pronoun.Male => "his", Game.Pronoun.Female => "her", _ => "their" },
+            "Own" => Self switch { Game.Pronoun.Male => "His", Game.Pronoun.Female => "Her", _ => "Their" },
+            "possessive" => ToString("the", null).Possessive(),
+            "Possessive" => ToString("The", null).Possessive(),
+            _ => name,
+        };
+    }
 
     public string? TemplatedName;
     const double HpMultiplier = 1.5;

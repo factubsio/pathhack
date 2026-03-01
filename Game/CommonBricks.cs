@@ -108,7 +108,12 @@ public class EnergyResist(DamageType type, int amount) : LogicBrick
     static readonly int[] RampValues = [5, 10, 15, 20];
 
     public override string Id => amount == 0 ? $"energy_res+{type.SubCat}" : $"energy_res+{type.SubCat}/{amount}";
-    public override string? PokedexDescription => amount == 0 ? $"Resist {type.SubCat} (scaling)" : $"Resist {type.SubCat} {amount}";
+    public override string? PokedexDescription => amount switch
+    {
+        0 => $"Resist {type.SubCat} (scaling)",
+        999 => $"Immune to {type.SubCat}",
+        _ => $"Resist {type.SubCat} {amount}",
+    };
 
     int Resolve(Fact fact) => amount > 0 ? amount : (fact.Entity as IUnit)?.EffectiveLevel.Ramp(RampValues) ?? 5;
 

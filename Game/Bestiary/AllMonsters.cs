@@ -21,6 +21,7 @@ public static class AllMonsters
         .. Mephits.All,
         .. Golems.All,
         .. Ants.All,
+        .. Oozes.All,
     ];
 
     public static readonly MonsterDef[] ActuallyAll = [

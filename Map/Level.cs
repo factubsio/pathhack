@@ -466,11 +466,13 @@ public class Level(LevelId id, int width, int height)
                 // Autopickup exceptions (dNH semantics): grab can promote, leave always wins
                 if (!want)
                 {
+                    using var _hallu = Hallucination.Suppress();
                     foreach (var ex in Config.Data.ApGrabs)
                         if (ex.Regex.IsMatch(item.DisplayName)) { want = true; break; }
                 }
                 if (want)
                 {
+                    using var _hallu = Hallucination.Suppress();
                     foreach (var ex in Config.Data.ApLeaves)
                         if (ex.Regex.IsMatch(item.DisplayName)) { want = false; break; }
                 }

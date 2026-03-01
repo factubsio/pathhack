@@ -81,14 +81,20 @@ public class GrabOnHit : LogicBrick
     }
 }
 
-public class Constrict(Dice damage) : LogicBrick
+public class Constrict(Dice damage, DamageType type) : LogicBrick
 {
-    public override string Id => $"snake:constrict+{damage.Serialize()}";
-    public static readonly Constrict Small = new(d(6));
-    public static readonly Constrict Medium = new(d(8));
-    public static readonly Constrict Large = new(d(10) + 7);
-    public static readonly Constrict Heavy = new(d(2, 8));
-    public static readonly Constrict Crushing = new(d(4, 8));
+    public override string Id => $"snake:constrict+{damage.Serialize()}/{type.SubCat}";
+    public static readonly Constrict Small = new(d(6), DamageTypes.Blunt);
+    public static readonly Constrict Medium = new(d(8), DamageTypes.Blunt);
+    public static readonly Constrict Large = new(d(10) + 7, DamageTypes.Blunt);
+    public static readonly Constrict Heavy = new(d(2, 8), DamageTypes.Blunt);
+    public static readonly Constrict Crushing = new(d(4, 8), DamageTypes.Blunt);
+
+    public static readonly Constrict SmallAcid = new(d(6), DamageTypes.Acid);
+    public static readonly Constrict MediumAcid = new(d(8), DamageTypes.Acid);
+    public static readonly Constrict LargeAcid = new(d(10) + 7, DamageTypes.Acid);
+    public static readonly Constrict HeavyAcid = new(d(2, 8), DamageTypes.Acid);
+    public static readonly Constrict CrushingAcid = new(d(4, 8), DamageTypes.Acid);
 
     public override string? PokedexDescription => $"Constrict {damage}";
     public override bool IsActive => true;
@@ -99,7 +105,7 @@ public class Constrict(Dice damage) : LogicBrick
         if (unit?.Grabbing is not { } victim) return;
 
         using var dmgCtx = PHContext.Create(unit, Target.From(victim));
-        dmgCtx.Damage.Add(new DamageRoll { Formula = damage, Type = DamageTypes.Blunt });
+        dmgCtx.Damage.Add(new DamageRoll { Formula = damage, Type = type });
         g.YouObserve(unit, $"{unit:The} {VTense(unit, "crush")} {victim:the}!");
         DoDamage(dmgCtx);
     }

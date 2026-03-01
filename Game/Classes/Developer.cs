@@ -281,6 +281,16 @@ public class ConfuseSelf() : ActionBrick("Confuse Self")
     }
 }
 
+public class HallucinateSelf() : ActionBrick("Hallucinate")
+{
+    public override ActionPlan CanExecute(IUnit unit, object? data, Target target) => true;
+
+    public override void Execute(IUnit unit, object? data, Target target, object? plan = null)
+    {
+        unit.AddFact(HallucinatingBuff.Instance, null, duration: 20);
+    }
+}
+
 public class Weaken() : ActionBrick("Weaken All")
 {
     public override ActionPlan CanExecute(IUnit unit, object? data, Target target) => true;
@@ -427,6 +437,7 @@ public static partial class ClassDefs
             p.AddAction(new TogglePhasing());
             p.AddAction(new ToggleGodlikeAB());
             p.AddAction(new ConfuseSelf());
+            p.AddAction(new HallucinateSelf());
             p.AddAction(new Weaken());
             p.AddAction(new GotoLevel());
             foreach (var blessing in Blessings.All)

@@ -236,26 +236,8 @@ public class RustTrap(int depth) : Trap(TrapType.Rust, depth, 0, 0, 0)
             return true;
         }
 
-        string name = $"{target:bare}";
         var result = target.TryDegrade();
-        switch (result)
-        {
-            case DegradeResult.Degraded:
-                g.YouObserveSelf(unit, $"Your {name} looks worse for wear!", $"{unit:Own} {name} corrodes!");
-                break;
-            case DegradeResult.DegradedFurther:
-                g.YouObserveSelf(unit, $"Your {name} looks even worse for wear!", $"{unit:Own} {name} corrodes further!");
-                break;
-            case DegradeResult.Tarnished:
-                g.YouObserveSelf(unit, $"The runes on your {name} flicker and fade!", $"The runes on {unit:own} {name} flicker and fade!");
-                break;
-            case DegradeResult.TarnishedFurther:
-                g.YouObserveSelf(unit, $"The runes on your {name} fade further!", $"The runes on {unit:own} {name} fade further!");
-                break;
-            default:
-                g.YouObserveSelf(unit, $"Your {name} couldn't get any worse.", $"{unit:Own} {name} couldn't get any worse.");
-                break;
-        }
+        Item.PrintDegrade(unit, target, result);
 
         return true;
     }

@@ -710,12 +710,16 @@ public static class Draw
             return a.remaining.Value.CompareTo(b.remaining.Value);
         });
 
+        var distinct = entries.GroupBy(a => a.text).ToList();
+
         int col = 0;
         int shown = 0;
-        int total = entries.Count;
-        foreach (var (text, color, _, _, style) in entries)
+        int total = distinct.Count;
+        foreach (var (count, (text, color, _, _, style)) in distinct.Select(a => (a.Count(), a.First())))
         {
-            int needed = (shown > 0 ? 2 : 0) + text.Length; // "  " separator
+            var label = text;
+            if (count > 1) label += $"x{count}";
+            int needed = (shown > 0 ? 2 : 0) + label.Length; // "  " separator
             // Reserve space for overflow indicator
             int overflow = total - shown - 1;
             int reserveLen = overflow > 0 ? 2 + $"…+{overflow}".Length : 0;
@@ -726,8 +730,8 @@ public static class Draw
                 break;
             }
             if (shown > 0) col += 2; // gap
-            StatusWin.At(col, row).Write(text, color, style: style);
-            col += text.Length;
+            StatusWin.At(col, row).Write(label, color, style: style);
+            col += label.Length;
             shown++;
         }
     }

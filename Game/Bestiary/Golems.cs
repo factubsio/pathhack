@@ -820,7 +820,7 @@ public class FossilSummon(int cd)
 
 public class DeathExplosion(DamageType type, Dice damage, int radius, ConsoleColor color) : LogicBrick
 {
-    public override string Id => $"golem:death_explosion+{type.SubCat}";
+    public override string Id => $"golem:death_explosion+{damage.Serialize()}/{type.SubCat}";
     public override string? PokedexDescription => $"Explodes on death ({type.SubCat})";
 
     static string ExplosionName(DamageType dt) => dt.SubCat switch
@@ -851,6 +851,7 @@ public class DeathExplosion(DamageType type, Dice damage, int radius, ConsoleCol
     public static readonly DeathExplosion Cold_3d6_R1 = new(DamageTypes.Cold, d(3, 6), 1, ConsoleColor.Cyan);
     public static readonly DeathExplosion Blunt_8d8_R1 = new(DamageTypes.Blunt, d(8, 8), 1, ConsoleColor.Gray);
     public static readonly DeathExplosion Fire_6d8_R1 = new(DamageTypes.Fire, d(6, 8), 1, ConsoleColor.Red);
+    public static readonly DeathExplosion Fire_10d8_R1 = new(DamageTypes.Fire, d(10, 8), 1, ConsoleColor.Red);
 }
 
 public class JunkSwarm(Pos where) : Swarm("Junk Swarm", new('µ', ConsoleColor.DarkYellow), 1, where)

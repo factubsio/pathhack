@@ -3,8 +3,14 @@ namespace Pathhack.Game.Bestiary;
 public class Thorns(Dice damage, DamageType type) : LogicBrick
 {
     public static readonly Thorns Piercing_1d2 = new(d(2), DamageTypes.Piercing);
+
     public static readonly Thorns Fire_1d4 = new(d(4), DamageTypes.Fire);
+    public static readonly Thorns Fire_2d8 = new(d(2, 8), DamageTypes.Fire);
+
     public static readonly Thorns Cold_1d4 = new(d(4), DamageTypes.Cold);
+
+    public static readonly Thorns Acid_1d6 = new(d(1, 6), DamageTypes.Acid);
+    public static readonly Thorns Acid_2d6 = new(d(2, 6), DamageTypes.Acid);
 
     public override string Id => $"thorns+{type.SubCat}/{damage.Serialize()}";
     public override string? PokedexDescription => $"Thorns ({damage} {type.SubCat} when hit)";

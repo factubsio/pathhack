@@ -35,7 +35,12 @@ public static class Pokedex
             {
                 var unit = lvl.UnitAt(cursor);
                 if (unit is Monster m && m.Perception >= PlayerPerception.Warned)
-                    ShowMonsterEntry(m);
+                {
+                    if (Hallucination.Active)
+                        ShowHallucinatedMonsterEntry();
+                    else
+                        ShowMonsterEntry(m);
+                }
                 break;
             }
 
@@ -150,6 +155,19 @@ public static class Pokedex
             TileType.Water => "~ water",
             _ => "unknown"
         };
+    }
+
+    static void ShowHallucinatedMonsterEntry()
+    {
+        var defs = AllMonsters.All;
+        var def = defs[g.Rn2(defs.Length)];
+        var menu = new TextMenu();
+        menu.Add();
+        menu.AddHeading($"{def.Name,-24} Creature CR {def.BaseLevel} {def.CreatureType}");
+        menu.Add($"{def.Size}");
+        menu.Add();
+        menu.Add($"HP {def.HpPerLevel}");
+        menu.Display();
     }
 
     static void ShowMonsterEntry(Monster m)
