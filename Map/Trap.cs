@@ -14,6 +14,7 @@ public enum TrapType
     Hole = 1 << 7,
     Release = 1 << 8,
     Ambush = 1 << 9,
+    Rust = 1 << 10,
 }
 
 [Flags]
@@ -195,5 +196,76 @@ public class HoleTrap(TrapType type, int depth) : Trap(type, depth, 2, 0, 0)
     public static LevelId? LevelBelow(LevelId id)
     {
         return id.Depth < id.Branch.MaxDepth ? id + 1 : null;
+    }
+}
+
+public class RustTrap(int depth) : Trap(TrapType.Rust, depth, 0, 0, 0)
+{
+    public override MoveMode TriggeredBy => MoveMode.Walk;
+    public override Glyph Glyph => new('^', ConsoleColor.DarkYellow);
+
+    public override bool Trigger(IUnit? unit, Item? item)
+    {
+        if (unit == null) return false;
+
+        if (unit.IsAwareOf(this) && g.Rn2(3) == 0)
+        {
+            if (g.YouObserve(unit, $"{unit:The} {VTense(unit, "avoid")} a rust trap."))
+                u.ObserveTrap(this);
+            return false;
+        }
+
+        g.YouObserve(unit, $"A cloud of corrosive mist engulfs {unit:the}!");
+
+        // equal chance: main hand, off hand, body armor
+        int roll = g.Rn2(3);
+        Item? target = roll switch
+        {
+            0 => GetEquipped(unit, ItemSlots.MainHandSlot),
+            1 => GetEquipped(unit, ItemSlots.OffHandSlot),
+            _ => GetEquipped(unit, ItemSlots.BodySlot),
+        };
+
+        // if preferred slot empty, 10% chance to hit random eligible inventory item
+        if (target == null && g.Rn2(10) == 0)
+            target = PickRandomEligible(unit);
+
+        if (target == null)
+        {
+            g.YouObserveSelf(unit, "The mist dissipates harmlessly.", $"The mist around {unit:the} dissipates.");
+            return true;
+        }
+
+        string name = $"{target:bare}";
+        var result = target.TryDegrade();
+        switch (result)
+        {
+            case DegradeResult.Degraded:
+                g.YouObserveSelf(unit, $"Your {name} looks worse for wear!", $"{unit:Own} {name} corrodes!");
+                break;
+            case DegradeResult.DegradedFurther:
+                g.YouObserveSelf(unit, $"Your {name} looks even worse for wear!", $"{unit:Own} {name} corrodes further!");
+                break;
+            case DegradeResult.Tarnished:
+                g.YouObserveSelf(unit, $"The runes on your {name} flicker and fade!", $"The runes on {unit:own} {name} flicker and fade!");
+                break;
+            case DegradeResult.TarnishedFurther:
+                g.YouObserveSelf(unit, $"The runes on your {name} fade further!", $"The runes on {unit:own} {name} fade further!");
+                break;
+            default:
+                g.YouObserveSelf(unit, $"Your {name} couldn't get any worse.", $"{unit:Own} {name} couldn't get any worse.");
+                break;
+        }
+
+        return true;
+    }
+
+    static Item? GetEquipped(IUnit unit, EquipSlot slot) =>
+        unit.Equipped.TryGetValue(slot, out var item) && item.Def is WeaponDef or ArmorDef ? item : null;
+
+    static Item? PickRandomEligible(IUnit unit)
+    {
+        var eligible = unit.Inventory.Where(i => i.Def is WeaponDef or ArmorDef).ToList();
+        return eligible.Count > 0 ? eligible[g.Rn2(eligible.Count)] : null;
     }
 }

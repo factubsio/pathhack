@@ -353,10 +353,12 @@ public class ArmorBrick(int acBonus, int dexCap) : LogicBrick
     protected override object? OnQuery(Fact fact, string key, string? arg)
     {
         if (!fact.IsEquipped()) return null;
-        var potency = (fact.Entity as Item)?.Potency ?? 0;
+        var item = fact.Entity as Item;
+        var potency = item?.Potency ?? 0;
+        var degradation = item?.Degradation ?? 0;
         return key switch
         {
-            "ac" => new Modifier(ModifierCategory.ItemBonus, acBonus + potency),
+            "ac" => new Modifier(ModifierCategory.ItemBonus, acBonus + potency - degradation),
             "dex_cap" => dexCap,
             _ => null,
         };

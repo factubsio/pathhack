@@ -222,6 +222,7 @@ public class GameState
 
         if (reason != "Quit" && reason != "Won")
         {
+            Draw.DrawCurrent();
             Draw.FlushTopLine();
             pline(reason);
             Draw.More(false, reason.Length, 0);
@@ -560,6 +561,27 @@ public class GameState
             }
         }
 
+        // tick item degradation repair (inventory/equipped only)
+        foreach (var unit in lvl.LiveUnits)
+        {
+            foreach (var item in unit.Inventory)
+            {
+                var repair = TickDegradationRepair(item, unit.Equipped.ContainsValue(item));
+                if (repair != RepairResult.None && unit.IsPlayer)
+                {
+                    string name = $"{item:bare}";
+                    if (repair.HasFlag(RepairResult.FullyRepaired))
+                        g.pline($"Your {name} looks good as new.");
+                    else if (repair.HasFlag(RepairResult.Repaired))
+                        g.pline($"Your {name} is in better shape.");
+                    if (repair.HasFlag(RepairResult.FullyUntarnished))
+                        g.pline($"The runes on your {name} shine brightly again.");
+                    else if (repair.HasFlag(RepairResult.Untarnished))
+                        g.pline($"The runes on your {name} brighten.");
+                }
+            }
+        }
+
         CleanupFacts();
         Perf.Stop("OnRoundEnd");
 
@@ -770,6 +792,8 @@ public class GameState
             else
                 check.Modifiers.Untyped(attacker.GetAttackBonus(weapon), "atk");
             check.Modifiers.Mod(ModifierCategory.ItemBonus, ctx.Weapon!.Potency, "potency");
+            if (ctx.Weapon!.Degradation > 0)
+                check.Modifiers.Untyped(-ctx.Weapon!.Degradation, "damaged");
         }
         else if (ctx.Spell != null)
         {
@@ -1510,6 +1534,54 @@ public class GameState
     }
 
     internal static void ResetGameState() => g = new();
+
+    static RepairResult TickDegradationRepair(Item item, bool equipped)
+    {
+        if (item.Def is not (WeaponDef or ArmorDef)) return RepairResult.None;
+        RepairResult result = RepairResult.None;
+
+        const int RepairDamage = 100;
+        const int RepairTarnish = 50;
+
+        // condition repair: equipped gets 50% bonus tick chance
+        if (item.Degradation > 0)
+        {
+            item.DegradationTick++;
+            if (equipped && g.Rn2(2) == 0) item.DegradationTick++;
+            if (item.DegradationTick >= RepairDamage)
+            {
+                item.Degradation--;
+                item.DegradationTick = 0;
+                result |= item.Degradation == 0 ? RepairResult.FullyRepaired : RepairResult.Repaired;
+            }
+        }
+
+        // rune repair: equipped gets 50% bonus tick chance
+        if (item.RuneDegradation != 0)
+        {
+            item.RuneRepairTick++;
+            if (equipped && g.Rn2(2) == 0) item.RuneRepairTick++;
+            if (item.RuneRepairTick >= RepairTarnish)
+            {
+                // pick a random set bit to clear
+                uint mask = item.RuneDegradation;
+                int bitCount = (int)uint.PopCount(mask);
+                int pick = g.RnRange(0, bitCount - 1);
+                for (int b = 0; b < 4; b++)
+                {
+                    if ((mask & (1 << b)) != 0)
+                    {
+                        if (pick == 0) { item.RuneDegradation &= ~(1u << b); break; }
+                        pick--;
+                    }
+                }
+                item.RuneRepairTick = 0;
+                result |= item.RuneDegradation == 0 ? RepairResult.FullyUntarnished : RepairResult.Untarnished;
+            }
+        }
+
+        return result;
+    }
 
     void CleanupFacts()
     {

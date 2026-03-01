@@ -268,7 +268,7 @@ public abstract class AfflictionBrick(int dc, string? tag = null) : LogicBrick<A
             unit.AddFact(this, fact.Source);
     }
 
-    protected virtual void OnCured(IUnit unit) => g.pline($"{unit:The} {VTense(unit, "feel")} better.");
+    protected virtual void OnCured(IUnit unit) => g.YouObserveSelf(unit, $"{unit:The} {VTense(unit, "feel")} better.", null);
 
     protected override object? OnQuery(Fact fact, string key, string? arg) =>
         key == Tag ? fact : DoQuery(Stage(fact), key, arg);

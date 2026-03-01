@@ -220,6 +220,7 @@ public static partial class Input
         {
             "pit" => new PitTrap(depth),
             "web" => new WebTrap(depth),
+            "rust" => new RustTrap(depth),
             "hole" => new HoleTrap(TrapType.Hole, depth),
             "trapdoor" => new HoleTrap(TrapType.Trapdoor, depth),
             "ambush" => new AmbushTrap(depth),

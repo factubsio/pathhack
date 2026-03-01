@@ -323,6 +323,8 @@ public class BonusRune(int quality) : RuneBrick("accurate", quality, RuneSlot.Fu
 
     protected override void OnBeforeAttackRoll(Fact fact, PHContext context)
     {
+        if (X(fact)) return;
+
         if (!fact.IsEquipped() || context.Weapon != fact.Entity) return;
         context.Check!.Modifiers.AddModifier(new(ModifierCategory.ItemBonus, context.Weapon.Potency + d(Quality, 4).Roll(), "bonus rune"));
     }
@@ -338,6 +340,8 @@ public class StrikingRune(int quality) : RuneBrick("striking", quality, RuneSlot
 
     protected override void OnBeforeDamageRoll(Fact fact, PHContext context)
     {
+        if (X(fact)) return;
+
         if (!fact.IsEquipped() || context.Weapon != fact.Entity) return;
         if (context.Weapon?.Def is not WeaponDef wdef) return;
         if (context.Damage.Count == 0 || context.Damage[0].Formula != wdef.BaseDamage) return;
@@ -362,6 +366,8 @@ public class ElementalRune : RuneBrick
 
     protected override void OnBeforeDamageRoll(Fact fact, PHContext context)
     {
+        if (X(fact)) return;
+
         if (!fact.IsEquipped()) return;
         if (context.Weapon != fact.Entity) return;
 

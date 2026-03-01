@@ -2,6 +2,11 @@ namespace Pathhack.Game;
 
 public enum BUC { Cursed = -1, Uncursed = 0, Blessed = 1 }
 
+public enum DegradeResult { None, Degraded, DegradedFurther, Tarnished, TarnishedFurther }
+
+[Flags]
+public enum RepairResult { None = 0, Repaired = 1, FullyRepaired = 2, Untarnished = 4, FullyUntarnished = 8 }
+
 public class ItemDef : BaseDef, IFormattable
 {
     public string Name = "";
@@ -78,7 +83,7 @@ public class ItemDef : BaseDef, IFormattable
 
 public enum RuneSlot { Fundamental, Property }
 
-public abstract class RuneBrick(string displayName, int quality, RuneSlot slot) : LogicBrick
+public abstract class RuneBrick(string displayName, int quality, RuneSlot slot) : LogicBrick<ScalarData<bool>>
 {
     public string DisplayName => displayName;
     public string QualifiedName => $"{displayName}/{Quality}";
@@ -188,6 +193,43 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
     public bool Unpaid;
     public bool Stolen;
 
+    // degradation (weapons + body armor only)
+    public int Degradation;          // 0-3, each point = -1 AB or AC
+    public int DegradationTick;      // counts toward repair
+    private uint _RuneDegradation = 0;// bitmask: bit0=fundamental, bit1-3=property runes
+    public uint RuneDegradation
+    {
+        get => _RuneDegradation;
+        set
+        {
+            var fund = Fundamental?.As<ScalarData<bool>>();
+            if (fund != null)
+                fund.Value = (value & 1) != 0;
+
+            for (int i = 0; i < PropertyRunes.Count; i++)
+            {
+                // mask starts at bit 1 for props
+                int bit = 1 << (i + 1);
+                PropertyRunes[i].As<ScalarData<bool>>().Value = (value & bit) != 0;
+            }
+
+            _RuneDegradation = value;
+        }
+    }
+    public int RuneRepairTick;       // counts toward rune repair
+
+    static string DegreePrefix(int level, string word) => level switch
+    {
+        1 => word,
+        2 => $"very {word}",
+        3 => $"thoroughly {word}",
+        >= 4 => $"utterly {word}",
+        _ => "",
+    };
+
+    string DegradationPrefix => DegreePrefix(Degradation, "damaged");
+    string RuneDegradationPrefix => DegreePrefix((int)uint.PopCount(RuneDegradation), "tarnished");
+
     // food/corpse state
     public int Eaten;
     public MonsterDef? CorpseOf;
@@ -279,6 +321,11 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
             parts.Add("enchanted");
         }
 
+        if (DegradationPrefix is { Length: > 0 } dp)
+            parts.Add(dp);
+        if (RuneDegradationPrefix is { Length: > 0 } rp)
+            parts.Add(rp);
+
         parts.Add(count > 1 ? Def.Name.Plural() : Def.Name);
 
         if (Def is WandDef or QuiverDef && potencyKnown)
@@ -301,6 +348,10 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
             parts.Add(fb.QualifiedName);
         var props = PropertyRunes.Select(r => (RuneBrick)r.Brick).Where(r => !r.IsNull).Select(r => r.DisplayName);
         if (props.Any()) parts.Add(string.Join(" ", props));
+        if (DegradationPrefix is { Length: > 0 } dp2)
+            parts.Add(dp2);
+        if (RuneDegradationPrefix is { Length: > 0 } rp2)
+            parts.Add(rp2);
         parts.Add(count > 1 ? Def.Name.Plural() : Def.Name);
         return string.Join(" ", parts);
     }
@@ -342,6 +393,10 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
             Stolen = Stolen,
             Unpaid = Unpaid,
             UnitPrice = UnitPrice,
+            Degradation = Degradation,
+            DegradationTick = DegradationTick,
+            RuneDegradation = RuneDegradation,
+            RuneRepairTick = RuneRepairTick,
         };
         other.PropertyRunes.AddRange(PropertyRunes);
         other.ShareFactsFrom(this);
@@ -361,6 +416,7 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
         if (other._material != _material) return false;
         if ((other.Knowledge & mask) != (Knowledge & mask)) { Log.Verbose("merging", $"  fail: Knowledge {Knowledge & mask} vs {other.Knowledge & mask}"); return false; }
         if (other.Potency != Potency) { Log.Verbose("merging", $"  fail: Potency {Potency} vs {other.Potency}"); return false; }
+        if (other.Degradation != Degradation || other.RuneDegradation != RuneDegradation) { Log.Verbose("merging", "  fail: Degradation"); return false; }
         if (!FactsEquivalent(other)) { Log.Verbose("merging", "  fail: FactsEquivalent"); return false; }
         if (Eaten != 0 || other.Eaten != 0) { Log.Verbose("merging", "  fail: Eaten"); return false; }
         if (CorpseOf != other.CorpseOf) { Log.Verbose("merging", "  fail: CorpseOf"); return false; }
@@ -422,6 +478,48 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
         if (!Def.Stackable) throw new NotSupportedException();
         Count = stackSize;
         return this;
+    }
+
+    /// <summary>Try to degrade this item. 66% condition damage, 33% tarnish. Falls back to tarnish if condition maxed.</summary>
+    internal DegradeResult TryDegrade()
+    {
+        if (Def is not (WeaponDef or ArmorDef)) return DegradeResult.None;
+
+        bool canDegrade = Degradation < 3;
+        int maxRuneBits = (Fundamental != null ? 1 : 0) + PropertyRunes.Count;
+        bool canTarnish = maxRuneBits > 0 && uint.PopCount(RuneDegradation) < maxRuneBits;
+
+        if (!canDegrade && !canTarnish) return DegradeResult.None;
+
+        if (canDegrade && (g.Rn2(3) != 0 || !canTarnish))
+        {
+            bool was = Degradation > 0;
+            Degradation++;
+            DegradationTick = 0;
+            return was ? DegradeResult.DegradedFurther : DegradeResult.Degraded;
+        }
+
+        if (canTarnish)
+        {
+            bool was = RuneDegradation != 0;
+            // pick a random clear bit among valid rune slots
+            uint validMask = (1u << maxRuneBits) - 1;
+            uint clearBits = validMask & ~RuneDegradation;
+            int clearCount = (int)uint.PopCount(clearBits);
+            int pick = g.RnRange(0, clearCount - 1);
+            for (int b = 0; b < 4; b++)
+            {
+                if ((clearBits & (1 << b)) != 0)
+                {
+                    if (pick == 0) { RuneDegradation |= 1u << b; break; }
+                    pick--;
+                }
+            }
+            RuneRepairTick = 0;
+            return was ? DegradeResult.TarnishedFurther : DegradeResult.Tarnished;
+        }
+
+        return DegradeResult.None;
     }
 }
 
