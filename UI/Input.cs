@@ -83,6 +83,7 @@ public static partial class Input
         ['@'] = new("autopickup", "Toggle autopickup", ArgType.None, _ => ToggleAutopickup()),
         [':'] = new("look", "Look at current square", ArgType.None, _ => Level.LookHere()),
         ['C'] = new("call", "Name an item type", ArgType.None, _ => CallItem()),
+        ['O'] = new("options", "Options menu", ArgType.None, _ => OptionsMenu.Show()),
         ['?'] = new("help", "Show help", ArgType.None, _ => ShowHelp()),
         ['p'] = new("pay", "Pay shopkeeper", ArgType.None, _ => PayShopkeeper()),
     };

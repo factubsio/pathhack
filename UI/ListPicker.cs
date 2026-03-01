@@ -8,6 +8,7 @@ public interface ISelectable
     IEnumerable<string> Details => [];
     public string? WhyNot { get; }
     string[] Tags => [];
+    ConsoleColor? ListColor => null;
 }
 
 public record class SimpleSelectable(string Name, string Description) : ISelectable
@@ -19,10 +20,9 @@ public delegate bool ListPickerDrawCallback<T>(WindowWriter writer, T item, bool
 
 public static class ListPicker
 {
-    const int ListWidth = 24;
-    const int DetailX = ListWidth + 2;
+    const int DefaultListWidth = 24;
 
-    public static T? Pick<T>(IReadOnlyList<T> items, string prompt, int defaultIndex = 0, ListPickerDrawCallback<T>? custom = null) where T : class, ISelectable
+    public static T? Pick<T>(IReadOnlyList<T> items, string prompt, int defaultIndex = 0, ListPickerDrawCallback<T>? custom = null, Func<T, ConsoleKeyInfo, bool>? keyHandler = null, int listWidth = DefaultListWidth) where T : class, ISelectable
     {
         if (items.Count == 0) return null;
 
@@ -44,7 +44,7 @@ public static class ListPicker
             if (visible.Count > 0)
                 index = Math.Clamp(index, 0, visible.Count - 1);
 
-            DrawPicker(win, visible, index, filter != null ? $"{prompt} [/{filter}{(typing ? "▌" : "")}]" : prompt, null, 0, custom);
+            DrawPicker(win, visible, index, filter != null ? $"{prompt} [/{filter}{(typing ? "▌" : "")}]" : prompt, null, 0, custom, listWidth: listWidth);
             var key = Input.NextKey();
 
             if (typing)
@@ -69,11 +69,12 @@ public static class ListPicker
                     {
                         if (custom != null)
                         {
+                            int detailX = listWidth + 2;
                             int paddedWidth = Math.Clamp(Draw.ScreenWidth - 10, Draw.MapWidth, 120);
-                            win.At(DetailX - 2, 0).Write("------", fg: ConsoleColor.Yellow);
-                            win.At(DetailX - 2, 1).WriteVertical("||||||", fg: ConsoleColor.Yellow);
+                            win.At(detailX - 2, 0).Write("------", fg: ConsoleColor.Yellow);
+                            win.At(detailX - 2, 1).WriteVertical("||||||", fg: ConsoleColor.Yellow);
                             Draw.Blit();
-                            var rhs = win.At(DetailX, 2, paddedWidth - DetailX - 2, Draw.ScreenHeight - 4);
+                            var rhs = win.At(detailX, 2, paddedWidth - detailX - 2, Draw.ScreenHeight - 4);
                             bool exit = custom(rhs, visible[index], true);
                             if (exit) return null;
                         }
@@ -84,6 +85,7 @@ public static class ListPicker
                     return null;
                 default:
                     if (key.KeyChar == '/') { filter = ""; typing = true; continue; }
+                    if (keyHandler != null && visible.Count > 0 && keyHandler(visible[index], key)) break;
                     break;
             }
         }
@@ -121,8 +123,9 @@ public static class ListPicker
         }
     }
 
-    static void DrawPicker<T>(Window win, IReadOnlyList<T> items, int cursor, string prompt, HashSet<int>? selected, int count, ListPickerDrawCallback<T>? custom = null) where T : ISelectable
+    static void DrawPicker<T>(Window win, IReadOnlyList<T> items, int cursor, string prompt, HashSet<int>? selected, int count, ListPickerDrawCallback<T>? custom = null, int listWidth = DefaultListWidth) where T : ISelectable
     {
+        int detailX = listWidth + 2;
         win.Clear();
         win.At(2, 1).Write(prompt, ConsoleColor.White);
 
@@ -142,15 +145,17 @@ public static class ListPicker
             ConsoleColor fg = ConsoleColor.White;
             if (items[i].WhyNot != null)
                 fg = ConsoleColor.DarkYellow;
+            else if (items[i].ListColor is { } lc)
+                fg = lc;
             string label = prefix + items[i].Name;
-            if (label.Length > ListWidth - 2)
-                label = label[..(ListWidth - 3)] + "…";
+            if (label.Length > listWidth - 2)
+                label = label[..(listWidth - 3)] + "…";
             win.At(2, 3 + i - scroll).Write(label, fg, ConsoleColor.Black, style);
         }
 
         if (items.Count > maxVisible)
         {
-            int trackX = ListWidth;
+            int trackX = listWidth;
             int trackH = end - scroll;
             int thumbH = Math.Max(1, trackH * maxVisible / items.Count);
             int thumbY = trackH > thumbH ? scroll * (trackH - thumbH) / (items.Count - maxVisible) : 0;
@@ -165,11 +170,11 @@ public static class ListPicker
 
         if (items.Count == 0)
         {
-            win.At(DetailX, 3).Write("No matches", ConsoleColor.DarkGray);
+            win.At(detailX, 3).Write("No matches", ConsoleColor.DarkGray);
         }
         else if (custom != null)
         {
-            var rhs = win.At(DetailX, 2, paddedWidth - DetailX - 2, Draw.ScreenHeight - 4);
+            var rhs = win.At(detailX, 2, paddedWidth - detailX - 2, Draw.ScreenHeight - 4);
             custom(rhs, items[cursor], false);
         }
         else
@@ -178,24 +183,24 @@ public static class ListPicker
             var no = current.WhyNot;
             if (no != null)
             {
-                win.At(DetailX, 2).Write(no, ConsoleColor.Red);
+                win.At(detailX, 2).Write(no, ConsoleColor.Red);
             }
-            win.At(DetailX, 3).Write(current.Name, ConsoleColor.Yellow);
+            win.At(detailX, 3).Write(current.Name, ConsoleColor.Yellow);
             if (current.Tags.Length > 0)
             {
-                win.At(DetailX + current.Name.Length + 5, 3).Write('(' + string.Join(", ", current.Tags) + ')', ConsoleColor.Cyan);
+                win.At(detailX + current.Name.Length + 5, 3).Write('(' + string.Join(", ", current.Tags) + ')', ConsoleColor.Cyan);
             }
             if (current.Subtitle != null)
             {
-                RichText.Write(win, DetailX, 4, paddedWidth - DetailX - 2, current.Subtitle);
+                RichText.Write(win, detailX, 4, paddedWidth - detailX - 2, current.Subtitle);
             }
 
-            int descEnd = RichText.Write(win, DetailX, 5, paddedWidth - DetailX - 2, current.Description);
+            int descEnd = RichText.Write(win, detailX, 5, paddedWidth - detailX - 2, current.Description);
 
             int detailY = descEnd + 2;
             foreach (var detail in current.Details)
             {
-                RichText.Write(win, DetailX, detailY++, paddedWidth - DetailX - 2, detail);
+                RichText.Write(win, detailX, detailY++, paddedWidth - detailX - 2, detail);
             }
         }
 

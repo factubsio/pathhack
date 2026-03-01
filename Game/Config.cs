@@ -10,6 +10,9 @@ public class ShorthandAttribute(params char[] chars) : Attribute
     public char[] Chars => chars;
 }
 
+[AttributeUsage(AttributeTargets.Property)]
+public class HonouredAttribute : Attribute;
+
 // --- Enums ---
 
 public enum MenuStyle
@@ -23,7 +26,7 @@ public enum MenuStyle
 public enum MsgWindow
 {
     [Shorthand('s')] Single,
-    [Shorthand('c')] Combination,
+    [Shorthand('c')] Combined,
     [Shorthand('f')] Full,
     [Shorthand('r')] Reversed,
 }
@@ -100,15 +103,15 @@ public record struct BindRule(string Key, string Command);
 public record class ConfigData
 {
     // Gameplay
-    public bool AutoPickup { get; set; } = false;
+    [Honoured] public bool AutoPickup { get; set; } = false;
     public HashSet<char> PickupTypes { get; set; } = [];
-    public bool PickupAll { get; set; } = true;
-    public PickupBurden PickupBurden { get; set; } = PickupBurden.Stressed;
-    public bool PickupThrown { get; set; } = true;
-    public bool AutoDig { get; set; } = false;
+    [Honoured] public bool PickupAll { get; set; } = true;
+    [Honoured] public PickupBurden PickupBurden { get; set; } = PickupBurden.Stressed;
+    [Honoured] public bool PickupThrown { get; set; } = true;
+    [Honoured] public bool AutoDig { get; set; } = false;
     public bool AutoOpen { get; set; } = true;
     public bool AutoQuiver { get; set; } = false;
-    public bool ZapQuivered { get; set; } = false;
+    [Honoured] public bool ZapQuivered { get; set; } = false;
     public bool Confirm { get; set; } = true;
     public bool SafePet { get; set; } = true;
     public bool PushWeapon { get; set; } = false;
@@ -120,22 +123,22 @@ public record class ConfigData
     public bool Color { get; set; } = true;
     public bool DarkRoom { get; set; } = false;
     public bool EightBitTty { get; set; } = false;
-    public RangeIndicator RangeIndicator { get; set; } = RangeIndicator.All;
+    [Honoured] public RangeIndicator RangeIndicator { get; set; } = RangeIndicator.All;
     public bool HilitePet { get; set; } = false;
-    public bool HilitePile { get; set; } = false;
-    public bool HiliteHiddenStairs { get; set; } = true;
+    [Honoured] public bool HilitePile { get; set; } = false;
+    [Honoured] public bool HiliteHiddenStairs { get; set; } = true;
     public bool LitCorridor { get; set; } = false;
     public bool MentionWalls { get; set; } = false;
-    public bool MenuColors { get; set; } = false;
+    [Honoured] public bool MenuColors { get; set; } = false;
     public bool Sparkle { get; set; } = true;
-    public bool Standout { get; set; } = false;
-    public bool UseDarkGray { get; set; } = false;
+    [Honoured] public bool Standout { get; set; } = false;
+    [Honoured] public bool UseDarkGray { get; set; } = false;
     public bool UseInverse { get; set; } = false;
     public char Boulder { get; set; } = '`';
 
     // Interface
     public bool FixInv { get; set; } = true;
-    public bool ImplicitUncursed { get; set; } = true;
+    [Honoured] public bool ImplicitUncursed { get; set; } = true;
     public bool LootAbc { get; set; } = false;
     public bool SortPack { get; set; } = true;
     public MenuStyle MenuStyle { get; set; } = MenuStyle.Full;
