@@ -7,6 +7,7 @@ global using Pathhack.Game.Bestiary;
 global using Pathhack.Game.Spells;
 global using Pathhack.Map;
 global using Pathhack.UI;
+global using Pathhack.Knowledge;
 
 global using static Pathhack.Game.GameState;
 global using static Pathhack.Game.Player;

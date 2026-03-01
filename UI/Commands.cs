@@ -1185,4 +1185,16 @@ public static partial class Input
         Draw.Blit();
         Input.NextKey();
     }
+
+    static void WhatIs()
+    {
+        g.pline("Specify unknown object by cursor? [ynq] (q) ");
+        while (true)
+        {
+            var key = NextKey();
+            if (key.KeyChar is 'y' or 'Y') { Pokedex.Farlook(); return; }
+            if (key.KeyChar is 'n' or 'N') { PokedexExplorer.Open(); return; }
+            if (key.KeyChar is 'q' or 'Q' || key.Key == ConsoleKey.Escape) return;
+        }
+    }
 }

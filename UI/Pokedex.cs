@@ -226,12 +226,13 @@ public static class Pokedex
         _ => $"very slow ({cost.Value})"
     };
 
-    static string Bonus(int val, string suffix = "") =>
+    internal static string Bonus(int val, string suffix = "") =>
         val == 0 ? "" : $" {val:+#;-#}{suffix}";
 
-    static string SignedBonus(int val) => $"{val:+#;-#;+0}";
+    internal static string SignedBonus(int val) => $"{val:+#;-#;+0}";
 
     public static void ShowItemEntry(Item item)
+
     {
         var def = item.Def;
         var menu = new TextMenu();
@@ -349,5 +350,288 @@ public static class Pokedex
         }
 
         menu.Display();
+    }
+}
+
+public static class PokedexExplorer
+{
+    const int SearchBarY = 1;
+    const int MaxDropdown = 12;
+
+    static object[] BuildEntries() =>
+    [
+        .. AllMonsters.ActuallyAll,
+        .. AllItems.All,
+        .. MasonryYard.AllSpells,
+        .. GeneralMechanics.All,
+    ];
+
+    static string NameOf(object entry) => entry switch
+    {
+        MonsterDef m => m.Name,
+        ItemDef i => i.Name,
+        SpellBrickBase s => s.Name,
+        MechanicsPage p => p.Name,
+        _ => entry.ToString() ?? "",
+    };
+
+    static string CategoryOf(object entry) => entry switch
+    {
+        MonsterDef => "monster",
+        WeaponDef => "weapon",
+        ArmorDef => "armor",
+        PotionDef => "potion",
+        ScrollDef => "scroll",
+        ItemDef => "item",
+        SpellBrickBase => "spell",
+        MechanicsPage => "mechanics",
+        _ => "",
+    };
+
+    static bool Matches(object entry, string query)
+    {
+        string name = NameOf(entry);
+        return name.Contains(query, StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static void Open()
+    {
+        object[] entries = BuildEntries();
+
+        using var handle = WM.CreateTransient(Draw.ScreenWidth, Draw.ScreenHeight, z: 5, opaque: true);
+        var win = handle.Window;
+
+        string query = "";
+        object? viewing = null;
+        int cursor = 0;
+        bool searching = true;
+
+        while (true)
+        {
+            win.Clear();
+
+            int barX = 2;
+            int barWidth = Draw.ScreenWidth - 4;
+            string prompt = searching ? $"/ {query}▌" : $"/ {query}";
+            win.At(barX, SearchBarY).Write(prompt, ConsoleColor.White);
+            win.At(barX, SearchBarY + 1).Write(new string('─', barWidth), ConsoleColor.DarkGray);
+
+            if (searching)
+            {
+                List<object> matches = [];
+                if (query.Length > 0)
+                    matches = entries.Where(e => Matches(e, query)).ToList();
+
+                if (matches.Count > 0)
+                {
+                    cursor = Math.Clamp(cursor, 0, matches.Count - 1);
+                    int dropY = SearchBarY + 2;
+                    int shown = Math.Min(matches.Count, MaxDropdown);
+
+                    int scroll = 0;
+                    if (shown < matches.Count)
+                    {
+                        scroll = cursor - shown / 2;
+                        scroll = Math.Clamp(scroll, 0, matches.Count - shown);
+                    }
+
+                    for (int i = 0; i < shown; i++)
+                    {
+                        int idx = scroll + i;
+                        var style = idx == cursor ? CellStyle.Reverse : CellStyle.None;
+                        string label = NameOf(matches[idx]);
+                        string cat = CategoryOf(matches[idx]);
+                        string line = cat.Length > 0 ? $"{label}  ({cat})" : label;
+                        if (line.Length > barWidth) line = line[..(barWidth - 1)] + "…";
+                        win.At(barX, dropY + i).Write(line, ConsoleColor.White, ConsoleColor.Black, style);
+                    }
+
+                    if (matches.Count > shown)
+                        win.At(barX + barWidth - 6, dropY + shown).Write($"({matches.Count})", ConsoleColor.DarkGray);
+                }
+                else if (query.Length > 0)
+                {
+                    win.At(barX, SearchBarY + 2).Write("No matches", ConsoleColor.DarkGray);
+                }
+
+                string help = "[↑↓] navigate  [Enter] select  [Esc] close";
+                win.At(barX, Draw.ScreenHeight - 2).Write(help, ConsoleColor.DarkGray);
+                Draw.Blit();
+
+                var key = Input.NextKey();
+
+                if (key.Key == ConsoleKey.Escape) { if (query.Length > 0) { query = ""; cursor = 0; } else return; continue; }
+                if (key.Key == ConsoleKey.Backspace) { if (query.Length > 0) { query = query[..^1]; cursor = 0; } continue; }
+                if (key.Key == ConsoleKey.UpArrow || (key.Key == ConsoleKey.P && key.Modifiers.HasFlag(ConsoleModifiers.Control)))
+                { cursor = Math.Max(0, cursor - 1); continue; }
+                if (key.Key == ConsoleKey.DownArrow || (key.Key == ConsoleKey.N && key.Modifiers.HasFlag(ConsoleModifiers.Control)))
+                { cursor++; continue; }
+                if (key.Key == ConsoleKey.U && key.Modifiers.HasFlag(ConsoleModifiers.Control))
+                { query = ""; cursor = 0; continue; }
+                if (key.Key == ConsoleKey.W && key.Modifiers.HasFlag(ConsoleModifiers.Control))
+                {
+                    query = query.TrimEnd();
+                    int last = query.LastIndexOf(' ');
+                    query = last >= 0 ? query[..last] : "";
+                    cursor = 0;
+                    continue;
+                }
+                if (key.Key == ConsoleKey.Enter && matches.Count > 0)
+                {
+                    viewing = matches[cursor];
+                    searching = false;
+                    continue;
+                }
+                if (key.KeyChar >= ' ' && key.KeyChar <= '~') { query += key.KeyChar; cursor = 0; continue; }
+            }
+            else
+            {
+                DrawEntry(win, viewing!, barX, SearchBarY + 2, barWidth);
+
+                string help = "[/] search  [Esc] back";
+                win.At(barX, Draw.ScreenHeight - 2).Write(help, ConsoleColor.DarkGray);
+                Draw.Blit();
+
+                var key = Input.NextKey();
+                if (key.Key == ConsoleKey.Escape) { searching = true; continue; }
+                if (key.KeyChar == '/') { searching = true; continue; }
+            }
+        }
+    }
+
+    static void DrawEntry(Window win, object entry, int x, int y, int width)
+    {
+        switch (entry)
+        {
+            case MonsterDef m:
+                DrawMonster(win, m, x, y, width);
+                break;
+            case WeaponDef w:
+                DrawWeapon(win, w, x, y, width);
+                break;
+            case ArmorDef a:
+                DrawArmor(win, a, x, y, width);
+                break;
+            case ItemDef i:
+                DrawItem(win, i, x, y, width);
+                break;
+            case SpellBrickBase s:
+                DrawSpell(win, s, x, y, width);
+                break;
+            case MechanicsPage p:
+                DrawMechanics(win, p, x, y, width);
+                break;
+        }
+    }
+
+    static void DrawMonster(Window win, MonsterDef m, int x, int y, int width)
+    {
+        win.At(x, y).Write(m.Name, ConsoleColor.Yellow);
+        win.At(x + m.Name.Length + 2, y).Write($"({m.CreatureType}, {m.Family.Name})", ConsoleColor.Cyan);
+        int cy = y + 1;
+        win.At(x, cy++).Write($"CR {m.BaseLevel}  {m.Size}  {m.Glyph.Value}", ConsoleColor.Gray);
+        win.At(x, cy++).Write($"AC {m.AC.Combined:+#;-#;+0}  AB {m.AttackBonus:+#;-#;+0}  HP/lvl {m.HpPerLevel}", ConsoleColor.Gray);
+        if (m.Unarmed != null)
+            win.At(x, cy++).Write($"Unarmed: {m.Unarmed.Name} {m.Unarmed.BaseDamage} {m.Unarmed.DamageType.SubCat}", ConsoleColor.Gray);
+
+        bool hasWeaponOrNatural = false;
+        foreach (var comp in m.Components)
+        {
+            if (comp is GrantAction ga && (ga.Action is AttackWithWeapon || (ga.Action is NaturalAttack n && n.Weapon != m.Unarmed)))
+            { hasWeaponOrNatural = true; break; }
+        }
+
+        cy++;
+        foreach (var comp in m.Components)
+        {
+            switch (comp)
+            {
+                case GrantAction ga when ga.Action is AttackWithWeapon:
+                    win.At(x, cy++).Write($"Melee weapon {Pokedex.SignedBonus(m.AttackBonus)}{Pokedex.Bonus(m.DamageBonus, " damage")}", ConsoleColor.Gray);
+                    break;
+                case GrantAction ga when ga.Action is NaturalAttack nat:
+                    if (nat.Weapon == m.Unarmed && hasWeaponOrNatural) break;
+                    win.At(x, cy++).Write($"Melee {nat.Weapon.Name} {Pokedex.SignedBonus(m.AttackBonus)}, Damage {nat.Weapon.BaseDamage}{Pokedex.Bonus(m.DamageBonus)} {nat.Weapon.DamageType.SubCat}", ConsoleColor.Gray);
+                    break;
+                case GrantAction ga when ga.Action is FullAttack fa:
+                    win.At(x, cy++).Write($"Full attack: {ga.Action.Name}", ConsoleColor.Gray);
+                    break;
+                case GrantAction ga:
+                    win.At(x, cy++).Write($"  {ga.Action.Name}", ConsoleColor.Gray);
+                    break;
+                case GrantSpell gs:
+                    win.At(x, cy++).Write($"  Spell: {gs.Spell.Name} (L{gs.Spell.Level})", ConsoleColor.Cyan);
+                    break;
+                case GrantPool gp:
+                    break; // pools are implicit from spells
+                default:
+                    if (comp.PokedexDescription != null)
+                        win.At(x, cy++).Write($"  {comp.PokedexDescription}", ConsoleColor.Gray);
+                    break;
+            }
+        }
+
+        cy++;
+        win.At(x, cy++).Write($"Max depth {m.MaxDepth}  Spawn weight {m.SpawnWeight}", ConsoleColor.DarkGray);
+    }
+
+    static void DrawWeapon(Window win, WeaponDef w, int x, int y, int width)
+    {
+        win.At(x, y).Write(w.Name, ConsoleColor.Yellow);
+        win.At(x + w.Name.Length + 2, y).Write("(weapon)", ConsoleColor.Cyan);
+        int cy = y + 1;
+        string hands = w.Hands == 1 ? "One-handed" : "Two-handed";
+        win.At(x, cy++).Write($"{hands} {w.DamageType.SubCat}", ConsoleColor.Gray);
+        win.At(x, cy++).Write($"Damage: {w.BaseDamage}", ConsoleColor.Gray);
+        if (w.Reach > 1) win.At(x, cy++).Write($"Reach: {w.Reach}", ConsoleColor.Gray);
+        if (w.Launcher != null) win.At(x, cy++).Write("Throwable", ConsoleColor.Gray);
+        win.At(x, cy++).Write($"Weight {w.Weight}  Price {w.Price}", ConsoleColor.DarkGray);
+        if (w.PokedexDescription != null)
+            RichText.Write(win, x, cy + 1, width, w.PokedexDescription);
+    }
+
+    static void DrawArmor(Window win, ArmorDef a, int x, int y, int width)
+    {
+        win.At(x, y).Write(a.Name, ConsoleColor.Yellow);
+        win.At(x + a.Name.Length + 2, y).Write("(armor)", ConsoleColor.Cyan);
+        int cy = y + 1;
+        win.At(x, cy++).Write($"AC bonus: +{a.ACBonus}", ConsoleColor.Gray);
+        if (a.DexCap < 99) win.At(x, cy++).Write($"Dex cap: {a.DexCap}", ConsoleColor.Gray);
+        if (a.CheckPenalty != 0) win.At(x, cy++).Write($"Check penalty: {a.CheckPenalty}", ConsoleColor.Gray);
+        win.At(x, cy++).Write($"Weight {a.Weight}  Price {a.Price}", ConsoleColor.DarkGray);
+        if (a.PokedexDescription != null)
+            RichText.Write(win, x, cy + 1, width, a.PokedexDescription);
+    }
+
+    static void DrawItem(Window win, ItemDef i, int x, int y, int width)
+    {
+        win.At(x, y).Write(i.Name, ConsoleColor.Yellow);
+        int cy = y + 1;
+        win.At(x, cy++).Write($"Weight {i.Weight}  Price {i.Price}", ConsoleColor.DarkGray);
+        if (i.PokedexDescription != null)
+            RichText.Write(win, x, cy + 1, width, i.PokedexDescription);
+        
+        if (i is BottleDef b)
+        {
+            RichText.Write(win, x, y + 3, width, b.Spell.Description);
+        }
+        if (i is WandDef w)
+        {
+            RichText.Write(win, x, y + 3, width, w.Spell.Description);
+        }
+    }
+
+    static void DrawSpell(Window win, SpellBrickBase s, int x, int y, int width)
+    {
+        win.At(x, y).Write(s.Name, ConsoleColor.Yellow);
+        win.At(x + s.Name.Length + 2, y).Write($"(level {s.Level} spell)", ConsoleColor.Cyan);
+        RichText.Write(win, x, y + 2, width, s.Description);
+    }
+
+    static void DrawMechanics(Window win, MechanicsPage p, int x, int y, int width)
+    {
+        win.At(x, y).Write(p.Name, ConsoleColor.Yellow);
+        win.At(x + p.Name.Length + 2, y).Write("(mechanics)", ConsoleColor.Cyan);
+        RichText.Write(win, x, y + 2, width, p.Description);
     }
 }

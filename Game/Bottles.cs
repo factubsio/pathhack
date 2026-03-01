@@ -46,7 +46,7 @@ public static partial class Bottles
     public static readonly BottleDef FalseLife = Brew(BasicLevel3Spells.FalseLife);
 
     private static SpellBrick Bomb(string name, DamageType type, ConsoleColor color) => new(name, 1,
-        $"A burst of {type.SubCat}. Reflex save for half.",
+        $"(1 + CL/3)d6 burst (3x3) of {type.SubCat}. Reflex save for half.",
         (c, t) =>
         {
             if (t.Pos is not { } center) return;

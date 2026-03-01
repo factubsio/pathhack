@@ -66,6 +66,7 @@ public static partial class Input
         ['T'] = new("takeoff", "Take off armor", ArgType.None, _ => TakeOff()),
         ['R'] = new("remove", "Remove accessory", ArgType.None, _ => RemoveAccessory()),
         [';'] = new("farlook", "Examine (farlook)", ArgType.None, _ => Pokedex.Farlook()),
+        ['/'] = new("whatis", "Encyclopedia / farlook", ArgType.None, _ => WhatIs()),
         ['f'] = new("fire", "Fire quivered item", ArgType.None, _ => Fire()),
         ['Q'] = new("quiver", "Set quiver", ArgType.None, _ => SetQuiver()),
         ['Z'] = new("cast", "Cast spell", ArgType.None, _ => ZapSpell()),
