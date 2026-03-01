@@ -180,6 +180,29 @@ public static partial class WishParser
     {
         if (input.Length == 0) return null;
 
+        var result = FuzzyMatchInner(input);
+        if (result != null) return result;
+
+        // Retry with depluralized input
+        string? singular = Depluralize(input);
+        return singular != null ? FuzzyMatchInner(singular) : null;
+    }
+
+    static string? Depluralize(string s)
+    {
+        if (s.EndsWith("ies") && s.Length > 3)
+            return s[..^3] + "y";
+        if (s.EndsWith("ses") || s.EndsWith("xes") || s.EndsWith("ches") || s.EndsWith("shes"))
+            return s[..^2];
+        if (s.EndsWith('s') && !s.EndsWith("ss") && s.Length > 2)
+            return s[..^1];
+        return null;
+    }
+
+    static ItemDef? FuzzyMatchInner(string input)
+    {
+        if (input.Length == 0) return null;
+
         // Exact match
         foreach (var def in AllDefs)
             if (def.Name.Equals(input, StringComparison.OrdinalIgnoreCase))

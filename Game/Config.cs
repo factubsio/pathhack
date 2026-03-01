@@ -91,7 +91,7 @@ public enum RangeIndicator { None, PosOnly, All }
 
 // --- Directive entries ---
 
-public record struct AutoPickupException(bool Include, string Pattern, Regex Regex);
+public record struct AutoPickupException(string Pattern, Regex Regex);
 public record struct MsgTypeRule(MsgTypeAction Action, string Pattern);
 public record struct MenuColorRule(string Pattern, string Color, CellStyle Style, Regex Regex);
 public record struct StatusColorRule(string Field, string Condition, string Color);
@@ -104,7 +104,8 @@ public record class ConfigData
 {
     // Gameplay
     [Honoured] public bool AutoPickup { get; set; } = false;
-    public HashSet<char> PickupTypes { get; set; } = [];
+    [Honoured] public bool ApExceptionRegex { get; set; } = false;
+    [Honoured] public HashSet<char> PickupTypes { get; set; } = [];
     [Honoured] public bool PickupAll { get; set; } = true;
     [Honoured] public PickupBurden PickupBurden { get; set; } = PickupBurden.Stressed;
     [Honoured] public bool PickupThrown { get; set; } = true;
@@ -169,7 +170,8 @@ public record class ConfigData
     public bool Tombstone { get; set; } = true;
 
     // Directives
-    public List<AutoPickupException> AutoPickupExceptions { get; set; } = [];
+    public List<AutoPickupException> ApGrabs { get; set; } = [];
+    public List<AutoPickupException> ApLeaves { get; set; } = [];
     public List<MsgTypeRule> MsgTypes { get; set; } = [];
     public List<MenuColorRule> MenuColorRules { get; set; } = [];
     public List<StatusColorRule> StatusColors { get; set; } = [];
@@ -185,7 +187,8 @@ public static partial class Config
 
     public static void Load()
     {
-        string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".pathhackrc");
+        string path = Environment.GetEnvironmentVariable("PH_RC")
+            ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".pathhackrc");
         if (!File.Exists(path)) return;
 
         List<string> warnings = [];
@@ -301,12 +304,14 @@ public static partial class Config
             warnings.Add($"bad AUTOPICKUP_EXCEPTION: {val}");
             return;
         }
-        bool include = val[0] == '<';
+        bool grab = val[0] == '<';
         string pattern = val[1..];
         try
         {
-            Regex rx = new(GlobToRegex(pattern), RegexOptions.IgnoreCase | RegexOptions.Compiled);
-            Data.AutoPickupExceptions.Add(new(include, pattern, rx));
+            string rxPattern = Data.ApExceptionRegex ? pattern : GlobToRegex(pattern);
+            Regex rx = new(rxPattern, RegexOptions.IgnoreCase | RegexOptions.Compiled);
+            var list = grab ? Data.ApGrabs : Data.ApLeaves;
+            list.Add(new(pattern, rx));
         }
         catch (RegexParseException)
         {

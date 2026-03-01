@@ -463,11 +463,16 @@ public class Level(LevelId id, int width, int height)
                 bool wantThrown = Config.Data.PickupThrown && item.ThrownByPlayer;
                 bool want = wantClass || wantThrown;
 
-                // Autopickup exceptions: last match wins
-                foreach (var ex in Config.Data.AutoPickupExceptions)
+                // Autopickup exceptions (dNH semantics): grab can promote, leave always wins
+                if (!want)
                 {
-                    if (ex.Regex.IsMatch(item.DisplayName))
-                        want = ex.Include;
+                    foreach (var ex in Config.Data.ApGrabs)
+                        if (ex.Regex.IsMatch(item.DisplayName)) { want = true; break; }
+                }
+                if (want)
+                {
+                    foreach (var ex in Config.Data.ApLeaves)
+                        if (ex.Regex.IsMatch(item.DisplayName)) { want = false; break; }
                 }
 
                 if (want)

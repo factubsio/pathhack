@@ -1,6 +1,7 @@
 namespace Pathhack.Game;
 
-public static class Gems
+[GenerateAll("AllStones", typeof(WeaponDef))]
+public static partial class Gems
 {
     public static readonly WeaponDef Rock = new()
     {

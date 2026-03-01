@@ -100,7 +100,7 @@ static class OptionsMenu
             "NumberPad", "RunMode", "SortLoot", "WhatisCoord", "PackOrder", "Fruit"]),
         ("Status", ["ShowExp", "ShowRace", "ShowScore", "Time", "HitPointBar", "Verbose"]),
         ("Misc", ["Blind", "Bones", "Help", "Legacy", "Mail", "Nudist", "Silent", "Tombstone"]),
-        ("Directives", ["AutoPickupExceptions", "MsgTypes", "MenuColorRules", "StatusColors",
+        ("Directives", ["ApGrabs", "ApLeaves", "MsgTypes", "MenuColorRules", "StatusColors",
             "MonsterColors", "Binds"]),
     ];
 
