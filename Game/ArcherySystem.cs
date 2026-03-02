@@ -2,6 +2,8 @@ namespace Pathhack.Game;
 
 public class QuiverDef : ItemDef
 {
+    public override ItemKnowledge RelevantKnowledge => ItemKnowledge.PropPotency;
+
     public required Dice Capacity;
 
     // the weapon type that can launch ammo from this quiver
@@ -26,6 +28,9 @@ public static class ArcherySystem
     {
         var qd = (QuiverDef)quiver.Def;
         var ammo = Item.Create(qd.Ammo);
+        ammo.Potency = quiver.Potency;
+        ammo.Identify();
+        // Copy runes too?
         quiver.Charges--;
         g.YouObserveSelf(unit, $"You shoot!", $"{unit:The} {VTense(unit, "shoot")} {ammo:an}!", "a twang");
         DoThrow(unit, ammo, dir, AttackType.Ammo, range: 8);

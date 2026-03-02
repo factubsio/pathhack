@@ -278,14 +278,16 @@ public class ShopState
         return GetSellPrice(item) / (Type == ShopType.General ? 3 : 2);
     }
 
-    public bool WillBuy(Item item) => Type switch
+    public bool WillBuy(Item item) => WillBuyDef(item.Def);
+
+    public bool WillBuyDef(ItemDef def) => Type switch
     {
-        ShopType.Weapon or ShopType.Armor => item.Def is WeaponDef or ArmorDef or QuiverDef,
-        ShopType.Potion => item.Def is PotionDef or BottleDef,
-        ShopType.Scroll => item.Def is ScrollDef,
-        ShopType.Ring => item.Def.DefaultEquipSlot is ItemSlots.Ring or ItemSlots.Amulet,
-        ShopType.Food => item.Def is ConsumableDef,
-        ShopType.Wand => item.Def is WandDef,
+        ShopType.Weapon or ShopType.Armor => def is WeaponDef or ArmorDef or QuiverDef,
+        ShopType.Potion => def is PotionDef or BottleDef,
+        ShopType.Scroll => def is ScrollDef,
+        ShopType.Ring => def.DefaultEquipSlot is ItemSlots.Ring or ItemSlots.Amulet,
+        ShopType.Food => def is ConsumableDef,
+        ShopType.Wand => def is WandDef,
         _ => true,
     };
 
@@ -319,6 +321,38 @@ public class ShopState
     {
         if (Stock.TryGetValue(item, out var state))
             DoPrice(item, state);
+    }
+}
+
+public static class ShopServices
+{
+    public static int IdentifyDefPrice(ItemDef def) => def switch
+    {
+        ScrollDef or PotionDef or BottleDef or WandDef => 100,
+        ArmorDef => 120,
+        WeaponDef => 160,
+        _ when def.AppearanceCategory == AppearanceCategory.Rune => 140,
+        _ => 100,
+    };
+
+    public static int AdjustedDefPrice(ShopState shop, ItemDef def)
+    {
+        int basePrice = IdentifyDefPrice(def);
+        if (shop.Type == ShopType.General) return basePrice;
+        bool knows = shop.WillBuyDef(def);
+        return knows ? (int)(basePrice * 0.8) : basePrice * 8;
+    }
+
+    public const int IdentifyPropsPrice = 100;
+
+    public static bool CanIdentifyDef(Item item) =>
+        item.Def.AppearanceCategory != null && !ItemDb.Instance.IsIdentified(item.Def);
+
+    public static bool CanIdentifyProps(Item item)
+    {
+        ItemKnowledge relevant = item.Def.RelevantKnowledge & ~ItemKnowledge.Seen;
+        if (relevant == ItemKnowledge.None) return false;
+        return (item.Knowledge & relevant) != relevant;
     }
 }
 
@@ -364,6 +398,14 @@ public static class EconomySystem
         MoralAxis = MoralAxis.Neutral,
         EthicalAxis = EthicalAxis.Lawful,
         Brain = new ShopkeeperBrain(),
+        OnChat = m =>
+        {
+            var shop = m.FindFact(ShopkeeperBrick.Instance)?.As<ShopState>();
+            if (shop == null) return;
+            g.pline($"{m:The} talks about the problem of shoplifters.");
+            if (Input.YesNo("Do you wish to try our other services?"))
+                ShopServicesUI.Show(shop);
+        },
         Components = [
             EquipSet.OneOf(MundaneArmory.Longsword, MundaneArmory.Falchion),
             new Equip(MundaneArmory.Breastplate),
@@ -372,6 +414,7 @@ public static class EconomySystem
     };
 
     public static string Crests(this int amount) => amount == 1 ? $"one {Coin}" : $"{amount} {Coins}";
+    public static string Crests(this long amount) => amount == 1 ? $"one {Coin}" : $"{amount} {Coins}";
     public const string Coin = "crest";
     public const string Coins = "crests";
 }

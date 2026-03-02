@@ -298,7 +298,7 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
 
         if (potencyKnown)
         {
-            if (Def is WeaponDef)
+            if (Def is WeaponDef or QuiverDef)
                 parts.Add($"+{Potency}");
             else if (Def is ArmorDef && Potency > 0)
                 parts.Add($"+{Potency}");

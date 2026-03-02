@@ -21,6 +21,8 @@ public static partial class Input
         if (shop.Bill <= 0)
         {
             g.pline($"You do not owe {room.Resident:the} anything.");
+            if (YesNo("Do you wish to try our other services?"))
+                ShopServicesUI.Show(shop);
             return;
         }
         if (u.Gold <= 0)
@@ -82,9 +84,10 @@ public static partial class Input
         DoOpenDoor(target);
     }
 
-    static void Chat(CommandArg arg)
+    static void Chat()
     {
-        if (arg is not DirArg(var d)) return;
+        g.pline("Talk to whom? (in what direction)");
+        if (GetDirection(NextKey().Key) is not { } d) return;
         Pos target = upos + d;
         if (lvl.UnitAt(target) is Monster m)
         {

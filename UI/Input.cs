@@ -42,7 +42,7 @@ public static partial class Input
         ["quit"] = new("quit", "Quit game", ArgType.None, _ => g.Done("Quit")),
         ["levelup"] = new("levelup", "Level up (if available)", ArgType.None, _ => DoLevelUp()),
         ["invoke"] = new("invoke", "Invoke item power", ArgType.None, _ => InvokeItem()),
-        ["chat"] = new("chat", "Talk to adjacent creature", ArgType.Dir, Chat),
+        ["chat"] = new("chat", "Talk to adjacent creature", ArgType.None, _ => Chat()),
         ["help"] = new("help", "Show help", ArgType.None, _ => ShowHelp()),
         ["name"] = new("name", "Name an item type", ArgType.None, _ => CallItem()),
         ["dismiss"] = new("dismiss", "Dismiss a maintained buff", ArgType.None, _ => DismissAction.DoDismiss(u)),

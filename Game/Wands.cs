@@ -2,6 +2,7 @@ namespace Pathhack.Game;
 
 public class WandDef : ItemDef
 {
+    public override ItemKnowledge RelevantKnowledge => ItemKnowledge.PropPotency;
     public readonly SpellBrickBase Spell;
     public readonly int MaxCharges;
 

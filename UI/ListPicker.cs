@@ -22,7 +22,7 @@ public static class ListPicker
 {
     const int DefaultListWidth = 24;
 
-    public static T? Pick<T>(IReadOnlyList<T> items, string prompt, int defaultIndex = 0, ListPickerDrawCallback<T>? custom = null, Func<T, ConsoleKeyInfo, bool>? keyHandler = null, int listWidth = DefaultListWidth) where T : class, ISelectable
+    public static T? Pick<T>(IReadOnlyList<T> items, string prompt, int defaultIndex = 0, ListPickerDrawCallback<T>? custom = null, Func<T, ConsoleKeyInfo, bool>? keyHandler = null, int listWidth = DefaultListWidth, Func<T, string>? groupBy = null, Func<T, bool>? extraFilter = null, bool emptyKeyDispatch = false) where T : class, ISelectable
     {
         if (items.Count == 0) return null;
 
@@ -36,15 +36,22 @@ public static class ListPicker
 
         while (true)
         {
-            if (filter != null)
-                visible = items.Where(i => i.Name.Contains(filter, StringComparison.OrdinalIgnoreCase)).ToList();
+            if (filter != null || extraFilter != null)
+            {
+                IEnumerable<T> filtered = items;
+                if (filter != null)
+                    filtered = filtered.Where(i => i.Name.Contains(filter, StringComparison.OrdinalIgnoreCase));
+                if (extraFilter != null)
+                    filtered = filtered.Where(extraFilter);
+                visible = filtered.ToList();
+            }
             else
                 visible = items;
 
             if (visible.Count > 0)
                 index = Math.Clamp(index, 0, visible.Count - 1);
 
-            DrawPicker(win, visible, index, filter != null ? $"{prompt} [/{filter}{(typing ? "▌" : "")}]" : prompt, null, 0, custom, listWidth: listWidth);
+            DrawPicker(win, visible, index, filter != null ? $"{prompt} [/{filter}{(typing ? "▌" : "")}]" : prompt, null, 0, custom, listWidth: listWidth, groupBy: groupBy);
             var key = Input.NextKey();
 
             if (typing)
@@ -82,10 +89,11 @@ public static class ListPicker
                     }
                     break;
                 case ConsoleKey.Escape:
+                case ConsoleKey.Q when !typing:
                     return null;
                 default:
                     if (key.KeyChar == '/') { filter = ""; typing = true; continue; }
-                    if (keyHandler != null && visible.Count > 0 && keyHandler(visible[index], key)) break;
+                    if (keyHandler != null && (visible.Count > 0 ? keyHandler(visible[index], key) : emptyKeyDispatch && keyHandler(null!, key))) break;
                     break;
             }
         }
@@ -123,46 +131,97 @@ public static class ListPicker
         }
     }
 
-    static void DrawPicker<T>(Window win, IReadOnlyList<T> items, int cursor, string prompt, HashSet<int>? selected, int count, ListPickerDrawCallback<T>? custom = null, int listWidth = DefaultListWidth) where T : ISelectable
+    static void DrawPicker<T>(Window win, IReadOnlyList<T> items, int cursor, string prompt, HashSet<int>? selected, int count, ListPickerDrawCallback<T>? custom = null, int listWidth = DefaultListWidth, Func<T, string>? groupBy = null) where T : ISelectable
     {
         int detailX = listWidth + 2;
         win.Clear();
         win.At(2, 1).Write(prompt, ConsoleColor.White);
 
+        // Count display rows (items + group headers) to compute scroll
+        int totalRows = items.Count;
+        if (groupBy != null)
+        {
+            string? lastGroup = null;
+            for (int i = 0; i < items.Count; i++)
+            {
+                string grp = groupBy(items[i]);
+                if (grp != lastGroup) { totalRows++; lastGroup = grp; }
+            }
+        }
+
         int maxVisible = Draw.ScreenHeight - 7;
+
+        // Find the display row of the cursor item
+        int cursorRow = 0;
+        {
+            string? lastGroup = null;
+            for (int i = 0; i < items.Count && i <= cursor; i++)
+            {
+                if (groupBy != null)
+                {
+                    string grp = groupBy(items[i]);
+                    if (grp != lastGroup) { if (i <= cursor) cursorRow++; lastGroup = grp; }
+                }
+                if (i < cursor) cursorRow++;
+            }
+        }
+
         int scroll = 0;
-        if (items.Count > maxVisible)
+        if (totalRows > maxVisible)
         {
-            scroll = cursor - maxVisible / 2;
-            scroll = Math.Clamp(scroll, 0, items.Count - maxVisible);
-        }
-        int end = Math.Min(scroll + maxVisible, items.Count);
-
-        for (int i = scroll; i < end; i++)
-        {
-            var style = i == cursor ? CellStyle.Reverse : CellStyle.None;
-            string prefix = selected != null ? (selected.Contains(i) ? "[+] " : "[ ] ") : "";
-            ConsoleColor fg = ConsoleColor.White;
-            if (items[i].WhyNot != null)
-                fg = ConsoleColor.DarkYellow;
-            else if (items[i].ListColor is { } lc)
-                fg = lc;
-            string label = prefix + items[i].Name;
-            if (label.Length > listWidth - 2)
-                label = label[..(listWidth - 3)] + "…";
-            win.At(2, 3 + i - scroll).Write(label, fg, ConsoleColor.Black, style);
+            scroll = cursorRow - maxVisible / 2;
+            scroll = Math.Clamp(scroll, 0, totalRows - maxVisible);
         }
 
-        if (items.Count > maxVisible)
+        // Render rows
+        int y = 3;
+        int row = 0;
+        string? prevGroup = null;
+        for (int i = 0; i < items.Count && y < 3 + maxVisible; i++)
+        {
+            if (groupBy != null)
+            {
+                string grp = groupBy(items[i]);
+                if (grp != prevGroup)
+                {
+                    prevGroup = grp;
+                    if (row >= scroll && y < 3 + maxVisible)
+                    {
+                        win.At(2, y).Write(grp, ConsoleColor.DarkCyan);
+                        y++;
+                    }
+                    row++;
+                }
+            }
+
+            if (row >= scroll && y < 3 + maxVisible)
+            {
+                var style = i == cursor ? CellStyle.Reverse : CellStyle.None;
+                string prefix = selected != null ? (selected.Contains(i) ? "[+] " : "[ ] ") : "";
+                ConsoleColor fg = ConsoleColor.White;
+                if (items[i].WhyNot != null)
+                    fg = ConsoleColor.DarkYellow;
+                else if (items[i].ListColor is { } lc)
+                    fg = lc;
+                string label = prefix + items[i].Name;
+                if (label.Length > listWidth - 2)
+                    label = label[..(listWidth - 3)] + "…";
+                win.At(2, y).Write(label, fg, ConsoleColor.Black, style);
+                y++;
+            }
+            row++;
+        }
+
+        if (totalRows > maxVisible)
         {
             int trackX = listWidth;
-            int trackH = end - scroll;
-            int thumbH = Math.Max(1, trackH * maxVisible / items.Count);
-            int thumbY = trackH > thumbH ? scroll * (trackH - thumbH) / (items.Count - maxVisible) : 0;
-            for (int y = 0; y < trackH; y++)
+            int trackH = Math.Min(maxVisible, totalRows - scroll);
+            int thumbH = Math.Max(1, trackH * maxVisible / totalRows);
+            int thumbY = trackH > thumbH ? scroll * (trackH - thumbH) / (totalRows - maxVisible) : 0;
+            for (int sy = 0; sy < trackH; sy++)
             {
-                bool isThumb = y >= thumbY && y < thumbY + thumbH;
-                win[trackX, 3 + y] = new Cell('x', isThumb ? ConsoleColor.White : ConsoleColor.DarkGray, Dec: true);
+                bool isThumb = sy >= thumbY && sy < thumbY + thumbH;
+                win[trackX, 3 + sy] = new Cell('x', isThumb ? ConsoleColor.White : ConsoleColor.DarkGray, Dec: true);
             }
         }
 
@@ -171,6 +230,11 @@ public static class ListPicker
         if (items.Count == 0)
         {
             win.At(detailX, 3).Write("No matches", ConsoleColor.DarkGray);
+            if (custom != null)
+            {
+                var rhs = win.At(detailX, 5, paddedWidth - detailX - 2, Draw.ScreenHeight - 7);
+                custom(rhs, default!, false);
+            }
         }
         else if (custom != null)
         {
