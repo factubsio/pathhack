@@ -668,6 +668,7 @@ public static partial class Input
     public static string EquipDescription(Item item, EquipSlot? slot) => slot?.Type switch
     {
         ItemSlots.Ring => $"(worn on {slot.Value.Slot} hand)",
+        ItemSlots.Hand when item.Def is ShieldDef => "(worn on arm)",
         ItemSlots.Hand when item.Def is WeaponDef { Hands: 2 } => "(weapon in hands)",
         ItemSlots.Hand => "(weapon in hand)",
         ItemSlots.Alt => "(alternate weapon)",

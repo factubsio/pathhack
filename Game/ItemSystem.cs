@@ -125,6 +125,7 @@ public class ArmorDef : ItemDef
     public required int ACBonus;
     public required string Proficiency;
     public int DexCap = 99;
+    public required string ArmorType;
     public int CheckPenalty = 0;
     public int SpeedPenalty = 0;
     public override ItemKnowledge RelevantKnowledge => ItemKnowledge.Seen | ItemKnowledge.Props | ItemKnowledge.BUC;
@@ -298,9 +299,7 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
 
         if (potencyKnown)
         {
-            if (Def is WeaponDef or QuiverDef)
-                parts.Add($"+{Potency}");
-            else if (Def is ArmorDef && Potency > 0)
+            if (Def is WeaponDef or QuiverDef or ArmorDef)
                 parts.Add($"+{Potency}");
         }
 
@@ -344,8 +343,7 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
         if (count > 1) parts.Add($"{count}");
         if (BUC != BUC.Uncursed)
             parts.Add(BUC == BUC.Blessed ? "blessed" : "cursed");
-        if (Def is WeaponDef) parts.Add($"+{Potency}");
-        else if (Def is ArmorDef && Potency > 0) parts.Add($"+{Potency}");
+        if (Def is WeaponDef or QuiverDef or ArmorDef) parts.Add($"+{Potency}");
         if (Fundamental?.Brick is RuneBrick { IsNull: false } fb)
             parts.Add(fb.QualifiedName);
         var props = PropertyRunes.Select(r => (RuneBrick)r.Brick).Where(r => !r.IsNull).Select(r => r.DisplayName);

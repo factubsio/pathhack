@@ -5,7 +5,7 @@ public static class Orcs
     public static readonly MonsterFamily Family = new("orc");
 
     static readonly LogicBrick[] CommonArmor = [
-        EquipSet.Roll(OrcishArmory.ChainMail, 40),
+        EquipSet.Roll(OrcishArmory.Breastplate, 40),
         EquipSet.Roll(MundaneArmory.LeatherArmor, 40),
     ];
 

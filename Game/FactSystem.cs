@@ -1072,10 +1072,21 @@ public abstract class Unit<TDef>(TDef def, IEnumerable<LogicBrick> components) :
             }
             else
             {
-                if (Equipped.ContainsKey(mainSlot))
-                    return null;
-                Equipped[mainSlot] = item;
-                resultSlot = mainSlot;
+                // Shields prefer offhand
+                if (item.Def is ShieldDef)
+                {
+                    if (Equipped.ContainsKey(offSlot))
+                        return null;
+                    Equipped[offSlot] = item;
+                    resultSlot = offSlot;
+                }
+                else
+                {
+                    if (Equipped.ContainsKey(mainSlot))
+                        return null;
+                    Equipped[mainSlot] = item;
+                    resultSlot = mainSlot;
+                }
             }
         }
 

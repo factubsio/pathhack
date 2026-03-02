@@ -156,6 +156,21 @@ public static class Proficiencies
     public const string Shield = "shield";
 }
 
+public static class ArmorTypes
+{
+    public const string LeatherArmor = "leather_armor";
+    public const string ChainShirt = "chain_shirt";
+    public const string HideArmor = "hide_armor";
+    public const string Breastplate = "breastplate";
+    public const string SplintMail = "splint_mail";
+    public const string FullPlate = "full_plate";
+    public const string Buckler = "buckler";
+    public const string LightShield = "light_shield";
+    public const string MediumShield = "medium_shield";
+    public const string HeavyShield = "heavy_shield";
+    public const string TowerShield = "tower_shield";
+}
+
 public static class WeaponTypes
 {
     public const string Unarmed = "unarmed";

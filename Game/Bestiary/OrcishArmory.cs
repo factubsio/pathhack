@@ -30,10 +30,11 @@ public static class OrcishArmory
         Price = 30,
     };
 
-    public static readonly ArmorDef ChainMail = new()
+    public static readonly ArmorDef Breastplate = new()
     {
-        id = "orcish_chain_mail",
-        Name = "orcish chain mail",
+        id = "orcish_breastplate",
+        Name = "orcish breastplate",
+        ArmorType = ArmorTypes.Breastplate,
         Proficiency = Proficiencies.MediumArmor,
         ACBonus = 2,
         DexCap = 1,

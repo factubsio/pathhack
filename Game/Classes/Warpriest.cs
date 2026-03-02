@@ -276,6 +276,7 @@ public static partial class ClassDefs
                     new GrantProficiency(Proficiencies.Unarmed, ProficiencyLevel.Trained),
                     new GrantProficiency(Proficiencies.LightArmor, ProficiencyLevel.Trained),
                     new GrantProficiency(Proficiencies.MediumArmor, ProficiencyLevel.Trained),
+                    new GrantProficiency(Proficiencies.Shield, ProficiencyLevel.Trained),
                     new GrantProficiency(WeaponStyle.Simple, ProficiencyLevel.Trained),
                     new GrantProficiency(WeaponGrip.Light, ProficiencyLevel.Trained),
                     new GrantProficiency("spell_attack", ProficiencyLevel.Trained),
@@ -335,6 +336,14 @@ public static partial class ClassDefs
             var armor = ItemGen.GenerateItem(MundaneArmory.LeatherArmor);
             p.Inventory.Add(armor).Identify();
             p.Equip(armor);
+
+            // Shield if not using a 2h weapon
+            if (weaponDef is not { Hands: 2 })
+            {
+                var shield = ItemGen.GenerateItem(Shields.LightShield);
+                p.Inventory.Add(shield).Identify();
+                p.Equip(shield);
+            }
 
             // Starting potions
             p.Inventory.Add(Item.Create(Potions.Healing, g.RnRange(2, 3))).Identify();

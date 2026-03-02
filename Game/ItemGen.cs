@@ -16,6 +16,7 @@ public static class ItemGen
         (16, GenerateScroll),
         (10, GenerateWeapon),
         (10, GenerateArmor),
+        (5, GenerateShield),
         (4, GenerateWand),
         (4, GenerateBottle),
         (4, GenerateRing),
@@ -26,7 +27,7 @@ public static class ItemGen
 
     static int TotalWeight => ClassWeights.Sum(x => x.weight);
 
-    static readonly ItemDef[] ArmorShopPool = [.. MundaneArmory.RandomAllArmors, .. MagicBoots.RandomAll, .. MagicGloves.RandomAll];
+    static readonly ItemDef[] ArmorShopPool = [.. MundaneArmory.RandomAllArmors, .. Shields.RandomAllShields, .. MagicBoots.RandomAll, .. MagicGloves.RandomAll];
 
     public static Item? GenerateForShop(ShopType type, int depth) => type switch
     {
@@ -87,6 +88,7 @@ public static class ItemGen
         return GenerateItem(def, depth);
     }
     public static Item? GenerateArmor(int depth) => PickFrom(MundaneArmory.RandomAllArmors, depth);
+    public static Item? GenerateShield(int depth) => PickFrom(Shields.RandomAllShields, depth);
     public static Item? GenerateQuiver(int depth) => PickFrom(MundaneQuivers.RandomQuivers, depth);
     public static Item? GenerateRing(int depth) => PickFrom(MagicRings.RandomAll, depth);
     public static Item? GenerateBoots(int depth) => PickFrom(MagicBoots.RandomAll, depth);
