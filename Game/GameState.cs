@@ -128,13 +128,15 @@ public class GameState
     public static Level lvl => g.CurrentLevel!;
     public StreamWriter? PlineLog;
 
-    public record struct Awareness(bool CanTarget, bool Disadvantage, PlayerPerception Perception)
+    public record struct Awareness(bool CanTarget, bool Disadvantage, PlayerPerception Perception, bool BlindFight)
     {
         public bool Visual => Perception == PlayerPerception.Visible;
     }
 
     public static Awareness GetAwareness(IUnit viewer, IUnit target)
     {
+        bool blindFight = viewer.Has("blind_fight");
+
         // monster<->monster: simplified visual check
         if (!viewer.IsPlayer && !target.IsPlayer)
         {
@@ -145,8 +147,8 @@ public class GameState
             bool mLOS = adjacent || FovCalculator.IsPathClear(lvl, viewer.Pos, target.Pos);
             bool mVisual = !mBlind && !mTargetInvis && !mTargetInDark && mLOS;
             if (!mVisual && adjacent && g.Rn2(8) == 0)
-                return new(true, false, PlayerPerception.Detected);
-            return new(mVisual, false, mVisual ? PlayerPerception.Visible : PlayerPerception.None);
+                return new(true, false, PlayerPerception.Detected, blindFight);
+            return new(mVisual, false, mVisual ? PlayerPerception.Visible : PlayerPerception.None, blindFight);
         }
 
         int tremor = viewer.Query("tremorsense", null, MergeStrategy.Max, 0);
@@ -191,13 +193,13 @@ public class GameState
         bool disadvantage = canTarget && !visual && !hasTremor;
 
         // blind_fight removes disadvantage but not visual
-        if (disadvantage && blind && viewer.Has("blind_fight"))
+        if (disadvantage && blind && blindFight)
             disadvantage = false;
 
         if (hiding && perception >= PlayerPerception.Detected)
             ((Monster)target).Hiding = false;
 
-        return new(canTarget, disadvantage, perception);
+        return new(canTarget, disadvantage, perception, blindFight);
     }
 
     public static bool CanSee(IUnit viewer, IUnit target) => GetAwareness(viewer, target).Visual;
@@ -828,6 +830,14 @@ public class GameState
         var defAwareness = GetAwareness(defender, attacker);
         if (!defAwareness.CanTarget)
             check.Advantage++;  // unseen attacker
+        
+        if (atkAwareness.Perception < PlayerPerception.Detected && !atkAwareness.BlindFight)
+        {
+            int chance = 2;
+            if (atkAwareness.Perception == PlayerPerception.Warned)
+                chance = 4;
+            if (g.Rn2(chance) == 0) check.ForceFailure();
+        }
 
         // The to hit roll looks backwards, but it is check where the attacker
         // is trying to beat the defender's AC roll, so the attacker *is* the target

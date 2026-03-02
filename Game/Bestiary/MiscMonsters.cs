@@ -3,6 +3,7 @@ namespace Pathhack.Game.Bestiary;
 public class Thorns(Dice damage, DamageType type) : LogicBrick
 {
     public static readonly Thorns Piercing_1d2 = new(d(2), DamageTypes.Piercing);
+    public static readonly Thorns Piercing_1d4 = new(d(4), DamageTypes.Piercing);
 
     public static readonly Thorns Fire_1d4 = new(d(4), DamageTypes.Fire);
     public static readonly Thorns Fire_2d8 = new(d(2, 8), DamageTypes.Fire);

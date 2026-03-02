@@ -66,6 +66,8 @@ public class TimedFact(LogicBrick brick) : LogicBrick
     public override string Id => $"timed+{brick.Id}";
     public static TimedFact For(LogicBrick brick) => WrapperHelper<TimedFact, LogicBrick>.For(brick, brick => new(brick));
 
+    public override string? PokedexDescription => $"{brick.PokedexDescription ?? brick.BuffName ?? brick.Id} (temporarily)";
+
     protected override void OnFactAdded(Fact fact) => fact.Entity.AddFact(brick, fact.Source);
 
     protected override void OnFactRemoved(Fact fact) => fact.Entity.RemoveStack(brick);

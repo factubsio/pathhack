@@ -28,12 +28,12 @@ public class BreathAttack(
         _ => dt.SubCat,
     };
 
-    public static void CollectBreath(BreathShape shape, IUnit source, Pos dir, int range, ConsoleColor color, string name, Action<IUnit> onHit, Action<Pos>? onTile = null, string verb = "breathe")
+    public static void CollectBreath(BreathShape shape, IUnit source, Pos dir, int range, ConsoleColor color, string name, Action<IUnit> onHit, Action<Pos>? onTile = null, string verb = "breathe", char? glyphChar = null)
     {
         if (shape == BreathShape.Cone)
         {
             using var cone = lvl.CollectCone(source.Pos, dir, range);
-            Draw.AnimateFlash(cone, new Glyph('≈', color));
+            Draw.AnimateFlash(cone, new Glyph(glyphChar ?? '≈', color));
             g.YouObserve(source, $"{source:The} {VTense(source, verb)} {name}!", $"a blast of {name}");
             foreach (var pos in cone)
             {
@@ -45,7 +45,7 @@ public class BreathAttack(
         else if (shape == BreathShape.Burst)
         {
             using var area = lvl.CollectCircle(source.Pos, range, andCenter: false);
-            Draw.AnimateFlash(area, new Glyph('*', color));
+            Draw.AnimateFlash(area, new Glyph(glyphChar ?? '*', color));
             foreach (var pos in area)
             {
                 onTile?.Invoke(pos);

@@ -9,6 +9,7 @@ public class BlindBuff : LogicBrick
     public override string? BuffName => "Blind";
     public override StatusDisplay StatusDisplayPriority => StatusDisplay.Severe;
     public override StackMode StackMode => StackMode.Stack;
+    public override string? PokedexDescription => "Blind, cannot see and chance to miss attacks";
 
     protected override object? OnQuery(Fact fact, string key, string? arg) => key.FalseWhen(CommonQueries.See);
 
@@ -29,6 +30,7 @@ public class ProneBuff : LogicBrick
     public override string Id => "prone";
     public override bool IsBuff => true;
     public override string? BuffName => "Hamstrung";
+    public override string? PokedexDescription => "Hamstrung, lowered ac and move speed";
     public override StatusDisplay StatusDisplayPriority => StatusDisplay.Moderate;
     public override StackMode StackMode => StackMode.Stack;
 
@@ -46,6 +48,7 @@ public class SilencedBuff : LogicBrick
     public override string Id => "silenced";
     public override bool IsBuff => true;
     public override string? BuffName => "Silenced";
+    public override string? PokedexDescription => "Silenced, cannot cast spells";
     public override StatusDisplay StatusDisplayPriority => StatusDisplay.Moderate;
     public override StackMode StackMode => StackMode.Stack;
 
@@ -63,6 +66,7 @@ public class ParalyzedBuff : LogicBrick
     public override bool IsBuff => true;
     public override bool IsActive => true;
     public override string? BuffName => "Paralyzed";
+    public override string? PokedexDescription => "Paralyzed, cannot act";
     public override StatusDisplay StatusDisplayPriority => StatusDisplay.Critical;
     public override StackMode StackMode => StackMode.Stack;
 
@@ -81,6 +85,7 @@ public class NauseatedBuff : LogicBrick
     public override string Id => "nauseated";
     public override bool IsBuff => true;
     public override string? BuffName => "Nauseated";
+    public override string? PokedexDescription => "Nauseated, disadvantage on checks";
     public override StatusDisplay StatusDisplayPriority => StatusDisplay.Severe;
     public override StackMode StackMode => StackMode.Stack;
 
@@ -100,6 +105,7 @@ public class FleeingBuff : LogicBrick
     public override string Id => "fleeing";
     public override bool IsBuff => true;
     public override string? BuffName => "Fleeing";
+    public override string? PokedexDescription => "Fleeing, RUN AWAY";
     public override StatusDisplay StatusDisplayPriority => StatusDisplay.Severe;
 
     protected override object? OnQuery(Fact fact, string key, string? arg) => key switch
@@ -116,6 +122,7 @@ public class StunnedBuff : LogicBrick
     public override bool IsBuff => true;
     public override bool IsActive => true;
     public override string? BuffName => "Stunned";
+    public override string? PokedexDescription => "Stunned, cannot act";
     public override StatusDisplay StatusDisplayPriority => StatusDisplay.Critical;
 
     protected override object? OnQuery(Fact fact, string key, string? arg) => key == "can_act" && !fact.Entity.Has(CommonQueries.StunImmune) ? false : null;
@@ -128,6 +135,7 @@ public class BleedBuff : LogicBrick
     public override bool IsBuff => true;
     public override bool IsActive => true;
     public override string? BuffName => "Bleed";
+    public override string? PokedexDescription => "Bleeding, damage every round, cured by any magical healing";
     public override StackMode StackMode => StackMode.ExtendStacks;
     public override int MaxStacks => 10;
     public override StatusDisplay StatusDisplayPriority => StatusDisplay.Severe;
@@ -325,6 +333,7 @@ public class ConfusedBuff : LogicBrick
     public override string Id => "confused";
     public override bool IsBuff => true;
     public override string? BuffName => "Confused";
+    public override string? PokedexDescription => "Confused, chance to stumble";
     public override StatusDisplay StatusDisplayPriority => StatusDisplay.Severe;
     public override StackMode StackMode => StackMode.ExtendDuration;
 
@@ -343,6 +352,7 @@ public class DazeImmunity : LogicBrick
     public static readonly DazeImmunity Instance = new();
     public override string Id => "daze_immune";
     public override string? BuffName => "Daze Immunity";
+    public override string? PokedexDescription => "Immune to daze";
     public override StatusDisplay StatusDisplayPriority => StatusDisplay.Low;
     public override StackMode StackMode => StackMode.Reject;
 
@@ -355,6 +365,7 @@ public class DazedBuff : LogicBrick
     public override string Id => "dazed";
     public override bool IsBuff => true;
     public override string? BuffName => "Dazed";
+    public override string? PokedexDescription => "Dazed, miss one turn, then immune for 4 rounds";
     public override StatusDisplay StatusDisplayPriority => StatusDisplay.Critical;
     public override StackMode StackMode => StackMode.Reject;
 
@@ -372,6 +383,7 @@ public class DazeOnHit : LogicBrick
 {
     public static readonly DazeOnHit Instance = new();
     public override string Id => "daze_on_hit";
+    public override string? PokedexDescription => "Dazes target on melee hit";
 
     protected override void OnAfterAttackRoll(Fact fact, PHContext ctx)
     {
@@ -384,7 +396,7 @@ public class DazeOnHit : LogicBrick
 public class BleedOnHit(int stacks) : LogicBrick
 {
     public override string Id => $"bleed_on_hit+{stacks}";
-    public override string? PokedexDescription => $"Inflicts {stacks} bleed on hit";
+    public override string? PokedexDescription => $"Inflicts {stacks} of bleed on hit";
 
     protected override void OnAfterAttackRoll(Fact fact, PHContext ctx)
     {
@@ -442,6 +454,7 @@ public class CursedWoundsBuff : LogicBrick
     public override string Id => "cursed_wounds";
     public override bool IsBuff => true;
     public override string? BuffName => "Cursed Wounds";
+    public override string? PokedexDescription => "Prevents natural regen and healing";
     public override StackMode StackMode => StackMode.ExtendDuration;
     public override StatusDisplay StatusDisplayPriority => StatusDisplay.Severe;
 
@@ -488,6 +501,7 @@ public class TrueSeeingBuff : LogicBrick
 {
     public static readonly TrueSeeingBuff Instance = new();
     public override string Id => "true_seeing";
+    public override string? PokedexDescription => "Can see through magical obscurement";
 
     protected override object? OnQuery(Fact fact, string key, string? arg) => key.TrueWhen("see_invisible");
 }
@@ -498,6 +512,7 @@ public class HallucinatingBuff : LogicBrick
     public override string Id => "hallucinating";
     public override bool IsBuff => true;
     public override string? BuffName => "Hallucinating";
+    public override string? PokedexDescription => "Wow, much cosmic, very scrambled";
     public override StatusDisplay StatusDisplayPriority => StatusDisplay.Severe;
     public override StackMode StackMode => StackMode.ExtendDuration;
 

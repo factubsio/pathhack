@@ -283,14 +283,18 @@ public class AdaptiveResistance : LogicBrick<AdaptiveResistance.State>
     }
 }
 
-public class CorrosionOnBeingHit : LogicBrick
+public class CorrosionOnBeingHit(int chance) : LogicBrick
 {
-    public static readonly CorrosionOnBeingHit Instance = new();
-    public override string Id => "ooze:corrosion";
+    public static readonly CorrosionOnBeingHit Instance = new(1);
+    public static readonly CorrosionOnBeingHit Chance25 = new(4);
+    public static readonly CorrosionOnBeingHit Chance10 = new(10);
+
+    public override string Id => $"ooze:corrosion/{chance}";
     public override string? PokedexDescription => "Corrodes attacker's weapon when hit";
 
     protected override void OnDamageTaken(Fact fact, PHContext ctx)
     {
+        if (g.Rn2(chance) != 0) return;
         if (ctx.Source is not IUnit attacker || attacker.IsDM) return;
         if (ctx.Weapon is not { Def: WeaponDef } || ctx.Weapon.Def.IsEphemeral) return;
         var result = ctx.Weapon.TryDegrade();

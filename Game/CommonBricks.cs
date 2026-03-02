@@ -254,6 +254,7 @@ public class ProtectionBrick(DamageType type) : LogicBrick
 public class ApplyFactOnAttackHit(LogicBrick toApply, int? duration = null) : LogicBrick
 {
     public override string Id => $"on_attack_hit+{toApply.Id}";
+    public override string? PokedexDescription => $"On hit: {toApply.PokedexDescription ?? toApply.BuffName ?? toApply.Id}";
     protected override void OnAfterAttackRoll(Fact fact, PHContext context)
     {
         if (context.Check!.Result)
