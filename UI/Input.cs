@@ -856,7 +856,7 @@ public static partial class Input
                 var next = NextKey();
                 if (next.KeyChar is >= '0' and <= '9' && next.Modifiers == 0)
                 {
-                    count = Math.Min(200, count * 10 + (next.KeyChar - '0'));
+                    count = Math.Min(2000, count * 10 + (next.KeyChar - '0'));
                 }
                 else if (next.Key == ConsoleKey.Escape)
                 {
