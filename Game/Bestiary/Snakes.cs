@@ -4,6 +4,7 @@ public class SnakeVenomLesser(int dc) : AfflictionBrick(dc, "poison")
 {
     public override string Id => $"snake:venom_lesser+{DC}";
     public override AbilityTags Tags => AbilityTags.Biological;
+    public override string? ImmunityKey => CommonQueries.PoisonImmune;
     public static readonly SnakeVenomLesser DC10 = new(10);
     public static readonly SnakeVenomLesser DC12 = new(12);
     public static readonly SnakeVenomLesser DC14 = new(14);
@@ -31,6 +32,7 @@ public class SnakeVenomGreater(int dc) : AfflictionBrick(dc, "poison")
 {
     public override string Id => $"snake:venom_greater+{DC}";
     public override AbilityTags Tags => AbilityTags.Biological;
+    public override string? ImmunityKey => CommonQueries.PoisonImmune;
     public static readonly SnakeVenomGreater DC13 = new(13);
     public static readonly SnakeVenomGreater DC14 = new(14);
     public static readonly SnakeVenomGreater DC15 = new(15);

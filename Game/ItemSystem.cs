@@ -16,6 +16,7 @@ public class ItemDef : BaseDef, IFormattable
     public string Material = Materials.Iron;
     public bool Stackable;
     public bool IsUnique = false;
+    public string? ArtifactBaseId; // id of the base item this artifact replaces during generation
     public string? PokedexDescription;
 
     public bool IsEphemeral => Weight < 0;
@@ -484,6 +485,7 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
     internal DegradeResult TryDegrade()
     {
         if (Def is not (WeaponDef or ArmorDef)) return DegradeResult.None;
+        if (Holder?.Has("degrade_immune") == true) return DegradeResult.None;
 
         bool canDegrade = Degradation < 3;
         int maxRuneBits = (Fundamental != null ? 1 : 0) + PropertyRunes.Count;
@@ -540,8 +542,7 @@ public class Item(ItemDef def) : Entity<ItemDef>(def, def.Components), IFormatta
                 g.YouObserveSelf(unit, $"The runes on your {name} fade further!", $"The runes on {unit:possessive} {name} fade further!");
                 break;
             default:
-                g.YouObserveSelf(unit, $"Your {name} couldn't get any worse.", $"{unit:possessive} {name} couldn't get any worse.");
-                break;
+                return;
         }
     }
 }

@@ -188,6 +188,7 @@ public static class CommonQueries
     public const string PetrificationImmune = "petrification_immunity";
     public const string See = "can_see";
     public const string Hallucinating = "hallucinating";
+    public const string HallucinationImmune = "hallucination_immunity";
 
     public const string SpeedPenaltyMul = "speed_pen";
     public const string SpeedBonusMul = "speed_bon";
@@ -253,6 +254,8 @@ public abstract class AfflictionBrick(int dc, string? tag = null) : LogicBrick<A
         if (g.CurrentRound < data.NextTick) return;
 
         var unit = (IUnit)fact.Entity;
+
+        if (ImmunityKey is { } key && unit.Has(key)) { fact.Remove(); return; }
 
         if (tag != null && unit.Query<bool>("suppress_affliction", tag, MergeStrategy.Or, false)) return;
 
@@ -516,7 +519,15 @@ public class HallucinatingBuff : LogicBrick
     public override StatusDisplay StatusDisplayPriority => StatusDisplay.Severe;
     public override StackMode StackMode => StackMode.ExtendDuration;
 
-    protected override object? OnQuery(Fact fact, string key, string? arg) => key.TrueWhen(CommonQueries.Hallucinating);
+    public static bool TryApply(IUnit source, IUnit target, int duration)
+    {
+        if (target.Has(CommonQueries.HallucinationImmune)) return false;
+        target.AddFact(Instance, source, duration);
+        return true;
+    }
+
+    protected override object? OnQuery(Fact fact, string key, string? arg) =>
+        key == CommonQueries.Hallucinating && !fact.Entity.Has(CommonQueries.HallucinationImmune) ? true : null;
 
     protected override void OnFactAdded(Fact fact)
     {

@@ -56,6 +56,24 @@ public static class ItemGen
     static Item? PickFrom(ItemDef[] pool, int depth) =>
         pool.Length == 0 ? null : GenerateItem(pool.Pick(), depth);
 
+    static Item? PickFromWithArtifact(ItemDef[] pool, int depth)
+    {
+        if (pool.Length == 0) return null;
+        var def = pool.Pick();
+        if (g.Rn2(20) == 0)
+        {
+            var candidates = ArtifactArmors.All
+                .Where(a => a.ArtifactBaseId == def.id && !g.GeneratedArtifacts.ContainsKey(a.id))
+                .ToArray();
+            if (candidates.Length > 0)
+            {
+                def = candidates.Pick();
+                g.GeneratedArtifacts[def.id] = lvl?.Id ?? new LevelId(g.Branches["dungeon"], 1);
+            }
+        }
+        return GenerateItem(def, depth);
+    }
+
     public static Item? GeneratePotion(int depth) => PickFrom(Potions.RandomAll, depth);
     public static Item? GenerateWand(int depth) => PickFrom(Wands.RandomAll, depth);
     public static Item? GenerateBottle(int depth) => PickFrom(Bottles.RandomAll, depth);
@@ -88,11 +106,11 @@ public static class ItemGen
         return GenerateItem(def, depth);
     }
     public static Item? GenerateArmor(int depth) => PickFrom(MundaneArmory.RandomAllArmors, depth);
-    public static Item? GenerateShield(int depth) => PickFrom(Shields.RandomAllShields, depth);
+    public static Item? GenerateShield(int depth) => PickFromWithArtifact(Shields.RandomAllShields, depth);
     public static Item? GenerateQuiver(int depth) => PickFrom(MundaneQuivers.RandomQuivers, depth);
     public static Item? GenerateRing(int depth) => PickFrom(MagicRings.RandomAll, depth);
-    public static Item? GenerateBoots(int depth) => PickFrom(MagicBoots.RandomAll, depth);
-    public static Item? GenerateGloves(int depth) => PickFrom(MagicGloves.RandomAll, depth);
+    public static Item? GenerateBoots(int depth) => PickFromWithArtifact(MagicBoots.RandomAll, depth);
+    public static Item? GenerateGloves(int depth) => PickFromWithArtifact(MagicGloves.RandomAll, depth);
 
     public static bool TryGeneratePotion(int depth, [NotNullWhen(true)] out Item? item) => (item = PickFrom(Potions.RandomAll, depth)) != null;
     public static bool TryGenerateWand(int depth, [NotNullWhen(true)] out Item? item) => (item = PickFrom(Wands.RandomAll, depth)) != null;

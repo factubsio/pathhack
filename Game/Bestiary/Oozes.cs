@@ -362,7 +362,7 @@ public class EmotionalBacklash : LogicBrick
         {
             case 0: attacker.AddFact(ConfusedBuff.Instance, ooze, 3); break;
             case 1 when !attacker.Has(CommonQueries.DazeImmune): attacker.AddFact(DazedBuff.Instance, ooze, 1); break;
-            case 2: attacker.AddFact(HallucinatingBuff.Instance, ooze, 3); break;
+            case 2: HallucinatingBuff.TryApply(ooze, attacker, 3); break;
             case 3: attacker.AddFact(SilencedBuff.Instance.Timed(), ooze, 2); break;
         }
     }
@@ -437,7 +437,7 @@ public static class Oozes
             ctx.Damage.Add(new() { Formula = d(2), Type = DamageTypes.Acid });
             DoDamage(ctx);
             if (!CheckWill(ctx, 11, "euphoric slime"))
-                unit.AddFact(HallucinatingBuff.Instance, null, 3);
+                HallucinatingBuff.TryApply(DungeonMaster.Mook, unit, 3);
         }
     }
 

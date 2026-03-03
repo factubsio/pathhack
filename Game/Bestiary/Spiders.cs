@@ -104,6 +104,7 @@ public class SpiderVenom(int dc) : AfflictionBrick(dc, "poison")
 {
     public override string Id => $"spider:venom+{DC}";
     public override AbilityTags Tags => AbilityTags.Biological;
+    public override string? ImmunityKey => CommonQueries.PoisonImmune;
     public static readonly SpiderVenom DC10 = new(10);
     public static readonly SpiderVenom DC11 = new(11);
     public static readonly SpiderVenom DC12 = new(12);
